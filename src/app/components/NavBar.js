@@ -5,12 +5,14 @@ import { useEffect, useState } from 'react';
 const NavBar = () => {
   const router = useRouter();
   const [userName, setUserName] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
     if (storedUser) {
       const user = JSON.parse(storedUser);
       setUserName(user.name);
+      setIsAdmin(user.roles && user.roles.includes('admin'));
     }
   }, []);
 
@@ -27,6 +29,7 @@ const NavBar = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUserName(null);
+    setIsAdmin(false);
     router.push('/');
   };
 
@@ -40,6 +43,9 @@ const NavBar = () => {
           <li className="nav-item"><Link href="/rankings" className="nav-link">Rankings</Link></li>
           <li className="nav-item"><Link href="/events" className="nav-link">Events</Link></li>
           <li className="nav-item"><Link href="/chat" className="nav-link">Chat</Link></li>
+          {isAdmin && (
+            <li className="nav-item"><Link href="/admin" className="nav-link">Admin</Link></li>
+          )}
         </ul>
         <ul className="navbar-nav">
           {userName ? (
