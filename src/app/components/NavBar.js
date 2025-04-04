@@ -7,12 +7,10 @@ const NavBar = () => {
   const [userName, setUserName] = useState(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        setUserName(user.name);
-      }
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      setUserName(user.name);
     }
   }, []);
 
@@ -39,6 +37,9 @@ const NavBar = () => {
         <ul className="navbar-nav me-auto">
           <li className="nav-item">
             <Link href="/forum" className="nav-link">Forum</Link>
+          </li>
+          <li className="nav-item">
+            <Link href="/matches" className="nav-link">Matches</Link>
           </li>
         </ul>
         <ul className="navbar-nav">
