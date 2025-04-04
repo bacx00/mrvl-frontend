@@ -35,12 +35,9 @@ const NavBar = () => {
       <div className="container">
         <Link href="/" className="navbar-brand">MRVL Esports</Link>
         <ul className="navbar-nav me-auto">
-          <li className="nav-item">
-            <Link href="/forum" className="nav-link">Forum</Link>
-          </li>
-          <li className="nav-item">
-            <Link href="/matches" className="nav-link">Matches</Link>
-          </li>
+          <li className="nav-item"><Link href="/forum" className="nav-link">Forum</Link></li>
+          <li className="nav-item"><Link href="/matches" className="nav-link">Matches</Link></li>
+          <li className="nav-item"><Link href="/rankings" className="nav-link">Rankings</Link></li>
         </ul>
         <ul className="navbar-nav">
           {userName ? (
@@ -54,12 +51,8 @@ const NavBar = () => {
             </>
           ) : (
             <>
-              <li className="nav-item">
-                <Link href="/auth/login" className="nav-link">Login</Link>
-              </li>
-              <li className="nav-item">
-                <Link href="/auth/register" className="nav-link">Register</Link>
-              </li>
+              <li className="nav-item"><Link href="/auth/login" className="nav-link">Login</Link></li>
+              <li className="nav-item"><Link href="/auth/register" className="nav-link">Register</Link></li>
             </>
           )}
         </ul>
