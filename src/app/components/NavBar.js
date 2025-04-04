@@ -38,6 +38,7 @@ const NavBar = () => {
           <li className="nav-item"><Link href="/forum" className="nav-link">Forum</Link></li>
           <li className="nav-item"><Link href="/matches" className="nav-link">Matches</Link></li>
           <li className="nav-item"><Link href="/rankings" className="nav-link">Rankings</Link></li>
+          <li className="nav-item"><Link href="/events" className="nav-link">Events</Link></li>
         </ul>
         <ul className="navbar-nav">
           {userName ? (
