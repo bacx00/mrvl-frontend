@@ -39,6 +39,7 @@ const NavBar = () => {
           <li className="nav-item"><Link href="/matches" className="nav-link">Matches</Link></li>
           <li className="nav-item"><Link href="/rankings" className="nav-link">Rankings</Link></li>
           <li className="nav-item"><Link href="/events" className="nav-link">Events</Link></li>
+          <li className="nav-item"><Link href="/chat" className="nav-link">Chat</Link></li>
         </ul>
         <ul className="navbar-nav">
           {userName ? (
