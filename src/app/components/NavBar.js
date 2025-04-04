@@ -24,9 +24,7 @@ const NavBar = () => {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + token }
         });
-      } catch (err) {
-        console.error('Logout failed', err);
-      }
+      } catch {}
     }
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -38,7 +36,12 @@ const NavBar = () => {
     <nav className="navbar navbar-expand-lg navbar-light bg-light">
       <div className="container">
         <Link href="/" className="navbar-brand">MRVL Esports</Link>
-        <ul className="navbar-nav ms-auto">
+        <ul className="navbar-nav me-auto">
+          <li className="nav-item">
+            <Link href="/forum" className="nav-link">Forum</Link>
+          </li>
+        </ul>
+        <ul className="navbar-nav">
           {userName ? (
             <>
               <li className="nav-item">
