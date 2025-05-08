@@ -1,26 +1,25 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+/* ───────────── Custom design tokens (CSS vars) ───────────── */
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg      : #dde2ed;   /* light */
+    --fg      : #181a26;
+    --accent  : #26335F;
   }
-}
+  .dark {
+    --bg : #181a26;        /* dark  */
+    --fg : #dde2ed;
+  }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply min-h-screen font-sans antialiased bg-[var(--bg)] text-[var(--fg)];
+    /* faint diagonal grid, à‑la nextjs.org */
+    background-image : radial-gradient(var(--fg)/5% 1px, transparent 1px);
+    background-size  : 40px 40px;
+  }
+
+  a:hover { @apply underline; }
 }
