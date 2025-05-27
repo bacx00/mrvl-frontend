@@ -1,40 +1,67 @@
-// src/app/matches/page.tsx
+// src/app/matches/page.tsx - VLR.gg Style Production Ready
 'use client';
-export const dynamic = 'force-dynamic';
+import { Suspense } from 'react';
+import MatchesContent from './MatchesContent';
 
-import { useEffect, useState } from 'react';
-import MatchCard from '@/components/MatchCard';
-import TabNavigation from '@/components/TabNavigation';
-
-type Filter = 'All' | 'Live' | 'Completed';
+// Loading skeleton that matches VLR.gg exactly
+function MatchesLoadingSkeleton() {
+  return (
+    <div className="pb-6">
+      {/* Tabs skeleton */}
+      <div className="bg-[#1a242d] border-b border-[#2b3d4d] mb-4">
+        <div className="container mx-auto">
+          <div className="flex">
+            <div className="px-4 py-3 w-24 bg-[#2b3d4d] animate-pulse"></div>
+            <div className="px-4 py-3 w-24 bg-[#15191f] animate-pulse ml-1"></div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="container mx-auto space-y-6">
+        {/* Date headers with match cards */}
+        {[1, 2, 3].map(i => (
+          <div key={i}>
+            <div className="bg-[#11161d] h-8 w-32 animate-pulse rounded-t-lg mb-1"></div>
+            <div className="space-y-px">
+              {[1, 2, 3].map(j => (
+                <div key={j} className="bg-[#1a242d] border border-[#2b3d4d] p-4 animate-pulse">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-[#2b3d4d] rounded animate-pulse"></div>
+                      <div className="w-24 h-4 bg-[#2b3d4d] rounded animate-pulse"></div>
+                    </div>
+                    <div className="w-16 h-6 bg-[#2b3d4d] rounded animate-pulse"></div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-24 h-4 bg-[#2b3d4d] rounded animate-pulse"></div>
+                      <div className="w-8 h-8 bg-[#2b3d4d] rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function MatchesPage() {
-  const [matches, setMatches] = useState<any[]>([]);
-  const [filter, setFilter] = useState<Filter>('All');
-
-  useEffect(() => {
-    fetch('/api/matches')
-      .then((res) => res.json())
-      .then((data) => setMatches(data));
-  }, []);
-
-  const filtered = matches.filter((m) => {
-    if (filter === 'Live') return m.status === 'live';
-    if (filter === 'Completed') return m.status === 'completed';
-    return true;
-  });
-
   return (
-    <main className="container py-4">
-      <h1>Matches</h1>
-      <TabNavigation
-        tabs={['All','Live','Completed']}
-        activeTab={filter}
-        onTabSelect={(tab) => setFilter(tab as Filter)}
-      />
-      <div className="mt-3">
-        {filtered.map((m) => <MatchCard key={m.id} match={m} />)}
+    <div className="min-h-screen bg-[#0f1419]">
+      {/* Page Title - VLR.gg style */}
+      <div className="bg-[#1a242d] border-b border-[#2b3d4d]">
+        <div className="container mx-auto py-4">
+          <h1 className="text-2xl font-bold">Matches</h1>
+          <p className="text-[#768894] text-sm mt-1">
+            Live scores, results and upcoming matches for Marvel Rivals esports
+          </p>
+        </div>
       </div>
-    </main>
+
+      <Suspense fallback={<MatchesLoadingSkeleton />}>
+        <MatchesContent />
+      </Suspense>
+    </div>
   );
 }
