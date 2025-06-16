@@ -311,7 +311,7 @@ function RankingsPage({ navigateTo }) {
                     </span>
                     {team.rank <= 3 && (
                       <div className="text-sm">
-                        {team.rank === 1 ? '🥇' : team.rank === 2 ? '🥈' : '🥉'}
+                        {team.rank === 1 ? '#1' : team.rank === 2 ? '#2' : '#3'}
                       </div>
                     )}
                   </div>
