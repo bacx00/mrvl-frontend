@@ -318,7 +318,7 @@ function RankingsPage({ navigateTo }) {
 
                   {/* Center: Team info */}
                   <div className="flex-1 flex items-center space-x-3">
-                    {/* Country Flag */}
+                    {/* Country Code */}
                     <span className="text-lg">{getCountryFlag(team.country)}</span>
                     
                     {/* Team Logo */}
