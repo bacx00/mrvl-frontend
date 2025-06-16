@@ -288,7 +288,6 @@ function RankingsPage({ navigateTo }) {
             </div>
           ) : rankings.length === 0 ? (
             <div className="p-8 text-center">
-              <div className="text-4xl mb-4">🏆</div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No rankings available</h3>
               <p className="text-gray-600 dark:text-gray-400">Rankings will be available soon</p>
             </div>
