@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../../hooks';
 
 function SearchPage({ searchParams = {}, navigateTo }) {
@@ -8,6 +8,14 @@ function SearchPage({ searchParams = {}, navigateTo }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  
+  // PHASE 6: ADVANCED SEARCH STATE
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searchHistory, setSearchHistory] = useState([]);
+  
+  const searchInputRef = useRef(null);
+  const suggestionsRef = useRef(null);
 
   // REAL BACKEND SEARCH using all 51+ endpoints
   const handleSearch = async (searchQuery) => {
