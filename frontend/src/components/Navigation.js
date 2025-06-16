@@ -102,7 +102,6 @@ function Navigation({ currentPage, navigateTo, onAuthClick, user: propUser }) {
   const navigationItems = [
     { id: 'forums', label: 'Forums' },
     { id: 'matches', label: 'Matches' },
-    { id: 'teams', label: 'Teams' },
     { id: 'events', label: 'Events' },
     { id: 'rankings', label: 'Rankings' }
   ];
