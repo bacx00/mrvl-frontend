@@ -52,7 +52,6 @@ const ROUTES = {
   'news-detail': NewsDetailPage,
   'matches': MatchesPage,
   'match-detail': MatchDetailPage,
-  'teams': TeamsPage,
   'team-detail': TeamDetailPage,
   'players': PlayersPage,
   'player-detail': PlayerDetailPage,
@@ -61,7 +60,7 @@ const ROUTES = {
   'event-detail': EventDetailPage,
   'forums': ForumsPage,
   'thread-detail': ThreadDetailPage,
-  'create-thread': CreateThreadPage, // FIXED: Now uses real CreateThreadPage component
+  'create-thread': CreateThreadPage,
   'user-dashboard': UserDashboard,
   'stats': StatsPage,
   'search': SearchPage,
