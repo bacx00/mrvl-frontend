@@ -71,19 +71,7 @@ function RankingsPage({ navigateTo }) {
 
   // Country flag helper function
   const getCountryFlag = (countryCode) => {
-    const flagMap = {
-      'US': '🇺🇸',
-      'CA': '🇨🇦',
-      'UK': '🇬🇧',
-      'DE': '🇩🇪',
-      'FR': '🇫🇷',
-      'SE': '🇸🇪',
-      'KR': '🇰🇷',
-      'AU': '🇦🇺',
-      'BR': '🇧🇷',
-      'JP': '🇯🇵'
-    };
-    return flagMap[countryCode] || '🌍';
+    return `${countryCode}`;
   };
 
   // VLR.gg style mock data - FIXED: No emojis, proper team structure
