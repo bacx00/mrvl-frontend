@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>MRVL - Ultimate Marvel Rivals Esports Hub</title>
+        <link rel="preconnect" href="https://fonts.bunny.net">
+        <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700,800,900&family=jetbrains-mono:400,500,600,700" rel="stylesheet" />
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            sans: ['Inter', 'system-ui', 'sans-serif'],
+                            mono: ['JetBrains Mono', 'monospace'],
+                        },
+                        colors: {
+                            primary: {
+                                50: '#eff6ff',
+                                500: '#3b82f6',
+                                600: '#2563eb',
+                                700: '#1d4ed8',
+                                900: '#1e3a8a',
+                            }
+                        },
+                        animation: {
+                            'fade-in': 'fadeIn 0.5s ease-in-out',
+                            'slide-up': 'slideUp 0.3s ease-out',
+                            'glow': 'glow 2s ease-in-out infinite alternate',
+                        }
+                    }
+                }
+            }
+        </script>
+        <style>
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            
+            @keyframes slideUp {
+                from { transform: translateY(10px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+            
+            @keyframes glow {
+                from { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+                to { box-shadow: 0 0 30px rgba(59, 130, 246, 0.8); }
+            }
+            
+            .glass {
+                background: rgba(15, 23, 42, 0.8);
+                backdrop-filter: blur(16px);
+                border: 1px solid rgba(148, 163, 184, 0.1);
+            }
+            
+            .gradient-text {
+                background: linear-gradient(135deg, #3b82f6, #8b5cf6, #f59e0b);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+        </style>
+    </head>
+    <body class="bg-slate-950 text-white font-sans antialiased">
+        <div id="app"></div>
+        <script type="module">
+            import { createRoot } from 'https://esm.sh/react-dom@18/client';
+            import { createElement as h, useState, useEffect } from 'https://esm.sh/react@18';
+
+            // ULTRA-MODERN MRVL WITH ALL FEATURES
+            const MOCK_DATA = {
+                // Live platform stats
+                stats: {
+                    activePlayers: 48392,
+                    liveViewers: 15420,
+                    liveMatches: 23,
+                    totalMatches: 125847
+                },
+                
+                // Enhanced matches with full details
+                matches: [
+                    {
+                        id: 1,
+                        team1: { name: "Avengers Elite", logo: "🛡️", region: "NA", rating: 1847 },
+                        team2: { name: "X-Force Gaming", logo: "⚡", region: "NA", rating: 1823 },
+                        status: "live",
+                        event: "Marvel Champions League Grand Finals",
+                        map: "Asgard Arena",
+                        team1_score: 8,
+                        team2_score: 6,
+                        best_of: 5,
+                        viewers: 15420,
+                        time: new Date(Date.now() + 30 * 60 * 1000).toISOString()
+                    },
+                    {
+                        id: 2,
+                        team1: { name: "Guardians Squad", logo: "🚀", region: "EU", rating: 1791 },
+                        team2: { name: "SHIELD Ops", logo: "🎯", region: "EU", rating: 1765 },
+                        status: "upcoming",
+                        event: "European Rivals Cup",
+                        map: "Wakanda Labs",
+                        time: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()
+                    }
+                ],
+
+                // Enhanced rankings with trends
+                rankings: [
+                    { rank: 1, team: "Avengers Elite", logo: "🛡️", rating: 1847, region: "NA", winRate: "87%", trend: "up" },
+                    { rank: 2, team: "X-Force Gaming", logo: "⚡", rating: 1823, region: "NA", winRate: "84%", trend: "stable" },
+                    { rank: 3, team: "Guardians Squad", logo: "🚀", rating: 1791, region: "EU", winRate: "82%", trend: "up" },
+                    { rank: 4, team: "SHIELD Ops", logo: "🎯", rating: 1765, region: "EU", winRate: "79%", trend: "down" },
+                    { rank: 5, team: "Fantastic Four", logo: "⭐", rating: 1742, region: "APAC", winRate: "76%", trend: "up" }
+                ],
+
+                // Complete teams data
+                teams: [
+                    {
+                        id: 1,
+                        name: "Avengers Elite",
+                        logo: "🛡️",
+                        region: "North America",
+                        coach: "Nick Fury",
+                        players: [
+                            { name: "TonyStark", hero: "Iron Man", role: "Vanguard" },
+                            { name: "SteveRogers", hero: "Captain America", role: "Vanguard" },
+                            { name: "ThorGod", hero: "Thor", role: "Duelist" },
+                            { name: "BruceSmash", hero: "Hulk", role: "Vanguard" },
+                            { name: "NatRush", hero: "Black Widow", role: "Duelist" }
+                        ],
+                        wins: 26,
+                        losses: 4,
+                        rating: 1847,
+                        earnings: "$125,000"
+                    }
+                ],
+
+                // Hero meta data
+                heroes: [
+                    { name: "Spider-Man", role: "Duelist", pickRate: "23.4%", winRate: "52.1%", difficulty: "Medium" },
+                    { name: "Iron Man", role: "Vanguard", pickRate: "21.8%", winRate: "54.3%", difficulty: "Hard" },
+                    { name: "Storm", role: "Strategist", pickRate: "19.2%", winRate: "58.7%", difficulty: "Medium" },
+                    { name: "Hulk", role: "Vanguard", pickRate: "18.9%", winRate: "49.8%", difficulty: "Easy" }
+                ],
+
+                // News articles
+                news: [
+                    {
+                        id: 1,
+                        title: "Marvel Champions League Grand Finals Announced",
+                        excerpt: "The biggest tournament of the year brings together 16 elite teams...",
+                        image: "https://images.pexels.com/photos/8728559/pexels-photo-8728559.jpeg",
+                        date: "2024-05-25",
+                        author: "Nick Fury",
+                        category: "Tournaments"
+                    }
+                ]
+            };
+
+            // Components
+            function Badge({ children, variant = 'default' }) {
+                const variants = {
+                    default: 'bg-slate-700 text-slate-300',
+                    live: 'bg-red-600 text-white animate-pulse',
+                    upcoming: 'bg-blue-600 text-white',
+                    completed: 'bg-green-600 text-white'
+                };
+                
+                return h('span', {
+                    className: `px-2 py-1 text-xs rounded-full font-medium ${variants[variant]}`
+                }, children);
+            }
+
+            function TrendIcon({ trend }) {
+                const icons = {
+                    up: '📈',
+                    down: '📉',
+                    stable: '➡️'
+                };
+                return h('span', { className: 'text-sm' }, icons[trend] || '➡️');
+            }
+
+            // Enhanced Navigation
+            function Navigation({ currentPage, setCurrentPage, showAdmin, setShowAdmin }) {
+                const [mobileOpen, setMobileOpen] = useState(false);
+                const [searchOpen, setSearchOpen] = useState(false);
+
+                const navItems = [
+                    { id: 'home', label: 'Home', icon: '🏠' },
+                    { id: 'matches', label: 'Matches', icon: '⚔️' },
+                    { id: 'rankings', label: 'Rankings', icon: '🏆' },
+                    { id: 'teams', label: 'Teams', icon: '👥' },
+                    { id: 'heroes', label: 'Heroes', icon: '🦸' },
+                    { id: 'events', label: 'Events', icon: '🎮' },
+                    { id: 'forums', label: 'Forums', icon: '💬' },
+                    { id: 'news', label: 'News', icon: '📰' }
+                ];
+
+                return h('header', { className: 'sticky top-0 z-50 glass border-b border-slate-700/50' },
+                    h('div', { className: 'max-w-7xl mx-auto px-4' },
+                        h('div', { className: 'flex items-center justify-between h-16' },
+                            // Logo
+                            h('div', { 
+                                className: 'flex items-center space-x-4 cursor-pointer group',
+                                onClick: () => setCurrentPage('home')
+                            },
+                                h('div', { className: 'text-3xl font-black gradient-text' }, 'MRVL'),
+                                h('div', { className: 'hidden lg:block text-sm text-slate-400 group-hover:text-slate-300 transition-colors' }, 
+                                    'Marvel Rivals Esports'
+                                )
+                            ),
+                            
+                            // Desktop Navigation
+                            h('nav', { className: 'hidden lg:flex items-center space-x-1' },
+                                ...navItems.map(item =>
+                                    h('button', {
+                                        key: item.id,
+                                        onClick: () => setCurrentPage(item.id),
+                                        className: `group flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                            currentPage === item.id 
+                                                ? 'bg-primary-600/20 text-primary-400 shadow-lg shadow-primary-500/20' 
+                                                : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                                        }`
+                                    },
+                                        h('span', { className: 'text-base' }, item.icon),
+                                        h('span', null, item.label)
+                                    )
+                                )
+                            ),
+
+                            // Controls
+                            h('div', { className: 'flex items-center space-x-3' },
+                                // Live indicator
+                                h('div', { className: 'hidden md:flex items-center space-x-2 px-3 py-1 bg-red-600/20 rounded-lg' },
+                                    h('div', { className: 'w-2 h-2 bg-red-500 rounded-full animate-pulse' }),
+                                    h('span', { className: 'text-xs font-medium text-red-400' }, 
+                                        `${MOCK_DATA.stats.liveMatches} Live`
+                                    )
+                                ),
+
+                                // Search toggle
+                                h('button', {
+                                    onClick: () => setSearchOpen(!searchOpen),
+                                    className: 'hidden md:flex items-center justify-center w-10 h-10 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 text-slate-400 hover:text-white transition-colors'
+                                }, '🔍'),
+
+                                // Admin Toggle
+                                h('button', {
+                                    onClick: () => setShowAdmin(!showAdmin),
+                                    className: `px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 ${
+                                        showAdmin 
+                                            ? 'bg-red-600 text-white hover:bg-red-700' 
+                                            : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
+                                    }`
+                                }, showAdmin ? 'Exit Admin' : 'Admin'),
+                                
+                                // Mobile menu
+                                h('button', {
+                                    className: 'lg:hidden p-2 text-slate-400 hover:text-white',
+                                    onClick: () => setMobileOpen(!mobileOpen)
+                                }, mobileOpen ? '✕' : '☰')
+                            )
+                        ),
+
+                        // Search bar
+                        searchOpen && h('div', { className: 'py-4 border-t border-slate-700/50 animate-fade-in' },
+                            h('input', {
+                                type: 'text',
+                                placeholder: 'Search teams, players, matches...',
+                                className: 'w-full bg-slate-800/80 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500',
+                                autoFocus: true
+                            })
+                        ),
+
+                        // Mobile nav
+                        mobileOpen && h('div', { className: 'lg:hidden py-4 border-t border-slate-700/50 animate-slide-up' },
+                            h('nav', { className: 'flex flex-col space-y-1' },
+                                ...navItems.map(item =>
+                                    h('button', {
+                                        key: item.id,
+                                        onClick: () => {
+                                            setCurrentPage(item.id);
+                                            setMobileOpen(false);
+                                        },
+                                        className: `flex items-center space-x-3 py-3 px-4 text-sm font-medium rounded-lg transition-colors ${
+                                            currentPage === item.id 
+                                                ? 'text-primary-400 bg-primary-600/20' 
+                                                : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                                        }`
+                                    },
+                                        h('span', { className: 'text-lg' }, item.icon),
+                                        h('span', null, item.label)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                );
+            }
+
+            // Enhanced Match Card
+            function MatchCard({ match }) {
+                const isLive = match.status === 'live';
+                const formatTime = (timeString) => {
+                    const date = new Date(timeString);
+                    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                };
+
+                return h('div', { className: 'glass p-6 rounded-xl hover:bg-slate-800/60 transition-all duration-300 group' },
+                    // Header
+                    h('div', { className: 'flex items-center justify-between mb-4' },
+                        h('div', { className: 'flex items-center space-x-3' },
+                            h(Badge, { variant: match.status }, 
+                                isLive ? '🔴 LIVE' : match.status.toUpperCase()
+                            ),
+                            h('span', { className: 'text-sm text-slate-400' }, match.event)
+                        ),
+                        h('div', { className: 'text-right text-sm' },
+                            h('div', { className: 'text-slate-300' }, formatTime(match.time)),
+                            isLive && h('div', { className: 'text-red-400 text-xs' }, `${match.viewers.toLocaleString()} viewers`)
+                        )
+                    ),
+
+                    // Teams
+                    h('div', { className: 'flex items-center justify-between mb-4' },
+                        // Team 1
+                        h('div', { className: 'flex items-center space-x-3 flex-1' },
+                            h('div', { className: 'text-center' },
+                                h('div', { className: 'text-3xl mb-1' }, match.team1.logo),
+                                h('div', { className: 'font-semibold text-white' }, match.team1.name),
+                                h('div', { className: 'text-xs text-slate-400' }, `${match.team1.region} • ${match.team1.rating}`)
+                            )
+                        ),
+
+                        // Score/VS
+                        h('div', { className: 'text-center mx-6' },
+                            match.team1_score !== undefined 
+                                ? h('div', { className: 'text-2xl font-bold text-primary-400' }, `${match.team1_score} : ${match.team2_score}`)
+                                : h('div', { className: 'text-slate-400 font-medium text-lg' }, 'VS'),
+                            h('div', { className: 'text-xs text-slate-500 mt-1' }, match.map),
+                            match.best_of && h('div', { className: 'text-xs text-slate-600 mt-1' }, `BO${match.best_of}`)
+                        ),
+
+                        // Team 2
+                        h('div', { className: 'flex items-center space-x-3 flex-1 justify-end' },
+                            h('div', { className: 'text-center' },
+                                h('div', { className: 'text-3xl mb-1' }, match.team2.logo),
+                                h('div', { className: 'font-semibold text-white' }, match.team2.name),
+                                h('div', { className: 'text-xs text-slate-400' }, `${match.team2.region} • ${match.team2.rating}`)
+                            )
+                        )
+                    ),
+
+                    // Actions
+                    isLive && h('div', { className: 'pt-4 border-t border-slate-700/50' },
+                        h('div', { className: 'flex justify-center space-x-3' },
+                            h('button', { className: 'flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors group-hover:shadow-lg' },
+                                h('span', null, '📺'),
+                                h('span', null, 'Watch Live')
+                            ),
+                            h('button', { className: 'flex items-center space-x-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium transition-colors' },
+                                h('span', null, '💬'),
+                                h('span', null, 'Live Chat')
+                            )
+                        )
+                    )
+                );
+            }
+
+            // Homepage Component
+            function HomePage() {
+                const liveMatches = MOCK_DATA.matches.filter(m => m.status === 'live');
+                const upcomingMatches = MOCK_DATA.matches.filter(m => m.status === 'upcoming');
+
+                return h('div', { className: 'space-y-8 animate-fade-in' },
+                    // Hero Section
+                    h('section', { 
+                        className: 'relative rounded-2xl overflow-hidden min-h-[60vh] flex items-center justify-center',
+                        style: {
+                            background: 'linear-gradient(135deg, #1e3a8a 0%, #3730a3 50%, #7c3aed 100%)',
+                            backgroundImage: 'url(https://images.pexels.com/photos/7900587/pexels-photo-7900587.jpeg)',
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            backgroundBlendMode: 'overlay'
+                        }
+                    },
+                        h('div', { className: 'absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-black/80' }),
+                        h('div', { className: 'relative text-center px-8 max-w-4xl mx-auto' },
+                            h('h1', { className: 'text-5xl md:text-7xl font-black mb-6' },
+                                h('span', { className: 'gradient-text' }, 'Marvel Rivals'),
+                                h('div', { className: 'text-white text-3xl md:text-5xl mt-2' }, 'Esports Universe')
+                            ),
+                            h('p', { className: 'text-xl md:text-2xl text-slate-200 mb-8 leading-relaxed' }, 
+                                'Experience the ultimate Marvel Rivals esports platform. Watch live matches, track your favorite teams, and join the most passionate gaming community.'
+                            ),
+                            h('div', { className: 'flex flex-wrap justify-center gap-4' },
+                                h('button', { className: 'px-8 py-4 bg-primary-600 hover:bg-primary-700 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary-500/25 flex items-center space-x-2' }, 
+                                    h('span', null, '🔴'),
+                                    h('span', null, 'Watch Live Matches')
+                                ),
+                                h('button', { className: 'px-8 py-4 glass hover:bg-slate-700/50 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-105 flex items-center space-x-2' }, 
+                                    h('span', null, '🏆'),
+                                    h('span', null, 'View Rankings')
+                                )
+                            )
+                        )
+                    ),
+
+                    // Live Matches
+                    liveMatches.length > 0 && h('section', null,
+                        h('div', { className: 'flex items-center justify-between mb-6' },
+                            h('h2', { className: 'text-3xl font-bold flex items-center space-x-3' }, 
+                                h('span', { className: 'text-red-500 animate-pulse' }, '🔴'),
+                                h('span', null, 'Live Matches'),
+                                h('span', { className: 'text-sm font-normal text-slate-400' }, `${liveMatches.length} ongoing`)
+                            ),
+                            h('button', { className: 'text-primary-400 hover:text-primary-300 text-sm font-medium flex items-center space-x-1 hover:underline' }, 
+                                h('span', null, 'View All Matches'),
+                                h('span', null, '→')
+                            )
+                        ),
+                        h('div', { className: 'grid grid-cols-1 lg:grid-cols-2 gap-6' },
+                            ...liveMatches.map(match => h(MatchCard, { key: match.id, match }))
+                        )
+                    ),
+
+                    // Main Grid
+                    h('div', { className: 'grid grid-cols-1 lg:grid-cols-3 gap-8' },
+                        // Upcoming Matches
+                        h('div', { className: 'lg:col-span-2' },
+                            h('h2', { className: 'text-2xl font-bold mb-6 flex items-center space-x-2' },
+                                h('span', null, '📅'),
+                                h('span', null, 'Upcoming Matches')
+                            ),
+                            h('div', { className: 'space-y-4' },
+                                ...upcomingMatches.map(match => h(MatchCard, { key: match.id, match }))
+                            )
+                        ),
+
+                        // Sidebar
+                        h('div', { className: 'space-y-6' },
+                            // Top Rankings
+                            h('div', { className: 'glass p-6 rounded-xl' },
+                                h('h3', { className: 'text-xl font-bold mb-4 flex items-center space-x-2' },
+                                    h('span', null, '🏆'),
+                                    h('span', null, 'Top Teams')
+                                ),
+                                h('div', { className: 'space-y-3' },
+                                    ...MOCK_DATA.rankings.slice(0, 5).map((team, index) =>
+                                        h('div', { key: team.rank, className: 'flex items-center justify-between p-3 bg-slate-800/30 rounded-lg hover:bg-slate-700/30 transition-colors cursor-pointer' },
+                                            h('div', { className: 'flex items-center space-x-3' },
+                                                h('div', { className: `w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                                    index === 0 ? 'bg-yellow-500 text-black' :
+                                                    index === 1 ? 'bg-slate-400 text-black' :
+                                                    index === 2 ? 'bg-orange-600 text-white' : 'bg-slate-600'
+                                                }` }, team.rank),
+                                                h('span', { className: 'text-lg' }, team.logo),
+                                                h('div', null,
+                                                    h('div', { className: 'font-medium text-sm' }, team.team),
+                                                    h('div', { className: 'text-xs text-slate-400' }, team.region)
+                                                )
+                                            ),
+                                            h('div', { className: 'text-right flex items-center space-x-2' },
+                                                h('div', null,
+                                                    h('div', { className: 'text-primary-400 font-semibold text-sm' }, team.rating),
+                                                    h('div', { className: 'text-xs text-slate-400' }, team.winRate)
+                                                ),
+                                                h(TrendIcon, { trend: team.trend })
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
+
+                            // Platform Stats
+                            h('div', { className: 'glass p-6 rounded-xl' },
+                                h('h3', { className: 'text-xl font-bold mb-4' }, '📊 Live Stats'),
+                                h('div', { className: 'grid grid-cols-2 gap-4' },
+                                    h('div', { className: 'text-center' },
+                                        h('div', { className: 'text-2xl font-bold text-green-400' }, MOCK_DATA.stats.activePlayers.toLocaleString()),
+                                        h('div', { className: 'text-xs text-slate-400' }, 'Active Players')
+                                    ),
+                                    h('div', { className: 'text-center' },
+                                        h('div', { className: 'text-2xl font-bold text-red-400' }, MOCK_DATA.stats.liveViewers.toLocaleString()),
+                                        h('div', { className: 'text-xs text-slate-400' }, 'Live Viewers')
+                                    ),
+                                    h('div', { className: 'text-center' },
+                                        h('div', { className: 'text-2xl font-bold text-blue-400' }, MOCK_DATA.stats.liveMatches),
+                                        h('div', { className: 'text-xs text-slate-400' }, 'Live Matches')
+                                    ),
+                                    h('div', { className: 'text-center' },
+                                        h('div', { className: 'text-2xl font-bold text-purple-400' }, (MOCK_DATA.stats.totalMatches / 1000).toFixed(0) + 'K'),
+                                        h('div', { className: 'text-xs text-slate-400' }, 'Total Matches')
+                                    )
+                                )
+                            )
+                        )
+                    )
+                );
+            }
+
+            // COMPLETE RANKINGS PAGE
+            function RankingsPage() {
+                const [selectedRegion, setSelectedRegion] = useState('all');
+                const [timeframe, setTimeframe] = useState('current');
+                
+                const regions = ['all', 'NA', 'EU', 'APAC'];
+                const filteredRankings = selectedRegion === 'all' 
+                    ? MOCK_DATA.rankings 
+                    : MOCK_DATA.rankings.filter(team => team.region === selectedRegion);
+
+                return h('div', { className: 'space-y-6 animate-fade-in' },
+                    h('div', { className: 'flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4' },
+                        h('h1', { className: 'text-4xl font-bold gradient-text' }, '🏆 Global Rankings'),
+                        h('div', { className: 'flex items-center space-x-4' },
+                            h('select', {
+                                value: selectedRegion,
+                                onChange: (e) => setSelectedRegion(e.target.value),
+                                className: 'glass px-4 py-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500'
+                            },
+                                ...regions.map(region =>
+                                    h('option', { key: region, value: region }, 
+                                        region === 'all' ? 'All Regions' : region
+                                    )
+                                )
+                            ),
+                            h('select', {
+                                value: timeframe,
+                                onChange: (e) => setTimeframe(e.target.value),
+                                className: 'glass px-4 py-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500'
+                            },
+                                h('option', { value: 'current' }, 'Current Season'),
+                                h('option', { value: 'monthly' }, 'This Month'),
+                                h('option', { value: 'weekly' }, 'This Week')
+                            )
+                        )
+                    ),
+
+                    // Main Rankings Table
+                    h('div', { className: 'glass rounded-xl overflow-hidden' },
+                        h('div', { className: 'p-6 border-b border-slate-700/50' },
+                            h('div', { className: 'grid grid-cols-12 gap-4 text-sm font-semibold text-slate-300' },
+                                h('div', { className: 'col-span-1' }, 'Rank'),
+                                h('div', { className: 'col-span-4' }, 'Team'),
+                                h('div', { className: 'col-span-2' }, 'Rating'),
+                                h('div', { className: 'col-span-2' }, 'Win Rate'),
+                                h('div', { className: 'col-span-2' }, 'Record'),
+                                h('div', { className: 'col-span-1' }, 'Trend')
+                            )
+                        ),
+                        h('div', { className: 'divide-y divide-slate-700/50' },
+                            ...filteredRankings.map((team, index) =>
+                                h('div', { 
+                                    key: team.rank, 
+                                    className: 'p-6 hover:bg-slate-800/30 transition-colors cursor-pointer'
+                                },
+                                    h('div', { className: 'grid grid-cols-12 gap-4 items-center' },
+                                        h('div', { className: 'col-span-1' },
+                                            h('div', { className: `w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
+                                                team.rank <= 3 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black' :
+                                                team.rank <= 10 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' :
+                                                'bg-slate-600 text-white'
+                                            }` }, team.rank)
+                                        ),
+                                        h('div', { className: 'col-span-4 flex items-center space-x-4' },
+                                            h('div', { className: 'text-3xl' }, team.logo),
+                                            h('div', null,
+                                                h('div', { className: 'font-bold text-white text-lg' }, team.team),
+                                                h('div', { className: 'text-sm text-slate-400' }, team.region)
+                                            )
+                                        ),
+                                        h('div', { className: 'col-span-2 font-bold text-primary-400 text-lg' }, team.rating),
+                                        h('div', { className: 'col-span-2' },
+                                            h('div', { className: 'flex items-center space-x-3' },
+                                                h('span', { className: 'font-bold text-green-400' }, team.winRate),
+                                                h('div', { className: 'w-20 bg-slate-700 rounded-full h-2' },
+                                                    h('div', { 
+                                                        className: 'bg-green-400 h-2 rounded-full',
+                                                        style: { width: team.winRate }
+                                                    })
+                                                )
+                                            )
+                                        ),
+                                        h('div', { className: 'col-span-2 text-sm' }, 
+                                            h('span', { className: 'text-green-400 font-semibold' }, team.wins || '15'),
+                                            h('span', { className: 'text-slate-400 mx-1' }, '-'),
+                                            h('span', { className: 'text-red-400 font-semibold' }, team.losses || '3')
+                                        ),
+                                        h('div', { className: 'col-span-1 text-center' },
+                                            h(TrendIcon, { trend: team.trend })
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    ),
+
+                    // Regional Breakdown
+                    h('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6' },
+                        ...regions.filter(r => r !== 'all').map(region => {
+                            const regionTeams = MOCK_DATA.rankings.filter(team => team.region === region);
+                            const topTeam = regionTeams[0];
+                            
+                            return h('div', { key: region, className: 'glass p-6 rounded-xl text-center' },
+                                h('h3', { className: 'text-lg font-bold mb-4' }, region),
+                                topTeam && h('div', null,
+                                    h('div', { className: 'text-4xl mb-3' }, topTeam.logo),
+                                    h('div', { className: 'font-bold text-white' }, topTeam.team),
+                                    h('div', { className: 'text-primary-400 text-xl font-bold my-2' }, topTeam.rating),
+                                    h('div', { className: 'text-sm text-slate-400' }, `${regionTeams.length} teams`)
+                                )
+                            );
+                        })
+                    )
+                );
+            }
+
+            // COMPLETE TEAMS PAGE
+            function TeamsPage() {
+                const [selectedRegion, setSelectedRegion] = useState('all');
+                const [searchTerm, setSearchTerm] = useState('');
+
+                const mockTeams = [
+                    {
+                        id: 1,
+                        name: "Avengers Elite",
+                        logo: "🛡️",
+                        region: "North America",
+                        coach: "Nick Fury",
+                        players: [
+                            { name: "TonyStark", hero: "Iron Man", role: "Vanguard" },
+                            { name: "SteveRogers", hero: "Captain America", role: "Vanguard" },
+                            { name: "ThorGod", hero: "Thor", role: "Duelist" },
+                            { name: "BruceSmash", hero: "Hulk", role: "Vanguard" },
+                            { name: "NatRush", hero: "Black Widow", role: "Duelist" }
+                        ],
+                        wins: 26,
+                        losses: 4,
+                        rating: 1847,
+                        earnings: "$125,000"
+                    },
+                    {
+                        id: 2,
+                        name: "X-Force Gaming",
+                        logo: "⚡",
+                        region: "North America",
+                        coach: "Professor X",
+                        players: [
+                            { name: "Wolverine", hero: "Wolverine", role: "Duelist" },
+                            { name: "Deadpool", hero: "Deadpool", role: "Duelist" },
+                            { name: "Storm", hero: "Storm", role: "Strategist" },
+                            { name: "Cyclops", hero: "Cyclops", role: "Duelist" },
+                            { name: "Jean", hero: "Phoenix", role: "Strategist" }
+                        ],
+                        wins: 21,
+                        losses: 4,
+                        rating: 1823,
+                        earnings: "$87,500"
+                    }
+                ];
+
+                const filteredTeams = mockTeams.filter(team => {
+                    const matchesRegion = selectedRegion === 'all' || team.region.includes(selectedRegion);
+                    const matchesSearch = team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        team.players.some(player => player.name.toLowerCase().includes(searchTerm.toLowerCase()));
+                    return matchesRegion && matchesSearch;
+                });
+
+                return h('div', { className: 'space-y-6 animate-fade-in' },
+                    h('div', { className: 'flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4' },
+                        h('h1', { className: 'text-4xl font-bold gradient-text' }, '👥 Teams'),
+                        h('div', { className: 'flex items-center space-x-4 w-full sm:w-auto' },
+                            h('input', {
+                                type: 'text',
+                                placeholder: 'Search teams or players...',
+                                value: searchTerm,
+                                onChange: (e) => setSearchTerm(e.target.value),
+                                className: 'flex-1 sm:w-64 glass px-4 py-2 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500'
+                            }),
+                            h('select', {
+                                value: selectedRegion,
+                                onChange: (e) => setSelectedRegion(e.target.value),
+                                className: 'glass px-4 py-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500'
+                            },
+                                h('option', { value: 'all' }, 'All Regions'),
+                                h('option', { value: 'North America' }, 'North America'),
+                                h('option', { value: 'Europe' }, 'Europe'),
+                                h('option', { value: 'Asia' }, 'Asia-Pacific')
+                            )
+                        )
+                    ),
+
+                    h('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' },
+                        ...filteredTeams.map(team =>
+                            h('div', { 
+                                key: team.id, 
+                                className: 'glass p-6 rounded-xl hover:bg-slate-800/40 transition-all duration-300 cursor-pointer group'
+                            },
+                                // Team Header
+                                h('div', { className: 'text-center mb-6' },
+                                    h('div', { className: 'text-5xl mb-3 group-hover:scale-110 transition-transform' }, team.logo),
+                                    h('h3', { className: 'text-2xl font-bold text-white mb-1' }, team.name),
+                                    h('p', { className: 'text-slate-400' }, team.region),
+                                    h('div', { className: 'mt-3 flex justify-center space-x-4' },
+                                        h('div', { className: 'text-center' },
+                                            h('div', { className: 'text-primary-400 font-bold text-lg' }, team.rating),
+                                            h('div', { className: 'text-xs text-slate-400' }, 'Rating')
+                                        ),
+                                        h('div', { className: 'text-center' },
+                                            h('div', { className: 'text-green-400 font-bold text-lg' }, `${team.wins}-${team.losses}`),
+                                            h('div', { className: 'text-xs text-slate-400' }, 'W-L')
+                                        )
+                                    )
+                                ),
+                                
+                                // Coach
+                                h('div', { className: 'mb-4 text-center' },
+                                    h('div', { className: 'text-sm text-slate-400' }, 'Coach'),
+                                    h('div', { className: 'font-medium text-accent-500' }, team.coach)
+                                ),
+
+                                // Players
+                                h('div', { className: 'mb-6' },
+                                    h('h4', { className: 'font-semibold mb-3 text-center' }, 'Roster'),
+                                    h('div', { className: 'space-y-2' },
+                                        ...team.players.map(player =>
+                                            h('div', { 
+                                                key: player.name, 
+                                                className: 'flex items-center justify-between p-2 bg-slate-800/30 rounded-lg'
+                                            },
+                                                h('div', null,
+                                                    h('div', { className: 'font-medium text-sm' }, player.name),
+                                                    h('div', { className: 'text-xs text-slate-400' }, player.hero)
+                                                ),
+                                                h('span', { className: `px-2 py-1 text-xs rounded-full ${
+                                                    player.role === 'Duelist' ? 'bg-red-600/20 text-red-400' :
+                                                    player.role === 'Vanguard' ? 'bg-blue-600/20 text-blue-400' :
+                                                    'bg-green-600/20 text-green-400'
+                                                }` }, player.role)
+                                            )
+                                        )
+                                    )
+                                ),
+
+                                // Earnings
+                                h('div', { className: 'text-center mb-4' },
+                                    h('div', { className: 'text-2xl font-bold text-accent-500' }, team.earnings),
+                                    h('div', { className: 'text-xs text-slate-400' }, 'Total Earnings')
+                                ),
+
+                                // Action Button
+                                h('button', { className: 'w-full py-3 bg-primary-600 hover:bg-primary-700 rounded-lg font-medium transition-colors group-hover:shadow-lg' },
+                                    'View Full Profile'
+                                )
+                            )
+                        )
+                    ),
+
+                    filteredTeams.length === 0 && h('div', { className: 'text-center py-16' },
+                        h('div', { className: 'text-6xl mb-4' }, '🔍'),
+                        h('h3', { className: 'text-xl font-semibold mb-2' }, 'No teams found'),
+                        h('p', { className: 'text-slate-400' }, 'Try adjusting your search or filter criteria')
+                    )
+                );
+            }
+
+            // COMPLETE MATCHES PAGE
+            function MatchesPage() {
+                const [selectedStatus, setSelectedStatus] = useState('all');
+                const [selectedRegion, setSelectedRegion] = useState('all');
+
+                const allMatches = [
+                    ...MOCK_DATA.matches,
+                    {
+                        id: 5,
+                        team1: { name: "Midnight Suns", logo: "🌙", region: "NA", rating: 1689 },
+                        team2: { name: "Web Warriors", logo: "🕷️", region: "NA", rating: 1654 },
+                        status: "upcoming",
+                        event: "NA Qualifier",
+                        map: "Daily Bugle",
+                        time: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString()
+                    }
+                ];
+
+                const filteredMatches = allMatches.filter(match => {
+                    const statusMatch = selectedStatus === 'all' || match.status === selectedStatus;
+                    const regionMatch = selectedRegion === 'all' || 
+                                       match.team1.region === selectedRegion || 
+                                       match.team2.region === selectedRegion;
+                    return statusMatch && regionMatch;
+                });
+
+                return h('div', { className: 'space-y-6 animate-fade-in' },
+                    h('div', { className: 'flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4' },
+                        h('h1', { className: 'text-4xl font-bold gradient-text' }, '⚔️ Matches'),
+                        h('div', { className: 'flex items-center space-x-4' },
+                            h('select', {
+                                value: selectedStatus,
+                                onChange: (e) => setSelectedStatus(e.target.value),
+                                className: 'glass px-4 py-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500'
+                            },
+                                h('option', { value: 'all' }, 'All Matches'),
+                                h('option', { value: 'live' }, 'Live'),
+                                h('option', { value: 'upcoming' }, 'Upcoming'),
+                                h('option', { value: 'completed' }, 'Completed')
+                            ),
+                            h('select', {
+                                value: selectedRegion,
+                                onChange: (e) => setSelectedRegion(e.target.value),
+                                className: 'glass px-4 py-2 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500'
+                            },
+                                h('option', { value: 'all' }, 'All Regions'),
+                                h('option', { value: 'NA' }, 'North America'),
+                                h('option', { value: 'EU' }, 'Europe'),
+                                h('option', { value: 'APAC' }, 'Asia-Pacific')
+                            )
+                        )
+                    ),
+
+                    h('div', { className: 'grid grid-cols-1 lg:grid-cols-2 gap-6' },
+                        ...filteredMatches.map(match => h(MatchCard, { key: match.id, match }))
+                    )
+                );
+            }
+
+            // Main App
+            function App() {
+                const [currentPage, setCurrentPage] = useState('home');
+                const [showAdmin, setShowAdmin] = useState(false);
+
+                const renderPage = () => {
+                    if (showAdmin) {
+                        return h('div', { className: 'animate-fade-in' },
+                            h('div', { className: 'bg-red-900/20 border border-red-700 rounded-xl p-6 mb-8' },
+                                h('h1', { className: 'text-2xl font-bold text-red-400 mb-2' }, '⚠️ Admin Dashboard'),
+                                h('p', { className: 'text-red-300' }, 'Full admin control panel with content management, user administration, and analytics.')
+                            ),
+                            h('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6' },
+                                ['Match Management', 'Team Management', 'User Administration', 'Analytics & Reports'].map(title =>
+                                    h('div', { key: title, className: 'glass p-6 rounded-xl hover:bg-slate-800/60 transition-colors cursor-pointer' },
+                                        h('h3', { className: 'font-bold mb-2' }, title),
+                                        h('p', { className: 'text-sm text-slate-400' }, 'Advanced admin controls and management tools.')
+                                    )
+                                )
+                            )
+                        );
+                    }
+                    
+                    switch(currentPage) {
+                        case 'home': return h(HomePage);
+                        case 'matches': return h(MatchesPage);
+                        case 'rankings': return h(RankingsPage);
+                        case 'teams': return h(TeamsPage);
+                        case 'heroes': return h(PagePlaceholder, { title: 'Heroes', icon: '🦸', description: 'Hero meta analysis with pick rates, win statistics, and build guides.' });
+                        case 'events': return h(PagePlaceholder, { title: 'Events', icon: '🎮', description: 'Tournament schedules, brackets, and esports event management.' });
+                        case 'forums': return h(PagePlaceholder, { title: 'Forums', icon: '💬', description: 'Community discussions, strategy guides, and player interactions.' });
+                        case 'news': return h(PagePlaceholder, { title: 'News', icon: '📰', description: 'Latest updates, patch notes, and esports coverage.' });
+                        default: return h(HomePage);
+                    }
+                };
+
+            // Page placeholder for remaining sections
+            function PagePlaceholder({ title, icon, description }) {
+                return h('div', { className: 'text-center py-20 animate-fade-in' },
+                    h('div', { className: 'text-8xl mb-6' }, icon),
+                    h('h1', { className: 'text-4xl font-bold mb-4 gradient-text' }, title),
+                    h('p', { className: 'text-xl text-slate-400 mb-8 max-w-2xl mx-auto' }, description),
+                    h('div', { className: 'glass p-8 rounded-xl max-w-md mx-auto' },
+                        h('h3', { className: 'text-lg font-semibold mb-4' }, 'Coming Soon'),
+                        h('p', { className: 'text-sm text-slate-400' }, 'Advanced features with real-time data integration.')
+                    )
+                );
+            }
+
+                return h('div', { className: 'min-h-screen bg-slate-950' },
+                    h(Navigation, { currentPage, setCurrentPage, showAdmin, setShowAdmin }),
+                    h('main', { className: 'max-w-7xl mx-auto px-4 py-8' },
+                        renderPage()
+                    ),
+                    h('footer', { className: 'glass border-t border-slate-700/50 mt-16' },
+                        h('div', { className: 'max-w-7xl mx-auto px-4 py-12' },
+                            h('div', { className: 'text-center' },
+                                h('div', { className: 'text-3xl font-black gradient-text mb-4' }, 'MRVL'),
+                                h('p', { className: 'text-slate-400 mb-6' }, 'The ultimate Marvel Rivals esports experience'),
+                                h('div', { className: 'flex justify-center space-x-6 text-sm text-slate-500' },
+                                    h('span', null, '© 2024 MRVL'),
+                                    h('span', null, 'Marvel Rivals Esports Hub'),
+                                    h('span', null, 'Better than VLR.gg 🚀')
+                                )
+                            )
+                        )
+                    )
+                );
+            }
+
+            // Initialize
+            const container = document.getElementById('app');
+            const root = createRoot(container);
+            root.render(h(App));
+        </script>
+    </body>
+</html>

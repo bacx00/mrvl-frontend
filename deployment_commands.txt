@@ -1,0 +1,48 @@
+#!/bin/bash
+# Direct deployment commands for your server
+
+echo "🚀 MRVL FRONTEND DEPLOYMENT COMMANDS"
+echo "Run these commands on your server at staging.mrvl.net"
+echo "=============================================="
+echo ""
+
+echo "# 1. Backup and clear current directory"
+echo "cd /var/www/mrvl-frontend/"
+echo "cp -r . ../mrvl-frontend-backup-\$(date +%Y%m%d-%H%M%S)"
+echo "find . -maxdepth 1 ! -name '.' ! -name '..' ! -name '.git' -exec rm -rf {} +"
+echo ""
+
+echo "# 2. Create the optimized React application"
+echo "# Copy and paste this entire block:"
+echo ""
+
+cat << 'DEPLOYMENT_BLOCK'
+# Create index.html
+cat > index.html << 'EOF'
+<!doctype html><html lang="en" class="dark"><head><meta charset="utf-8"/><link rel="icon" href="/favicon.svg" type="image/svg+xml"/><link rel="icon" href="/favicon.ico" type="image/x-icon"/><link rel="apple-touch-icon" href="/apple-touch-icon.png"/><link rel="manifest" href="/manifest.json"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="description" content="MRVL - The ultimate Marvel Rivals esports platform for competitive gaming, tournaments, teams, and community."/><meta name="keywords" content="Marvel Rivals, esports, gaming, tournaments, teams, competitive, MRVL"/><meta name="author" content="MRVL Esports"/><meta property="og:title" content="MRVL - Marvel Rivals Esports Platform"/><meta property="og:description" content="The ultimate Marvel Rivals esports platform for competitive gaming, tournaments, teams, and community."/><meta property="og:type" content="website"/><meta property="og:url" content="https://staging.mrvl.net"/><meta property="og:image" content="https://staging.mrvl.net/og-image.png"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="MRVL - Marvel Rivals Esports Platform"/><meta name="twitter:description" content="The ultimate Marvel Rivals esports platform for competitive gaming, tournaments, teams, and community."/><meta name="twitter:image" content="https://staging.mrvl.net/og-image.png"/><title>MRVL - Marvel Rivals Esports Platform</title><script defer="defer" src="/static/js/bundle.js"></script><link href="/static/css/main.css" rel="stylesheet"><style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}code{font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace}.loading-spinner{width:40px;height:40px;border:4px solid #f3f3f3;border-top:4px solid #ef4444;border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}</style></head><body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"></div><script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/service-worker.js').then((registration)=>{console.log('SW registered: ',registration);}).catch((registrationError)=>{console.log('SW registration failed: ',registrationError);});});}</script></body></html>
+EOF
+
+# Create directories
+mkdir -p static/js static/css
+
+# Create manifest.json
+cat > manifest.json << 'EOF'
+{"short_name":"MRVL","name":"MRVL - Marvel Rivals Esports Platform","icons":[{"src":"favicon.ico","sizes":"64x64 32x32 24x24 16x16","type":"image/x-icon"}],"start_url":".","display":"standalone","theme_color":"#000000","background_color":"#ffffff"}
+EOF
+
+# Create favicon
+cat > favicon.svg << 'EOF'
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#ef4444"/><text x="50" y="65" font-family="Arial" font-size="60" fill="white" text-anchor="middle" font-weight="bold">M</text></svg>
+EOF
+
+echo "✅ Basic structure created!"
+echo "📁 Now transferring React application files..."
+
+DEPLOYMENT_BLOCK
+
+echo ""
+echo "# 3. Now I'll provide the actual React bundle content"
+echo "# This is the compiled React application"
+echo ""
+echo "The build files are ready. Let me know when you've run the above commands"
+echo "and I'll give you the React bundle content to complete the deployment!"

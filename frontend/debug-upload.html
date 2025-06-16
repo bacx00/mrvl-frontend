@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Upload Test</title>
+</head>
+<body>
+    <h1>Marvel Rivals Upload Debug</h1>
+    <p>Test image upload with proper CSRF handling</p>
+    
+    <div>
+        <label>Select Team Logo:</label>
+        <input type="file" id="logoFile" accept="image/*">
+        <button onclick="uploadLogo()">Upload Logo</button>
+    </div>
+    
+    <div id="log" style="margin-top: 20px; font-family: monospace; background: #f0f0f0; padding: 10px;">
+        <h3>Debug Log:</h3>
+    </div>
+
+    <script>
+        const API_BASE = 'https://staging.mrvl.net/api';
+        const log = document.getElementById('log');
+        
+        function addLog(message) {
+            log.innerHTML += '<br>' + new Date().toLocaleTimeString() + ': ' + message;
+        }
+        
+        async function getCsrfToken() {
+            try {
+                addLog('🔐 Fetching CSRF token...');
+                const response = await fetch(`${API_BASE}/sanctum/csrf-cookie`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                });
+                
+                addLog(`🔐 CSRF Response: ${response.status} ${response.statusText}`);
+                addLog(`🔐 Cookies after CSRF: ${document.cookie}`);
+                return response.ok;
+            } catch (error) {
+                addLog(`❌ CSRF Error: ${error.message}`);
+                return false;
+            }
+        }
+        
+        function getCSRFTokenFromCookie() {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'XSRF-TOKEN') {
+                    return decodeURIComponent(value);
+                }
+            }
+            return null;
+        }
+        
+        async function uploadLogo() {
+            const fileInput = document.getElementById('logoFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                addLog('❌ Please select a file first');
+                return;
+            }
+            
+            addLog(`📁 Selected file: ${file.name}`);
+            
+            // Get CSRF token
+            const csrfSuccess = await getCsrfToken();
+            if (!csrfSuccess) {
+                addLog('❌ Failed to get CSRF token');
+                return;
+            }
+            
+            const csrfToken = getCSRFTokenFromCookie();
+            addLog(`🔐 CSRF Token: ${csrfToken ? 'Found' : 'Missing'}`);
+            
+            // Use your auth token from localStorage (if logged in)
+            const authToken = localStorage.getItem('authToken');
+            addLog(`🔑 Auth Token: ${authToken ? 'Found' : 'Missing'}`);
+            
+            const formData = new FormData();
+            formData.append('logo', file);
+            
+            const headers = {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            };
+            
+            if (csrfToken) {
+                headers['X-XSRF-TOKEN'] = csrfToken;
+                headers['X-CSRF-TOKEN'] = csrfToken;
+            }
+            
+            if (authToken) {
+                headers['Authorization'] = `Bearer ${authToken}`;
+            }
+            
+            try {
+                addLog('🚀 Uploading to team 30...');
+                const response = await fetch(`${API_BASE}/upload/team/30/logo`, {
+                    method: 'POST',
+                    mode: 'cors',
+                    credentials: 'include',
+                    headers,
+                    body: formData
+                });
+                
+                addLog(`📡 Upload Response: ${response.status} ${response.statusText}`);
+                
+                const responseText = await response.text();
+                addLog(`📄 Response Body: ${responseText.substring(0, 200)}`);
+                
+                if (response.ok) {
+                    addLog('✅ Upload successful!');
+                } else {
+                    addLog(`❌ Upload failed: ${response.status}`);
+                }
+            } catch (error) {
+                addLog(`❌ Upload error: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>

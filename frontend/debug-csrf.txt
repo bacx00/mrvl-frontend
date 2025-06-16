@@ -1,0 +1,1 @@
+QUICK FIX: Check browser console for CSRF token presence
