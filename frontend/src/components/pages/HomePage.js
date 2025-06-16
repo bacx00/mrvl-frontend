@@ -392,11 +392,6 @@ function HomePage({ navigateTo }) {
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center space-x-1">
                           <span className="text-xs font-medium text-red-600 dark:text-red-400">LIVE</span>
-                          {match.viewers > 0 && (
-                            <span className="text-xs text-gray-500 dark:text-gray-500">
-                              👁 {match.viewers.toLocaleString()}
-                            </span>
-                          )}
                         </div>
                       </div>
                       <div className="text-center">
