@@ -369,7 +369,7 @@ function MatchDetailPage({ params, navigateTo }) {
   const currentMap = match.maps[activeMap];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-4 text-sm scale-75 origin-top-left transform w-[133.33%]">
+    <div className="max-w-6xl mx-auto space-y-4 text-sm scale-[0.8] origin-top-left transform w-[125%]">
       {/* Breadcrumb */}
       <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-500">
         <button 
