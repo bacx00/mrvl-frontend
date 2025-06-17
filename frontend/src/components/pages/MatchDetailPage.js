@@ -591,7 +591,7 @@ function MatchDetailPage({ params, navigateTo }) {
                   {currentMap.team1Players.map((player, index) => (
                     <div
                       key={player.id}
-                      className="grid grid-cols-8 gap-2 items-center px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                      className="grid grid-cols-9 gap-2 items-center px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                       onClick={() => {
                         console.log('🔗 CRITICAL FIX: Navigating to player profile with REAL ID:', player.name, player.id);
                         navigateTo && navigateTo('player-detail', { id: player.id });
