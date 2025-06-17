@@ -159,20 +159,135 @@ function MatchDetailPage({ params, navigateTo }) {
     }
   };
 
-  // PHASE 4: DELETE COMMENT (Admin/Moderator only)
-  const deleteComment = async (commentId) => {
+  // ENHANCED COMMENTS: VOTE ON COMMENT (Like/Dislike)
+  const voteOnComment = async (commentId, voteType) => {
+    if (!isAuthenticated) {
+      alert('Please sign in to vote on comments');
+      return;
+    }
+
+    const userVoteKey = `${commentId}_${user.id}`;
+    const existingVote = userVotes[userVoteKey];
+
+    // Prevent multiple votes of same type
+    if (existingVote === voteType) {
+      return;
+    }
+
     try {
-      console.log('🗑️ Deleting comment:', commentId);
+      console.log(`🗳️ Voting ${voteType} on comment:`, commentId);
       
-      await api.delete(`/matches/${matchId}/comments/${commentId}`);
-      
-      // Remove comment from list
-      setComments(prev => prev.filter(c => c.id !== commentId));
-      
-      console.log('✅ Comment deleted successfully');
+      // API call to vote
+      await api.post(`/matches/${matchId}/comments/${commentId}/vote`, {
+        vote_type: voteType
+      });
+
+      // Update local state
+      setUserVotes(prev => ({
+        ...prev,
+        [userVoteKey]: voteType
+      }));
+
+      // Update comment vote count
+      setComments(prev => prev.map(comment => {
+        if (comment.id === commentId) {
+          const newComment = { ...comment };
+          
+          // Remove previous vote if exists
+          if (existingVote) {
+            if (existingVote === 'like') {
+              newComment.likes = Math.max(0, (newComment.likes || 0) - 1);
+            } else {
+              newComment.dislikes = Math.max(0, (newComment.dislikes || 0) - 1);
+            }
+          }
+          
+          // Add new vote
+          if (voteType === 'like') {
+            newComment.likes = (newComment.likes || 0) + 1;
+          } else {
+            newComment.dislikes = (newComment.dislikes || 0) + 1;
+          }
+          
+          return newComment;
+        }
+        return comment;
+      }));
+
+      console.log('✅ Vote submitted successfully');
     } catch (error) {
-      console.error('❌ Error deleting comment:', error);
-      alert('Failed to delete comment. Please try again.');
+      console.error('❌ Error voting on comment:', error);
+      
+      // Demo mode - update locally
+      setUserVotes(prev => ({
+        ...prev,
+        [userVoteKey]: voteType
+      }));
+
+      setComments(prev => prev.map(comment => {
+        if (comment.id === commentId) {
+          const newComment = { ...comment };
+          
+          if (existingVote) {
+            if (existingVote === 'like') {
+              newComment.likes = Math.max(0, (newComment.likes || 0) - 1);
+            } else {
+              newComment.dislikes = Math.max(0, (newComment.dislikes || 0) - 1);
+            }
+          }
+          
+          if (voteType === 'like') {
+            newComment.likes = (newComment.likes || 0) + 1;
+          } else {
+            newComment.dislikes = (newComment.dislikes || 0) + 1;
+          }
+          
+          return newComment;
+        }
+        return comment;
+      }));
+    }
+  };
+
+  // ENHANCED COMMENTS: REPLY TO COMMENT
+  const submitReply = async (parentCommentId) => {
+    if (!replyText.trim() || !isAuthenticated) return;
+
+    try {
+      console.log('💬 Submitting reply to comment:', parentCommentId);
+      
+      const replyData = {
+        content: replyText.trim(),
+        parent_id: parentCommentId
+      };
+      
+      const response = await api.post(`/matches/${matchId}/comments`, replyData);
+      const newReply = response.data || response;
+      
+      // Add reply to comments list
+      setComments(prev => [newReply, ...prev]);
+      setReplyText('');
+      setReplyingTo(null);
+      
+      console.log('✅ Reply submitted successfully');
+    } catch (error) {
+      console.error('❌ Error submitting reply:', error);
+      
+      // Demo mode - add reply locally
+      const demoReply = {
+        id: Date.now(),
+        content: replyText.trim(),
+        user_name: user?.name || 'Anonymous',
+        user_avatar: "🦸",
+        created_at: new Date().toISOString(),
+        parent_id: parentCommentId,
+        likes: 0,
+        dislikes: 0
+      };
+      
+      setComments(prev => [demoReply, ...prev]);
+      setReplyText('');
+      setReplyingTo(null);
     }
   };
 
