@@ -58,13 +58,185 @@ function Navigation({ currentPage, navigateTo, onAuthClick, user: propUser }) {
     }
   };
 
-  // CRITICAL FIX: Enhanced search with real backend data suggestions
-  const handleSearch = async (e) => {
-    if (e.key === 'Enter' && searchQuery.trim()) {
-      console.log('🔍 Navigation: Search triggered for:', searchQuery.trim());
-      handleNavigationClick('search', { query: searchQuery.trim() });
-      setSearchQuery('');
+  // LIVE SEARCH FUNCTIONALITY
+  const performLiveSearch = async (query) => {
+    if (!query.trim() || query.length < 2) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
     }
+
+    setIsSearching(true);
+    
+    try {
+      console.log('🔍 Live search for:', query);
+      
+      // Parallel fetch from all backend endpoints for comprehensive search
+      const [teamsRes, playersRes, eventsRes, matchesRes, forumsRes, newsRes] = await Promise.allSettled([
+        api.get('/teams'),
+        api.get('/players'), 
+        api.get('/events'),
+        api.get('/matches'),
+        api.get('/forums/threads'),
+        api.get('/news')
+      ]);
+      
+      const searchTerm = query.toLowerCase();
+      const results = [];
+      
+      // Process teams
+      if (teamsRes.status === 'fulfilled') {
+        const teams = teamsRes.value?.data?.data || teamsRes.value?.data || [];
+        teams.filter(team => 
+          team.name?.toLowerCase().includes(searchTerm) ||
+          team.short_name?.toLowerCase().includes(searchTerm)
+        ).slice(0, 3).forEach(team => {
+          results.push({
+            id: team.id,
+            type: 'team',
+            title: team.name,
+            subtitle: team.short_name,
+            icon: '👥',
+            data: team
+          });
+        });
+      }
+      
+      // Process players
+      if (playersRes.status === 'fulfilled') {
+        const players = playersRes.value?.data?.data || playersRes.value?.data || [];
+        players.filter(player =>
+          player.name?.toLowerCase().includes(searchTerm) ||
+          player.username?.toLowerCase().includes(searchTerm)
+        ).slice(0, 3).forEach(player => {
+          results.push({
+            id: player.id,
+            type: 'player',
+            title: player.name || player.username,
+            subtitle: player.team_name || 'Free Agent',
+            icon: '🎮',
+            data: player
+          });
+        });
+      }
+      
+      // Process matches
+      if (matchesRes.status === 'fulfilled') {
+        const matches = matchesRes.value?.data?.data || matchesRes.value?.data || [];
+        matches.filter(match =>
+          match.team1?.name?.toLowerCase().includes(searchTerm) ||
+          match.team2?.name?.toLowerCase().includes(searchTerm)
+        ).slice(0, 2).forEach(match => {
+          results.push({
+            id: match.id,
+            type: 'match',
+            title: `${match.team1?.name} vs ${match.team2?.name}`,
+            subtitle: match.event?.name || 'Match',
+            icon: '⚔️',
+            data: match
+          });
+        });
+      }
+      
+      // Process events
+      if (eventsRes.status === 'fulfilled') {
+        const events = eventsRes.value?.data?.data || eventsRes.value?.data || [];
+        events.filter(event =>
+          event.name?.toLowerCase().includes(searchTerm)
+        ).slice(0, 2).forEach(event => {
+          results.push({
+            id: event.id,
+            type: 'event',
+            title: event.name,
+            subtitle: event.location || 'Tournament',
+            icon: '🏆',
+            data: event
+          });
+        });
+      }
+      
+      // Process forum threads
+      if (forumsRes.status === 'fulfilled') {
+        const threads = forumsRes.value?.data?.data || forumsRes.value?.data || [];
+        threads.filter(thread =>
+          thread.title?.toLowerCase().includes(searchTerm)
+        ).slice(0, 2).forEach(thread => {
+          results.push({
+            id: thread.id,
+            type: 'forum',
+            title: thread.title,
+            subtitle: `by ${thread.user_name || 'Anonymous'}`,
+            icon: '💬',
+            data: thread
+          });
+        });
+      }
+      
+      setSearchResults(results.slice(0, 10)); // Limit to 10 total results
+      setShowDropdown(results.length > 0);
+      
+    } catch (error) {
+      console.error('❌ Live search error:', error);
+      setSearchResults([]);
+      setShowDropdown(false);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounced search effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery.trim()) {
+        performLiveSearch(searchQuery);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target) &&
+          searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Handle search result click
+  const handleResultClick = (result) => {
+    console.log('🔗 Search result clicked:', result);
+    
+    switch (result.type) {
+      case 'team':
+        handleNavigationClick('team-detail', { id: result.id });
+        break;
+      case 'player':
+        handleNavigationClick('player-detail', { id: result.id });
+        break;
+      case 'match':
+        handleNavigationClick('match-detail', { id: result.id });
+        break;
+      case 'event':
+        handleNavigationClick('event-detail', { id: result.id });
+        break;
+      case 'forum':
+        handleNavigationClick('thread-detail', { id: result.id });
+        break;
+      case 'news':
+        handleNavigationClick('news-detail', { id: result.id });
+        break;
+      default:
+        break;
+    }
+    
+    setShowDropdown(false);
+    setSearchQuery('');
   };
 
   const handleAuthClick = () => {
