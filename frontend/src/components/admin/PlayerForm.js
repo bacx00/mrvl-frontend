@@ -264,13 +264,11 @@ function PlayerForm({ playerId, navigateTo }) {
     }
   };
 
-  // ✅ FIXED: Match exact backend validation roles - NO Coach allowed
+  // ✅ FIXED: Use only backend-supported roles (database constraint issue with Flex)
   const roles = [
     { value: 'Duelist', label: 'Duelist (DPS)', description: 'Damage dealers' },
     { value: 'Tank', label: 'Tank (Vanguard)', description: 'Front-line defenders' },
-    { value: 'Support', label: 'Support (Strategist)', description: 'Team support and healing' },
-    { value: 'Flex', label: 'Flex Player', description: 'Multi-role versatility' },
-    { value: 'Sub', label: 'Substitute', description: 'Backup player' }
+    { value: 'Support', label: 'Support (Strategist)', description: 'Team support and healing' }
   ];
 
   const countries = [
