@@ -143,16 +143,15 @@ function EventForm({ eventId, navigateTo }) {
     }
   };
 
-  // FIXED: Use backend-supported event types exactly as documented
+  // ✅ FIXED: Only backend-supported event types based on backend documentation
   const eventTypes = [
-    { value: 'tournament', label: 'Tournament' },
-    { value: 'match', label: 'Match' },
-    { value: 'scrim', label: 'Scrim' },
     { value: 'championship', label: 'Championship' },
+    { value: 'tournament', label: 'Tournament' },
+    { value: 'scrim', label: 'Scrim' },
+    { value: 'qualifier', label: 'Qualifier' },
     { value: 'regional', label: 'Regional' },
     { value: 'international', label: 'International' },
-    { value: 'qualifier', label: 'Qualifier' },
-    { value: 'community', label: 'Community' }
+    { value: 'invitational', label: 'Invitational' }
   ];
 
   const tiers = [
