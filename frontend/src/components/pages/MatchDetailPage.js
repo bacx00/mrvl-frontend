@@ -369,9 +369,30 @@ function MatchDetailPage({ params, navigateTo }) {
   const currentMap = match.maps[activeMap];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4 text-sm scale-[0.85] origin-top-left transform w-[117%]">
-      {/* Breadcrumb - BIGGER */}
-      <div className="flex items-center space-x-2 text-base text-gray-500 dark:text-gray-500 mb-4">
+    <div className="space-y-4 text-sm">
+      {/* Breadcrumb - BIGGER - Left aligned */}
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center space-x-2 text-base text-gray-500 dark:text-gray-500 mb-4 scale-[0.85] origin-top-left transform w-[117%]">
+          <button 
+            onClick={() => navigateTo('home')}
+            className="hover:text-red-600 dark:hover:text-red-400 transition-colors"
+          >
+            Home
+          </button>
+          <span>›</span>
+          <button 
+            onClick={() => navigateTo('matches')}
+            className="hover:text-red-600 dark:hover:text-red-400 transition-colors"
+          >
+            Matches
+          </button>
+          <span>›</span>
+          <span className="text-gray-900 dark:text-white">{match.team1.short_name} vs {match.team2.short_name}</span>
+        </div>
+      </div>
+
+      {/* Main Content - Centered */}
+      <div className="max-w-6xl mx-auto space-y-4"
         <button 
           onClick={() => navigateTo('home')}
           className="hover:text-red-600 dark:hover:text-red-400 transition-colors"
