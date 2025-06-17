@@ -322,39 +322,18 @@ function MatchesPage({ navigateTo }) {
                   </div>
                 </div>
 
-                {/* Match Actions */}
-                <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <div className="flex justify-center space-x-4">
+                {/* Match Actions - BETTER LAYOUT */}
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex justify-center">
                     <button
-                      onClick={() => handleMatchClick(match)}
-                      className="btn btn-ghost btn-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMatchClick(match);
+                      }}
+                      className="text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 text-sm font-medium transition-colors"
                     >
                       👁️ View Details
                     </button>
-                    {/* LIVE SCORING BUTTON - Admin/Moderator Only */}
-                    {(isAdmin() || isModerator()) && match.status === 'live' && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openLiveScoring(match);
-                        }}
-                        className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors flex items-center space-x-1"
-                      >
-                        <span>📊</span>
-                        <span>Live Scoring</span>
-                      </button>
-                    )}
-                    {(isAdmin() || isModerator()) && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigateTo && navigateTo('admin-match-edit', { id: match.id });
-                        }}
-                        className="btn btn-ghost btn-sm"
-                      >
-                        ⚙️ Manage
-                      </button>
-                    )}
                   </div>
                 </div>
               </div>
