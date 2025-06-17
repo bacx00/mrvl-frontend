@@ -93,61 +93,9 @@ function AdminForums({ navigateTo }) {
       setLoading(false);
     }
   };
-          upvotes: 127,
-          downvotes: 23
-        },
-        {
-          id: 2,
-          title: '[GUIDE] Complete Tank Meta Guide - Best Strategies for Season 1',
-          author: { name: 'TankMaster_Pro', avatar: '🛡️' },
-          category: 'strategy',
-          replies: 234,
-          views: 8932,
-          created_at: '2025-01-22T14:15:00Z',
-          status: 'active',
-          pinned: true,
-          locked: false,
-          reported: false,
-          upvotes: 456,
-          downvotes: 12
-        },
-        {
-          id: 3,
-          title: 'Looking for Diamond+ players for competitive team - NA East',
-          author: { name: 'TeamCaptain_Sam', avatar: '👤' },
-          category: 'team-recruitment',
-          replies: 67,
-          views: 1234,
-          created_at: '2025-01-25T16:45:00Z',
-          status: 'active',
-          pinned: false,
-          locked: false,
-          reported: true,
-          upvotes: 89,
-          downvotes: 5
-        }
-      ]);
 
-      setCategories([
-        { id: 'all', name: 'All Categories', threads_count: 1247 },
-        { id: 'general', name: 'General Discussion', threads_count: 234 },
-        { id: 'hero-discussion', name: 'Hero Discussion', threads_count: 189 },
-        { id: 'strategy', name: 'Strategy & Tactics', threads_count: 156 },
-        { id: 'esports', name: 'Esports & Competitive', threads_count: 98 },
-        { id: 'guides', name: 'Guides & Tutorials', threads_count: 67 },
-        { id: 'team-recruitment', name: 'Team Recruitment', threads_count: 89 }
-      ]);
-
-      setReports([
-        {
-          id: 1,
-          thread_id: 3,
-          thread_title: 'Looking for Diamond+ players for competitive team - NA East',
-          reporter: { name: 'ModWatcher', avatar: '👮' },
-          reason: 'spam',
-          description: 'User has posted the same recruitment message multiple times',
-          created_at: '2025-01-27T08:30:00Z',
-          status: 'pending'
+  // Handle different moderation actions
+  const handleAction = async (type, itemId, action) => {
         }
       ]);
     } catch (error) {
