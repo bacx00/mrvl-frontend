@@ -121,17 +121,32 @@ function EventDetailPage({ params, navigateTo }) {
       setMatches([]); // NO FALLBACK DATA
     }
 
-    // Get participating teams
-    const participatingTeams = REAL_TEAMS.slice(0, transformedEvent.teams || 8).map((team, index) => ({
-      id: team.id,
-      name: team.name,
-      shortName: team.short_name,
-      region: team.region,
-      rating: team.rating,
-      seed: index + 1,
-      logo: team.logo
-    }));
-    setTeams(participatingTeams);
+    // CRITICAL FIX: Get participating teams from REAL backend data
+    try {
+      console.log('🔍 EventDetailPage: Fetching teams for event ID:', eventId);
+      const teamsResponse = await api.get(`/events/${eventId}/teams`);
+      const realTeams = teamsResponse?.data?.data || teamsResponse?.data || [];
+      
+      if (Array.isArray(realTeams) && realTeams.length > 0) {
+        const transformedTeams = realTeams.map((team, index) => ({
+          id: team.id, // REAL TEAM ID
+          name: team.name,
+          shortName: team.short_name || team.shortName,
+          region: team.region,
+          rating: team.rating,
+          seed: team.seed || index + 1,
+          logo: team.logo
+        }));
+        setTeams(transformedTeams);
+        console.log('✅ EventDetailPage: Using REAL backend teams:', transformedTeams.length);
+      } else {
+        console.log('⚠️ EventDetailPage: No teams found for event');
+        setTeams([]);
+      }
+    } catch (error) {
+      console.error('❌ EventDetailPage: Failed to fetch event teams:', error);
+      setTeams([]); // NO FALLBACK DATA
+    }
   };
 
   const generateFallbackEvent = (eventId) => {
