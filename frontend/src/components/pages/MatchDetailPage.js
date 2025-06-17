@@ -850,7 +850,6 @@ function MatchDetailPage({ params, navigateTo }) {
           </div>
         )}
       </div>
-      </div>
     </div>
   );
 }
