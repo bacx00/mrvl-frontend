@@ -1,11 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth, useTheme } from '../hooks';
 
 function Navigation({ currentPage, navigateTo, onAuthClick, user: propUser }) {
-  const { user: contextUser, logout, isAdmin } = useAuth();
+  const { user: contextUser, logout, isAdmin, api } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // LIVE SEARCH DROPDOWN STATE
+  const [searchResults, setSearchResults] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   // Use user from context or prop (for flexibility)
   const user = contextUser || propUser;
