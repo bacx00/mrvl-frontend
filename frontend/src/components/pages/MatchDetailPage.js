@@ -871,14 +871,13 @@ function MatchDetailPage({ params, navigateTo }) {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* MATCH COMMENTS SECTION - VLR.gg Style */}
-      <div className="card p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
-          <span>💬</span>
-          <span>Match Comments ({comments.length})</span>
-        </h3>
+        {/* MATCH COMMENTS SECTION - VLR.gg Style */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
+            <span>💬</span>
+            <span>Match Comments ({comments.length})</span>
+          </h3>
 
         {/* Comment Input */}
         {isAuthenticated ? (
