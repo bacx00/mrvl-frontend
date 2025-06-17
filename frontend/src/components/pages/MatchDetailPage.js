@@ -946,20 +946,77 @@ function MatchDetailPage({ params, navigateTo }) {
                   </div>
                   <p className="text-gray-700 dark:text-gray-300">{comment.content}</p>
                   
-                  {/* VLR.gg Style Comment Actions */}
+                  {/* VLR.gg Style Comment Actions - FIXED VOTING */}
                   <div className="flex items-center space-x-4 mt-2">
-                    <button className="flex items-center space-x-1 text-gray-500 hover:text-green-600 transition-colors">
+                    <button 
+                      onClick={() => voteOnComment(comment.id, 'like')}
+                      disabled={!isAuthenticated}
+                      className={`flex items-center space-x-1 transition-colors ${
+                        userVotes[`${comment.id}_${user?.id}`] === 'like'
+                          ? 'text-green-600 font-semibold' 
+                          : 'text-gray-500 hover:text-green-600'
+                      } ${!isAuthenticated ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
                       <span>👍</span>
                       <span className="text-sm">{comment.likes || 0}</span>
                     </button>
-                    <button className="flex items-center space-x-1 text-gray-500 hover:text-red-600 transition-colors">
+                    <button 
+                      onClick={() => voteOnComment(comment.id, 'dislike')}
+                      disabled={!isAuthenticated}
+                      className={`flex items-center space-x-1 transition-colors ${
+                        userVotes[`${comment.id}_${user?.id}`] === 'dislike'
+                          ? 'text-red-600 font-semibold' 
+                          : 'text-gray-500 hover:text-red-600'
+                      } ${!isAuthenticated ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
                       <span>👎</span>
                       <span className="text-sm">{comment.dislikes || 0}</span>
                     </button>
-                    <button className="text-sm text-gray-500 hover:text-blue-600 transition-colors">
-                      Reply
+                    <button 
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          alert('Please sign in to reply');
+                          return;
+                        }
+                        setReplyingTo(replyingTo === comment.id ? null : comment.id);
+                        setReplyText('');
+                      }}
+                      className="text-sm text-gray-500 hover:text-blue-600 transition-colors"
+                    >
+                      {replyingTo === comment.id ? 'Cancel' : 'Reply'}
                     </button>
                   </div>
+
+                  {/* Reply Input */}
+                  {replyingTo === comment.id && (
+                    <div className="mt-3 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                      <textarea
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        placeholder={`Reply to ${comment.user_name}...`}
+                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none text-sm"
+                        rows="2"
+                      />
+                      <div className="flex justify-end space-x-2 mt-2">
+                        <button
+                          onClick={() => {
+                            setReplyingTo(null);
+                            setReplyText('');
+                          }}
+                          className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => submitReply(comment.id)}
+                          disabled={!replyText.trim()}
+                          className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Reply
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Delete button for admins/moderators */}
