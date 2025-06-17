@@ -1019,6 +1019,8 @@ function MatchDetailPage({ params, navigateTo }) {
             <button
         )}
       </div>
+      </div>
+      </div>
     </div>
   );
 }
