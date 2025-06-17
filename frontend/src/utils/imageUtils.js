@@ -96,9 +96,21 @@ export const getTeamLogoUrl = (team) => {
 
   // Try to use the logo path from backend (if valid)
   if (team?.logo && typeof team.logo === 'string' && team.logo.length > 0) {
-    // Construct full URL if it's a relative path
-    const baseUrl = 'https://staging.mrvl.net/storage/';
-    const logoUrl = team.logo.startsWith('http') ? team.logo : baseUrl + team.logo;
+    // ✅ FIXED: Prevent double /storage/ prefix issue
+    let logoUrl = team.logo;
+    
+    // If it's already a full URL, use as is
+    if (logoUrl.startsWith('http')) {
+      console.log('🖼️ getTeamLogoUrl - Using full URL:', logoUrl);
+      return logoUrl;
+    }
+    
+    // If it already has /storage/ prefix, construct URL properly
+    if (logoUrl.startsWith('/storage/')) {
+      logoUrl = `https://staging.mrvl.net${logoUrl}`;
+    } else {
+      logoUrl = `https://staging.mrvl.net/storage/${logoUrl}`;
+    }
     
     console.log('🖼️ getTeamLogoUrl - Final URL:', logoUrl);
     return logoUrl;
