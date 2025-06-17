@@ -264,13 +264,11 @@ function PlayerForm({ playerId, navigateTo }) {
     }
   };
 
-  // FIXED: Updated roles to match backend validation - Coach is proper role
+  // ✅ FIXED: Match exact backend validation roles - NO Coach allowed
   const roles = [
     { value: 'Duelist', label: 'Duelist (DPS)', description: 'Damage dealers' },
     { value: 'Tank', label: 'Tank (Vanguard)', description: 'Front-line defenders' },
     { value: 'Support', label: 'Support (Strategist)', description: 'Team support and healing' },
-    { value: 'Coach', label: 'Coach', description: 'Team strategist and leader' }, // FIXED: Use Coach not Controller
-    { value: 'IGL', label: 'In-Game Leader (IGL)', description: 'Shot caller and team coordinator' },
     { value: 'Flex', label: 'Flex Player', description: 'Multi-role versatility' },
     { value: 'Sub', label: 'Substitute', description: 'Backup player' }
   ];
