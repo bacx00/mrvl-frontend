@@ -369,9 +369,9 @@ function MatchDetailPage({ params, navigateTo }) {
   const currentMap = match.maps[activeMap];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-4 text-sm scale-[0.8] origin-top-left transform w-[125%]">
-      {/* Breadcrumb */}
-      <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-500">
+    <div className="max-w-7xl mx-auto space-y-4 text-sm scale-[0.85] origin-top-left transform w-[117%]">
+      {/* Breadcrumb - BIGGER */}
+      <div className="flex items-center space-x-2 text-base text-gray-500 dark:text-gray-500 mb-4">
         <button 
           onClick={() => navigateTo('home')}
           className="hover:text-red-600 dark:hover:text-red-400 transition-colors"
