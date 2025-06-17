@@ -649,10 +649,10 @@ function MatchDetailPage({ params, navigateTo }) {
         </div>
       </div>
 
-      {/* VLR.gg Style Match Stats - COMPACT & IMPROVED */}
-      <div className="card">
-        <div className="p-4">
-          <div className="space-y-4">
+        {/* VLR.gg Style Match Stats - COMPACT & IMPROVED */}
+        <div className="card">
+          <div className="p-4">
+            <div className="space-y-4">
             {/* Map Header - COMPACT */}
             <div className="text-center">
               <h2 className="text-xl font-bold text-red-600 dark:text-red-400 mb-1">{currentMap.name}</h2>
