@@ -326,16 +326,7 @@ function MatchDetailPage({ params, navigateTo }) {
         setMatch(transformedMatch);
       } catch (error) {
         console.error('❌ Error fetching match data from API:', error);
-        
-        // Fallback: try to find a match from centralized data
-        const fallbackMatch = getMatchById(1); // Default to first match
-        if (fallbackMatch) {
-          console.log('⚠️ Using fallback centralized match data');
-          const transformedMatch = await transformMatchData(fallbackMatch);
-          setMatch(transformedMatch);
-        } else {
-          setMatch(null);
-        }
+        setMatch(null); // NO FALLBACK DATA
       }
     } catch (error) {
       console.error('❌ Error in fetchMatchData:', error);
