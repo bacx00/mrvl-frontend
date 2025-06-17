@@ -59,15 +59,11 @@ function MatchDetailPage({ params, navigateTo }) {
   const [loading, setLoading] = useState(true);
   const [realPlayersLoaded, setRealPlayersLoaded] = useState(false);
   
-  // PHASE 4: MATCH COMMENTS SYSTEM STATE
+  // PHASE 4: ENHANCED COMMENTS SYSTEM STATE
   const [comments, setComments] = useState([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
-  const [replyingTo, setReplyingTo] = useState(null);
-  const [replyText, setReplyText] = useState('');
-  const [userVotes, setUserVotes] = useState({});
-  const [showReplies, setShowReplies] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [userVotes, setUserVotes] = useState({});
