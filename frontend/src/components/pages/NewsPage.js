@@ -41,102 +41,8 @@ function NewsPage({ navigateTo }) {
       
       setNews(filteredNews);
     } catch (error) {
-      console.warn('❌ News API failed, using mock data:', error.message);
-      
-      // FIXED: Enhanced fallback mock data with country flags
-      const mockNewsData = [
-        {
-          id: 1,
-          title: 'Marvel Rivals Season 1 Battle Pass Now Live',
-          excerpt: 'The highly anticipated Season 1 Battle Pass is now available featuring new heroes, skins, and exclusive rewards.',
-          content: 'Marvel Rivals has officially launched its Season 1 Battle Pass, bringing a wealth of new content to players worldwide...',
-          category: 'updates',
-          region: 'INTL',
-          author: { name: 'Marvel Dev Team', avatar: null },
-          featured_image_url: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=400&fit=crop',
-          views: 15420,
-          comments_count: 89,
-          created_at: '2025-01-26T10:00:00Z',
-          featured: true
-        },
-        {
-          id: 2,
-          title: 'Balance Changes Coming to Iron Man and Spider-Man',
-          excerpt: 'Developer insights on upcoming hero adjustments and the reasoning behind the changes.',
-          content: 'Following extensive community feedback and data analysis, we are implementing targeted balance changes...',
-          category: 'balance',
-          region: 'US',
-          author: { name: 'Game Design Team', avatar: null },
-          featured_image_url: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?w=800&h=400&fit=crop',
-          views: 8934,
-          comments_count: 156,
-          created_at: '2025-01-25T15:30:00Z',
-          featured: false
-        },
-        {
-          id: 3,
-          title: 'Team Stark Industries Wins Championship Finals',
-          excerpt: 'In a thrilling 5-map series, Team Stark Industries claims the Marvel Rivals Championship title.',
-          content: 'The grand finals of the Marvel Rivals World Championship concluded with an epic showdown...',
-          category: 'esports',
-          region: 'US',
-          author: { name: 'Esports Team', avatar: null },
-          featured_image_url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=400&fit=crop',
-          views: 12456,
-          comments_count: 234,
-          created_at: '2025-01-24T20:00:00Z',
-          featured: true
-        },
-        {
-          id: 4,
-          title: 'New Map: Asgard Throne Room - Developer Walkthrough',
-          excerpt: 'Take a behind-the-scenes look at the creation of our newest competitive map.',
-          content: 'The design team takes us through the development process of Asgard Throne Room...',
-          category: 'content',
-          region: 'SE',
-          author: { name: 'Level Design Team', avatar: null },
-          featured_image_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=400&fit=crop',
-          views: 6789,
-          comments_count: 67,
-          created_at: '2025-01-23T14:20:00Z',
-          featured: false
-        },
-        {
-          id: 5,
-          title: 'EU Regional Championship Schedule Announced',
-          excerpt: 'European teams prepare for the biggest tournament of the season.',
-          content: 'The European Regional Championship will feature 16 top teams competing for glory...',
-          category: 'esports',
-          region: 'DE',
-          author: { name: 'Tournament Operations', avatar: null },
-          featured_image_url: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=800&h=400&fit=crop',
-          views: 5432,
-          comments_count: 78,
-          created_at: '2025-01-22T12:00:00Z',
-          featured: false
-        },
-        {
-          id: 6,
-          title: 'Korean Domination: APAC Meta Analysis',
-          excerpt: 'Breaking down the strategies that made Korean teams so successful this season.',
-          content: 'Korean teams have been dominating the APAC region with innovative strategies...',
-          category: 'analysis',
-          region: 'KR',
-          author: { name: 'Strategy Analyst', avatar: null },
-          featured_image_url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&h=400&fit=crop',
-          views: 7890,
-          comments_count: 123,
-          created_at: '2025-01-21T16:45:00Z',
-          featured: false
-        }
-      ];
-
-      // Filter mock data by category
-      const filteredMockNews = selectedCategory === 'all' 
-        ? mockNewsData 
-        : mockNewsData.filter(article => article.category === selectedCategory);
-      
-      setNews(filteredMockNews);
+      console.error('❌ NewsPage: Backend API failed, NO MOCK DATA FALLBACK:', error.message);
+      setNews([]); // ✅ NO MOCK DATA - Show empty state instead
     } finally {
       setLoading(false);
     }
@@ -237,7 +143,7 @@ function NewsPage({ navigateTo }) {
                 )}
                 <div className="p-6">
                   <div className="flex items-center space-x-2 mb-3">
-                    {/* FIXED: Added region flag */}
+                    {/* Region flag */}
                     <span className="text-lg">{getCountryFlag(article.region)}</span>
                     <span className={`px-2 py-1 text-xs font-bold rounded ${getCategoryColor(article.category)}`}>
                       {(article.category || 'news').toUpperCase()}
@@ -271,52 +177,54 @@ function NewsPage({ navigateTo }) {
       )}
 
       {/* Regular News */}
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Latest News</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {regularNews.map((article) => (
-            <div 
-              key={article.id} 
-              className="card hover:shadow-lg transition-shadow cursor-pointer group"
-              onClick={() => navigateTo && navigateTo('news-detail', { id: article.id })}
-            >
-              {(article.featured_image_url || article.image) && (
-                <div className="aspect-video overflow-hidden rounded-t-lg">
-                  <img 
-                    src={article.featured_image_url || article.image} 
-                    alt={article.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-              )}
-              <div className="p-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  {/* FIXED: Added region flag */}
-                  <span className="text-lg">{getCountryFlag(article.region)}</span>
-                  <span className={`px-2 py-1 text-xs font-bold rounded ${getCategoryColor(article.category)}`}>
-                    {(article.category || 'news').toUpperCase()}
-                  </span>
-                </div>
-                
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors line-clamp-2">
-                  {article.title}
-                </h3>
-                
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
-                  {article.excerpt}
-                </p>
-
-                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-500">
-                  <div className="flex items-center space-x-2">
-                    <span>{article.author?.name || 'MRVL Team'}</span>
+      {regularNews.length > 0 && (
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Latest News</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {regularNews.map((article) => (
+              <div 
+                key={article.id} 
+                className="card hover:shadow-lg transition-shadow cursor-pointer group"
+                onClick={() => navigateTo && navigateTo('news-detail', { id: article.id })}
+              >
+                {(article.featured_image_url || article.image) && (
+                  <div className="aspect-video overflow-hidden rounded-t-lg">
+                    <img 
+                      src={article.featured_image_url || article.image} 
+                      alt={article.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
                   </div>
-                  <span>{formatDate(article.created_at)}</span>
+                )}
+                <div className="p-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    {/* Region flag */}
+                    <span className="text-lg">{getCountryFlag(article.region)}</span>
+                    <span className={`px-2 py-1 text-xs font-bold rounded ${getCategoryColor(article.category)}`}>
+                      {(article.category || 'news').toUpperCase()}
+                    </span>
+                  </div>
+                  
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors line-clamp-2">
+                    {article.title}
+                  </h3>
+                  
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                    {article.excerpt}
+                  </p>
+
+                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-500">
+                    <div className="flex items-center space-x-2">
+                      <span>{article.author?.name || 'MRVL Team'}</span>
+                    </div>
+                    <span>{formatDate(article.created_at)}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* No Results */}
       {news.length === 0 && (

@@ -14,184 +14,39 @@ function NewsDetailPage({ params, navigateTo }) {
     try {
       console.log('🔍 NewsDetailPage: Fetching article with ID:', params.id);
       
-      // Try to fetch from backend API using the real ID
+      // ✅ FIXED: ONLY USE REAL BACKEND DATA - NO MOCK FALLBACK
       const response = await api.get(`/news/${params.id}`);
       
-      // FIXED: Handle Laravel API response structure properly
+      // Handle Laravel API response structure properly
       const articleData = response?.data?.data || response?.data || response;
       
-      console.log('✅ NewsDetailPage: Real article loaded:', articleData);
-      setArticle(articleData);
-      
-      // Fetch related articles
-      try {
-        const relatedResponse = await api.get('/news');
-        const allNews = relatedResponse?.data?.data || relatedResponse?.data || relatedResponse || [];
+      if (articleData && articleData.id) {
+        console.log('✅ NewsDetailPage: Real article loaded:', articleData);
+        setArticle(articleData);
         
-        // Filter out current article and take 3 related ones
-        const related = allNews
-          .filter(news => news.id !== articleData.id)
-          .slice(0, 3);
-        setRelatedNews(related);
-        console.log('✅ NewsDetailPage: Related articles loaded:', related.length);
-      } catch (relatedError) {
-        console.warn('Could not fetch related articles:', relatedError);
-        setRelatedNews([]);
+        // Fetch related articles
+        try {
+          const relatedResponse = await api.get('/news');
+          const allNews = relatedResponse?.data?.data || relatedResponse?.data || relatedResponse || [];
+          
+          // Filter out current article and take 3 related ones
+          const related = allNews
+            .filter(news => news.id !== articleData.id)
+            .slice(0, 3);
+          setRelatedNews(related);
+          console.log('✅ NewsDetailPage: Related articles loaded:', related.length);
+        } catch (relatedError) {
+          console.warn('Could not fetch related articles:', relatedError);
+          setRelatedNews([]);
+        }
+      } else {
+        console.error('❌ NewsDetailPage: Article not found:', params.id);
+        setArticle(null);
       }
       
     } catch (error) {
-      console.warn('❌ NewsDetailPage: News API failed, using mock data for ID:', params.id, error.message);
-      
-      // FIXED: Enhanced fallback mock data mapped to requested ID
-      const mockArticles = {
-        // Real backend IDs get proper content
-        '1': {
-          id: 1,
-          title: 'Marvel Rivals Ignite 2025 Open Qualifiers',
-          slug: 'marvel-rivals-ignite-2025-open-qualifiers',
-          content: `
-            <h2>Marvel Rivals Ignite 2025: The Ultimate Competitive Tournament</h2>
-            
-            <p>The Marvel Rivals Ignite 2025 Open Qualifiers have officially begun, marking the start of the most anticipated competitive season in the game's history. This tournament will determine who advances to the main event with a $2 million prize pool.</p>
-            
-            <h3>Tournament Format</h3>
-            
-            <ul>
-              <li><strong>Open Qualifiers:</strong> 128 teams compete in double-elimination brackets</li>
-              <li><strong>Regional Finals:</strong> Top 16 teams from each region advance</li>
-              <li><strong>International Championship:</strong> 64 teams battle for the ultimate prize</li>
-              <li><strong>Hero Draft:</strong> New strategic draft system implemented</li>
-              <li><strong>Best of 5 Finals:</strong> All elimination matches use extended format</li>
-            </ul>
-            
-            <h3>Registration Details</h3>
-            
-            <p>Registration is now open for all eligible teams. The tournament features separate qualification paths for each major region: North America, Europe, Asia-Pacific, and Latin America.</p>
-            
-            <h3>Prize Pool Distribution</h3>
-            
-            <p>The $2 million prize pool will be distributed across all participating teams, with the championship winner receiving $500,000. This represents the largest prize pool in Marvel Rivals esports history.</p>
-            
-            <blockquote>
-              <p>"Marvel Rivals Ignite 2025 represents the pinnacle of competitive gaming. We're excited to see the incredible talent from around the world." - Tournament Director</p>
-            </blockquote>
-            
-            <h3>New Features</h3>
-            
-            <p>This tournament introduces several new competitive features including hero bans, tactical timeouts, and enhanced spectator modes for the best viewing experience.</p>
-            
-            <p>Don't miss out on the action! Qualifiers begin this weekend with matches streamed live on all major platforms.</p>
-          `,
-          excerpt: 'The Marvel Rivals Ignite 2025 Open Qualifiers have begun with a massive $2 million prize pool.',
-          category: 'tournaments',
-          author: { 
-            id: 1,
-            name: 'MRVL Esports Team', 
-            avatar: '🏆',
-            bio: 'Official esports team for Marvel Rivals tournaments'
-          },
-          featured_image_url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=1200&h=600&fit=crop',
-          views: 23450,
-          comments_count: 156,
-          created_at: '2025-01-27T14:30:00Z',
-          updated_at: '2025-01-27T14:30:00Z',
-          published_at: '2025-01-27T14:30:00Z',
-          featured: true,
-          tags: ['Tournament', 'Ignite 2025', 'Qualifiers', 'Competitive', 'Esports']
-        },
-        
-        // Fallback for unknown IDs
-        'default': {
-          id: parseInt(params.id) || 999,
-          title: 'Marvel Rivals Season 1 Battle Pass Now Live',
-          slug: 'marvel-rivals-season-1-battle-pass-now-live',
-          content: `
-            <h2>The Season 1 Battle Pass Has Arrived!</h2>
-            
-            <p>Marvel Rivals has officially launched its Season 1 Battle Pass, bringing a wealth of new content to players worldwide. This highly anticipated release includes new heroes, exclusive skins, and rewards that will enhance your gaming experience.</p>
-            
-            <h3>What's New in Season 1?</h3>
-            
-            <ul>
-              <li><strong>New Heroes:</strong> Three new heroes join the roster with unique abilities and playstyles</li>
-              <li><strong>Exclusive Skins:</strong> Over 50 new cosmetic items including legendary character skins</li>
-              <li><strong>Battle Pass Rewards:</strong> 100 tiers of rewards including credits, boosts, and exclusive items</li>
-              <li><strong>New Maps:</strong> Two competitive maps added to the rotation</li>
-              <li><strong>Balance Updates:</strong> Hero adjustments based on community feedback</li>
-            </ul>
-            
-            <h3>How to Access the Battle Pass</h3>
-            
-            <p>The Season 1 Battle Pass is available for purchase in-game for 950 credits, or you can upgrade to the Premium Battle Pass for 2400 credits to unlock additional rewards and XP boosts.</p>
-            
-            <h3>Season Duration and Rewards</h3>
-            
-            <p>Season 1 will run for 12 weeks, giving players plenty of time to progress through all 100 tiers. The final tier rewards include an exclusive legendary skin for Iron Man and a rare player card background.</p>
-            
-            <blockquote>
-              <p>"We're incredibly excited to launch Season 1 and see how the community responds to the new content. This is just the beginning of many exciting updates planned for Marvel Rivals." - Game Director</p>
-            </blockquote>
-            
-            <h3>Esports Integration</h3>
-            
-            <p>Season 1 also introduces new features for competitive play, including updated ranking systems and seasonal rewards for top-performing players. The Marvel Rivals Championship Series will feature the new content prominently.</p>
-            
-            <p>Ready to jump in? Log into Marvel Rivals now and start your Season 1 journey!</p>
-          `,
-          excerpt: 'The highly anticipated Season 1 Battle Pass is now available featuring new heroes, skins, and exclusive rewards.',
-          category: 'updates',
-          author: { 
-            id: 1,
-            name: 'Marvel Dev Team', 
-            avatar: '🛡️',
-            bio: 'Official development team for Marvel Rivals'
-          },
-          featured_image_url: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200&h=600&fit=crop',
-          views: 15420,
-          comments_count: 89,
-          created_at: '2025-01-26T10:00:00Z',
-          updated_at: '2025-01-26T10:00:00Z',
-          published_at: '2025-01-26T10:00:00Z',
-          featured: true,
-          tags: ['Season 1', 'Battle Pass', 'New Content', 'Updates']
-        }
-      };
-
-      // Use specific article for known IDs, otherwise use default
-      const mockArticle = mockArticles[params.id] || mockArticles['default'];
-      
-      setArticle(mockArticle);
-      console.log('📰 NewsDetailPage: Using mock article for ID:', params.id, mockArticle.title);
-      
-      // Mock related articles
-      const mockRelated = [
-        {
-          id: 2,
-          title: 'Balance Changes Coming to Iron Man and Spider-Man',
-          excerpt: 'Developer insights on upcoming hero adjustments.',
-          featured_image_url: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?w=400&h=200&fit=crop',
-          created_at: '2025-01-25T15:30:00Z',
-          category: 'balance'
-        },
-        {
-          id: 3,
-          title: 'Team Stark Industries Wins Championship Finals',
-          excerpt: 'Epic 5-map series concludes with thrilling victory.',
-          featured_image_url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=200&fit=crop',
-          created_at: '2025-01-24T20:00:00Z',
-          category: 'esports'
-        },
-        {
-          id: 4,
-          title: 'New Map: Asgard Throne Room Revealed',
-          excerpt: 'Behind-the-scenes look at map creation process.',
-          featured_image_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&h=200&fit=crop',
-          created_at: '2025-01-23T14:20:00Z',
-          category: 'content'
-        }
-      ];
-      
-      setRelatedNews(mockRelated);
+      console.error('❌ NewsDetailPage: Backend API failed:', error.message);
+      setArticle(null); // ✅ NO MOCK DATA - Show not found instead
     } finally {
       setLoading(false);
     }
@@ -286,11 +141,6 @@ function NewsDetailPage({ params, navigateTo }) {
             </button>
           </div>
         )}
-      </div>
-
-      {/* FIXED: Debug info to show which article is loaded */}
-      <div className="mb-4 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs text-blue-800 dark:text-blue-200">
-        📰 Loaded Article ID: {article.id} | Requested ID: {params.id} | Title: {article.title}
       </div>
 
       {/* Article Header */}
