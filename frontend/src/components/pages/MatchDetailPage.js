@@ -337,17 +337,29 @@ function MatchDetailPage({ params, navigateTo }) {
   };
 
   const transformMatchData = async (matchData) => {
+    console.log('🔍 MatchDetailPage: Transforming match data:', matchData);
+    
     // If this is already from centralized data, return as is with maps
     if (matchData.team1 && matchData.team2 && matchData.team1.name) {
+      console.log('✅ MatchDetailPage: Using pre-formatted match data');
       return {
         ...matchData,
         maps: generateMapData(matchData.team1, matchData.team2)
       };
     }
 
-    // Otherwise use real teams from our data
-    const team1 = getTeamById(matchData.team1_id) || getRandomTeams(1)[0];
-    const team2 = getTeamById(matchData.team2_id) || getRandomTeams(1)[0];
+    // CRITICAL FIX: Get real teams by ID from backend data
+    console.log('🔍 MatchDetailPage: Getting teams by ID - Team1:', matchData.team1_id, 'Team2:', matchData.team2_id);
+    
+    const team1 = getTeamById(matchData.team1_id);
+    const team2 = getTeamById(matchData.team2_id);
+    
+    if (!team1 || !team2) {
+      console.error('❌ MatchDetailPage: Could not find teams with IDs:', matchData.team1_id, matchData.team2_id);
+      throw new Error('Teams not found');
+    }
+    
+    console.log('✅ MatchDetailPage: Found teams:', team1.name, 'vs', team2.name);
 
     return {
       id: matchData.id,
@@ -355,7 +367,7 @@ function MatchDetailPage({ params, navigateTo }) {
       team2: { ...team2, score: matchData.team2_score || 0 },
       status: matchData.status || 'completed',
       event: {
-        name: matchData.event?.name || matchData.event_name || getRandomTournament(),
+        name: matchData.event?.name || matchData.event_name || 'Tournament',
         tier: matchData.event?.tier || 'S'
       },
       date: matchData.match_date || matchData.date,
