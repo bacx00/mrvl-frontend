@@ -87,29 +87,38 @@ function EventDetailPage({ params, navigateTo }) {
 
     setEvent(transformedEvent);
 
-    // Get matches for this event
-    const eventMatches = getMatchesByEvent(eventId);
-    if (eventMatches && eventMatches.length > 0) {
-      const transformedMatches = eventMatches.map(match => ({
-        id: match.id,
-        team1: match.team1?.name || 'Team 1',
-        team1Id: match.team1?.id,
-        team2: match.team2?.name || 'Team 2', 
-        team2Id: match.team2?.id,
-        status: match.status,
-        score: {
-          team1: match.team1?.score || 0,
-          team2: match.team2?.score || 0
-        },
-        date: match.date,
-        time: match.time || '18:00',
-        stage: match.event?.stage || 'Main Event',
-        format: match.format || 'BO3'
-      }));
-      setMatches(transformedMatches);
-    } else {
-      // Generate sample matches
-      setMatches(generateSampleMatches());
+    // CRITICAL FIX: Get matches for this event from REAL backend data only
+    try {
+      console.log('🔍 EventDetailPage: Fetching matches for event ID:', eventId);
+      const matchesResponse = await api.get(`/events/${eventId}/matches`);
+      const realMatches = matchesResponse?.data?.data || matchesResponse?.data || [];
+      
+      if (Array.isArray(realMatches) && realMatches.length > 0) {
+        const transformedMatches = realMatches.map(match => ({
+          id: match.id, // REAL MATCH ID
+          team1: match.team1?.name || match.team1_name || 'Team 1',
+          team1Id: match.team1?.id || match.team1_id, // REAL TEAM ID
+          team2: match.team2?.name || match.team2_name || 'Team 2', 
+          team2Id: match.team2?.id || match.team2_id, // REAL TEAM ID
+          status: match.status,
+          score: {
+            team1: match.team1_score || match.team1?.score || 0,
+            team2: match.team2_score || match.team2?.score || 0
+          },
+          date: formatDate(match.match_date || match.date),
+          time: match.match_time || match.time || '18:00',
+          stage: match.stage || 'Main Event',
+          format: match.format || 'BO3'
+        }));
+        setMatches(transformedMatches);
+        console.log('✅ EventDetailPage: Using REAL backend matches:', transformedMatches.length);
+      } else {
+        console.log('⚠️ EventDetailPage: No matches found for event');
+        setMatches([]);
+      }
+    } catch (error) {
+      console.error('❌ EventDetailPage: Failed to fetch event matches:', error);
+      setMatches([]); // NO FALLBACK DATA
     }
 
     // Get participating teams
