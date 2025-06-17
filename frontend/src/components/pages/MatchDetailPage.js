@@ -505,21 +505,6 @@ function MatchDetailPage({ params, navigateTo }) {
           </div>
         </div>
 
-        {/* Watch Box - Moved to VLR.gg Position */}
-        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
-          <div className="flex items-center justify-center space-x-4">
-            <button className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-sm font-medium">
-              📺 Live Stream
-            </button>
-            <button className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm font-medium">
-              💰 Bet on this match
-            </button>
-            <button className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm font-medium">
-              🎬 Watch VOD
-            </button>
-          </div>
-        </div>
-
         {/* VLR.gg Style Map Navigation - COMPACT */}
         <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-600">
           <div className="flex items-center justify-center space-x-2">
