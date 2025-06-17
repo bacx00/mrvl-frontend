@@ -64,6 +64,10 @@ function MatchDetailPage({ params, navigateTo }) {
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [userVotes, setUserVotes] = useState({});
+  const [showReplies, setShowReplies] = useState({});
   
   const { api, user, isAuthenticated } = useAuth();
 
