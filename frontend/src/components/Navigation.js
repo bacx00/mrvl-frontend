@@ -322,22 +322,75 @@ function Navigation({ currentPage, navigateTo, onAuthClick, user: propUser }) {
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
-            {/* Search Bar - VLR.gg style */}
+            {/* Search Bar - VLR.gg style with Live Dropdown */}
             <div className="hidden md:flex items-center">
               <div className="relative w-48">
                 <input
+                  ref={searchRef}
                   type="text"
                   placeholder="Search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  ref={searchRef}
+                  onFocus={() => searchQuery.trim() && setShowDropdown(true)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && searchQuery.trim()) {
+                      handleNavigationClick('search', { query: searchQuery.trim() });
+                      setShowDropdown(false);
+                      setSearchQuery('');
+                    }
+                  }}
                   className="w-full px-3 py-1.5 pl-8 pr-3 text-sm bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
                 />
                 <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+                  {isSearching ? (
+                    <div className="w-4 h-4 border-2 border-gray-400 border-t-red-500 rounded-full animate-spin"></div>
+                  ) : (
+                    <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  )}
                 </div>
+                
+                {/* Live Search Dropdown */}
+                {showDropdown && searchResults.length > 0 && (
+                  <div 
+                    ref={dropdownRef}
+                    className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto"
+                  >
+                    {searchResults.map((result, index) => (
+                      <button
+                        key={`${result.type}-${result.id}`}
+                        onClick={() => handleResultClick(result)}
+                        className="w-full flex items-center space-x-3 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                      >
+                        <span className="text-base">{result.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {result.title}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            {result.subtitle}
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-400 dark:text-gray-500 capitalize">
+                          {result.type}
+                        </div>
+                      </button>
+                    ))}
+                    
+                    {/* Show All Results Link */}
+                    <button
+                      onClick={() => {
+                        handleNavigationClick('search', { query: searchQuery.trim() });
+                        setShowDropdown(false);
+                        setSearchQuery('');
+                      }}
+                      className="w-full px-3 py-2 text-center text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-t border-gray-200 dark:border-gray-600 font-medium"
+                    >
+                      View all results for "{searchQuery}" →
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
