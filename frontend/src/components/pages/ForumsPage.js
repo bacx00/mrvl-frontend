@@ -85,25 +85,18 @@ function ForumsPage({ navigateTo }) {
         }
         
       } catch (error) {
-        console.error('❌ ForumsPage: Backend API failed, using mock data:', error);
+        console.error('❌ ForumsPage: Backend API failed, NO MOCK DATA FALLBACK');
+        setThreads([]); // NO MOCK DATA - ONLY REAL BACKEND DATA
         
-        // Enhanced mock categories with new threads refresh
+        // Set basic categories without mock data
         categoriesData = [
-          { id: 'all', name: 'All Categories', count: 1247 },
-          { id: 'general', name: 'General Discussion', count: 234 },
-          { id: 'hero-discussion', name: 'Hero Discussion', count: 189 },
-          { id: 'strategy', name: 'Strategy & Tactics', count: 156 },
-          { id: 'esports', name: 'Esports & Competitive', count: 98 },
-          { id: 'guides', name: 'Guides & Tutorials', count: 67 },
-          { id: 'patch-notes', name: 'Patch Notes & Updates', count: 23 },
-          { id: 'bugs', name: 'Bug Reports', count: 45 },
-          { id: 'feedback', name: 'Feedback & Suggestions', count: 78 },
-          { id: 'team-recruitment', name: 'Team Recruitment', count: 89 },
-          { id: 'meta-discussion', name: 'Meta Analysis', count: 134 }
+          { id: 'all', name: 'All Categories', count: 0 },
+          { id: 'general', name: 'General Discussion', count: 0 },
+          { id: 'tournaments', name: 'Tournaments', count: 0 },
+          { id: 'hero-discussion', name: 'Hero Discussion', count: 0 },
+          { id: 'strategy', name: 'Strategy & Tactics', count: 0 },
+          { id: 'esports', name: 'Esports & Competitive', count: 0 }
         ];
-        
-        // Enhanced mock threads with real Marvel Rivals content
-        threadsData = generateMockThreads();
       }
 
       setCategories(categoriesData);
