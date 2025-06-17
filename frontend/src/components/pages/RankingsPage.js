@@ -17,7 +17,7 @@ function RankingsPage({ navigateTo }) {
     try {
       console.log('🔍 RankingsPage: Fetching REAL LIVE BACKEND RANKINGS...');
       
-      // Get REAL teams from backend API
+      // ✅ FIXED: ONLY USE REAL BACKEND DATA - NO MOCK FALLBACK
       const response = await api.get('/teams');
       const teamsData = response?.data || response || [];
       
@@ -49,11 +49,12 @@ function RankingsPage({ navigateTo }) {
         setRankings(filteredTeams);
         console.log('✅ RankingsPage: Using REAL backend rankings:', filteredTeams.length);
       } else {
-        throw new Error('No real teams data');
+        console.error('❌ RankingsPage: No backend data available');
+        setRankings([]);
       }
     } catch (error) {
-      console.error('❌ RankingsPage: Backend API failed, using mock data:', error);
-      setRankings(getMockRankings(selectedRegion));
+      console.error('❌ RankingsPage: Backend API failed:', error);
+      setRankings([]); // ✅ NO MOCK DATA - Show empty state instead
     } finally {
       setLoading(false);
     }
@@ -72,185 +73,6 @@ function RankingsPage({ navigateTo }) {
   // Country flag helper function
   const getCountryFlag = (countryCode) => {
     return `${countryCode}`;
-  };
-
-  // VLR.gg style mock data - FIXED: No emojis, proper team structure
-  const getMockRankings = (region) => {
-    const allRankings = {
-      'World': [
-        {
-          rank: 1,
-          id: 1,
-          name: "Team Stark Industries",
-          short_name: "STARK",
-          logo: null,
-          points: 2000,
-          region: "NA",
-          country: "US",
-          lastMatch: "W vs WAKANDA",
-          winRate: 92.3,
-          record: "24-2",
-          peak: 1,
-          streak: "W5"
-        },
-        {
-          rank: 2,
-          id: 2,
-          name: "Wakanda Protectors", 
-          short_name: "WAKANDA",
-          logo: null,
-          points: 1947,
-          region: "NA", 
-          country: "US",
-          lastMatch: "L vs STARK",
-          winRate: 89.1,
-          record: "20-3",
-          peak: 1,
-          streak: "L1"
-        },
-        {
-          rank: 3,
-          id: 3,
-          name: "S.H.I.E.L.D. Tactical",
-          short_name: "SHIELD",
-          logo: null,
-          points: 1944,
-          region: "EU",
-          country: "UK", 
-          lastMatch: "W vs HYDRA",
-          winRate: 86.7,
-          record: "18-3",
-          peak: 2,
-          streak: "W3"
-        },
-        {
-          rank: 4,
-          id: 4,
-          name: "Hydra Supremacy",
-          short_name: "HYDRA",
-          logo: null,
-          points: 1843,
-          region: "EU",
-          country: "DE",
-          lastMatch: "L vs SHIELD", 
-          winRate: 78.2,
-          record: "19-5",
-          peak: 3,
-          streak: "L2"
-        },
-        {
-          rank: 5,
-          id: 5,
-          name: "Avengers Elite",
-          short_name: "AVENG",
-          logo: null,
-          points: 1768,
-          region: "NA",
-          country: "US",
-          lastMatch: "W vs XFORC",
-          winRate: 81.5,
-          record: "18-4",
-          peak: 4,
-          streak: "W2"
-        },
-        {
-          rank: 6,
-          id: 6,
-          name: "X-Force Gaming",
-          short_name: "XFORC", 
-          logo: null,
-          points: 1689,
-          region: "NA",
-          country: "CA",
-          lastMatch: "L vs AVENG",
-          winRate: 75.0,
-          record: "15-5",
-          peak: 5,
-          streak: "L1"
-        },
-        {
-          rank: 7,
-          id: 7,
-          name: "Galaxy Guardians",
-          short_name: "GUARD",
-          logo: null,
-          points: 1612,
-          region: "APAC",
-          country: "KR",
-          lastMatch: "W vs COSMIC",
-          winRate: 72.4,
-          record: "13-5",
-          peak: 6,
-          streak: "W1"
-        },
-        {
-          rank: 8,
-          id: 8,
-          name: "Asgard Warriors",
-          short_name: "ASGAR",
-          logo: null,
-          points: 1556,
-          region: "EU",
-          country: "SE",
-          lastMatch: "W vs FROST",
-          winRate: 68.2,
-          record: "13-6",
-          peak: 7,
-          streak: "W3"
-        },
-        {
-          rank: 9,
-          id: 9,
-          name: "Nova Corps",
-          short_name: "NOVA",
-          logo: null,
-          points: 1489,
-          region: "APAC",
-          country: "AU",
-          lastMatch: "W vs COSMIC",
-          winRate: 65.8,
-          record: "12-6",
-          peak: 8,
-          streak: "W2"
-        },
-        {
-          rank: 10,
-          id: 10,
-          name: "Fantastic Force",
-          short_name: "FF",
-          logo: null,
-          points: 1423,
-          region: "NA",
-          country: "US",
-          lastMatch: "L vs SHIELD",
-          winRate: 63.2,
-          record: "11-7",
-          peak: 9,
-          streak: "L1"
-        }
-      ]
-    };
-
-    if (region === 'North America') {
-      return allRankings.World.filter(team => team.region === 'NA').map((team, index) => ({
-        ...team,
-        rank: index + 1
-      }));
-    }
-    if (region === 'Europe') {
-      return allRankings.World.filter(team => team.region === 'EU').map((team, index) => ({
-        ...team,
-        rank: index + 1
-      }));
-    }
-    if (region === 'Asia-Pacific') {
-      return allRankings.World.filter(team => team.region === 'APAC').map((team, index) => ({
-        ...team,
-        rank: index + 1
-      }));
-    }
-
-    return allRankings.World;
   };
 
   const regions = ['World', 'North America', 'Europe', 'Asia-Pacific'];
@@ -280,7 +102,7 @@ function RankingsPage({ navigateTo }) {
           ))}
         </div>
 
-        {/* Rankings Table - FIXED: VLR.gg style - Team name + logo, ELO only */}
+        {/* Rankings Table - VLR.gg style - Team name + logo, ELO only */}
         <div className="divide-y divide-gray-200 dark:divide-gray-600">
           {loading ? (
             <div className="p-8 text-center">
@@ -289,7 +111,7 @@ function RankingsPage({ navigateTo }) {
           ) : rankings.length === 0 ? (
             <div className="p-8 text-center">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No rankings available</h3>
-              <p className="text-gray-600 dark:text-gray-400">Rankings will be available soon</p>
+              <p className="text-gray-600 dark:text-gray-400">No team rankings data available at this time.</p>
             </div>
           ) : (
             rankings.map((team, index) => (
@@ -361,13 +183,17 @@ function RankingsPage({ navigateTo }) {
         </div>
         <div className="card p-4 text-center">
           <div className="text-2xl font-bold text-red-600 dark:text-red-400 mb-1">
-            {rankings.length > 0 ? Math.round(rankings.reduce((acc, team) => acc + team.winRate, 0) / rankings.length) : 0}%
+            {rankings.length > 0 ? Math.round(rankings.reduce((acc, team) => acc + (team.win_rate || team.winRate || 0), 0) / rankings.length) : 0}%
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Average Win Rate</div>
         </div>
         <div className="card p-4 text-center">
           <div className="text-2xl font-bold text-red-600 dark:text-red-400 mb-1">
-            {rankings.reduce((acc, team) => acc + parseInt(team.record.split('-')[0]) + parseInt(team.record.split('-')[1]), 0)}
+            {rankings.reduce((acc, team) => {
+              const record = team.record || '0-0';
+              const parts = record.split('-');
+              return acc + parseInt(parts[0] || 0) + parseInt(parts[1] || 0);
+            }, 0)}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Total Matches</div>
         </div>

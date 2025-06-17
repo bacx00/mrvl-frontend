@@ -16,7 +16,7 @@ function ThreadDetailPage({ params, navigateTo }) {
     try {
       console.log('🔍 ThreadDetailPage: Fetching REAL thread data for ID:', params.id);
       
-      // CRITICAL FIX: Use correct forum thread endpoint
+      // ✅ FIXED: ONLY USE REAL BACKEND DATA - NO MOCK FALLBACK
       try {
         const threadResponse = await api.get(`/forums/threads/${params.id}`);
         const realThread = threadResponse?.data?.data || threadResponse?.data;
@@ -58,149 +58,15 @@ function ThreadDetailPage({ params, navigateTo }) {
           return;
         }
       } catch (backendError) {
-        console.log('⚠️ ThreadDetailPage: Backend thread not found, using mock data for ID:', params.id);
+        console.error('❌ ThreadDetailPage: Backend thread not found:', backendError);
+        setThread(null); // ✅ NO MOCK DATA - Show not found instead
       }
-      
-      // Fallback to mock data if backend fails
-      const mockThread = getMockThreadById(params.id);
-      setThread(mockThread);
-      
-      // Initialize expanded state for comments with replies
-      const expanded = {};
-      mockThread.posts.forEach(post => {
-        if (post.replies && post.replies.length > 0) {
-          expanded[post.id] = true;
-        }
-      });
-      setExpandedReplies(expanded);
-      setUserReactions({});
       
     } catch (error) {
       console.error('❌ ThreadDetailPage: Error fetching thread:', error);
-      const mockThread = getMockThreadById(params.id);
-      setThread(mockThread);
+      setThread(null); // ✅ NO MOCK DATA - Show error instead
     }
     setLoading(false);
-  };
-
-  // CRITICAL FIX: Get mock thread by ID with proper mapping
-  const getMockThreadById = (threadId) => {
-    const allMockThreads = {
-      1: {
-        id: 1,
-        title: "Iron Man broken in meta",
-        author: {
-          id: 1,
-          name: "CompetitiveGamer2024",
-          avatar: "🎮",
-          posts: 342,
-          joined: "2024-03-15",
-          rank: "Super Fan"
-        },
-        content: "His Repulsors do way too much damage and his mobility with the Arc Reactor flight makes him nearly impossible to counter. In ranked matches, whoever picks Iron Man first basically wins. The damage output is insane - 200+ DPS with perfect accuracy at any range. This needs to be addressed immediately.",
-        createdAt: new Date().toISOString(),
-        views: 4567,
-        replies: 89,
-        locked: false,
-        pinned: false,
-        reactions: [
-          { type: '👍', count: 127, userReacted: false },
-          { type: '👎', count: 23, userReacted: false }
-        ],
-        posts: getMockPostsForThread(1)
-      },
-      13: {
-        id: 13,
-        title: "World Championship 2025 - Predictions and Discussion",
-        author: {
-          id: 3,
-          name: "Johnny Rodriguez",
-          avatar: "🏆",
-          posts: 156,
-          joined: "2024-01-01",
-          rank: "Tournament Admin"
-        },
-        content: "The Marvel Rivals World Championship 2025 is starting soon! What are your predictions for the top teams? Which heroes will dominate the meta? Let's discuss strategies and potential upsets.",
-        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        views: 1247,
-        replies: 89,
-        locked: false,
-        pinned: true,
-        reactions: [
-          { type: '👍', count: 201, userReacted: false },
-          { type: '👎', count: 18, userReacted: false }
-        ],
-        posts: getMockPostsForThread(13)
-      }
-    };
-
-    return allMockThreads[threadId] || allMockThreads[1]; // Default to thread 1 if not found
-  };
-
-  // Generate mock posts for different threads
-  const getMockPostsForThread = (threadId) => {
-    const basePosts = [
-      {
-        id: 2,
-        parentId: null,
-        author: {
-          id: 2,
-          name: "TankMaster_Pro",
-          avatar: "🛡️",
-          posts: 156,
-          joined: "2024-06-20",
-          rank: "Moderator"
-        },
-        content: threadId === 13 ? "I think Team Stark Industries will take it all. Their coordination in the recent matches has been incredible, especially Tony's Iron Man plays." : "I disagree. Iron Man requires skill to play effectively. His damage is high but he's very squishy. A good Hulk or Thor can shut him down easily.",
-        createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-        reactions: [
-          { type: '👍', count: 45, userReacted: false },
-          { type: '👎', count: 12, userReacted: false }
-        ],
-        replies: [
-          {
-            id: 4,
-            parentId: 2,
-            author: {
-              id: 4,
-              name: threadId === 13 ? "ChampionshipWatcher" : "IronManMain",
-              avatar: threadId === 13 ? "👀" : "🔥",
-              posts: 89,
-              joined: "2024-08-10",
-              rank: "Fan"
-            },
-            content: threadId === 13 ? "Agreed! But don't sleep on Team Lightning. Storm's gameplay has been revolutionary this season." : "@TankMaster_Pro Exactly! People complaining about Iron Man just don't know how to counter him. Play around cover and close the distance.",
-            createdAt: new Date(Date.now() - 2.5 * 60 * 60 * 1000).toISOString(),
-            reactions: [
-              { type: '👍', count: 23, userReacted: false },
-              { type: '👎', count: 8, userReacted: false }
-            ],
-            replies: []
-          }
-        ]
-      },
-      {
-        id: 3,
-        parentId: null,
-        author: {
-          id: 3,
-          name: threadId === 13 ? "ProAnalyst" : "SpiderManFan",
-          avatar: threadId === 13 ? "📊" : "🕷️",
-          posts: 178,
-          joined: "2024-07-12",
-          rank: "Fan"
-        },
-        content: threadId === 13 ? "The meta is going to be crucial. I predict we'll see a lot of Support compositions in the finals. Teams that can sustain fights longer will have the advantage." : "The problem isn't just his damage - it's the combination of mobility + damage + range. No other character has all three at this level.",
-        createdAt: new Date(Date.now() - 1.5 * 60 * 60 * 1000).toISOString(),
-        reactions: [
-          { type: '👍', count: 89, userReacted: false },
-          { type: '👎', count: 7, userReacted: false }
-        ],
-        replies: []
-      }
-    ];
-
-    return basePosts;
   };
 
   useEffect(() => {
@@ -209,7 +75,7 @@ function ThreadDetailPage({ params, navigateTo }) {
     }
   }, [params.id]);
 
-  // CRITICAL FIX: Enhanced reaction handling with 1 reaction per user limit
+  // Enhanced reaction handling with 1 reaction per user limit
   const handleReaction = async (postId, type) => {
     if (!isAuthenticated) {
       window.dispatchEvent(new CustomEvent('mrvl-show-auth-modal'));
@@ -221,36 +87,6 @@ function ThreadDetailPage({ params, navigateTo }) {
     const reactionKey = `${postId}-${type}`;
     const hasReacted = userReactions[reactionKey];
     
-    // CRITICAL FIX: Clear all other reactions for this post (limit 1 per user per post)
-    const clearOtherReactions = (posts) => {
-      return posts.map(post => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            reactions: post.reactions.map(reaction => {
-              if (reaction.type === type) {
-                // Toggle this reaction
-                const newCount = hasReacted ? reaction.count - 1 : reaction.count + 1;
-                return { ...reaction, count: Math.max(0, newCount), userReacted: !hasReacted };
-              } else {
-                // Clear other reactions for this user
-                const otherReactionKey = `${postId}-${reaction.type}`;
-                const hadOtherReaction = userReactions[otherReactionKey];
-                if (hadOtherReaction) {
-                  return { ...reaction, count: Math.max(0, reaction.count - 1), userReacted: false };
-                }
-                return reaction;
-              }
-            })
-          };
-        }
-        if (post.replies) {
-          return { ...post, replies: clearOtherReactions(post.replies) };
-        }
-        return post;
-      });
-    };
-
     // Update user reactions tracking
     const newUserReactions = { ...userReactions };
     
@@ -285,11 +121,6 @@ function ThreadDetailPage({ params, navigateTo }) {
             return reaction;
           }
         })
-      }));
-    } else {
-      setThread(prev => ({
-        ...prev,
-        posts: clearOtherReactions(prev.posts)
       }));
     }
   };
@@ -569,6 +400,9 @@ function ThreadDetailPage({ params, navigateTo }) {
         <div className="text-center py-8">
           <div className="text-4xl mb-4">❌</div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Post not found</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            This forum thread could not be found or may have been deleted.
+          </p>
           <button
             onClick={() => navigateTo && navigateTo('forums')}
             className="text-red-600 dark:text-red-400 hover:underline"
