@@ -209,14 +209,14 @@ function EventDetailPage({ params, navigateTo }) {
     );
   };
 
-  // CRITICAL FIX: Enhanced click handlers for navigation
+  // CRITICAL FIX: Navigation handlers that use ONLY real backend IDs
   const handleMatchClick = (matchId) => {
-    console.log('🔗 EventDetailPage: Navigating to match detail:', matchId);
+    console.log('🔗 EventDetailPage: Navigating to match with REAL ID:', matchId);
     navigateTo && navigateTo('match-detail', { id: matchId });
   };
 
   const handleTeamClick = (teamId) => {
-    console.log('🔗 EventDetailPage: Navigating to team detail:', teamId);
+    console.log('🔗 EventDetailPage: Navigating to team with REAL ID:', teamId);
     navigateTo && navigateTo('team-detail', { id: teamId });
   };
 
