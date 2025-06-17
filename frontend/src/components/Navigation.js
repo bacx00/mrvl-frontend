@@ -330,7 +330,7 @@ function Navigation({ currentPage, navigateTo, onAuthClick, user: propUser }) {
                   placeholder="Search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={handleSearch}
+                  ref={searchRef}
                   className="w-full px-3 py-1.5 pl-8 pr-3 text-sm bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
                 />
                 <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
