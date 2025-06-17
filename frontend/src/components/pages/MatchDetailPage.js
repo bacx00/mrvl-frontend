@@ -304,8 +304,6 @@ function MatchDetailPage({ params, navigateTo }) {
     }
   };
 
-  // DELETE COMMENT FUNCTION
-
   const initializeMatchData = async () => {
     try {
       setLoading(true);
