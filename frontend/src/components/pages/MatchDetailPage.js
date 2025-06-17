@@ -1017,6 +1017,12 @@ function MatchDetailPage({ params, navigateTo }) {
         {comments.length > 0 && comments.length % 20 === 0 && (
           <div className="text-center mt-6">
             <button
+              onClick={fetchComments}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Load More Comments
+            </button>
+          </div>
         )}
       </div>
       </div>
