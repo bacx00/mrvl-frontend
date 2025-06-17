@@ -541,8 +541,28 @@ function MatchDetailPage({ params, navigateTo }) {
               <div className="text-gray-600 dark:text-gray-400 text-sm mt-1">Duration: {currentMap.duration}</div>
             </div>
 
-            {/* VLR.gg Style Scoreboard Header - IMPROVED */}
-            <div className="grid grid-cols-8 gap-2 items-center px-3 py-2 bg-gray-800 dark:bg-gray-700 text-white font-bold text-xs rounded-t">
+            {/* Maps Navigation - Moved below Duration */}
+            <div className="flex items-center justify-center space-x-2">
+              {match.maps.map((map, index) => (
+                <button
+                  key={index}
+                  onClick={() => setActiveMap(index)}
+                  className={`px-3 py-2 rounded text-xs font-medium transition-colors ${
+                    activeMap === index
+                      ? 'bg-red-600 text-white shadow'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="font-bold">{map.name}</div>
+                    <div className="text-xs opacity-75">{map.team1Score} - {map.team2Score}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* VLR.gg Style Scoreboard Header - IMPROVED with DMG BLOCKED */}
+            <div className="grid grid-cols-9 gap-2 items-center px-3 py-2 bg-gray-800 dark:bg-gray-700 text-white font-bold text-xs rounded-t">
               <div className="text-left">Player</div>
               <div className="text-center">Heroes</div>
               <div className="text-center">E</div>
@@ -551,6 +571,7 @@ function MatchDetailPage({ params, navigateTo }) {
               <div className="text-center">K/D</div>
               <div className="text-center">DMG</div>
               <div className="text-center">HEAL</div>
+              <div className="text-center">BLK</div>
             </div>
 
             {/* VLR.gg Style Scoreboard - TEAM BOXES */}
