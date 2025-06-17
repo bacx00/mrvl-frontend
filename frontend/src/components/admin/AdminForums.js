@@ -94,15 +94,6 @@ function AdminForums({ navigateTo }) {
     }
   };
 
-  // Handle different moderation actions
-  const handleAction = async (type, itemId, action) => {
-        }
-      ]);
-    } catch (error) {
-      console.error('Error fetching forum data:', error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleThreadAction = async (threadId, action) => {
