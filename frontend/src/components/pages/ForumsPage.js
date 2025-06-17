@@ -161,8 +161,8 @@ function ForumsPage({ navigateTo }) {
     return `${diffDays}d ago`;
   };
 
-  // Generate mock threads function
-  const generateMockThreads = () => {
+  // Helper function to format time ago
+  const formatTimeAgo = (dateString) => {
     return [
       {
         id: 1,
