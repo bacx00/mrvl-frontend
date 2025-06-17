@@ -161,77 +161,7 @@ function ForumsPage({ navigateTo }) {
     return `${diffDays}d ago`;
   };
 
-  // Helper function to format time ago
-  const formatTimeAgo = (dateString) => {
-    return [
-      {
-        id: 1,
-        title: 'Iron Man is completely broken in the current meta - needs urgent nerf',
-        author: { 
-          name: 'CompetitiveGamer2024', 
-          role: 'user',
-          country: 'US',
-          teamFlair: { name: 'Team Stark', logo: null }
-        },
-        category: 'hero-discussion',
-        replies: 189,
-        views: 4567,
-        lastReply: {
-          user: 'TacticalAnalyst',
-          timestamp: '2 hours ago'
-        },
-        created: '2025-01-24T10:30:00Z',
-        pinned: false,
-        locked: false,
-        trending: true,
-        excerpt: 'His Repulsors do way too much damage and his mobility with the Arc Reactor flight makes him nearly impossible to counter...'
-      },
-      {
-        id: 2,
-        title: '[GUIDE] Complete Tank Meta Guide - Best Strategies for Season 1',
-        author: { 
-          name: 'TankMaster_Pro', 
-          role: 'moderator',
-          country: 'CA',
-          teamFlair: { name: 'Avengers', logo: null }
-        },
-        category: 'strategy',
-        replies: 234,
-        views: 8932,
-        lastReply: {
-          user: 'NewPlayer123',
-          timestamp: '45 minutes ago'
-        },
-        created: '2025-01-22T14:15:00Z',
-        pinned: true,
-        locked: false,
-        trending: true,
-        excerpt: 'After analyzing 500+ ranked matches in Masters tier, here are the most effective tank strategies...'
-      },
-      {
-        id: 3,
-        title: 'Season 1 Balance Changes Discussion - What are your thoughts?',
-        author: { 
-          name: 'Marvel_DevTeam', 
-          role: 'admin',
-          country: 'US',
-          teamFlair: null
-        },
-        category: 'patch-notes',
-        replies: 345,
-        views: 12456,
-        lastReply: {
-          user: 'CommunityVoice',
-          timestamp: '30 minutes ago'
-        },
-        created: '2025-01-26T09:00:00Z',
-        pinned: true,
-        locked: false,
-        trending: true,
-        excerpt: 'The latest Season 1 balance changes bring significant adjustments to Spider-Man, Scarlet Witch...'
-      }
-    ];
-  };
+
 
   useEffect(() => {
     fetchForumData();
