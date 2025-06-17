@@ -472,28 +472,7 @@ function TeamForm({ teamId, navigateTo }) {
               />
             </div>
 
-            {/* ELO Rating - CRITICAL FIX: Added as requested */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                ELO Rating
-              </label>
-              <input
-                type="number"
-                name="elo"
-                value={formData.elo}
-                onChange={handleInputChange}
-                className="form-input"
-                placeholder="1000"
-                min="1000"
-                max="3000"
-                step="1"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Marvel Rivals ELO rating (1000-3000). Default: 1000
-              </p>
-            </div>
-
-            {/* ELO Rating - CRITICAL FIX: Added as requested */}
+            {/* ELO Rating - FIXED: Single field only */}
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                 ELO Rating
