@@ -649,6 +649,9 @@ function MatchDetailPage({ params, navigateTo }) {
                       <div className="text-center text-sm font-medium text-gray-800 dark:text-gray-200">
                         {player.healing > 0 ? `${(player.healing / 1000).toFixed(1)}k` : '-'}
                       </div>
+                      <div className="text-center text-sm font-medium text-gray-800 dark:text-gray-200">
+                        {player.damageBlocked > 0 ? `${(player.damageBlocked / 1000).toFixed(1)}k` : '-'}
+                      </div>
                     </div>
                   ))}
                 </div>
