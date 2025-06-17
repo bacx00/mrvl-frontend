@@ -27,27 +27,72 @@ function AdminForums({ navigateTo }) {
     try {
       setLoading(true);
       
-      // Fetch threads, categories, and reports
-      const [threadsData, categoriesData, reportsData] = await Promise.all([
-        api.get('/admin/forums/threads').catch(() => ({ data: [] })),
-        api.get('/admin/forums/categories').catch(() => ({ data: [] })),
-        api.get('/admin/forums/reports').catch(() => ({ data: [] }))
-      ]);
-
-      // Set mock data for demonstration
-      setThreads([
-        {
-          id: 1,
-          title: 'Iron Man is completely broken in the current meta - needs urgent nerf',
-          author: { name: 'CompetitiveGamer2024', avatar: '🎮' },
-          category: 'hero-discussion',
-          replies: 189,
-          views: 4567,
-          created_at: '2025-01-24T10:30:00Z',
-          status: 'active',
-          pinned: false,
-          locked: false,
-          reported: false,
+      // CRITICAL FIX: Use REAL backend data only
+      try {
+        console.log('🔍 AdminForums: Fetching REAL moderation data...');
+        
+        // Try to fetch real threads for moderation
+        const threadsResponse = await api.get('/admin/forums/threads');
+        const realThreads = threadsResponse?.data?.data || threadsResponse?.data || [];
+        
+        if (Array.isArray(realThreads) && realThreads.length > 0) {
+          const moderationThreads = realThreads.map(thread => ({
+            id: thread.id,
+            title: thread.title,
+            author: { 
+              name: thread.user_name || thread.author?.name || 'Unknown User',
+              avatar: thread.author?.avatar || '👤'
+            },
+            category: thread.category || 'general',
+            replies: thread.replies || thread.replies_count || 0,
+            views: thread.views || thread.views_count || 0,
+            created_at: thread.created_at,
+            status: thread.status || 'active',
+            pinned: thread.pinned || false,
+            locked: thread.locked || false,
+            reported: thread.reported || false,
+            reports_count: thread.reports_count || 0
+          }));
+          
+          setThreads(moderationThreads);
+          console.log('✅ AdminForums: Using REAL backend threads:', moderationThreads.length);
+        } else {
+          setThreads([]);
+          console.log('⚠️ AdminForums: No threads found for moderation');
+        }
+        
+        // Try to fetch real categories
+        try {
+          const categoriesResponse = await api.get('/admin/forums/categories');
+          const realCategories = categoriesResponse?.data?.data || categoriesResponse?.data || [];
+          setCategories(realCategories);
+        } catch (categoriesError) {
+          console.log('⚠️ AdminForums: Categories endpoint not available');
+          setCategories([
+            { id: 'all', name: 'All Categories' },
+            { id: 'general', name: 'General Discussion' },
+            { id: 'tournaments', name: 'Tournaments' },
+            { id: 'hero-discussion', name: 'Hero Discussion' },
+            { id: 'strategy', name: 'Strategy & Tactics' },
+            { id: 'esports', name: 'Esports & Competitive' }
+          ]);
+        }
+        
+        // Set empty reports for now
+        setReports([]);
+        
+      } catch (error) {
+        console.error('❌ AdminForums: Failed to fetch moderation data:', error);
+        setThreads([]);
+        setCategories([]);
+        setReports([]);
+      }
+    } catch (error) {
+      console.error('❌ AdminForums: Error in fetchForumData:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
           upvotes: 127,
           downvotes: 23
         },
