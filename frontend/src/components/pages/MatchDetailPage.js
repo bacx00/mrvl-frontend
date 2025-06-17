@@ -392,23 +392,7 @@ function MatchDetailPage({ params, navigateTo }) {
       </div>
 
       {/* Main Content - Centered */}
-      <div className="max-w-6xl mx-auto space-y-4"
-        <button 
-          onClick={() => navigateTo('home')}
-          className="hover:text-red-600 dark:hover:text-red-400 transition-colors"
-        >
-          Home
-        </button>
-        <span>›</span>
-        <button 
-          onClick={() => navigateTo('matches')}
-          className="hover:text-red-600 dark:hover:text-red-400 transition-colors"
-        >
-          Matches
-        </button>
-        <span>›</span>
-        <span className="text-gray-900 dark:text-white">{match.team1.short_name} vs {match.team2.short_name}</span>
-      </div>
+      <div className="max-w-6xl mx-auto space-y-4">
 
       {/* VLR.gg Style Match Header - COMPACT */}
       <div className="card">
