@@ -394,8 +394,8 @@ function MatchDetailPage({ params, navigateTo }) {
       {/* Main Content - Centered */}
       <div className="max-w-6xl mx-auto space-y-4">
 
-      {/* VLR.gg Style Match Header - COMPACT */}
-      <div className="card">
+        {/* VLR.gg Style Match Header - COMPACT */}
+        <div className="card">
         {/* Match Header */}
         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-600 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/10 dark:to-red-800/10">
           <div className="flex items-center justify-between mb-2">
