@@ -141,7 +141,7 @@ function ForumsPage({ navigateTo }) {
       setThreads(filteredThreads);
     } catch (error) {
       console.error('Error fetching forum data:', error);
-      setThreads(generateMockThreads());
+      setThreads([]); // NO MOCK DATA - REAL BACKEND ONLY
     } finally {
       setLoading(false);
     }
