@@ -94,8 +94,6 @@ function AdminForums({ navigateTo }) {
     }
   };
 
-  };
-
   const handleThreadAction = async (threadId, action) => {
     try {
       let endpoint = '';
