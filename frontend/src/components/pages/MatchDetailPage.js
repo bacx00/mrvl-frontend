@@ -291,6 +291,19 @@ function MatchDetailPage({ params, navigateTo }) {
     }
   };
 
+  // DELETE COMMENT FUNCTION
+  const deleteComment = async (commentId) => {
+    try {
+      console.log('🗑️ Deleting comment:', commentId);
+      await api.delete(`/matches/${matchId}/comments/${commentId}`);
+      setComments(prev => prev.filter(c => c.id !== commentId));
+      console.log('✅ Comment deleted successfully');
+    } catch (error) {
+      console.error('❌ Error deleting comment:', error);
+      alert('Failed to delete comment. Please try again.');
+    }
+  };
+
   const initializeMatchData = async () => {
     try {
       setLoading(true);
