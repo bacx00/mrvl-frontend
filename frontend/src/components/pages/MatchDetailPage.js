@@ -97,23 +97,7 @@ function MatchDetailPage({ params, navigateTo }) {
       console.log('✅ Comments loaded:', commentsData.length);
     } catch (error) {
       console.error('❌ Error fetching comments:', error);
-      // Set fallback comments for demonstration
-      setComments([
-        {
-          id: 1,
-          content: "Amazing match! TenZ playing incredibly well.",
-          user_name: "Marvel_Fan_2025",
-          user_avatar: "🎮",
-          created_at: "2025-06-12 22:27:52"
-        },
-        {
-          id: 2,
-          content: "These live updates are so good! Love the real-time scoring.",
-          user_name: "ESports_Watcher",
-          user_avatar: "👁️",
-          created_at: "2025-06-12 22:28:15"
-        }
-      ]);
+      setComments([]); // NO FALLBACK DATA
     } finally {
       setCommentsLoading(false);
     }
