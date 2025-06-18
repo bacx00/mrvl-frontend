@@ -109,47 +109,7 @@ function TeamDetailPage({ params, navigateTo }) {
     }
   };
 
-  // Generate fallback team data based on team ID
-  const generateFallbackTeamData = (teamId) => {
-    const fallbackTeams = [
-      { name: "Team Alpha Test", shortName: "ALF", region: "NA", country: "US" },
-      { name: "Team Beta Test", shortName: "BET", region: "EU", country: "DE" },
-      { name: "Gamma Squad", shortName: "GAMMA", region: "APAC", country: "KR" },
-      { name: "Delta Force", shortName: "DELTA", region: "NA", country: "CA" },
-      { name: "Echo Gaming", shortName: "ECHO", region: "EU", country: "FR" },
-      { name: "Foxtrot Elite", shortName: "FOX", region: "APAC", country: "JP" },
-      { name: "Golf Champions", shortName: "GOLF", region: "SA", country: "BR" },
-      { name: "Hotel Legends", shortName: "HOTEL", region: "NA", country: "US" },
-      { name: "India Warriors", shortName: "INDIA", region: "APAC", country: "IN" },
-      { name: "Juliet Masters", shortName: "JUL", region: "EU", country: "SE" }
-    ];
-    
-    const teamIndex = (parseInt(teamId) - 1) % fallbackTeams.length;
-    const baseTeam = fallbackTeams[teamIndex];
-    
-    return {
-      id: parseInt(teamId),
-      name: baseTeam.name,
-      shortName: baseTeam.shortName,
-      logo: null,
-      country: baseTeam.country,
-      region: baseTeam.region,
-      rating: Math.floor(Math.random() * 1000) + 1500,
-      rank: Math.floor(Math.random() * 50) + 1,
-      winRate: Math.floor(Math.random() * 30) + 70,
-      founded: "2024",
-      captain: "TeamCaptain",
-      coach: "HeadCoach",
-      achievements: ["Regional Qualifier", "Tournament Participant"],
-      social_media: {
-        twitter: `@${baseTeam.shortName}Esports`,
-        twitch: `${baseTeam.shortName.toLowerCase()}_gaming`,
-        youtube: `${baseTeam.name.replace(/\s+/g, '')}Gaming`
-      }
-    };
-  };
-
-  // Generate fallback players for a team
+  // No fallback data generation - Using null states for errors
   const generateFallbackPlayers = (teamId) => {
     const playerNames = [
       'Tony Stark', 'Steve Rogers', 'Natasha Romanoff', 'Bruce Banner', 'Clint Barton',
