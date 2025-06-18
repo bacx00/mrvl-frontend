@@ -87,11 +87,28 @@ function EventDetailPage({ params, navigateTo }) {
 
     setEvent(transformedEvent);
 
-    // CRITICAL FIX: Get matches for this event from REAL backend data only
+    // ✅ FIXED: Get matches for this event using alternative approach
     try {
       console.log('🔍 EventDetailPage: Fetching matches for event ID:', eventId);
-      const matchesResponse = await api.get(`/events/${eventId}/matches`);
-      const realMatches = matchesResponse?.data?.data || matchesResponse?.data || [];
+      
+      // Try the specific endpoint first, then fallback to filtering all matches
+      let realMatches = [];
+      try {
+        const matchesResponse = await api.get(`/events/${eventId}/matches`);
+        realMatches = matchesResponse?.data?.data || matchesResponse?.data || [];
+      } catch (specificError) {
+        console.log('⚠️ Specific endpoint not available, trying all matches...');
+        
+        // FALLBACK: Get all matches and filter by event_id
+        try {
+          const allMatchesResponse = await api.get('/matches');
+          const allMatches = allMatchesResponse?.data?.data || allMatchesResponse?.data || [];
+          realMatches = allMatches.filter(match => match.event_id == eventId);
+          console.log(`✅ Filtered ${realMatches.length} matches for event ${eventId} from all matches`);
+        } catch (fallbackError) {
+          console.error('❌ Could not fetch matches from fallback:', fallbackError);
+        }
+      }
       
       if (Array.isArray(realMatches) && realMatches.length > 0) {
         const transformedMatches = realMatches.map(match => ({
@@ -105,7 +122,7 @@ function EventDetailPage({ params, navigateTo }) {
             team1: match.team1_score || match.team1?.score || 0,
             team2: match.team2_score || match.team2?.score || 0
           },
-          date: formatDate(match.match_date || match.date),
+          date: formatDate(match.match_date || match.scheduled_at || match.date),
           time: match.match_time || match.time || '18:00',
           stage: match.stage || 'Main Event',
           format: match.format || 'BO3'
@@ -121,10 +138,36 @@ function EventDetailPage({ params, navigateTo }) {
       setMatches([]); // NO FALLBACK DATA
     }
 
-    // CRITICAL FIX: Get participating teams from REAL backend data
+    // ✅ FIXED: Get participating teams using alternative approach
     try {
       console.log('🔍 EventDetailPage: Fetching teams for event ID:', eventId);
-      const teamsResponse = await api.get(`/events/${eventId}/teams`);
+      
+      let realTeams = [];
+      try {
+        const teamsResponse = await api.get(`/events/${eventId}/teams`);
+        realTeams = teamsResponse?.data?.data || teamsResponse?.data || [];
+      } catch (specificError) {
+        console.log('⚠️ Specific teams endpoint not available, deriving from matches...');
+        
+        // FALLBACK: Get teams from matches we already fetched
+        if (matches.length > 0) {
+          const teamIds = new Set();
+          matches.forEach(match => {
+            if (match.team1Id) teamIds.add(match.team1Id);
+            if (match.team2Id) teamIds.add(match.team2Id);
+          });
+          
+          // Fetch individual teams
+          try {
+            const allTeamsResponse = await api.get('/teams');
+            const allTeams = allTeamsResponse?.data?.data || allTeamsResponse?.data || [];
+            realTeams = allTeams.filter(team => teamIds.has(team.id));
+            console.log(`✅ Derived ${realTeams.length} teams from matches for event ${eventId}`);
+          } catch (teamsError) {
+            console.error('❌ Could not fetch teams from fallback:', teamsError);
+          }
+        }
+      }
       const realTeams = teamsResponse?.data?.data || teamsResponse?.data || [];
       
       if (Array.isArray(realTeams) && realTeams.length > 0) {
