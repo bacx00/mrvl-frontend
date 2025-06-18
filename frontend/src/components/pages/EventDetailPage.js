@@ -91,11 +91,11 @@ function EventDetailPage({ params, navigateTo }) {
     setEvent(transformedEvent);
 
     // ✅ FIXED: Get matches for this event using alternative approach
+    let realMatches = []; // Define in broader scope
     try {
       console.log('🔍 EventDetailPage: Fetching matches for event ID:', eventId);
       
       // Try the specific endpoint first, then fallback to filtering all matches
-      let realMatches = [];
       try {
         const matchesResponse = await api.get(`/events/${eventId}/matches`);
         realMatches = matchesResponse?.data?.data || matchesResponse?.data || [];
