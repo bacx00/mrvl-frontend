@@ -13,19 +13,22 @@ class MarvelRivalsAPITester:
         self.tests_passed = 0
         self.issues = []
         self.debug = True
+        self.admin_token = None
 
     def log(self, message):
         """Print debug messages if debug is enabled"""
         if self.debug:
             print(f"DEBUG: {message}")
 
-    def run_test(self, name, method, endpoint, expected_status, data=None, auth=False, with_api_prefix=True):
+    def run_test(self, name, method, endpoint, expected_status, data=None, auth=False, admin_auth=False, with_api_prefix=True):
         """Run a single API test"""
         url = f"{self.api_url}/{endpoint}" if with_api_prefix else f"{self.base_url}/{endpoint}"
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         
         if auth and self.token:
             headers['Authorization'] = f'Bearer {self.token}'
+        elif admin_auth and self.admin_token:
+            headers['Authorization'] = f'Bearer {self.admin_token}'
         
         self.tests_run += 1
         print(f"\n🔍 Testing {name}...")
@@ -88,6 +91,137 @@ class MarvelRivalsAPITester:
             })
             return False, {}
 
+    def login(self, email="admin@mrvl.net", password="password"):
+        """Login to get authentication token"""
+        print("\n🔑 Attempting to login...")
+        success, data = self.run_test(
+            "User Login",
+            "POST",
+            "login",
+            200,
+            {"email": email, "password": password}
+        )
+        
+        if success and 'token' in data:
+            self.token = data['token']
+            print(f"✅ Login successful! Token: {self.token[:10]}...")
+            
+            # Check if user is admin
+            if data.get('user', {}).get('role') == 'admin':
+                self.admin_token = self.token
+                print("✅ Admin login confirmed!")
+            
+            return True
+        else:
+            print("❌ Login failed!")
+            return False
+
+    def test_get_teams(self):
+        """Test getting teams list"""
+        return self.run_test(
+            "Get Teams",
+            "GET",
+            "teams",
+            200
+        )
+    
+    def test_get_team_players(self, team_id):
+        """Test getting players for a specific team"""
+        return self.run_test(
+            f"Get Players for Team ID {team_id}",
+            "GET",
+            f"teams/{team_id}/players",
+            200
+        )
+    
+    def test_get_events(self):
+        """Test getting events list"""
+        return self.run_test(
+            "Get Events",
+            "GET",
+            "events",
+            200
+        )
+    
+    def test_get_event_matches(self, event_id):
+        """Test getting matches for a specific event"""
+        return self.run_test(
+            f"Get Matches for Event ID {event_id}",
+            "GET",
+            f"events/{event_id}/matches",
+            200
+        )
+    
+    def test_get_event_teams(self, event_id):
+        """Test getting teams for a specific event"""
+        return self.run_test(
+            f"Get Teams for Event ID {event_id}",
+            "GET",
+            f"events/{event_id}/teams",
+            200
+        )
+    
+    def test_get_admin_analytics(self):
+        """Test getting admin analytics"""
+        return self.run_test(
+            "Get Admin Analytics",
+            "GET",
+            "admin/analytics",
+            200,
+            admin_auth=True
+        )
+    
+    def test_admin_thread_pin(self, thread_id):
+        """Test pinning a thread"""
+        return self.run_test(
+            f"Pin Thread ID {thread_id}",
+            "POST",
+            f"admin/forums/threads/{thread_id}/pin",
+            200,
+            admin_auth=True
+        )
+    
+    def test_admin_thread_unpin(self, thread_id):
+        """Test unpinning a thread"""
+        return self.run_test(
+            f"Unpin Thread ID {thread_id}",
+            "POST",
+            f"admin/forums/threads/{thread_id}/unpin",
+            200,
+            admin_auth=True
+        )
+    
+    def test_admin_thread_lock(self, thread_id):
+        """Test locking a thread"""
+        return self.run_test(
+            f"Lock Thread ID {thread_id}",
+            "POST",
+            f"admin/forums/threads/{thread_id}/lock",
+            200,
+            admin_auth=True
+        )
+    
+    def test_admin_thread_unlock(self, thread_id):
+        """Test unlocking a thread"""
+        return self.run_test(
+            f"Unlock Thread ID {thread_id}",
+            "POST",
+            f"admin/forums/threads/{thread_id}/unlock",
+            200,
+            admin_auth=True
+        )
+    
+    def test_update_thread(self, thread_id, data):
+        """Test updating a thread"""
+        return self.run_test(
+            f"Update Thread ID {thread_id}",
+            "PUT",
+            f"admin/forums/threads/{thread_id}",
+            200,
+            data=data,
+            admin_auth=True
+        )
+    
     def test_get_players(self):
         """Test getting players list"""
         return self.run_test(
@@ -97,118 +231,54 @@ class MarvelRivalsAPITester:
             200
         )
     
-    def test_get_player_detail(self, player_id):
-        """Test getting player detail"""
+    def test_get_matches(self):
+        """Test getting matches list"""
         return self.run_test(
-            f"Get Player Detail for ID {player_id}",
+            "Get Matches",
             "GET",
-            f"players/{player_id}",
+            "matches",
             200
         )
     
-    def test_get_players_by_team(self, team_id):
-        """Test getting players by team ID"""
+    def test_get_forum_threads(self):
+        """Test getting forum threads"""
         return self.run_test(
-            f"Get Players for Team ID {team_id}",
+            "Get Forum Threads",
             "GET",
-            f"players?team_id={team_id}",
+            "forums/threads",
             200
         )
     
-    def test_player_team_consistency(self):
-        """Test if players are correctly associated with their teams"""
-        print("\n🔍 Testing Player-Team Consistency...")
-        
-        # Get all players
-        success, all_players = self.test_get_players()
-        if not success:
-            print("❌ Failed to get all players")
-            return False
-        
-        players_list = all_players if isinstance(all_players, list) else all_players.get('data', [])
-        if not players_list:
-            print("❌ No players found in the response")
-            return False
-        
-        # Check a sample of players to verify team consistency
-        inconsistencies = []
-        for player in players_list[:5]:  # Check first 5 players
-            player_id = player.get('id')
-            team_id = player.get('team_id')
-            
-            if not player_id or not team_id:
-                continue
-                
-            # Get player detail
-            success, player_detail = self.test_get_player_detail(player_id)
-            if not success:
-                continue
-                
-            # Check if team ID matches
-            detail_team_id = player_detail.get('team_id') or (player_detail.get('team', {}) or {}).get('id')
-            
-            if detail_team_id != team_id:
-                inconsistencies.append({
-                    'player_id': player_id,
-                    'player_name': player.get('name'),
-                    'list_team_id': team_id,
-                    'detail_team_id': detail_team_id
-                })
-        
-        if inconsistencies:
-            print("❌ Found player-team inconsistencies:")
-            for issue in inconsistencies:
-                print(f"   - Player {issue['player_name']} (ID: {issue['player_id']}): List team ID {issue['list_team_id']} vs Detail team ID {issue['detail_team_id']}")
-            
-            self.issues.append({
-                "test": "Player-Team Consistency",
-                "error": "Players have inconsistent team associations",
-                "details": inconsistencies
-            })
-            return False
-        
-        print("✅ All checked players have consistent team associations")
-        return True
+    def test_create_forum_thread(self, title, content):
+        """Test creating a forum thread"""
+        return self.run_test(
+            "Create Forum Thread",
+            "POST",
+            "forums/threads",
+            201,
+            data={"title": title, "content": content},
+            auth=True
+        )
     
-    def test_specific_player_ids(self):
-        """Test specific player IDs from the realPlayersMapping.js file"""
-        print("\n🔍 Testing Specific Player IDs from realPlayersMapping.js...")
-        
-        # Test specific players mentioned in the review request
-        test_players = [
-            {"id": 101, "name": "TenZ", "team_id": 11},
-            {"id": 106, "name": "Sacy", "team_id": 11},
-            {"id": 201, "name": "Derke", "team_id": 13},
-            {"id": 203, "name": "Chronicle", "team_id": 13}
-        ]
-        
-        for player in test_players:
-            print(f"\n🔍 Testing specific player: {player['name']} (ID: {player['id']}, Expected Team ID: {player['team_id']})")
-            success, player_detail = self.test_get_player_detail(player['id'])
-            
-            if not success:
-                print(f"❌ Failed to get player detail for {player['name']} (ID: {player['id']})")
-                continue
-            
-            # Check if player data matches expected values
-            actual_name = player_detail.get('name')
-            actual_team_id = player_detail.get('team_id')
-            
-            if actual_name != player['name'] or actual_team_id != player['team_id']:
-                print(f"❌ Player data mismatch:")
-                print(f"   - Expected: Name={player['name']}, Team ID={player['team_id']}")
-                print(f"   - Actual: Name={actual_name}, Team ID={actual_team_id}")
-                
-                self.issues.append({
-                    "test": f"Specific Player Test - {player['name']} (ID: {player['id']})",
-                    "error": "Player data mismatch",
-                    "details": {
-                        "expected": {"name": player['name'], "team_id": player['team_id']},
-                        "actual": {"name": actual_name, "team_id": actual_team_id}
-                    }
-                })
-            else:
-                print(f"✅ Player data matches: Name={actual_name}, Team ID={actual_team_id}")
+    def test_get_user(self):
+        """Test getting user profile"""
+        return self.run_test(
+            "Get User Profile",
+            "GET",
+            "user",
+            200,
+            auth=True
+        )
+    
+    def test_logout(self):
+        """Test logout"""
+        return self.run_test(
+            "User Logout",
+            "POST",
+            "logout",
+            200,
+            auth=True
+        )
     
     def print_summary(self):
         """Print a summary of the test results"""
@@ -227,8 +297,8 @@ class MarvelRivalsAPITester:
                             for detail in issue['details']:
                                 print(f"   - {detail}")
                         else:
-                            print(f"   - Expected: {issue['details']['expected']}")
-                            print(f"   - Actual: {issue['details']['actual']}")
+                            print(f"   - Expected: {issue['details'].get('expected')}")
+                            print(f"   - Actual: {issue['details'].get('actual')}")
                 else:
                     print(f"   Expected: {issue['expected_status']}, Got: {issue['actual_status']}")
                     if issue['is_json'] and isinstance(issue['response'], dict):
@@ -242,62 +312,72 @@ def main():
     # Setup
     tester = MarvelRivalsAPITester()
     
-    print("\n🚀 Starting Marvel Rivals API Tests - Player Navigation Fix\n")
+    print("\n🚀 Starting Marvel Rivals API Tests - Comprehensive Backend Audit\n")
     print(f"🌐 Base URL: {tester.base_url}")
     print(f"🌐 API URL: {tester.api_url}")
     
-    # Test player endpoints
-    print("\n===== TESTING PLAYER ENDPOINTS =====")
-    success, players_data = tester.test_get_players()
+    # Try to login to get authentication token for admin operations
+    tester.login()
     
+    # 1. Test newly added endpoints
+    print("\n===== TESTING NEWLY ADDED ENDPOINTS =====")
+    
+    # Test team players endpoints
+    print("\n----- Testing Team Players Endpoints -----")
+    success, teams_data = tester.test_get_teams()
     if success:
-        players_list = players_data if isinstance(players_data, list) else players_data.get('data', [])
-        print(f"\n✅ Found {len(players_list)} players in the API")
-        
-        # Test a few player details
-        if players_list:
-            for player in players_list[:3]:  # Test first 3 players
-                player_id = player.get('id')
-                player_name = player.get('name')
-                team_id = player.get('team_id')
-                
-                print(f"\n🔍 Testing player: {player_name} (ID: {player_id}, Team ID: {team_id})")
-                tester.test_get_player_detail(player_id)
-            
-            # Test players by team
-            if team_id:
-                print(f"\n🔍 Testing players for team ID: {team_id}")
-                success, team_players = tester.test_get_players_by_team(team_id)
-                
-                if success:
-                    team_players_list = team_players if isinstance(team_players, list) else team_players.get('data', [])
-                    print(f"✅ Found {len(team_players_list)} players for team ID {team_id}")
-                    
-                    # Check if all players in this response have the correct team_id
-                    incorrect_team_ids = []
-                    for p in team_players_list:
-                        if p.get('team_id') != team_id:
-                            incorrect_team_ids.append({
-                                'player_id': p.get('id'),
-                                'player_name': p.get('name'),
-                                'expected_team_id': team_id,
-                                'actual_team_id': p.get('team_id')
-                            })
-                    
-                    if incorrect_team_ids:
-                        print("❌ Found players with incorrect team IDs:")
-                        for issue in incorrect_team_ids:
-                            print(f"   - Player {issue['player_name']} (ID: {issue['player_id']}): Expected team ID {issue['expected_team_id']}, got {issue['actual_team_id']}")
-                    else:
-                        print("✅ All players have correct team ID")
+        teams = teams_data if isinstance(teams_data, list) else teams_data.get('data', [])
+        # Test specific team IDs as mentioned in the review request
+        test_team_ids = [83, 84]
+        for team_id in test_team_ids:
+            tester.test_get_team_players(team_id)
     
-    # Test player-team consistency
-    print("\n===== TESTING PLAYER-TEAM CONSISTENCY =====")
-    tester.test_player_team_consistency()
+    # Test event-related endpoints
+    print("\n----- Testing Event-Related Endpoints -----")
+    success, events_data = tester.test_get_events()
+    if success:
+        events = events_data if isinstance(events_data, list) else events_data.get('data', [])
+        # Test specific event ID as mentioned in the review request
+        event_id = 12
+        tester.test_get_event_matches(event_id)
+        tester.test_get_event_teams(event_id)
     
-    # Test specific player IDs from realPlayersMapping.js
-    print("\n===== TESTING SPECIFIC PLAYER IDS FROM REAL PLAYERS MAPPING =====")
-    tester.test_specific_player_ids()
+    # Test admin analytics endpoint
+    print("\n----- Testing Admin Analytics Endpoint -----")
+    tester.test_get_admin_analytics()
+    
+    # Test forum thread admin operations
+    print("\n----- Testing Forum Thread Admin Operations -----")
+    thread_id = 16  # As mentioned in the review request
+    tester.test_admin_thread_pin(thread_id)
+    tester.test_admin_thread_unpin(thread_id)
+    tester.test_admin_thread_lock(thread_id)
+    tester.test_admin_thread_unlock(thread_id)
+    
+    # 2. Test SQL fix verification
+    print("\n===== TESTING SQL FIX VERIFICATION =====")
+    # Test updating thread with pinned status
+    tester.test_update_thread(thread_id, {"pinned": True})
+    tester.test_update_thread(thread_id, {"pinned": False})
+    
+    # 3. Test core platform endpoints
+    print("\n===== TESTING CORE PLATFORM ENDPOINTS =====")
+    tester.test_get_teams()
+    tester.test_get_players()
+    tester.test_get_matches()
+    tester.test_get_events()
+    tester.test_get_forum_threads()
+    
+    # Test forum thread creation if logged in
+    if tester.token:
+        tester.test_create_forum_thread("Test Thread from API Audit", "This is a test thread created during the API audit.")
+    
+    # 4. Test authentication endpoints
+    print("\n===== TESTING AUTHENTICATION ENDPOINTS =====")
+    # Login was already tested at the beginning
+    if tester.token:
+        tester.test_get_user()
+        tester.test_logout()
     
     # Print summary
     tester.print_summary()
