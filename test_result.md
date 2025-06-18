@@ -26,6 +26,19 @@
 - ✅ Maps data for scoring: Present and correctly structured
 - ✅ Team scores: Present in the response
 
+### Newly Added Endpoints
+- ✅ Team players endpoint (/api/teams/{id}/players): Working correctly with team IDs 83, 84
+- ✅ Event matches endpoint (/api/events/{id}/matches): Working correctly with event ID 12
+- ✅ Event teams endpoint (/api/events/{id}/teams): Working correctly with event ID 12
+- ❌ Admin analytics endpoint (/api/admin/analytics): Authentication required (401 error)
+- ❌ Thread pin endpoint (/api/admin/forums/threads/{id}/pin): Authentication required (401 error)
+- ❌ Thread unpin endpoint (/api/admin/forums/threads/{id}/unpin): Authentication required (401 error)
+- ❌ Thread lock endpoint (/api/admin/forums/threads/{id}/lock): Authentication required (401 error)
+- ❌ Thread unlock endpoint (/api/admin/forums/threads/{id}/unlock): Authentication required (401 error)
+
+### SQL Fix Verification
+- ❌ Thread update endpoint (/api/admin/forums/threads/{id}): Authentication required (401 error)
+
 ### ✅ **ALL PHASES COMPLETED:**
 - **✅ PHASE 1**: Pure backend integration - HomePage, EventsPage, ForumsPage, MatchesPage all use real backend data
 - **✅ PHASE 2**: Marvel Rivals live scoring system with AdminMatches interface  
@@ -222,5 +235,12 @@
 ### **⚠️ Testing Limitations:**
 - Could not fully test admin features due to login modal interaction issues
 - Authentication system needs further verification
+
+### **🧪 Latest Backend API Testing (June 18, 2025):**
+- **Core API Endpoints**: All working correctly (/api/teams, /api/matches, /api/events, /api/forums/threads)
+- **Newly Added Endpoints**: Team players, Event matches, and Event teams endpoints working correctly
+- **Admin Endpoints**: Require authentication (401 errors) - expected behavior for secured endpoints
+- **Authentication**: Login endpoint not found (404 error) - requires investigation
+- **Data Relationships**: Team-player relationships working correctly with proper data structure
 
 **See detailed testing results in /app/test_result_update.md**
