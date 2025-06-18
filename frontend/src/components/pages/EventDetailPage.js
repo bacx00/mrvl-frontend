@@ -153,9 +153,9 @@ function EventDetailPage({ params, navigateTo }) {
         console.log('⚠️ Specific teams endpoint not available, deriving from matches...');
         
         // FALLBACK: Get teams from matches we already fetched
-        if (matches.length > 0) {
+        if (realMatches.length > 0) { // Use realMatches instead of matches
           const teamIds = new Set();
-          matches.forEach(match => {
+          realMatches.forEach(match => {
             if (match.team1Id) teamIds.add(match.team1Id);
             if (match.team2Id) teamIds.add(match.team2Id);
           });
