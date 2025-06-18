@@ -76,11 +76,15 @@ function ForumsPage({ navigateTo }) {
           console.log('⚠️ ForumsPage: Categories API unavailable, using enhanced fallback categories');
           categoriesData = [
             { id: 'all', name: 'All Categories', count: threadsData.length },
-            { id: 'general', name: 'General Discussion', count: Math.floor(threadsData.length * 0.3) },
-            { id: 'tournaments', name: 'Tournaments', count: Math.floor(threadsData.length * 0.2) },
-            { id: 'hero-discussion', name: 'Hero Discussion', count: Math.floor(threadsData.length * 0.25) },
+            { id: 'general-discussion', name: 'General Discussion', count: Math.floor(threadsData.length * 0.3) },
             { id: 'strategy', name: 'Strategy & Tactics', count: Math.floor(threadsData.length * 0.15) },
-            { id: 'esports', name: 'Esports & Competitive', count: Math.floor(threadsData.length * 0.1) }
+            { id: 'hero-discussion', name: 'Hero Discussion', count: Math.floor(threadsData.length * 0.25) },
+            { id: 'esports', name: 'Esports & Competitive', count: Math.floor(threadsData.length * 0.1) },
+            { id: 'guides', name: 'Guides & Tutorials', count: Math.floor(threadsData.length * 0.05) },
+            { id: 'team-recruitment', name: 'Team Recruitment', count: Math.floor(threadsData.length * 0.05) },
+            { id: 'meta-discussion', name: 'Meta Analysis', count: Math.floor(threadsData.length * 0.05) },
+            { id: 'feedback', name: 'Feedback & Suggestions', count: Math.floor(threadsData.length * 0.03) },
+            { id: 'bugs', name: 'Bug Reports', count: Math.floor(threadsData.length * 0.02) }
           ];
         }
         
