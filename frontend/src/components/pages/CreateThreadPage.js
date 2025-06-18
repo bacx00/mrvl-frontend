@@ -5,7 +5,7 @@ function CreateThreadPage({ navigateTo }) {
   const { user, api } = useAuth();
   const [formData, setFormData] = useState({
     title: '',
-    category: 'general',
+    category: 'general-discussion',
     content: '',
     tags: ''
   });
