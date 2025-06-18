@@ -380,7 +380,7 @@ function MatchDetailPage({ params, navigateTo }) {
     };
   };
 
-  const generateMapData = (team1, team2) => {
+  const generateMapData = async (team1, team2) => {
     const mapPool = [
       'Asgard Throne Room',
       'Wakanda Palace',
@@ -396,20 +396,27 @@ function MatchDetailPage({ params, navigateTo }) {
       'Star-Lord', 'Gamora', 'Mantis', 'Luna Snow', 'Galacta', 'Jeff the Land Shark'
     ];
 
-    return Array.from({ length: 3 }, (_, mapIndex) => {
-      const team1Won = Math.random() > 0.5;
+    // ✅ FIXED: Generate maps with proper initialization
+    const maps = [];
+    for (let mapIndex = 0; mapIndex < 3; mapIndex++) {
       const map = mapPool[Math.floor(Math.random() * mapPool.length)];
       
-      return {
+      // ✅ AWAIT player data for both teams
+      const team1Players = await generateRealPlayerStats(team1, heroPool);
+      const team2Players = await generateRealPlayerStats(team2, heroPool);
+      
+      maps.push({
         name: map,
-        winner: team1Won ? team1.id : team2.id,
-        team1Score: team1Won ? Math.floor(Math.random() * 3 + 3) : Math.floor(Math.random() * 3 + 1),
-        team2Score: team1Won ? Math.floor(Math.random() * 3 + 1) : Math.floor(Math.random() * 3 + 3),
-        duration: `${Math.floor(Math.random() * 10 + 15)}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`,
-        team1Players: generateRealPlayerStats(team1, heroPool),
-        team2Players: generateRealPlayerStats(team2, heroPool)
-      };
-    });
+        winner: null, // ✅ Initialize with no winner
+        team1Score: 0, // ✅ Initialize to 0
+        team2Score: 0, // ✅ Initialize to 0
+        duration: null, // ✅ No duration for new matches
+        team1Players: team1Players,
+        team2Players: team2Players
+      });
+    }
+    
+    return maps;
   };
 
   // ✅ CRITICAL FIX: Get real players from backend API for proper navigation
