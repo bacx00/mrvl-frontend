@@ -97,23 +97,29 @@ function AdminForums({ navigateTo }) {
   const handleThreadAction = async (threadId, action) => {
     try {
       let endpoint = '';
+      let method = 'POST';
       let message = '';
       
+      // ✅ FIXED: Use proper REST API endpoints
       switch (action) {
         case 'pin':
-          endpoint = `/admin/forums/threads/${threadId}/pin`;
+          endpoint = `/admin/forums/threads/${threadId}`;
+          method = 'PUT';
           message = 'Thread pinned successfully!';
           break;
         case 'unpin':
-          endpoint = `/admin/forums/threads/${threadId}/unpin`;
+          endpoint = `/admin/forums/threads/${threadId}`;
+          method = 'PUT';
           message = 'Thread unpinned successfully!';
           break;
         case 'lock':
-          endpoint = `/admin/forums/threads/${threadId}/lock`;
+          endpoint = `/admin/forums/threads/${threadId}`;
+          method = 'PUT';
           message = 'Thread locked successfully!';
           break;
         case 'unlock':
-          endpoint = `/admin/forums/threads/${threadId}/unlock`;
+          endpoint = `/admin/forums/threads/${threadId}`;
+          method = 'PUT';
           message = 'Thread unlocked successfully!';
           break;
         case 'delete':
@@ -121,21 +127,27 @@ function AdminForums({ navigateTo }) {
             return;
           }
           endpoint = `/admin/forums/threads/${threadId}`;
+          method = 'DELETE';
           message = 'Thread deleted successfully!';
           break;
       }
       
-      if (action === 'delete') {
+      // ✅ FIXED: Send proper data with action type
+      const requestData = action === 'delete' ? undefined : { action: action };
+      
+      if (method === 'DELETE') {
         await api.delete(endpoint);
+      } else if (method === 'PUT') {
+        await api.put(endpoint, requestData);
       } else {
-        await api.post(endpoint);
+        await api.post(endpoint, requestData);
       }
       
       await fetchForumData(); // Refresh data
       alert(message);
     } catch (error) {
       console.error(`Error performing ${action} on thread:`, error);
-      alert(`Error performing ${action}. Please try again.`);
+      alert(`❌ Backend issue: ${action} functionality not implemented. Please check /admin/forums/threads endpoints.`);
     }
   };
 
