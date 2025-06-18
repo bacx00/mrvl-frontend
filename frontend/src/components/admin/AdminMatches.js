@@ -92,10 +92,27 @@ function AdminMatches({ navigateTo }) {
 
   const handleStatsUpdate = async (updatedMatch) => {
     try {
-      await api.put(`/matches/${updatedMatch.id}`, updatedMatch);
+      // ✅ FIXED: Use admin endpoint for match updates
+      await api.put(`/admin/matches/${updatedMatch.id}`, updatedMatch);
       await fetchMatches(); // Refresh matches
+      console.log('✅ Match stats updated successfully!');
     } catch (error) {
-      console.error('Error updating match stats:', error);
+      console.error('❌ Error updating match stats:', error);
+      
+      // ✅ Better error handling for live match updates
+      if (error.message.includes('405')) {
+        console.log('⚠️ PUT method not supported - trying PATCH instead...');
+        try {
+          await api.patch(`/admin/matches/${updatedMatch.id}`, updatedMatch);
+          await fetchMatches();
+          console.log('✅ Match stats updated via PATCH!');
+        } catch (patchError) {
+          console.error('❌ PATCH also failed:', patchError);
+          alert('Unable to update match stats. Please check admin permissions.');
+        }
+      } else {
+        alert('Error updating match stats. Please try again.');
+      }
     }
   };
 
