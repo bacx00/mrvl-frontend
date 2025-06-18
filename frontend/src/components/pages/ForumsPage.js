@@ -88,14 +88,18 @@ function ForumsPage({ navigateTo }) {
         console.error('❌ ForumsPage: Backend API failed, NO MOCK DATA FALLBACK');
         setThreads([]); // NO MOCK DATA - ONLY REAL BACKEND DATA
         
-        // Set basic categories without mock data
+        // Set basic categories without mock data - MATCH CreateThreadPage categories exactly  
         categoriesData = [
           { id: 'all', name: 'All Categories', count: 0 },
-          { id: 'general', name: 'General Discussion', count: 0 },
-          { id: 'tournaments', name: 'Tournaments', count: 0 },
-          { id: 'hero-discussion', name: 'Hero Discussion', count: 0 },
+          { id: 'general-discussion', name: 'General Discussion', count: 0 },
           { id: 'strategy', name: 'Strategy & Tactics', count: 0 },
-          { id: 'esports', name: 'Esports & Competitive', count: 0 }
+          { id: 'hero-discussion', name: 'Hero Discussion', count: 0 },
+          { id: 'esports', name: 'Esports & Competitive', count: 0 },
+          { id: 'guides', name: 'Guides & Tutorials', count: 0 },
+          { id: 'team-recruitment', name: 'Team Recruitment', count: 0 },
+          { id: 'meta-discussion', name: 'Meta Analysis', count: 0 },
+          { id: 'feedback', name: 'Feedback & Suggestions', count: 0 },
+          { id: 'bugs', name: 'Bug Reports', count: 0 }
         ];
       }
 
