@@ -151,60 +151,10 @@ function TeamDetailPage({ params, navigateTo }) {
     };
   };
 
-  const generateMapStats = () => {
-    const maps = ['Asgard Throne Room', 'Wakanda', 'Sanctum Sanctorum', 'Tokyo 2099', 'Klyntar', 'Midtown'];
-    const mapStats = {};
-    maps.forEach(map => {
-      mapStats[map] = {
-        winRate: (Math.random() * 30 + 60).toFixed(1),
-        played: Math.floor(Math.random() * 15 + 5),
-        won: 0,
-        lost: 0
-      };
-      const played = mapStats[map].played;
-      const won = Math.floor(played * (mapStats[map].winRate / 100));
-      mapStats[map].won = won;
-      mapStats[map].lost = played - won;
-    });
-    return mapStats;
-  };
-
-  const generateRecentForm = () => {
-    return Array.from({ length: 10 }, () => Math.random() > 0.35 ? 'W' : 'L');
-  };
-
   const calculateAvgTeamRating = (players) => {
     if (players.length === 0) return 1500;
     const totalRating = players.reduce((sum, player) => sum + (player.rating || 1500), 0);
     return Math.floor(totalRating / players.length);
-  };
-
-  const generateTeamMatches = (team) => {
-    const opponents = ['SHROUD-X', 'Fnatic', 'Gen.G', 'Team Liquid', 'NAVI', 'Cloud9', 'NRG', 'Team Secret', 'Sentinels', 'TSM'];
-    const events = ['Champions 2025', 'Masters Stage 1', 'VCT Americas', 'Lock//In Tournament', 'Marvel Cup'];
-    const maps = ['Asgard Throne Room', 'Wakanda', 'Sanctum Sanctorum', 'Tokyo 2099', 'Klyntar', 'Midtown'];
-    
-    return Array.from({ length: 10 }, (_, i) => {
-      const result = Math.random() > 0.4 ? 'W' : 'L';
-      const isBO3 = Math.random() > 0.3;
-      return {
-        id: i + 1,
-        date: new Date(Date.now() - (i + 1) * 24 * 60 * 60 * 1000 * Math.random() * 5).toISOString().split('T')[0],
-        opponent: {
-          name: opponents[Math.floor(Math.random() * opponents.length)],
-          short_name: opponents[Math.floor(Math.random() * opponents.length)].substring(0, 3).toUpperCase()
-        },
-        result: result,
-        score: isBO3 
-          ? (result === 'W' ? ['2-0', '2-1'][Math.floor(Math.random() * 2)] : ['0-2', '1-2'][Math.floor(Math.random() * 2)])
-          : (result === 'W' ? '1-0' : '0-1'),
-        event: events[Math.floor(Math.random() * events.length)],
-        maps: isBO3 
-          ? [maps[Math.floor(Math.random() * maps.length)], maps[Math.floor(Math.random() * maps.length)]]
-          : [maps[Math.floor(Math.random() * maps.length)]],
-        duration: (Math.random() * 20 + 15).toFixed(0) + 'm'
-      };
-    });
   };
 
   const getRoleColor = (role) => {
