@@ -92,17 +92,30 @@ function AdminUsers({ navigateTo }) {
 
   const updateUserRole = async (userId, newRole) => {
     try {
-      // FIXED: Get current user data to preserve status
+      // ✅ FIXED: Optimistic UI update for immediate feedback
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === userId 
+            ? { ...user, roles: [{ name: newRole }] }
+            : user
+        )
+      );
+      
+      // Get current user data to preserve status
       const currentUser = users.find(u => u.id === userId);
       await api.put(`/admin/users/${userId}`, { 
         role: newRole,
-        status: currentUser.status || 'active' // Preserve current status
+        status: currentUser.status || 'active'
       });
-      await fetchUsers(); // Refresh the list
-      alert(`User role updated to ${newRole}!`);
+      
+      // Force refresh after successful update
+      await fetchUsers();
+      alert(`✅ User role updated to ${newRole}!`);
     } catch (error) {
-      console.error('Error updating user role:', error);
-      alert('Error updating user role. Please try again.');
+      console.error('❌ Error updating user role:', error);
+      // Revert optimistic update on error
+      await fetchUsers();
+      alert('❌ Error updating user role. Please try again.');
     }
   };
 
