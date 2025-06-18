@@ -86,38 +86,24 @@ function TeamDetailPage({ params, navigateTo }) {
         setStats(teamStats);
         
       } catch (error) {
-        console.error('❌ Error fetching team data from API, using fallback:', error);
+        console.error('❌ Error fetching team data from API - NO FALLBACK DATA:', error);
         
-        // CRITICAL FIX: Generate fallback team data based on ID
-        const fallbackTeam = generateFallbackTeamData(teamId);
-        const fallbackPlayers = generateFallbackPlayers(teamId);
-        const fallbackStats = generateTeamStats(fallbackTeam, fallbackPlayers);
-        const fallbackMatches = generateTeamMatches(fallbackTeam);
-
-        setTeam(fallbackTeam);
-        setPlayers(fallbackPlayers);
-        setMatches(fallbackMatches);
-        setStats(fallbackStats);
+        // ✅ NO MOCK DATA - Set null/empty states
+        setTeam(null);
+        setPlayers([]);
+        setMatches([]);
+        setStats({});
         
-        console.log('✅ TeamDetailPage: Using fallback data for team ID:', teamId);
+        console.log('❌ TeamDetailPage: No team data available for ID:', teamId);
       }
     } catch (error) {
       console.error('❌ Error in fetchTeamData:', error);
       
-      // Even if everything fails, create a basic team profile
-      const basicTeam = {
-        id: teamId,
-        name: `Team ${teamId}`,
-        shortName: `T${teamId}`,
-        logo: null,
-        country: 'US',
-        region: 'NA',
-        rating: 1500,
-        rank: Math.floor(Math.random() * 100) + 1
-      };
-      
-      setTeam(basicTeam);
+      // ✅ NO MOCK DATA - Set null/empty states
+      setTeam(null);
       setPlayers([]);
+      setMatches([]);
+      setStats({});
       setMatches([]);
       setStats(generateTeamStats(basicTeam, []));
     } finally {
