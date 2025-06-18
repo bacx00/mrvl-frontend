@@ -353,7 +353,7 @@ function AdminUsers({ navigateTo }) {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       <select
-                        value={user.roles?.[0] || 'user'}
+                        value={user.roles?.[0]?.name || user.roles?.[0] || 'user'}
                         onChange={(e) => updateUserRole(user.id, e.target.value)}
                         className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800"
                       >
