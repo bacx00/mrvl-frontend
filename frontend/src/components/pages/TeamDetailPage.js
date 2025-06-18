@@ -104,8 +104,6 @@ function TeamDetailPage({ params, navigateTo }) {
       setPlayers([]);
       setMatches([]);
       setStats({});
-      setMatches([]);
-      setStats(generateTeamStats(basicTeam, []));
     } finally {
       setLoading(false);
     }
