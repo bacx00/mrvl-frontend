@@ -131,12 +131,29 @@ function AdminMatches({ navigateTo }) {
 
   const updateMatchStatus = async (matchId, newStatus) => {
     try {
-      await api.put(`/matches/${matchId}/status`, { status: newStatus });
+      // ✅ FIXED: Use admin endpoint for match status updates  
+      await api.put(`/admin/matches/${matchId}`, { status: newStatus });
       await fetchMatches(); // Refresh the list
+      console.log(`✅ Match status updated to ${newStatus}!`);
       alert(`Match status updated to ${newStatus}!`);
     } catch (error) {
-      console.error('Error updating match status:', error);
-      alert('Error updating match status. Please try again.');
+      console.error('❌ Error updating match status:', error);
+      
+      // ✅ Better error handling for live match status updates
+      if (error.message.includes('405')) {
+        console.log('⚠️ PUT method not supported - trying PATCH instead...');
+        try {
+          await api.patch(`/admin/matches/${matchId}`, { status: newStatus });
+          await fetchMatches();
+          console.log(`✅ Match status updated to ${newStatus} via PATCH!`);
+          alert(`Match status updated to ${newStatus}!`);
+        } catch (patchError) {
+          console.error('❌ PATCH also failed:', patchError);
+          alert('Unable to update match status. Please check admin permissions.');
+        }
+      } else {
+        alert('Error updating match status. Please try again.');
+      }
     }
   };
 
