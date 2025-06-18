@@ -92,11 +92,14 @@ function AdminUsers({ navigateTo }) {
 
   const updateUserRole = async (userId, newRole) => {
     try {
-      // ✅ FIXED: Optimistic UI update for immediate feedback
+      // ✅ FIXED: Optimistic UI update for immediate feedback - handle both role formats
       setUsers(prevUsers => 
         prevUsers.map(user => 
           user.id === userId 
-            ? { ...user, roles: [{ name: newRole }] }
+            ? { 
+                ...user, 
+                roles: [{ name: newRole }] // Backend expects role objects with name property
+              }
             : user
         )
       );
