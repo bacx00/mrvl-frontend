@@ -43,11 +43,14 @@ function EventDetailPage({ params, navigateTo }) {
         
         await processEventData(eventData);
       } catch (error) {
-        console.error('❌ Error fetching event data from API:', error);
+        console.error('❌ Error fetching event data from API - NO FALLBACK DATA:', error);
         
-        // Use enhanced fallback data
-        const fallbackEvent = generateFallbackEvent(eventId);
-        await processEventData(fallbackEvent);
+        // ✅ NO MOCK DATA - Set null/empty states only
+        setEvent(null);
+        setMatches([]);
+        setTeams([]);
+        
+        console.log('❌ EventDetailPage: No event data available for ID:', eventId);
       }
     } catch (error) {
       console.error('❌ Error in fetchEventData:', error);
