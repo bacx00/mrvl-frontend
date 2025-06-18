@@ -129,24 +129,7 @@ function TeamDetailPage({ params, navigateTo }) {
     }));
   };
 
-  const generateTeamStats = (team, players) => {
-    return {
-      ranking: team.rank || Math.floor(Math.random() * 50 + 1),
-      rating: team.rating || 1500,
-      winRate: team.winRate || (Math.random() * 20 + 65).toFixed(1),
-      matchesPlayed: Math.floor(Math.random() * 30 + 20),
-      mapsWon: Math.floor(Math.random() * 40 + 30),
-      mapsLost: Math.floor(Math.random() * 20 + 10),
-      averageMatchDuration: (Math.random() * 10 + 20).toFixed(1),
-      mapWinRate: generateMapStats(),
-      recentForm: generateRecentForm(),
-      totalEarnings: team.earnings || `$${(Math.random() * 200000 + 50000).toFixed(0)}`,
-      avgTeamRating: calculateAvgTeamRating(players),
-      bestMap: 'Asgard Throne Room',
-      worstMap: 'Klyntar'
-    };
-  };
-
+  // Utility function to calculate average team rating
   const calculateAvgTeamRating = (players) => {
     if (players.length === 0) return 1500;
     const totalRating = players.reduce((sum, player) => sum + (player.rating || 1500), 0);
