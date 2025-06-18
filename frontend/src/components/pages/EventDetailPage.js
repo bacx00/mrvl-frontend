@@ -168,7 +168,6 @@ function EventDetailPage({ params, navigateTo }) {
           }
         }
       }
-      const realTeams = teamsResponse?.data?.data || teamsResponse?.data || [];
       
       if (Array.isArray(realTeams) && realTeams.length > 0) {
         const transformedTeams = realTeams.map((team, index) => ({
