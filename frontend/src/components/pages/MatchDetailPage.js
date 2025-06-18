@@ -437,7 +437,7 @@ function MatchDetailPage({ params, navigateTo }) {
         ? allPlayers.filter(player => player.team_id === team.id || player.team_id === parseInt(team.id))
         : [];
       
-      if (Array.isArray(realPlayers) && realPlayers.length > 0) {
+      if (realPlayers.length > 0) {
         console.log(`✅ Found ${realPlayers.length} REAL players for team ${team.name}:`, realPlayers.map(p => ({ id: p.id, name: p.name })));
         
         // Use real players with their actual IDs - THIS FIXES THE NAVIGATION!
