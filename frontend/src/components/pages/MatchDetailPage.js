@@ -426,9 +426,16 @@ function MatchDetailPage({ params, navigateTo }) {
     console.log(`🔍 Generating players for team ${team.name} (ID: ${team.id})`);
     
     try {
-      // ✅ FETCH REAL PLAYERS FROM BACKEND
-      const playersResponse = await api.get(`/teams/${team.id}/players`);
-      const realPlayers = playersResponse?.data?.data || playersResponse?.data || [];
+      // ✅ FETCH REAL PLAYERS FROM BACKEND - Use general players endpoint and filter
+      console.log(`🔍 Fetching players for team ${team.name} (ID: ${team.id}) from /api/players...`);
+      
+      const playersResponse = await api.get('/players');
+      const allPlayers = playersResponse?.data?.data || playersResponse?.data || [];
+      
+      // Filter players by team_id
+      const realPlayers = Array.isArray(allPlayers) 
+        ? allPlayers.filter(player => player.team_id === team.id || player.team_id === parseInt(team.id))
+        : [];
       
       if (Array.isArray(realPlayers) && realPlayers.length > 0) {
         console.log(`✅ Found ${realPlayers.length} REAL players for team ${team.name}:`, realPlayers.map(p => ({ id: p.id, name: p.name })));
