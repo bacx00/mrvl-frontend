@@ -412,40 +412,74 @@ function MatchDetailPage({ params, navigateTo }) {
     });
   };
 
-  // CRITICAL FIX: Use direct player mapping to fix navigation issue
-  const generateRealPlayerStats = (team, heroPool) => {
+  // ✅ CRITICAL FIX: Get real players from backend API for proper navigation
+  const generateRealPlayerStats = async (team, heroPool) => {
     const roles = ['Tank', 'Duelist', 'Support', 'Duelist', 'Support', 'Tank'];
     
     console.log(`🔍 Generating players for team ${team.name} (ID: ${team.id})`);
     
-    // Get real players for this team from direct mapping
-    const realPlayers = getRealPlayersForTeam(team.id);
-    
-    if (realPlayers && realPlayers.length > 0) {
-      console.log(`✅ Found ${realPlayers.length} REAL players for team ${team.name}:`, realPlayers.map(p => ({ id: p.id, name: p.name })));
+    try {
+      // ✅ FETCH REAL PLAYERS FROM BACKEND
+      const playersResponse = await api.get(`/teams/${team.id}/players`);
+      const realPlayers = playersResponse?.data?.data || playersResponse?.data || [];
       
-      // Use real players with their actual IDs - THIS FIXES THE NAVIGATION!
-      return realPlayers.slice(0, 6).map((player, i) => ({
-        id: player.id, // ✅ REAL PLAYER ID - NAVIGATION WILL WORK!
-        name: player.name,
-        hero: player.main_hero || heroPool[Math.floor(Math.random() * heroPool.length)],
-        role: player.role || roles[i] || 'Duelist',
-        eliminations: Math.floor(Math.random() * 20 + 5),
-        deaths: Math.floor(Math.random() * 15 + 3),
-        assists: Math.floor(Math.random() * 25 + 5),
-        damage: Math.floor(Math.random() * 8000 + 4000),
-        healing: player.role === 'Support' ? Math.floor(Math.random() * 12000 + 6000) : 0,
-        damageBlocked: player.role === 'Tank' ? Math.floor(Math.random() * 8000 + 5000) : 0,
-        ultimatesUsed: Math.floor(Math.random() * 6 + 2),
-        country: player.country || 'US',
-        teamId: team.id
-      }));
+      if (Array.isArray(realPlayers) && realPlayers.length > 0) {
+        console.log(`✅ Found ${realPlayers.length} REAL players for team ${team.name}:`, realPlayers.map(p => ({ id: p.id, name: p.name })));
+        
+        // Use real players with their actual IDs - THIS FIXES THE NAVIGATION!
+        return realPlayers.slice(0, 6).map((player, i) => ({
+          id: player.id, // ✅ REAL PLAYER ID - NAVIGATION WILL WORK!
+          name: player.name,
+          hero: player.main_hero || heroPool[Math.floor(Math.random() * heroPool.length)],
+          role: player.role || roles[i] || 'Duelist',
+          eliminations: 0, // ✅ Initialize to 0 for new matches
+          deaths: 0,
+          assists: 0,
+          damage: 0,
+          healing: 0,
+          damageBlocked: 0,
+          ultimatesUsed: 0,
+          country: player.country || 'US',
+          teamId: team.id
+        }));
+      } else {
+        console.warn(`⚠️ No players found via API for team ${team.name}, using placeholder`);
+        
+        // ✅ FALLBACK: Create placeholder players but still try to get some real data
+        try {
+          const allPlayersResponse = await api.get('/players');
+          const allPlayers = allPlayersResponse?.data?.data || allPlayersResponse?.data || [];
+          const teamPlayers = allPlayers.filter(p => p.team_id == team.id).slice(0, 6);
+          
+          if (teamPlayers.length > 0) {
+            console.log(`✅ Found ${teamPlayers.length} players via all players API for team ${team.name}`);
+            return teamPlayers.map((player, i) => ({
+              id: player.id,
+              name: player.name,
+              hero: player.main_hero || heroPool[Math.floor(Math.random() * heroPool.length)],
+              role: player.role || roles[i] || 'Duelist',
+              eliminations: 0,
+              deaths: 0,
+              assists: 0,
+              damage: 0,
+              healing: 0,
+              damageBlocked: 0,
+              ultimatesUsed: 0,
+              country: player.country || 'US',
+              teamId: team.id
+            }));
+          }
+        } catch (allPlayersError) {
+          console.warn('Could not fetch from all players API:', allPlayersError);
+        }
+        
+        // Last resort: Return empty array for clean UI
+        return [];
+      }
+    } catch (error) {
+      console.error(`❌ Failed to fetch players for team ${team.name}:`, error);
+      return [];
     }
-    
-    // This should never happen with the direct mapping
-    console.error(`❌ NO PLAYERS FOUND for team ${team.name} (ID: ${team.id}) - Check realPlayersMapping.js`);
-    
-    return [];
   };
 
   const getRoleColor = (role) => {
