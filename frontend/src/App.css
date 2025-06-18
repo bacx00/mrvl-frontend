@@ -403,7 +403,11 @@ body {
 }
 
 .image-preview {
-  @apply relative group rounded-lg overflow-hidden;
+  @apply relative rounded-lg overflow-hidden;
+}
+
+.image-preview:hover .image-preview-overlay {
+  @apply opacity-100;
 }
 
 .image-preview-overlay {
