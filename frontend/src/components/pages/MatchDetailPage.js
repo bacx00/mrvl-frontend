@@ -344,7 +344,7 @@ function MatchDetailPage({ params, navigateTo }) {
       console.log('✅ MatchDetailPage: Using pre-formatted match data');
       return {
         ...matchData,
-        maps: generateMapData(matchData.team1, matchData.team2)
+        maps: await generateMapData(matchData.team1, matchData.team2) // ✅ AWAIT async function
       };
     }
 
