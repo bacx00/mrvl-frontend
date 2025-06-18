@@ -74,15 +74,11 @@ function TeamDetailPage({ params, navigateTo }) {
           console.error('❌ Error fetching team players:', error);
         }
 
-        // Generate team stats
-        const teamStats = generateTeamStats(transformedTeam, teamPlayers);
-        
-        // Generate recent matches
-        const recentMatches = generateTeamMatches(transformedTeam);
-
+        // Set the transformed team data
         setTeam(transformedTeam);
         setPlayers(teamPlayers);
-        setMatches(recentMatches);
+        setMatches([]);
+        setStats({});
         setStats(teamStats);
         
       } catch (error) {
