@@ -79,7 +79,6 @@ function TeamDetailPage({ params, navigateTo }) {
         setPlayers(teamPlayers);
         setMatches([]);
         setStats({});
-        setStats(teamStats);
         
       } catch (error) {
         console.error('❌ Error fetching team data from API - NO FALLBACK DATA:', error);
