@@ -85,6 +85,7 @@ function AdminNews({ navigateTo }) {
       const updateData = {
         title: article.title,
         content: article.content,
+        excerpt: article.excerpt || article.content?.substring(0, 150) + '...' || 'No excerpt available',
         category: article.category,
         status: article.status,
         featured: !article.featured
