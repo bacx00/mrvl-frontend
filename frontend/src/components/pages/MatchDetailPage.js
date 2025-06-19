@@ -617,8 +617,8 @@ function MatchDetailPage({ params, navigateTo }) {
   const getRoleColor = (role) => {
     switch (role) {
       case 'Duelist': return 'text-red-600 dark:text-red-400';
-      case 'Vanguard': return 'text-blue-600 dark:text-blue-400';
-      case 'Strategist': return 'text-green-600 dark:text-green-400';
+      case 'Tank': return 'text-blue-600 dark:text-blue-400';
+      case 'Support': return 'text-green-600 dark:text-green-400';
       default: return 'text-gray-600 dark:text-gray-400';
     }
   };
