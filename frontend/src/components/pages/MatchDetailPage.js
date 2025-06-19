@@ -53,19 +53,19 @@ const getHeroImage = (heroName) => {
   return heroImageMapping[heroName] || null;
 };
 
-// 🎮 MARVEL RIVALS ROLE SYSTEM
+// 🎮 MARVEL RIVALS ROLE SYSTEM - ALIGNED WITH BACKEND
 const getHeroRole = (heroName) => {
   const heroRoles = {
-    // 🛡️ VANGUARD (Tank) Heroes - 9 heroes
-    'Captain America': 'Vanguard',
-    'Doctor Strange': 'Vanguard', 
-    'Groot': 'Vanguard',
-    'Hulk': 'Vanguard',
-    'Magneto': 'Vanguard',
-    'Peni Parker': 'Vanguard',
-    'The Thing': 'Vanguard',
-    'Thor': 'Vanguard',
-    'Venom': 'Vanguard',
+    // 🛡️ TANK Heroes - BACKEND USES "TANK" NOT "VANGUARD"
+    'Captain America': 'Tank',
+    'Doctor Strange': 'Tank', 
+    'Groot': 'Tank',
+    'Hulk': 'Tank',
+    'Magneto': 'Tank',
+    'Peni Parker': 'Tank',
+    'The Thing': 'Tank',
+    'Thor': 'Tank',
+    'Venom': 'Tank',
 
     // ⚔️ DUELIST Heroes - 18 heroes
     'Black Panther': 'Duelist',
@@ -87,15 +87,15 @@ const getHeroRole = (heroName) => {
     'Storm': 'Duelist',
     'Wolverine': 'Duelist',
 
-    // 💚 STRATEGIST (Support) Heroes - 7 heroes
-    'Adam Warlock': 'Strategist',
-    'Cloak & Dagger': 'Strategist',
-    'Invisible Woman': 'Strategist',
-    'Jeff the Land Shark': 'Strategist',
-    'Loki': 'Strategist',
-    'Luna Snow': 'Strategist',
-    'Mantis': 'Strategist',
-    'Rocket Raccoon': 'Strategist'
+    // 💚 SUPPORT Heroes - 7 heroes
+    'Adam Warlock': 'Support',
+    'Cloak & Dagger': 'Support',
+    'Invisible Woman': 'Support',
+    'Jeff the Land Shark': 'Support',
+    'Loki': 'Support',
+    'Luna Snow': 'Support',
+    'Mantis': 'Support',
+    'Rocket Raccoon': 'Support'
   };
   
   return heroRoles[heroName] || 'Unknown';
