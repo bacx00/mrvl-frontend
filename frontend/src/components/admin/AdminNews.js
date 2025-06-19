@@ -304,7 +304,7 @@ function AdminNews({ navigateTo }) {
               {/* Article Meta */}
               <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-500 mb-4">
                 <div className="flex items-center space-x-3">
-                  <span>{article.author?.avatar || '👤'} {article.author?.name || 'Unknown'}</span>
+                  <span>{article.author?.avatar || '👤'} {article.author?.name || 'MRVL Team'}</span>
                   <span>👁 {article.views?.toLocaleString() || 0}</span>
                   <span>💬 {article.comments_count || 0}</span>
                 </div>
