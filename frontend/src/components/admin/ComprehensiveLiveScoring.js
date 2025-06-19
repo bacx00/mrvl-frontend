@@ -136,8 +136,8 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
           })),
           team2: Array(6).fill(null).map((_, i) => ({
             playerName: `${match.team2?.short_name || 'T2'}_Player${i + 1}`,
-            hero: marvelRivalsHeroes.Tank[0],
-            role: 'Tank',
+            hero: marvelRivalsHeroes.Vanguard[0] || 'Captain America', // ✅ FIXED: Use Vanguard instead of Tank
+            role: 'Vanguard',
             eliminations: 0,
             deaths: 0,
             assists: 0,
