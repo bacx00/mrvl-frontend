@@ -209,7 +209,7 @@ function AdvancedAnalytics({ api }) {
         </div>
         <div className="text-sm text-blue-700 dark:text-blue-300">Total Users</div>
         <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-          +{analytics.overview.newUsers} new
+          +{analytics?.overview?.newUsers || 0} new
         </div>
       </div>
       
