@@ -59,9 +59,9 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     }
   ];
 
-  // ✅ ENHANCED MARVEL RIVALS HEROES BY ROLE - REAL GAME ROSTER
+  // ✅ ENHANCED MARVEL RIVALS HEROES BY ROLE - ALIGNED WITH BACKEND
   const marvelRivalsHeroes = {
-    Vanguard: [
+    Tank: [
       'Captain America', 'Doctor Strange', 'Groot', 'Hulk', 
       'Magneto', 'Peni Parker', 'The Thing', 'Thor', 'Venom'
     ],
@@ -71,7 +71,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
       'Psylocke', 'The Punisher', 'Scarlet Witch', 'Spider-Man', 
       'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine'
     ],
-    Strategist: [
+    Support: [
       'Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 
       'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon'
     ]
