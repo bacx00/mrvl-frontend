@@ -90,6 +90,7 @@ function ForumsPage({ navigateTo }) {
         
       } catch (error) {
         console.error('❌ ForumsPage: Unable to load forum data from backend');
+        // Remove fallback data generation - dynamic from backend only
         setThreads([]); // Show empty state instead of mock data
         
         // Set basic categories without mock data - MATCH CreateThreadPage categories exactly  
