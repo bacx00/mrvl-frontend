@@ -152,16 +152,35 @@ function ForumsPage({ navigateTo }) {
 
   // Helper function to format time ago
   const formatTimeAgo = (dateString) => {
+    if (!dateString) return 'Unknown time';
+    
     const date = new Date(dateString);
+    
+    // ✅ FIXED: Handle invalid dates from backend
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid date format:', dateString);
+      return 'Just now';
+    }
+    
     const now = new Date();
     const diffMs = now - date;
+    
+    // ✅ FIXED: Handle negative differences (future dates)
+    if (diffMs < 0) {
+      return 'Just now';
+    }
+    
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
+    if (diffMins < 1) return 'Just now';
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
-    return `${diffDays}d ago`;
+    if (diffDays < 30) return `${diffDays}d ago`;
+    
+    // ✅ FIXED: For very old dates, show actual date
+    return date.toLocaleDateString();
   };
 
 
