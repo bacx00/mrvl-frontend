@@ -54,7 +54,8 @@ function MatchesPage({ navigateTo }) {
           }));
           console.log('✅ MatchesPage: Using REAL backend matches with live teams:', matchesData.length);
         } else {
-          throw new Error('No valid API data');
+          console.log('⚠️ MatchesPage: No matches found in backend - showing empty state');
+          matchesData = []; // Empty array for proper empty state
         }
       } catch (error) {
         console.error('❌ MatchesPage: Backend API failed:', error);
