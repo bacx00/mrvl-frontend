@@ -216,11 +216,11 @@ function AdvancedAnalytics({ api }) {
       <div className="card p-6 text-center bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30">
         <div className="text-3xl mb-2">🔥</div>
         <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-          {analytics.overview.activeUsers?.toLocaleString()}
+          {analytics?.overview?.activeUsers?.toLocaleString() || 0}
         </div>
         <div className="text-sm text-green-700 dark:text-green-300">Active Users</div>
-        <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-          {analytics.overview.retention}% retention
+        <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+          {analytics?.overview?.retention || 0}% retention
         </div>
       </div>
       
