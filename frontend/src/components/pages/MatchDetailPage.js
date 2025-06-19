@@ -420,7 +420,7 @@ function MatchDetailPage({ params, navigateTo }) {
       },
       date: matchData.match_date || matchData.date,
       bestOf: matchData.best_of || 3,
-      maps: generateMapData(team1, team2),
+      maps: await generateMapData(team1, team2),
       broadcast: {
         stream: 'https://twitch.tv/marvelrivals',
         vod: 'https://youtube.com/watch?v=example'
@@ -515,7 +515,7 @@ function MatchDetailPage({ params, navigateTo }) {
 
   // ✅ CRITICAL FIX: Get real players from backend API for proper navigation
   const generateRealPlayerStats = async (team, heroPool) => {
-    const roles = ['Tank', 'Duelist', 'Support', 'Duelist', 'Support', 'Tank'];
+    const roles = ['Vanguard', 'Duelist', 'Strategist', 'Duelist', 'Strategist', 'Vanguard'];
     
     console.log(`🔍 Generating players for team ${team.name} (ID: ${team.id})`);
     
@@ -534,55 +534,79 @@ function MatchDetailPage({ params, navigateTo }) {
       if (realPlayers.length > 0) {
         console.log(`✅ Found ${realPlayers.length} REAL players for team ${team.name}:`, realPlayers.map(p => ({ id: p.id, name: p.name })));
         
-        // Use real players with their actual IDs - THIS FIXES THE NAVIGATION!
-        return realPlayers.slice(0, 6).map((player, i) => ({
-          id: player.id, // ✅ REAL PLAYER ID - NAVIGATION WILL WORK!
-          name: player.name,
-          hero: player.main_hero || heroPool[Math.floor(Math.random() * heroPool.length)],
-          role: player.role || roles[i] || 'Duelist',
-          eliminations: 0, // ✅ Initialize to 0 for new matches
-          deaths: 0,
-          assists: 0,
-          damage: 0,
-          healing: 0,
-          damageBlocked: 0,
-          ultimatesUsed: 0,
-          country: player.country || 'US',
-          teamId: team.id
-        }));
-      } else {
-        console.warn(`⚠️ No players found via API for team ${team.name}, using placeholder`);
-        
-        // ✅ FALLBACK: Create placeholder players but still try to get some real data
-        try {
-          const allPlayersResponse = await api.get('/players');
-          const allPlayers = allPlayersResponse?.data?.data || allPlayersResponse?.data || [];
-          const teamPlayers = allPlayers.filter(p => p.team_id == team.id).slice(0, 6);
+        // ✅ ENHANCED: Assign proper Marvel Rivals heroes to players
+        const enhancedPlayers = realPlayers.slice(0, 6).map((player, i) => {
+          // Get hero from different roles to create balanced team comp
+          let assignedHero;
+          const playerRole = roles[i] || 'Duelist';
           
-          if (teamPlayers.length > 0) {
-            console.log(`✅ Found ${teamPlayers.length} players via all players API for team ${team.name}`);
-            return teamPlayers.map((player, i) => ({
-              id: player.id,
-              name: player.name,
-              hero: player.main_hero || heroPool[Math.floor(Math.random() * heroPool.length)],
-              role: player.role || roles[i] || 'Duelist',
-              eliminations: 0,
-              deaths: 0,
-              assists: 0,
-              damage: 0,
-              healing: 0,
-              damageBlocked: 0,
-              ultimatesUsed: 0,
-              country: player.country || 'US',
-              teamId: team.id
-            }));
+          if (playerRole === 'Vanguard') {
+            const vanguardHeroes = ['Captain America', 'Doctor Strange', 'Groot', 'Thor', 'Venom'];
+            assignedHero = vanguardHeroes[Math.floor(Math.random() * vanguardHeroes.length)];
+          } else if (playerRole === 'Strategist') {
+            const strategistHeroes = ['Luna Snow', 'Mantis', 'Rocket Raccoon', 'Adam Warlock', 'Loki'];
+            assignedHero = strategistHeroes[Math.floor(Math.random() * strategistHeroes.length)];
+          } else {
+            const duelistHeroes = ['Iron Man', 'Spider-Man', 'Black Widow', 'Hawkeye', 'Scarlet Witch'];
+            assignedHero = duelistHeroes[Math.floor(Math.random() * duelistHeroes.length)];
           }
-        } catch (allPlayersError) {
-          console.warn('Could not fetch from all players API:', allPlayersError);
+          
+          return {
+            id: player.id, // ✅ REAL PLAYER ID - NAVIGATION WILL WORK!
+            name: player.name,
+            hero: player.main_hero || assignedHero,
+            role: player.role || playerRole,
+            eliminations: 0, // ✅ Initialize to 0 for live input
+            deaths: 0,
+            assists: 0,
+            damage: 0,
+            healing: 0,
+            damageBlocked: 0,
+            ultimatesUsed: 0,
+            country: player.country || 'US',
+            teamId: team.id
+          };
+        });
+        
+        return enhancedPlayers;
+      } else {
+        console.warn(`⚠️ No players found via API for team ${team.name}, creating placeholder players with Marvel heroes`);
+        
+        // ✅ FALLBACK: Create placeholder players with proper Marvel Rivals heroes
+        const placeholderPlayers = [];
+        for (let i = 0; i < 6; i++) {
+          const playerRole = roles[i] || 'Duelist';
+          let assignedHero;
+          
+          if (playerRole === 'Vanguard') {
+            const vanguardHeroes = ['Captain America', 'Doctor Strange', 'Groot', 'Thor', 'Venom'];
+            assignedHero = vanguardHeroes[i % vanguardHeroes.length];
+          } else if (playerRole === 'Strategist') {
+            const strategistHeroes = ['Luna Snow', 'Mantis', 'Rocket Raccoon', 'Adam Warlock', 'Loki'];
+            assignedHero = strategistHeroes[i % strategistHeroes.length];
+          } else {
+            const duelistHeroes = ['Iron Man', 'Spider-Man', 'Black Widow', 'Hawkeye', 'Scarlet Witch'];
+            assignedHero = duelistHeroes[i % duelistHeroes.length];
+          }
+          
+          placeholderPlayers.push({
+            id: `${team.id}_player_${i + 1}`, // Unique placeholder ID
+            name: `${team.short_name}_${i + 1}`,
+            hero: assignedHero,
+            role: playerRole,
+            eliminations: 0,
+            deaths: 0,
+            assists: 0,
+            damage: 0,
+            healing: 0,
+            damageBlocked: 0,
+            ultimatesUsed: 0,
+            country: 'US',
+            teamId: team.id
+          });
         }
         
-        // Last resort: Return empty array for clean UI
-        return [];
+        return placeholderPlayers;
       }
     } catch (error) {
       console.error(`❌ Failed to fetch players for team ${team.name}:`, error);
@@ -593,8 +617,8 @@ function MatchDetailPage({ params, navigateTo }) {
   const getRoleColor = (role) => {
     switch (role) {
       case 'Duelist': return 'text-red-600 dark:text-red-400';
-      case 'Tank': return 'text-blue-600 dark:text-blue-400';
-      case 'Support': return 'text-green-600 dark:text-green-400';
+      case 'Vanguard': return 'text-blue-600 dark:text-blue-400';
+      case 'Strategist': return 'text-green-600 dark:text-green-400';
       default: return 'text-gray-600 dark:text-gray-400';
     }
   };
@@ -764,6 +788,7 @@ function MatchDetailPage({ params, navigateTo }) {
             {/* Map Header - COMPACT */}
             <div className="text-center">
               <h2 className="text-xl font-bold text-red-600 dark:text-red-400 mb-1">{currentMap.name}</h2>
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">{currentMap.mode} • {currentMap.description}</div>
               <div className="flex items-center justify-center space-x-4">
                 <div className={`text-2xl font-bold ${
                   currentMap.winner === match.team1.id ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'
@@ -777,7 +802,7 @@ function MatchDetailPage({ params, navigateTo }) {
                   {currentMap.team2Score} {match.team2.short_name}
                 </div>
               </div>
-              <div className="text-gray-600 dark:text-gray-400 text-sm mt-1">Duration: {currentMap.duration}</div>
+              <div className="text-gray-600 dark:text-gray-400 text-sm mt-1">Duration: {currentMap.duration || 'Not started'}</div>
             </div>
 
             {/* Maps Navigation - Moved below Duration */}
@@ -851,26 +876,44 @@ function MatchDetailPage({ params, navigateTo }) {
                         </div>
                       </div>
                       
-                      {/* Hero Image Box */}
+                      {/* ✅ FIXED: Hero Image Display with Real Marvel Rivals Images */}
                       <div className="flex justify-center">
-                        <div className="bg-gray-600 dark:bg-gray-700 rounded p-1">
+                        <div className={`relative rounded-lg overflow-hidden ${
+                          getHeroRole(player.hero) === 'Vanguard' ? 'bg-blue-600' :
+                          getHeroRole(player.hero) === 'Duelist' ? 'bg-red-600' : 
+                          getHeroRole(player.hero) === 'Strategist' ? 'bg-green-600' : 'bg-gray-600'
+                        }`}>
                           {getHeroImage(player.hero) ? (
                             <img 
                               src={`/Heroes/${getHeroImage(player.hero)}`}
                               alt={player.hero}
-                              className="w-8 h-8 rounded object-cover"
+                              className="w-10 h-10 object-cover rounded-lg"
+                              title={`${player.hero} (${getHeroRole(player.hero)})`}
                               onError={(e) => {
-                                // Fallback to text if image fails
+                                console.error(`❌ Failed to load hero image: /Heroes/${getHeroImage(player.hero)}`);
+                                // Show role-colored fallback with hero name
                                 e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'block';
+                                e.target.nextSibling.style.display = 'flex';
                               }}
                             />
                           ) : null}
                           <div 
-                            className="text-white text-xs font-medium px-1 text-center"
-                            style={{ display: getHeroImage(player.hero) ? 'none' : 'block' }}
+                            className="w-10 h-10 flex items-center justify-center text-white text-xs font-bold text-center leading-tight"
+                            style={{ display: getHeroImage(player.hero) ? 'none' : 'flex' }}
+                            title={`${player.hero} (${getHeroRole(player.hero)})`}
                           >
-                            {player.hero}
+                            {player.hero.split(' ').map(word => word[0]).join('').slice(0, 3)}
+                          </div>
+                          {/* Role indicator */}
+                          <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full text-xs flex items-center justify-center text-white font-bold" 
+                               style={{
+                                 backgroundColor: getHeroRole(player.hero) === 'Vanguard' ? '#3B82F6' :
+                                                getHeroRole(player.hero) === 'Duelist' ? '#EF4444' : 
+                                                getHeroRole(player.hero) === 'Strategist' ? '#10B981' : '#6B7280'
+                               }}>
+                            {getHeroRole(player.hero) === 'Vanguard' ? '🛡️' :
+                             getHeroRole(player.hero) === 'Duelist' ? '⚔️' : 
+                             getHeroRole(player.hero) === 'Strategist' ? '💚' : '❓'}
                           </div>
                         </div>
                       </div>
@@ -932,26 +975,44 @@ function MatchDetailPage({ params, navigateTo }) {
                         </div>
                       </div>
                       
-                      {/* Hero Image Box */}
+                      {/* ✅ FIXED: Hero Image Display with Real Marvel Rivals Images */}
                       <div className="flex justify-center">
-                        <div className="bg-gray-600 dark:bg-gray-700 rounded p-1">
+                        <div className={`relative rounded-lg overflow-hidden ${
+                          getHeroRole(player.hero) === 'Vanguard' ? 'bg-blue-600' :
+                          getHeroRole(player.hero) === 'Duelist' ? 'bg-red-600' : 
+                          getHeroRole(player.hero) === 'Strategist' ? 'bg-green-600' : 'bg-gray-600'
+                        }`}>
                           {getHeroImage(player.hero) ? (
                             <img 
                               src={`/Heroes/${getHeroImage(player.hero)}`}
                               alt={player.hero}
-                              className="w-8 h-8 rounded object-cover"
+                              className="w-10 h-10 object-cover rounded-lg"
+                              title={`${player.hero} (${getHeroRole(player.hero)})`}
                               onError={(e) => {
-                                // Fallback to text if image fails
+                                console.error(`❌ Failed to load hero image: /Heroes/${getHeroImage(player.hero)}`);
+                                // Show role-colored fallback with hero name
                                 e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'block';
+                                e.target.nextSibling.style.display = 'flex';
                               }}
                             />
                           ) : null}
                           <div 
-                            className="text-white text-xs font-medium px-1 text-center"
-                            style={{ display: getHeroImage(player.hero) ? 'none' : 'block' }}
+                            className="w-10 h-10 flex items-center justify-center text-white text-xs font-bold text-center leading-tight"
+                            style={{ display: getHeroImage(player.hero) ? 'none' : 'flex' }}
+                            title={`${player.hero} (${getHeroRole(player.hero)})`}
                           >
-                            {player.hero}
+                            {player.hero.split(' ').map(word => word[0]).join('').slice(0, 3)}
+                          </div>
+                          {/* Role indicator */}
+                          <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full text-xs flex items-center justify-center text-white font-bold" 
+                               style={{
+                                 backgroundColor: getHeroRole(player.hero) === 'Vanguard' ? '#3B82F6' :
+                                                getHeroRole(player.hero) === 'Duelist' ? '#EF4444' : 
+                                                getHeroRole(player.hero) === 'Strategist' ? '#10B981' : '#6B7280'
+                               }}>
+                            {getHeroRole(player.hero) === 'Vanguard' ? '🛡️' :
+                             getHeroRole(player.hero) === 'Duelist' ? '⚔️' : 
+                             getHeroRole(player.hero) === 'Strategist' ? '💚' : '❓'}
                           </div>
                         </div>
                       </div>
