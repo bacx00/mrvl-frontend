@@ -238,11 +238,11 @@ function AdvancedAnalytics({ api }) {
       <div className="card p-6 text-center bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950/30 dark:to-red-900/30">
         <div className="text-3xl mb-2">⏱️</div>
         <div className="text-3xl font-bold text-red-600 dark:text-red-400">
-          {analytics.overview.avgSessionTime}
+          {analytics?.overview?.avgSessionTime || '0:00'}
         </div>
         <div className="text-sm text-red-700 dark:text-red-300">Avg Session</div>
         <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-          {analytics.overview.conversionRate}% conversion
+          {analytics?.overview?.conversionRate || 0}% conversion
         </div>
       </div>
     </div>
