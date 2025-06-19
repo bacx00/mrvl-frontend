@@ -87,7 +87,7 @@ function HomePage({ navigateTo }) {
           discussionsData = rawDiscussions.slice(0, 8).map(thread => ({
             id: thread.id,
             title: thread.title,
-            author: thread.user_name || thread.author?.name || 'Unknown User',
+            author: thread.user_name || thread.author?.name || 'Anonymous',
             replies: thread.replies || thread.replies_count || 0,
             lastActivity: formatTimeAgo(thread.updated_at || thread.created_at),
             category: formatCategory(thread.category)
