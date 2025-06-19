@@ -12,9 +12,9 @@ function CreateThreadPage({ navigateTo }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // ✅ FIXED: Marvel Rivals forum categories that match backend validation EXACTLY
+  // ✅ BACKEND VALIDATED: Use EXACT categories that backend accepts
   const categories = [
-    { id: 'general-discussion', name: 'General Discussion', description: 'General Marvel Rivals discussion' },
+    { id: 'general', name: 'General Discussion', description: 'General Marvel Rivals discussion' },
     { id: 'strategy', name: 'Strategy & Tactics', description: 'Share strategies and gameplay tactics' },
     { id: 'hero-discussion', name: 'Hero Discussion', description: 'Discuss heroes, abilities, and balancing' },
     { id: 'esports', name: 'Esports & Competitive', description: 'Competitive scene and tournament discussion' },
