@@ -37,40 +37,9 @@ function AdminUsers({ navigateTo }) {
 
       setUsers(usersData);
     } catch (error) {
-      console.error('Error fetching users:', error);
-      // Set fallback data
-      setUsers([
-        {
-          id: 1,
-          name: 'Johnny Rodriguez',
-          email: 'jhonny@ar-mediia.com',
-          roles: ['admin'],
-          created_at: '2024-01-15T10:30:00Z',
-          last_login: '2025-01-27T14:20:00Z',
-          status: 'active',
-          avatar: '🛡️'
-        },
-        {
-          id: 2,
-          name: 'TenZ Gaming',
-          email: 'tenz@gaming.com',
-          roles: ['user'],
-          created_at: '2024-02-10T16:45:00Z',
-          last_login: '2025-01-27T12:15:00Z',
-          status: 'active',
-          avatar: '🎮'
-        },
-        {
-          id: 3,
-          name: 'Moderator Mike',
-          email: 'mike@mrvl.com',
-          roles: ['moderator'],
-          created_at: '2024-01-20T09:15:00Z',
-          last_login: '2025-01-26T18:30:00Z',
-          status: 'active',
-          avatar: '⭐'
-        }
-      ]);
+      console.error('❌ AdminUsers: Backend users API failed:', error);
+      // ✅ CRITICAL FIX: NO MOCK DATA - Show empty state instead
+      setUsers([]);
     } finally {
       setLoading(false);
     }
