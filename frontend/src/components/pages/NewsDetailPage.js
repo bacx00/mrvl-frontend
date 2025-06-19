@@ -14,7 +14,7 @@ function NewsDetailPage({ params, navigateTo }) {
     try {
       console.log('🔍 NewsDetailPage: Fetching article with ID:', params.id);
       
-      // ✅ FIXED: ONLY USE REAL BACKEND DATA - NO MOCK FALLBACK
+      // ✅ FIXED: ONLY USE REAL BACKEND DATA - PROPER ERROR HANDLING
       const response = await api.get(`/news/${params.id}`);
       
       // Handle Laravel API response structure properly
@@ -40,13 +40,21 @@ function NewsDetailPage({ params, navigateTo }) {
           setRelatedNews([]);
         }
       } else {
-        console.error('❌ NewsDetailPage: Article not found:', params.id);
+        console.warn('⚠️ NewsDetailPage: Article data structure invalid:', articleData);
         setArticle(null);
       }
       
     } catch (error) {
       console.error('❌ NewsDetailPage: Backend API failed:', error.message);
-      setArticle(null); // ✅ NO MOCK DATA - Show not found instead
+      
+      // ✅ IMPROVED: Check if it's a 404 or server issue
+      if (error.message.includes('404') || error.message.includes('No query results')) {
+        console.log('📰 NewsDetailPage: Article not found (404) - this is normal for non-existent articles');
+      } else {
+        console.error('🚨 NewsDetailPage: Server error:', error);
+      }
+      
+      setArticle(null); // ✅ NO MOCK DATA - Show proper not found message
     } finally {
       setLoading(false);
     }
