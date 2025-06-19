@@ -470,7 +470,7 @@ function MatchDetailPage({ params, navigateTo }) {
 
     // ✅ REAL MARVEL RIVALS HEROES - Current roster
     const marvelRivalsHeroes = [
-      // Vanguard (Tanks)
+      // Tank (Tanks)
       'Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 
       'Peni Parker', 'The Thing', 'Thor', 'Venom',
       
@@ -480,7 +480,7 @@ function MatchDetailPage({ params, navigateTo }) {
       'Psylocke', 'The Punisher', 'Scarlet Witch', 'Spider-Man', 
       'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine',
       
-      // Strategist (Support)
+      // Support (Support)
       'Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 
       'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon'
     ];
@@ -515,7 +515,7 @@ function MatchDetailPage({ params, navigateTo }) {
 
   // ✅ CRITICAL FIX: Get real players from backend API for proper navigation
   const generateRealPlayerStats = async (team, heroPool) => {
-    const roles = ['Vanguard', 'Duelist', 'Strategist', 'Duelist', 'Strategist', 'Vanguard'];
+    const roles = ['Tank', 'Duelist', 'Support', 'Duelist', 'Support', 'Tank'];
     
     console.log(`🔍 Generating players for team ${team.name} (ID: ${team.id})`);
     
@@ -540,12 +540,12 @@ function MatchDetailPage({ params, navigateTo }) {
           let assignedHero;
           const playerRole = roles[i] || 'Duelist';
           
-          if (playerRole === 'Vanguard') {
-            const vanguardHeroes = ['Captain America', 'Doctor Strange', 'Groot', 'Thor', 'Venom'];
-            assignedHero = vanguardHeroes[Math.floor(Math.random() * vanguardHeroes.length)];
-          } else if (playerRole === 'Strategist') {
-            const strategistHeroes = ['Luna Snow', 'Mantis', 'Rocket Raccoon', 'Adam Warlock', 'Loki'];
-            assignedHero = strategistHeroes[Math.floor(Math.random() * strategistHeroes.length)];
+          if (playerRole === 'Tank') {
+            const tankHeroes = ['Captain America', 'Doctor Strange', 'Groot', 'Thor', 'Venom'];
+            assignedHero = tankHeroes[Math.floor(Math.random() * tankHeroes.length)];
+          } else if (playerRole === 'Support') {
+            const supportHeroes = ['Luna Snow', 'Mantis', 'Rocket Raccoon', 'Adam Warlock', 'Loki'];
+            assignedHero = supportHeroes[Math.floor(Math.random() * supportHeroes.length)];
           } else {
             const duelistHeroes = ['Iron Man', 'Spider-Man', 'Black Widow', 'Hawkeye', 'Scarlet Witch'];
             assignedHero = duelistHeroes[Math.floor(Math.random() * duelistHeroes.length)];
@@ -578,12 +578,12 @@ function MatchDetailPage({ params, navigateTo }) {
           const playerRole = roles[i] || 'Duelist';
           let assignedHero;
           
-          if (playerRole === 'Vanguard') {
-            const vanguardHeroes = ['Captain America', 'Doctor Strange', 'Groot', 'Thor', 'Venom'];
-            assignedHero = vanguardHeroes[i % vanguardHeroes.length];
-          } else if (playerRole === 'Strategist') {
-            const strategistHeroes = ['Luna Snow', 'Mantis', 'Rocket Raccoon', 'Adam Warlock', 'Loki'];
-            assignedHero = strategistHeroes[i % strategistHeroes.length];
+          if (playerRole === 'Tank') {
+            const tankHeroes = ['Captain America', 'Doctor Strange', 'Groot', 'Thor', 'Venom'];
+            assignedHero = tankHeroes[i % tankHeroes.length];
+          } else if (playerRole === 'Support') {
+            const supportHeroes = ['Luna Snow', 'Mantis', 'Rocket Raccoon', 'Adam Warlock', 'Loki'];
+            assignedHero = supportHeroes[i % supportHeroes.length];
           } else {
             const duelistHeroes = ['Iron Man', 'Spider-Man', 'Black Widow', 'Hawkeye', 'Scarlet Witch'];
             assignedHero = duelistHeroes[i % duelistHeroes.length];
@@ -861,9 +861,13 @@ function MatchDetailPage({ params, navigateTo }) {
                         navigateTo && navigateTo('player-detail', { id: player.id });
                       }}
                     >
-                      {/* Player Info */}
+                      {/* ✅ PLAYER AVATAR - NOT FLAG */}
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm">{getCountryFlag(player.country)}</span>
+                        <div className="w-8 h-8 rounded-full bg-gray-600 dark:bg-gray-700 flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">
+                            {player.name.charAt(0)}
+                          </span>
+                        </div>
                         <div 
                           className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 cursor-pointer text-sm transition-colors"
                           onClick={(e) => {
@@ -879,9 +883,9 @@ function MatchDetailPage({ params, navigateTo }) {
                       {/* ✅ FIXED: Hero Image Display with Real Marvel Rivals Images */}
                       <div className="flex justify-center">
                         <div className={`relative rounded-lg overflow-hidden ${
-                          getHeroRole(player.hero) === 'Vanguard' ? 'bg-blue-600' :
+                          getHeroRole(player.hero) === 'Tank' ? 'bg-blue-600' :
                           getHeroRole(player.hero) === 'Duelist' ? 'bg-red-600' : 
-                          getHeroRole(player.hero) === 'Strategist' ? 'bg-green-600' : 'bg-gray-600'
+                          getHeroRole(player.hero) === 'Support' ? 'bg-green-600' : 'bg-gray-600'
                         }`}>
                           {getHeroImage(player.hero) ? (
                             <img 
@@ -907,13 +911,13 @@ function MatchDetailPage({ params, navigateTo }) {
                           {/* Role indicator */}
                           <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full text-xs flex items-center justify-center text-white font-bold" 
                                style={{
-                                 backgroundColor: getHeroRole(player.hero) === 'Vanguard' ? '#3B82F6' :
+                                 backgroundColor: getHeroRole(player.hero) === 'Tank' ? '#3B82F6' :
                                                 getHeroRole(player.hero) === 'Duelist' ? '#EF4444' : 
-                                                getHeroRole(player.hero) === 'Strategist' ? '#10B981' : '#6B7280'
+                                                getHeroRole(player.hero) === 'Support' ? '#10B981' : '#6B7280'
                                }}>
-                            {getHeroRole(player.hero) === 'Vanguard' ? '🛡️' :
+                            {getHeroRole(player.hero) === 'Tank' ? '🛡️' :
                              getHeroRole(player.hero) === 'Duelist' ? '⚔️' : 
-                             getHeroRole(player.hero) === 'Strategist' ? '💚' : '❓'}
+                             getHeroRole(player.hero) === 'Support' ? '💚' : '❓'}
                           </div>
                         </div>
                       </div>
@@ -960,9 +964,13 @@ function MatchDetailPage({ params, navigateTo }) {
                         navigateTo && navigateTo('player-detail', { id: player.id });
                       }}
                     >
-                      {/* Player Info */}
+                      {/* ✅ PLAYER AVATAR - NOT FLAG */}
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm">{getCountryFlag(player.country)}</span>
+                        <div className="w-8 h-8 rounded-full bg-gray-600 dark:bg-gray-700 flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">
+                            {player.name.charAt(0)}
+                          </span>
+                        </div>
                         <div 
                           className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 cursor-pointer text-sm transition-colors"
                           onClick={(e) => {
@@ -978,9 +986,9 @@ function MatchDetailPage({ params, navigateTo }) {
                       {/* ✅ FIXED: Hero Image Display with Real Marvel Rivals Images */}
                       <div className="flex justify-center">
                         <div className={`relative rounded-lg overflow-hidden ${
-                          getHeroRole(player.hero) === 'Vanguard' ? 'bg-blue-600' :
+                          getHeroRole(player.hero) === 'Tank' ? 'bg-blue-600' :
                           getHeroRole(player.hero) === 'Duelist' ? 'bg-red-600' : 
-                          getHeroRole(player.hero) === 'Strategist' ? 'bg-green-600' : 'bg-gray-600'
+                          getHeroRole(player.hero) === 'Support' ? 'bg-green-600' : 'bg-gray-600'
                         }`}>
                           {getHeroImage(player.hero) ? (
                             <img 
@@ -1006,13 +1014,13 @@ function MatchDetailPage({ params, navigateTo }) {
                           {/* Role indicator */}
                           <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full text-xs flex items-center justify-center text-white font-bold" 
                                style={{
-                                 backgroundColor: getHeroRole(player.hero) === 'Vanguard' ? '#3B82F6' :
+                                 backgroundColor: getHeroRole(player.hero) === 'Tank' ? '#3B82F6' :
                                                 getHeroRole(player.hero) === 'Duelist' ? '#EF4444' : 
-                                                getHeroRole(player.hero) === 'Strategist' ? '#10B981' : '#6B7280'
+                                                getHeroRole(player.hero) === 'Support' ? '#10B981' : '#6B7280'
                                }}>
-                            {getHeroRole(player.hero) === 'Vanguard' ? '🛡️' :
+                            {getHeroRole(player.hero) === 'Tank' ? '🛡️' :
                              getHeroRole(player.hero) === 'Duelist' ? '⚔️' : 
-                             getHeroRole(player.hero) === 'Strategist' ? '💚' : '❓'}
+                             getHeroRole(player.hero) === 'Support' ? '💚' : '❓'}
                           </div>
                         </div>
                       </div>
