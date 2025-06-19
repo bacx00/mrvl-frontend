@@ -344,28 +344,6 @@ function ForumsPage({ navigateTo }) {
         </div>
       </div>
 
-      {/* ✅ CATEGORY TABS - All categories visible as tabs */}
-      <div className="card mb-4">
-        <div className="p-2">
-          <div className="flex flex-wrap gap-1">
-            {categories.map(category => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-                  selectedCategory === category.id
-                    ? 'bg-red-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
-              >
-                {category.name}
-                <span className="ml-1 text-xs opacity-75">({category.count || 0})</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Responsive card layout */}
       <div className="card">
         {/* Added sorting controls */}
