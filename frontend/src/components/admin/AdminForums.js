@@ -40,7 +40,7 @@ function AdminForums({ navigateTo }) {
             id: thread.id,
             title: thread.title,
             author: { 
-              name: thread.user_name || thread.author?.name || 'Unknown User',
+              name: thread.user_name || thread.author?.name || 'Anonymous',
               avatar: thread.author?.avatar || '👤'
             },
             category: thread.category || 'general',
