@@ -368,72 +368,103 @@ def main():
     # Setup
     tester = MarvelRivalsAPITester()
     
-    print("\n🚀 Starting Marvel Rivals API Tests - Comprehensive Backend Audit\n")
+    print("\n🚀 Starting Marvel Rivals API Tests - Focused on Review Requirements\n")
     print(f"🌐 Base URL: {tester.base_url}")
     print(f"🌐 API URL: {tester.api_url}")
     
     # Try to login to get authentication token for admin operations
     tester.login()
     
-    # 1. Test newly added endpoints
-    print("\n===== TESTING NEWLY ADDED ENDPOINTS =====")
+    # 1. Test Match Detail Endpoints
+    print("\n===== TESTING MATCH DETAIL ENDPOINTS =====")
+    success, matches_data = tester.test_get_matches()
+    if success:
+        matches = matches_data if isinstance(matches_data, list) else matches_data.get('data', [])
+        if matches and len(matches) > 0:
+            # Test the first match in the list
+            match_id = matches[0]['id']
+            success, match_detail = tester.test_get_match_detail(match_id)
+            if success:
+                print(f"✅ Match detail endpoint returns team and player information")
+                # Verify team information
+                if 'team1' in match_detail and 'team2' in match_detail:
+                    print(f"✅ Team data is present in match details")
+                else:
+                    print(f"❌ Team data is missing in match details")
+                
+                # Verify player information
+                if 'players' in match_detail:
+                    print(f"✅ Player data is present in match details")
+                else:
+                    print(f"❌ Player data is missing in match details")
+        else:
+            print("❌ No matches found to test match detail endpoint")
     
-    # Test team players endpoints
-    print("\n----- Testing Team Players Endpoints -----")
+    # 2. Test Live Scoring Endpoints
+    print("\n===== TESTING LIVE SCORING ENDPOINTS =====")
+    if matches and len(matches) > 0:
+        match_id = matches[0]['id']
+        # Test updating match score
+        score_data = {
+            "score1": 3,
+            "score2": 2
+        }
+        tester.test_update_match_score(match_id, score_data)
+        
+        # Test updating match details
+        match_data = {
+            "score1": 3,
+            "score2": 2,
+            "date": datetime.now().isoformat()
+        }
+        tester.test_update_match(match_id, match_data)
+    else:
+        print("❌ No matches found to test live scoring endpoints")
+    
+    # 3. Test News System
+    print("\n===== TESTING NEWS SYSTEM =====")
+    success, news_data = tester.test_get_news()
+    if success:
+        news_articles = news_data if isinstance(news_data, list) else news_data.get('data', [])
+        if news_articles and len(news_articles) > 0:
+            # Test the first news article in the list
+            news_id = news_articles[0]['id']
+            tester.test_get_news_detail(news_id)
+            
+            # Test non-existent news article (should return 404)
+            non_existent_id = 9999
+            tester.test_get_news_detail_not_found(non_existent_id)
+        else:
+            print("❌ No news articles found to test news detail endpoint")
+    
+    # 4. Test Teams and Players
+    print("\n===== TESTING TEAMS AND PLAYERS ENDPOINTS =====")
     success, teams_data = tester.test_get_teams()
     if success:
         teams = teams_data if isinstance(teams_data, list) else teams_data.get('data', [])
-        # Test specific team IDs as mentioned in the review request
-        test_team_ids = [83, 84]
-        for team_id in test_team_ids:
-            tester.test_get_team_players(team_id)
+        if teams and len(teams) > 0:
+            # Test specific team IDs as mentioned in the review request
+            test_team_ids = [83, 84]
+            for team_id in test_team_ids:
+                success, players_data = tester.test_get_team_players(team_id)
+                if success:
+                    players = players_data if isinstance(players_data, list) else players_data.get('data', [])
+                    print(f"✅ Team {team_id} has {len(players)} players")
+        else:
+            print("❌ No teams found to test team players endpoint")
     
-    # Test event-related endpoints
-    print("\n----- Testing Event-Related Endpoints -----")
+    # 5. Test Events Integration
+    print("\n===== TESTING EVENTS INTEGRATION =====")
     success, events_data = tester.test_get_events()
     if success:
         events = events_data if isinstance(events_data, list) else events_data.get('data', [])
-        # Test specific event ID as mentioned in the review request
-        event_id = 12
-        tester.test_get_event_matches(event_id)
-        tester.test_get_event_teams(event_id)
-    
-    # Test admin analytics endpoint
-    print("\n----- Testing Admin Analytics Endpoint -----")
-    tester.test_get_admin_analytics()
-    
-    # Test forum thread admin operations
-    print("\n----- Testing Forum Thread Admin Operations -----")
-    thread_id = 16  # As mentioned in the review request
-    tester.test_admin_thread_pin(thread_id)
-    tester.test_admin_thread_unpin(thread_id)
-    tester.test_admin_thread_lock(thread_id)
-    tester.test_admin_thread_unlock(thread_id)
-    
-    # 2. Test SQL fix verification
-    print("\n===== TESTING SQL FIX VERIFICATION =====")
-    # Test updating thread with pinned status
-    tester.test_update_thread(thread_id, {"pinned": True})
-    tester.test_update_thread(thread_id, {"pinned": False})
-    
-    # 3. Test core platform endpoints
-    print("\n===== TESTING CORE PLATFORM ENDPOINTS =====")
-    tester.test_get_teams()
-    tester.test_get_players()
-    tester.test_get_matches()
-    tester.test_get_events()
-    tester.test_get_forum_threads()
-    
-    # Test forum thread creation if logged in
-    if tester.token:
-        tester.test_create_forum_thread("Test Thread from API Audit", "This is a test thread created during the API audit.")
-    
-    # 4. Test authentication endpoints
-    print("\n===== TESTING AUTHENTICATION ENDPOINTS =====")
-    # Login was already tested at the beginning
-    if tester.token:
-        tester.test_get_user()
-        tester.test_logout()
+        if events and len(events) > 0:
+            # Test specific event ID as mentioned in the review request
+            event_id = 12
+            tester.test_get_event_matches(event_id)
+            tester.test_get_event_teams(event_id)
+        else:
+            print("❌ No events found to test event integration endpoints")
     
     # Print summary
     tester.print_summary()
