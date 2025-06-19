@@ -28,7 +28,7 @@ function ThreadDetailPage({ params, navigateTo }) {
             title: realThread.title,
             author: {
               id: realThread.user_id || realThread.author?.id || 1,
-              name: realThread.user_name || realThread.author?.name || 'Unknown User',
+              name: realThread.user_name || realThread.author?.name || 'Anonymous',
               avatar: realThread.author?.avatar || "🎮",
               posts: realThread.author?.posts_count || 1,
               joined: realThread.author?.created_at || "2024-01-01",
