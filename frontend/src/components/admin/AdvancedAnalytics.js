@@ -282,11 +282,11 @@ function AdvancedAnalytics({ api }) {
             <h3 className="text-lg font-bold mb-4">Player Analytics</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{analytics.players.totalPlayers}</div>
+                <div className="text-2xl font-bold text-blue-600">{analytics?.players?.totalPlayers || 0}</div>
                 <div className="text-sm text-gray-600">Total Players</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{analytics.players.activePlayers}</div>
+                <div className="text-2xl font-bold text-green-600">{analytics?.players?.activePlayers || 0}</div>
                 <div className="text-sm text-gray-600">Active Players</div>
               </div>
               <div className="text-center">
