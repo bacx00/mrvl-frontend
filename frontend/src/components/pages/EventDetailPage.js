@@ -196,38 +196,6 @@ function EventDetailPage({ params, navigateTo }) {
 
   // ✅ NO MORE MOCK DATA FUNCTIONS - DELETED FOR PRODUCTION
 
-  const generateSampleMatches = () => {
-    const sampleTeams = REAL_TEAMS.slice(0, 8);
-    return [
-      {
-        id: 1,
-        team1: sampleTeams[0]?.name || 'Luminosity Gaming',
-        team1Id: sampleTeams[0]?.id,
-        team2: sampleTeams[1]?.name || 'Fnatic',
-        team2Id: sampleTeams[1]?.id,
-        status: 'live',
-        score: { team1: 1, team2: 1 },
-        date: '2025-01-26',
-        time: '18:00',
-        stage: 'Grand Finals',
-        format: 'BO5'
-      },
-      {
-        id: 2,
-        team1: sampleTeams[2]?.name || 'OG',
-        team1Id: sampleTeams[2]?.id,
-        team2: sampleTeams[3]?.name || 'Sentinels',
-        team2Id: sampleTeams[3]?.id,
-        status: 'upcoming',
-        score: { team1: 0, team2: 0 },
-        date: '2025-01-27',
-        time: '15:00',
-        stage: 'Semi-Finals',
-        format: 'BO3'
-      }
-    ];
-  };
-
   const getCountryFlag = (region) => {
     const flagMap = {
       'North America': '🇺🇸', 'Europe': '🇪🇺', 'Asia Pacific': '🌏', 'International': '🌍',
