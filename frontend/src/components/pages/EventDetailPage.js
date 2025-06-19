@@ -194,27 +194,7 @@ function EventDetailPage({ params, navigateTo }) {
     }
   };
 
-  const generateFallbackEvent = (eventId) => {
-    return {
-      id: eventId,
-      name: 'Marvel Rivals Championship 2025',
-      description: 'The ultimate Marvel Rivals championship featuring the world\'s best teams competing for glory and a massive prize pool.',
-      startDate: '2025-01-20',
-      endDate: '2025-02-15',
-      location: 'Los Angeles, CA',
-      venue: 'Los Angeles Convention Center',
-      prizePool: '$1,000,000',
-      format: 'Double Elimination',
-      status: 'upcoming',
-      organizer: 'Marvel Rivals League',
-      region: 'International',
-      tier: 'S',
-      teams: 16,
-      stream: 'https://twitch.tv/marvelrivals',
-      sponsors: ['Marvel', 'NetEase', 'Intel', 'NVIDIA', 'Red Bull'],
-      stage: 'Main Event'
-    };
-  };
+  // ✅ NO MORE MOCK DATA FUNCTIONS - DELETED FOR PRODUCTION
 
   const generateSampleMatches = () => {
     const sampleTeams = REAL_TEAMS.slice(0, 8);
