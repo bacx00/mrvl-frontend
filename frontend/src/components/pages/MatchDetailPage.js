@@ -5,53 +5,100 @@ import { getMatchById } from '../../data/matchesData';
 import { REAL_TEAMS, getTeamById, getRandomTeams, getRandomTournament, getCountryFlag } from '../../data/realTeams';
 import { getRealPlayersForTeam } from '../../data/realPlayersMapping';
 
-// ✅ MARVEL RIVALS HERO SYSTEM - Enhanced with role colors and emojis
+// 🎮 MARVEL RIVALS HERO SYSTEM - Real Images + Role Data
 const getHeroImage = (heroName) => {
   if (!heroName) return null;
   
-  // ✅ FIXED: Use emoji/icon representation since images don't exist
-  const heroMapping = {
-    // 🛡️ VANGUARD (Tank) Heroes
-    'Captain America': { emoji: '🛡️', role: 'Vanguard', color: 'bg-blue-600' },
-    'Doctor Strange': { emoji: '🔮', role: 'Vanguard', color: 'bg-purple-600' },
-    'Groot': { emoji: '🌳', role: 'Vanguard', color: 'bg-green-600' },
-    'Hulk': { emoji: '💚', role: 'Vanguard', color: 'bg-green-700' },
-    'Magneto': { emoji: '🧲', role: 'Vanguard', color: 'bg-purple-700' },
-    'Peni Parker': { emoji: '🕷️', role: 'Vanguard', color: 'bg-pink-600' },
-    'The Thing': { emoji: '🪨', role: 'Vanguard', color: 'bg-orange-600' },
-    'Thor': { emoji: '⚡', role: 'Vanguard', color: 'bg-blue-700' },
-    'Venom': { emoji: '🖤', role: 'Vanguard', color: 'bg-gray-800' },
-
-    // ⚔️ DUELIST Heroes
-    'Black Panther': { emoji: '🐾', role: 'Duelist', color: 'bg-purple-800' },
-    'Black Widow': { emoji: '🕸️', role: 'Duelist', color: 'bg-red-700' },
-    'Hawkeye': { emoji: '🏹', role: 'Duelist', color: 'bg-purple-600' },
-    'Hela': { emoji: '💀', role: 'Duelist', color: 'bg-green-800' },
-    'Iron Fist': { emoji: '👊', role: 'Duelist', color: 'bg-yellow-600' },
-    'Iron Man': { emoji: '🤖', role: 'Duelist', color: 'bg-red-600' },
-    'Magik': { emoji: '⚔️', role: 'Duelist', color: 'bg-purple-700' },
-    'Moon Knight': { emoji: '🌙', role: 'Duelist', color: 'bg-gray-600' },
-    'Namor': { emoji: '🔱', role: 'Duelist', color: 'bg-blue-800' },
-    'Psylocke': { emoji: '💜', role: 'Duelist', color: 'bg-purple-600' },
-    'Punisher': { emoji: '💀', role: 'Duelist', color: 'bg-gray-700' },
-    'Scarlet Witch': { emoji: '🔴', role: 'Duelist', color: 'bg-red-800' },
-    'Spider-Man': { emoji: '🕷️', role: 'Duelist', color: 'bg-red-600' },
-    'Squirrel Girl': { emoji: '🐿️', role: 'Duelist', color: 'bg-brown-600' },
-    'Star-Lord': { emoji: '⭐', role: 'Duelist', color: 'bg-orange-600' },
-    'Storm': { emoji: '⛈️', role: 'Duelist', color: 'bg-gray-500' },
-    'Wolverine': { emoji: '🔪', role: 'Duelist', color: 'bg-yellow-700' },
-
-    // 💚 STRATEGIST (Support) Heroes  
-    'Adam Warlock': { emoji: '✨', role: 'Strategist', color: 'bg-yellow-500' },
-    'Cloak & Dagger': { emoji: '🌗', role: 'Strategist', color: 'bg-gray-600' },
-    'Jeff the Land Shark': { emoji: '🦈', role: 'Strategist', color: 'bg-blue-500' },
-    'Loki': { emoji: '🐍', role: 'Strategist', color: 'bg-green-700' },
-    'Luna Snow': { emoji: '❄️', role: 'Strategist', color: 'bg-blue-300' },
-    'Mantis': { emoji: '🧘', role: 'Strategist', color: 'bg-green-500' },
-    'Rocket Raccoon': { emoji: '🦝', role: 'Strategist', color: 'bg-brown-600' }
+  // ✅ REAL HERO IMAGES - Convert hero name to actual image filename
+  const heroImageMapping = {
+    'Adam Warlock': 'adam-warlock-headbig.webp',
+    'Black Panther': 'black-panther-headbig.webp', 
+    'Black Widow': 'black-widow-headbig.webp',
+    'Bruce Banner': 'bruce-banner-headbig.webp',
+    'Captain America': 'captain-america-headbig.webp',
+    'Cloak & Dagger': 'cloak-dagger-headbig.webp',
+    'Doctor Strange': 'doctor-strange-headbig.webp',
+    'Emma Frost': 'emma-frost-headbig.webp',
+    'Groot': 'groot-headbig.webp',
+    'Hawkeye': 'hawkeye-headbig.webp',
+    'Hela': 'hela-headbig.webp',
+    'Human Torch': 'human-torch-headbig.webp',
+    'Invisible Woman': 'invisible-woman-headbig.webp',
+    'Iron Fist': 'iron-fist-headbig.webp',
+    'Iron Man': 'iron-man-headbig.webp',
+    'Jeff the Land Shark': 'jeff-the-land-shark-headbig.webp',
+    'Loki': 'loki-headbig.webp',
+    'Luna Snow': 'luna-snow-headbig.webp',
+    'Magik': 'magik-headbig.webp',
+    'Magneto': 'magneto-headbig.webp',
+    'Mantis': 'mantis-headbig.webp',
+    'Mister Fantastic': 'mister-fantastic-headbig.webp',
+    'Moon Knight': 'moon-knight-headbig.webp',
+    'Namor': 'namor-headbig.webp',
+    'Peni Parker': 'peni-parker-headbig.webp',
+    'Psylocke': 'psylocke-headbig.webp',
+    'Rocket Raccoon': 'rocket-raccoon-headbig.webp',
+    'Scarlet Witch': 'scarlet-witch-headbig.webp',
+    'Spider-Man': 'spider-man-headbig.webp',
+    'Squirrel Girl': 'squirrel-girl-headbig.webp',
+    'Star-Lord': 'star-lord-headbig.webp',
+    'Storm': 'storm-headbig.webp',
+    'The Punisher': 'the-punisher-headbig.webp',
+    'The Thing': 'the-thing-headbig.webp',
+    'Thor': 'thor-headbig.webp',
+    'Ultron': 'ultron-headbig.webp',
+    'Venom': 'venom-headbig.webp'
   };
   
-  return heroMapping[heroName] || { emoji: '🦸', role: 'Unknown', color: 'bg-gray-600' };
+  return heroImageMapping[heroName] || null;
+};
+
+// 🎮 MARVEL RIVALS ROLE SYSTEM
+const getHeroRole = (heroName) => {
+  const heroRoles = {
+    // 🛡️ VANGUARD (Tank) Heroes - 9 heroes
+    'Captain America': 'Vanguard',
+    'Doctor Strange': 'Vanguard', 
+    'Groot': 'Vanguard',
+    'Hulk': 'Vanguard',
+    'Magneto': 'Vanguard',
+    'Peni Parker': 'Vanguard',
+    'The Thing': 'Vanguard',
+    'Thor': 'Vanguard',
+    'Venom': 'Vanguard',
+
+    // ⚔️ DUELIST Heroes - 18 heroes
+    'Black Panther': 'Duelist',
+    'Black Widow': 'Duelist',
+    'Hawkeye': 'Duelist',
+    'Hela': 'Duelist',
+    'Human Torch': 'Duelist',
+    'Iron Fist': 'Duelist',
+    'Iron Man': 'Duelist',
+    'Magik': 'Duelist',
+    'Moon Knight': 'Duelist',
+    'Namor': 'Duelist',
+    'Psylocke': 'Duelist',
+    'The Punisher': 'Duelist',
+    'Scarlet Witch': 'Duelist',
+    'Spider-Man': 'Duelist',
+    'Squirrel Girl': 'Duelist',
+    'Star-Lord': 'Duelist',
+    'Storm': 'Duelist',
+    'Wolverine': 'Duelist',
+
+    // 💚 STRATEGIST (Support) Heroes - 7 heroes
+    'Adam Warlock': 'Strategist',
+    'Cloak & Dagger': 'Strategist',
+    'Invisible Woman': 'Strategist',
+    'Jeff the Land Shark': 'Strategist',
+    'Loki': 'Strategist',
+    'Luna Snow': 'Strategist',
+    'Mantis': 'Strategist',
+    'Rocket Raccoon': 'Strategist'
+  };
+  
+  return heroRoles[heroName] || 'Unknown';
 };
 
 function MatchDetailPage({ params, navigateTo }) {
