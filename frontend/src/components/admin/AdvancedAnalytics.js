@@ -258,15 +258,15 @@ function AdvancedAnalytics({ api }) {
             <h3 className="text-lg font-bold mb-4">Team Analytics</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{analytics.teams.totalTeams}</div>
+                <div className="text-2xl font-bold text-blue-600">{analytics?.teams?.totalTeams || 0}</div>
                 <div className="text-sm text-gray-600">Total Teams</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{analytics.teams.activeTeams}</div>
+                <div className="text-2xl font-bold text-green-600">{analytics?.teams?.activeTeams || 0}</div>
                 <div className="text-sm text-gray-600">Active Teams</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{analytics.teams.averageRating}</div>
+                <div className="text-2xl font-bold text-purple-600">{analytics?.teams?.averageRating || 0}</div>
                 <div className="text-sm text-gray-600">Avg Rating</div>
               </div>
               <div className="text-center">
