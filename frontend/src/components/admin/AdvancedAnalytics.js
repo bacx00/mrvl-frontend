@@ -270,7 +270,7 @@ function AdvancedAnalytics({ api }) {
                 <div className="text-sm text-gray-600">Avg Rating</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-red-600">{analytics.teams.totalMatches}</div>
+                <div className="text-2xl font-bold text-red-600">{analytics?.teams?.totalMatches || 0}</div>
                 <div className="text-sm text-gray-600">Total Matches</div>
               </div>
             </div>
