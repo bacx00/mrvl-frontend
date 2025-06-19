@@ -154,7 +154,7 @@ function ForumsPage({ navigateTo }) {
 
   // Helper function to format time ago
   const formatTimeAgo = (dateString) => {
-    if (!dateString) return 'Unknown time';
+    if (!dateString) return 'Just now';
     
     const date = new Date(dateString);
     
