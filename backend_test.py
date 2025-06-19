@@ -134,6 +134,62 @@ class MarvelRivalsAPITester:
             200
         )
     
+    def test_get_match_detail(self, match_id):
+        """Test getting match detail with team and player information"""
+        return self.run_test(
+            f"Get Match Detail for ID {match_id}",
+            "GET",
+            f"matches/{match_id}",
+            200
+        )
+    
+    def test_update_match_score(self, match_id, score_data):
+        """Test updating match score"""
+        return self.run_test(
+            f"Update Match Score for ID {match_id}",
+            "PUT",
+            f"matches/{match_id}/score",
+            200,
+            data=score_data
+        )
+    
+    def test_update_match(self, match_id, match_data):
+        """Test updating match details"""
+        return self.run_test(
+            f"Update Match for ID {match_id}",
+            "PUT",
+            f"matches/{match_id}",
+            200,
+            data=match_data
+        )
+    
+    def test_get_news(self):
+        """Test getting news articles"""
+        return self.run_test(
+            "Get News Articles",
+            "GET",
+            "news",
+            200
+        )
+    
+    def test_get_news_detail(self, news_id):
+        """Test getting news article detail"""
+        return self.run_test(
+            f"Get News Article Detail for ID {news_id}",
+            "GET",
+            f"news/{news_id}",
+            200
+        )
+    
+    def test_get_news_detail_not_found(self, news_id):
+        """Test getting non-existent news article (should return 404)"""
+        return self.run_test(
+            f"Get Non-existent News Article (ID {news_id})",
+            "GET",
+            f"news/{news_id}",
+            404
+        )
+    
     def test_get_events(self):
         """Test getting events list"""
         return self.run_test(
