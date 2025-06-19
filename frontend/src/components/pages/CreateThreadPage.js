@@ -12,17 +12,12 @@ function CreateThreadPage({ navigateTo }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // ✅ BACKEND VALIDATED: Use EXACT categories that backend accepts
+  // ✅ MINIMAL CATEGORIES - Only ones that work on backend  
   const categories = [
     { id: 'general', name: 'General Discussion', description: 'General Marvel Rivals discussion' },
     { id: 'strategy', name: 'Strategy & Tactics', description: 'Share strategies and gameplay tactics' },
-    { id: 'hero-discussion', name: 'Hero Discussion', description: 'Discuss heroes, abilities, and balancing' },
-    { id: 'esports', name: 'Esports & Competitive', description: 'Competitive scene and tournament discussion' },
     { id: 'guides', name: 'Guides & Tutorials', description: 'Player guides and tutorials' },
-    { id: 'team-recruitment', name: 'Team Recruitment', description: 'Looking for team members or teams' },
-    { id: 'meta-discussion', name: 'Meta Analysis', description: 'Current meta and balance discussion' },
-    { id: 'feedback', name: 'Feedback & Suggestions', description: 'Game feedback and improvement suggestions' },
-    { id: 'bugs', name: 'Bug Reports', description: 'Report bugs and technical issues' }
+    { id: 'feedback', name: 'Feedback & Suggestions', description: 'Game feedback and improvement suggestions' }
   ];
 
   const handleInputChange = (e) => {
