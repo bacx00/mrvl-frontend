@@ -28,10 +28,10 @@ function ForumsPage({ navigateTo }) {
         
         if (Array.isArray(rawThreads) && rawThreads.length > 0) {
           threadsData = rawThreads.map(thread => ({
-            id: thread.id, // CRITICAL FIX: Use REAL thread ID from backend
+            id: thread.id, // ✅ CRITICAL FIX: Use REAL thread ID from backend
             title: thread.title,
             author: {
-              name: thread.user_name || thread.author?.name || 'Unknown User',
+              name: thread.user_name || thread.author?.name || 'Anonymous',
               role: thread.author?.role || 'user',
               country: thread.author?.country || 'US',
               teamFlair: thread.author?.team_flair || null
@@ -40,7 +40,7 @@ function ForumsPage({ navigateTo }) {
             replies: thread.replies || thread.replies_count || 0,
             views: thread.views || thread.views_count || 0,
             lastReply: {
-              user: thread.last_reply?.user || 'No replies yet',
+              user: thread.last_reply?.user || thread.user_name || 'No replies',
               timestamp: formatTimeAgo(thread.updated_at || thread.created_at)
             },
             created: thread.created_at,
