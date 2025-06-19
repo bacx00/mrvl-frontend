@@ -227,11 +227,11 @@ function AdvancedAnalytics({ api }) {
       <div className="card p-6 text-center bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30">
         <div className="text-3xl mb-2">👁️</div>
         <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-          {analytics.overview.pageViews?.toLocaleString()}
+          {analytics?.overview?.pageViews?.toLocaleString() || 0}
         </div>
         <div className="text-sm text-purple-700 dark:text-purple-300">Page Views</div>
         <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-          {analytics.overview.bounceRate}% bounce rate
+          {analytics?.overview?.bounceRate || 0}% bounce rate
         </div>
       </div>
       
