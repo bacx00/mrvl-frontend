@@ -429,36 +429,82 @@ function MatchDetailPage({ params, navigateTo }) {
   };
 
   const generateMapData = async (team1, team2) => {
-    const mapPool = [
-      'Asgard Throne Room',
-      'Wakanda Palace',
-      'Sanctum Sanctorum',
-      'Tokyo 2099',
-      'Klyntar Symbiote World',
-      'Midtown Manhattan'
+    // ✅ REAL MARVEL RIVALS MAPS - Accurate to the game
+    const marvelRivalsMaps = [
+      {
+        name: 'Tokyo 2099: Spider-Islands',
+        mode: 'Convoy',
+        description: 'Neo-Tokyo futuristic cityscape with web-slinging routes'
+      },
+      {
+        name: 'Midtown Manhattan',
+        mode: 'Domination', 
+        description: 'Classic New York City street battles'
+      },
+      {
+        name: 'Wakanda Palace',
+        mode: 'Convoy',
+        description: 'Advanced Wakandan technology and vibranium structures'
+      },
+      {
+        name: 'Sanctum Sanctorum',
+        mode: 'Domination',
+        description: 'Doctor Strange\'s mystical headquarters with magical portals'
+      },
+      {
+        name: 'Asgard: Royal Palace',
+        mode: 'Convoy',
+        description: 'Thor\'s home realm with Bifrost bridges and godly architecture'
+      },
+      {
+        name: 'Klyntar Symbiote World',
+        mode: 'Domination',
+        description: 'Dark alien world of the symbiotes with organic structures'
+      },
+      {
+        name: 'Birnin Zana: Golden City',
+        mode: 'Convoy',
+        description: 'Wakanda\'s capital city with advanced urban warfare'
+      }
     ];
 
-    const heroPool = [
-      'Iron Man', 'Spider-Man', 'Hulk', 'Black Panther', 'Doctor Strange', 'Captain America',
-      'Thor', 'Wolverine', 'Storm', 'Magneto', 'Scarlet Witch', 'Venom', 'Groot', 'Rocket',
-      'Star-Lord', 'Gamora', 'Mantis', 'Luna Snow', 'Galacta', 'Jeff the Land Shark'
-    ];
-
-    // ✅ FIXED: Generate maps with proper initialization
-    const maps = [];
-    for (let mapIndex = 0; mapIndex < 3; mapIndex++) {
-      const map = mapPool[Math.floor(Math.random() * mapPool.length)];
+    // ✅ REAL MARVEL RIVALS HEROES - Current roster
+    const marvelRivalsHeroes = [
+      // Vanguard (Tanks)
+      'Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 
+      'Peni Parker', 'The Thing', 'Thor', 'Venom',
       
-      // ✅ AWAIT player data for both teams
-      const team1Players = await generateRealPlayerStats(team1, heroPool);
-      const team2Players = await generateRealPlayerStats(team2, heroPool);
+      // Duelist (DPS) 
+      'Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Human Torch',
+      'Iron Fist', 'Iron Man', 'Magik', 'Moon Knight', 'Namor', 
+      'Psylocke', 'The Punisher', 'Scarlet Witch', 'Spider-Man', 
+      'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine',
+      
+      // Strategist (Support)
+      'Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 
+      'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon'
+    ];
+
+    // ✅ INITIALIZE MATCH MAPS - 3 maps for BO3 format
+    const maps = [];
+    const selectedMaps = marvelRivalsMaps.slice(0, 3); // Take first 3 maps for consistency
+    
+    for (let mapIndex = 0; mapIndex < 3; mapIndex++) {
+      const currentMap = selectedMaps[mapIndex];
+      
+      // ✅ AWAIT player data for both teams with real heroes
+      const team1Players = await generateRealPlayerStats(team1, marvelRivalsHeroes);
+      const team2Players = await generateRealPlayerStats(team2, marvelRivalsHeroes);
       
       maps.push({
-        name: map,
-        winner: null, // ✅ Initialize with no winner
-        team1Score: 0, // ✅ Initialize to 0
-        team2Score: 0, // ✅ Initialize to 0
-        duration: null, // ✅ No duration for new matches
+        name: currentMap.name,
+        mode: currentMap.mode,
+        description: currentMap.description,
+        winner: null, // ✅ Initialize with no winner - ready for live input
+        team1Score: 0, // ✅ Initialize to 0 - ready for live updates
+        team2Score: 0, // ✅ Initialize to 0 - ready for live updates
+        duration: null, // ✅ No duration for new matches - will be updated live
+        status: 'not_started', // ✅ Track map status for live workflow
         team1Players: team1Players,
         team2Players: team2Players
       });
