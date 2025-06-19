@@ -6,50 +6,75 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
   const { api } = useAuth();
   const [activeMap, setActiveMap] = useState(0);
 
-  // COMPREHENSIVE MARVEL RIVALS MAP POOL
+  // COMPREHENSIVE MARVEL RIVALS MAP POOL - REAL GAME MAPS
   const marvelRivalsMaps = [
     { 
-      name: 'Tokyo 2099', 
+      name: 'Tokyo 2099: Spider-Islands', 
       mode: 'Convoy', 
       icon: '🏙️',
-      checkpoints: ['Point A', 'Point B', 'Point C'],
+      checkpoints: ['Spider Bridge', 'Neon District', 'Final Plaza'],
       timeLimit: 600 // 10 minutes
     },
     { 
-      name: 'Klyntar', 
+      name: 'Midtown Manhattan', 
       mode: 'Domination', 
-      icon: '🌌',
-      checkpoints: ['Zone 1', 'Zone 2', 'Zone 3'],
+      icon: '🏢',
+      checkpoints: ['Times Square', 'Central Park', 'Brooklyn Bridge'],
       timeLimit: 480 // 8 minutes
     },
     { 
-      name: 'Asgard Throne Room', 
-      mode: 'Control', 
-      icon: '⚡',
-      checkpoints: ['Control Point'],
-      timeLimit: 420 // 7 minutes
-    },
-    { 
-      name: 'Helicarrier', 
+      name: 'Wakanda Palace', 
       mode: 'Convoy', 
-      icon: '✈️',
-      checkpoints: ['Point A', 'Point B', 'Point C'],
+      icon: '⚡',
+      checkpoints: ['Vibranium Mines', 'Royal Chambers', 'Panther Statue'],
       timeLimit: 600
     },
     { 
       name: 'Sanctum Sanctorum', 
-      mode: 'Control', 
+      mode: 'Domination', 
       icon: '🔮',
-      checkpoints: ['Control Point'],
-      timeLimit: 420
+      checkpoints: ['Mystic Library', 'Portal Room', 'Astral Plane'],
+      timeLimit: 480
+    },
+    { 
+      name: 'Asgard: Royal Palace', 
+      mode: 'Convoy', 
+      icon: '🌈',
+      checkpoints: ['Bifrost Bridge', 'Throne Room', 'Rainbow Bridge'],
+      timeLimit: 600
+    },
+    { 
+      name: 'Klyntar Symbiote World', 
+      mode: 'Domination', 
+      icon: '🌌',
+      checkpoints: ['Symbiote Nest', 'Dark Caverns', 'Venom Pools'],
+      timeLimit: 480
+    },
+    { 
+      name: 'Birnin Zana: Golden City', 
+      mode: 'Convoy', 
+      icon: '🏛️',
+      checkpoints: ['Golden District', 'Tech Labs', 'Ceremonial Plaza'],
+      timeLimit: 600
     }
   ];
 
-  // MARVEL RIVALS HEROES BY ROLE
+  // ✅ ENHANCED MARVEL RIVALS HEROES BY ROLE - REAL GAME ROSTER
   const marvelRivalsHeroes = {
-    Tank: ['Hulk', 'Thor', 'Groot', 'Thing', 'Colossus', 'Magneto'],
-    Duelist: ['Iron Man', 'Spider-Man', 'Black Widow', 'Hawkeye', 'Star-Lord', 'Punisher', 'Wolverine'],
-    Support: ['Storm', 'Mantis', 'Rocket Raccoon', 'Cloak & Dagger', 'Luna Snow', 'Adam Warlock']
+    Vanguard: [
+      'Captain America', 'Doctor Strange', 'Groot', 'Hulk', 
+      'Magneto', 'Peni Parker', 'The Thing', 'Thor', 'Venom'
+    ],
+    Duelist: [
+      'Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Human Torch',
+      'Iron Fist', 'Iron Man', 'Magik', 'Moon Knight', 'Namor', 
+      'Psylocke', 'The Punisher', 'Scarlet Witch', 'Spider-Man', 
+      'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine'
+    ],
+    Strategist: [
+      'Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 
+      'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon'
+    ]
   };
 
   // COMPREHENSIVE MATCH STATE
