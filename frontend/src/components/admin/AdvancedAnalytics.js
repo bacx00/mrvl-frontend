@@ -205,7 +205,7 @@ function AdvancedAnalytics({ api }) {
       <div className="card p-6 text-center bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30">
         <div className="text-3xl mb-2">👥</div>
         <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-          {analytics.overview.totalUsers?.toLocaleString()}
+          {analytics?.overview?.totalUsers?.toLocaleString() || 0}
         </div>
         <div className="text-sm text-blue-700 dark:text-blue-300">Total Users</div>
         <div className="text-xs text-green-600 dark:text-green-400 mt-1">
