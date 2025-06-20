@@ -60,7 +60,7 @@ const getInitialMatchData = (format = 'BO3') => {
     // ✅ Additional metadata
     viewers: 0,
     featured: false,
-    map_pool: MARVEL_RIVALS_CONFIG.maps.slice(0, Math.max(mapCount, 3))
+    map_pool: MARVEL_RIVALS_CONFIG.maps.slice(0, mapCount) // EXACTLY the number of maps needed
   };
 };
 
