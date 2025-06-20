@@ -936,38 +936,6 @@ function MatchDetailPage({ params, navigateTo }) {
                           </div>
                         </div>
                       </div>
-                              alt={player.hero}
-                              className="w-10 h-10 object-cover rounded-lg"
-                              title={`${player.hero} (${getHeroRole(player.hero)})`}
-                              onError={(e) => {
-                                console.error(`❌ Failed to load hero image: /Heroes/${getHeroImage(player.hero)}`);
-                                // Show role-colored fallback with hero name
-                                e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'flex';
-                              }}
-                            />
-                          ) : null}
-                          <div 
-                            className="w-10 h-10 flex items-center justify-center text-white text-xs font-bold text-center leading-tight"
-                            style={{ display: getHeroImage(player.hero) ? 'none' : 'flex' }}
-                            title={`${player.hero} (${getHeroRole(player.hero)})`}
-                          >
-                            {player.hero.split(' ').map(word => word[0]).join('').slice(0, 3)}
-                          </div>
-                          {/* Role indicator */}
-                          <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full text-xs flex items-center justify-center text-white font-bold" 
-                               style={{
-                                 backgroundColor: getHeroRole(player.hero) === 'Tank' ? '#3B82F6' :
-                                                getHeroRole(player.hero) === 'Duelist' ? '#EF4444' : 
-                                                getHeroRole(player.hero) === 'Support' ? '#10B981' : '#6B7280'
-                               }}>
-                            {getHeroRole(player.hero) === 'Tank' ? '🛡️' :
-                             getHeroRole(player.hero) === 'Duelist' ? '⚔️' : 
-                             getHeroRole(player.hero) === 'Support' ? '💚' : '❓'}
-                          </div>
-                        </div>
-                      </div>
-                      
                       {/* Stats */}
                       <div className="text-center text-sm font-medium text-gray-800 dark:text-gray-200">{player.eliminations}</div>
                       <div className="text-center text-sm font-medium text-gray-800 dark:text-gray-200">{player.deaths}</div>
