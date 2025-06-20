@@ -175,31 +175,24 @@ class MarvelRivalsAPITester:
             admin_auth=True
         )
     
-    def test_get_news(self):
-        """Test getting news articles"""
+    def test_get_heroes(self):
+        """Test getting heroes list"""
         return self.run_test(
-            "Get News Articles",
+            "Get Heroes",
             "GET",
-            "news",
+            "heroes",
             200
         )
     
-    def test_get_news_detail(self, news_id):
-        """Test getting news article detail"""
+    def test_update_player_stats(self, match_id, player_id, stats_data):
+        """Test updating player stats for a match"""
         return self.run_test(
-            f"Get News Article Detail for ID {news_id}",
-            "GET",
-            f"news/{news_id}",
-            200
-        )
-    
-    def test_get_news_detail_not_found(self, news_id):
-        """Test getting non-existent news article (should return 404)"""
-        return self.run_test(
-            f"Get Non-existent News Article (ID {news_id})",
-            "GET",
-            f"news/{news_id}",
-            404
+            f"Update Player Stats for Match ID {match_id}, Player ID {player_id}",
+            "PUT",
+            f"admin/matches/{match_id}/players/{player_id}/stats",
+            200,
+            data=stats_data,
+            admin_auth=True
         )
     
     def test_get_events(self):
