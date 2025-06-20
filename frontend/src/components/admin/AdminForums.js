@@ -523,43 +523,133 @@ function AdminForums({ navigateTo }) {
 
       {/* Categories Tab */}
       {activeTab === 'categories' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {categories.filter(cat => cat.id !== 'all').map((category) => (
-            <div key={category.id} className="card p-6 text-center">
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {categories.filter(cat => cat.id !== 'all').map((category) => (
+              <div key={category.id} className="card p-6 text-center">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  {category.name}
+                </h3>
+                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+                  {category.threads_count || 0}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  threads
+                </p>
+                <div className="flex justify-center space-x-2">
+                  <button 
+                    onClick={() => openCategoryModal(category)}
+                    className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button 
+                    onClick={() => handleCategoryAction(category.id, 'delete')}
+                    className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                  >
+                    🗑️ Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+            
+            {/* Add Category Card */}
+            <div className="card p-6 text-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+              <div className="text-4xl mb-4">➕</div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                {category.name}
+                Add Category
               </h3>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-                {category.threads_count || 0}
-              </p>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                threads
+                Create a new forum category
               </p>
-              <div className="flex space-x-2">
-                <button className="btn btn-secondary text-xs">
-                  ✏️ Edit
-                </button>
-                <button className="btn text-xs bg-red-600 text-white hover:bg-red-700">
-                  🗑️ Delete
-                </button>
+              <button 
+                onClick={() => openCategoryModal()}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                ➕ Add Category
+              </button>
+            </div>
+          </div>
+
+          {/* ✅ Category Modal */}
+          {showCategoryModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-black/60" onClick={() => setShowCategoryModal(false)} />
+              <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    {editingCategory ? 'Edit Category' : 'Create New Category'}
+                  </h2>
+                </div>
+                
+                <div className="p-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Category Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={newCategory.name}
+                      onChange={(e) => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="e.g., Strategy Discussion"
+                      className="form-input w-full"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={newCategory.description}
+                      onChange={(e) => setNewCategory(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Brief description of this category..."
+                      rows="3"
+                      className="form-input w-full resize-none"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      URL Slug
+                    </label>
+                    <input
+                      type="text"
+                      value={newCategory.slug}
+                      onChange={(e) => setNewCategory(prev => ({ ...prev, slug: e.target.value }))}
+                      placeholder="strategy-discussion"
+                      className="form-input w-full"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                      Leave empty to auto-generate from name
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
+                  <button
+                    onClick={() => setShowCategoryModal(false)}
+                    className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleCategoryAction(
+                      editingCategory?.id, 
+                      editingCategory ? 'edit' : 'create', 
+                      newCategory
+                    )}
+                    disabled={!newCategory.name.trim()}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {editingCategory ? 'Update' : 'Create'} Category
+                  </button>
+                </div>
               </div>
             </div>
-          ))}
-          
-          {/* Add Category Card */}
-          <div className="card p-6 text-center border-2 border-dashed border-gray-300 dark:border-gray-600">
-            <div className="text-4xl mb-4">➕</div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Add Category
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Create a new forum category
-            </p>
-            <button className="btn btn-primary text-xs">
-              ➕ Add Category
-            </button>
-          </div>
-        </div>
+          )}
+        </>
       )}
 
       {/* Reports Tab */}
