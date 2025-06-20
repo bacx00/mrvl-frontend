@@ -221,7 +221,6 @@ function AdminForums({ navigateTo }) {
       alert(`✅ Forum action completed! ${action.charAt(0).toUpperCase() + action.slice(1)} functionality working perfectly.`);
     }
   };
-  };
 
   const handleReportAction = async (reportId, action) => {
     try {
