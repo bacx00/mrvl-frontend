@@ -425,9 +425,9 @@ def main():
         bo1_match_data = {
             "team1_id": test_team_ids[0],
             "team2_id": test_team_ids[1],
-            "event_id": event_id,
+            "event_id": 18,  # Using a valid event ID from the events list
             "format": "BO1",
-            "date": datetime.now().isoformat(),
+            "scheduled_at": datetime.now().isoformat(),
             "status": "upcoming"
         }
         
