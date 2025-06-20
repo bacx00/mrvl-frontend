@@ -28,12 +28,12 @@ const MARVEL_RIVALS_CONFIG = {
   ]
 };
 
-// ✅ CRITICAL FIX: Perfect map initialization for BO1/BO3/BO5
+// ✅ PERFECT MATCH INITIALIZATION
 const getInitialMatchData = (format = 'BO3') => {
   const formatConfig = MARVEL_RIVALS_CONFIG.formats.find(f => f.value === format);
   const mapCount = formatConfig?.maps || 3;
   
-  console.log(`🎮 CRITICAL FIX: Initializing ${format} match with EXACTLY ${mapCount} maps`);
+  console.log(`🎮 Initializing ${format} match with ${mapCount} maps`);
   
   return {
     team1_id: '',
@@ -47,10 +47,10 @@ const getInitialMatchData = (format = 'BO3') => {
     // ✅ CRITICAL: Proper score initialization
     team1_score: 0,
     team2_score: 0,
-    // 🚨 CRITICAL FIX: Create EXACTLY the right number of maps
+    // ✅ CRITICAL: Perfect map structure for each format
     maps: Array.from({ length: mapCount }, (_, index) => ({
       map_number: index + 1,
-      map_name: MARVEL_RIVALS_CONFIG.maps[index] || MARVEL_RIVALS_CONFIG.maps[0], // Use exact map, no modulo
+      map_name: MARVEL_RIVALS_CONFIG.maps[index % MARVEL_RIVALS_CONFIG.maps.length],
       team1_score: 0,
       team2_score: 0,
       status: 'upcoming',
@@ -60,7 +60,7 @@ const getInitialMatchData = (format = 'BO3') => {
     // ✅ Additional metadata
     viewers: 0,
     featured: false,
-    map_pool: MARVEL_RIVALS_CONFIG.maps.slice(0, mapCount) // Only the exact maps needed
+    map_pool: MARVEL_RIVALS_CONFIG.maps.slice(0, Math.max(mapCount, 3))
   };
 };
 
