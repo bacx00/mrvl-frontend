@@ -1014,12 +1014,12 @@ function MatchDetailPage({ params, navigateTo }) {
                         }`}>
                           {getHeroImage(player.hero) ? (
                             <img 
-                              src={`/Heroes/${getHeroImage(player.hero)}`}
+                              src={`https://staging.mrvl.net/Heroes/${getHeroImage(player.hero)}`}
                               alt={player.hero}
                               className="w-10 h-10 object-cover rounded-lg"
                               title={`${player.hero} (${getHeroRole(player.hero)})`}
                               onError={(e) => {
-                                console.error(`❌ Failed to load hero image: /Heroes/${getHeroImage(player.hero)}`);
+                                console.error(`❌ Failed to load hero image: https://staging.mrvl.net/Heroes/${getHeroImage(player.hero)}`);
                                 // Show role-colored fallback with hero name
                                 e.target.style.display = 'none';
                                 e.target.nextSibling.style.display = 'flex';
