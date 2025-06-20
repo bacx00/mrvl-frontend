@@ -709,9 +709,9 @@ function MatchForm({ matchId, navigateTo }) {
                               Support: ['Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon']
                             }).map(([role, heroes]) => (
                               <optgroup key={role} label={role}>
-                                {heroes.map(hero => (
+                                {Array.isArray(heroes) ? heroes.map(hero => (
                                   <option key={hero} value={hero}>{hero}</option>
-                                ))}
+                                )) : null}
                               </optgroup>
                             ))}
                           </select>
