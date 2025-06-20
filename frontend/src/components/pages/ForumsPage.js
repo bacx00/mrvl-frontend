@@ -152,7 +152,7 @@ function ForumsPage({ navigateTo }) {
     }
   }, [selectedCategory, searchQuery, sortBy, api]);
 
-  // Helper function to format time ago
+  // ✅ ENHANCED: More realistic time formatting
   const formatTimeAgo = (dateString) => {
     if (!dateString) return 'Just now';
     
@@ -175,14 +175,22 @@ function ForumsPage({ navigateTo }) {
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
+    const diffWeeks = Math.floor(diffDays / 7);
+    const diffMonths = Math.floor(diffDays / 30);
 
     if (diffMins < 1) return 'Just now';
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 30) return `${diffDays}d ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffWeeks < 4) return `${diffWeeks}w ago`;
+    if (diffMonths < 12) return `${diffMonths}mo ago`;
     
-    // ✅ FIXED: For very old dates, show actual date
-    return date.toLocaleDateString();
+    // ✅ ENHANCED: For old dates, show actual date
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+    });
   };
 
 
