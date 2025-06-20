@@ -390,15 +390,16 @@ function MatchForm({ matchId, navigateTo }) {
                 Event (Optional)
               </label>
               <select
-                name="eventId"
-                value={formData.eventId}
+                name="event_id"
+                value={formData.event_id}
                 onChange={handleInputChange}
-                className="form-input"
+                className={`form-input ${errors.event_id ? 'border-red-500' : ''}`}
+                required
               >
-                <option value="">Standalone Match</option>
+                <option value="">Select Event...</option>
                 {events.map(event => (
                   <option key={event.id} value={event.id}>
-                    {event.name} ({event.type})
+                    {event.name} ({event.type || 'Tournament'})
                   </option>
                 ))}
               </select>
