@@ -143,24 +143,36 @@ class MarvelRivalsAPITester:
             200
         )
     
-    def test_update_match_score(self, match_id, score_data):
-        """Test updating match score"""
+    def test_create_match(self, match_data):
+        """Test creating a new match"""
         return self.run_test(
-            f"Update Match Score for ID {match_id}",
-            "PUT",
-            f"matches/{match_id}/score",
-            200,
-            data=score_data
+            "Create New Match",
+            "POST",
+            "admin/matches",
+            201,
+            data=match_data,
+            admin_auth=True
         )
     
-    def test_update_match(self, match_id, match_data):
-        """Test updating match details"""
+    def test_update_match_status(self, match_id, status):
+        """Test updating match status"""
         return self.run_test(
-            f"Update Match for ID {match_id}",
+            f"Update Match Status for ID {match_id}",
             "PUT",
-            f"matches/{match_id}",
+            f"admin/matches/{match_id}",
             200,
-            data=match_data
+            data={"status": status},
+            admin_auth=True
+        )
+    
+    def test_delete_match(self, match_id):
+        """Test deleting a match"""
+        return self.run_test(
+            f"Delete Match ID {match_id}",
+            "DELETE",
+            f"admin/matches/{match_id}",
+            204,
+            admin_auth=True
         )
     
     def test_get_news(self):
