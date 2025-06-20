@@ -120,9 +120,26 @@ function MatchForm({ matchId, navigateTo }) {
         console.log('✅ Heroes loaded from API:', heroData);
         
         if (heroData && typeof heroData === 'object') {
-          // Update the configuration with live data
-          MARVEL_RIVALS_CONFIG.herosByRole = heroData;
-          console.log('🎮 Heroes configuration updated:', MARVEL_RIVALS_CONFIG.herosByRole);
+          // 🚨 CRITICAL FIX: Transform API response to extract hero names only
+          const transformedHeroes = {};
+          
+          for (const [role, heroes] of Object.entries(heroData)) {
+            if (Array.isArray(heroes)) {
+              // Extract just the name from hero objects
+              transformedHeroes[role] = heroes.map(hero => {
+                if (typeof hero === 'object' && hero.name) {
+                  return hero.name; // Extract name from hero object
+                }
+                return hero; // If it's already a string, keep it
+              });
+            } else {
+              transformedHeroes[role] = heroes;
+            }
+          }
+          
+          // Update the configuration with transformed data
+          MARVEL_RIVALS_CONFIG.herosByRole = transformedHeroes;
+          console.log('🎮 Heroes configuration updated (names only):', MARVEL_RIVALS_CONFIG.herosByRole);
         }
       } catch (error) {
         console.error('❌ Error loading heroes from API:', error);
