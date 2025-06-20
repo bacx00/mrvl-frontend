@@ -303,7 +303,16 @@ function EventDetailPage({ params, navigateTo }) {
 
       {/* Event Header - HLTV.org Style */}
       <div className="card">
-        <div className="p-6 border-b border-gray-200 dark:border-gray-600 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/10 dark:to-red-800/10">
+        <div 
+          className="p-6 border-b border-gray-200 dark:border-gray-600 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/10 dark:to-red-800/10 relative overflow-hidden"
+          style={{
+            backgroundImage: event.featured_image 
+              ? `linear-gradient(rgba(239, 68, 68, 0.85), rgba(239, 68, 68, 0.85)), url('${event.featured_image}')`
+              : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+          }}
+        >
           <div className="flex flex-col lg:flex-row items-start lg:items-center space-y-6 lg:space-y-0 lg:space-x-8">
             <div className="text-6xl">{getCountryFlag(event.region)}</div>
             
