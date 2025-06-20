@@ -167,6 +167,46 @@ function MatchDetailPage({ params, navigateTo }) {
     return () => clearInterval(interval);
   }, [match?.status]);
 
+  // ✅ CRITICAL FIX: Add real-time sync listener for match updates
+  useEffect(() => {
+    const handleMatchUpdate = (event) => {
+      const { matchId: updatedMatchId, matchData } = event.detail || {};
+      
+      if (updatedMatchId && updatedMatchId == matchId) {
+        console.log('🔥 REAL-TIME UPDATE: Match data received:', matchData);
+        
+        // Re-fetch match data to get the latest
+        initializeMatchData();
+        
+        // Show notification
+        const notification = document.createElement('div');
+        notification.innerHTML = '🔥 Match Updated Live!';
+        notification.className = 'fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg z-50 animate-pulse';
+        document.body.appendChild(notification);
+        setTimeout(() => document.body.removeChild(notification), 3000);
+      }
+    };
+
+    window.addEventListener('mrvl-match-updated', handleMatchUpdate);
+    
+    return () => {
+      window.removeEventListener('mrvl-match-updated', handleMatchUpdate);
+    };
+  }, [matchId]);
+
+  // ✅ CRITICAL FIX: Add auto-refresh for live matches
+  useEffect(() => {
+    if (!match || match.status !== 'live') return;
+    
+    console.log('🔴 LIVE MATCH: Setting up auto-refresh every 15 seconds');
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-refreshing live match data...');
+      initializeMatchData();
+    }, 15000); // Refresh every 15 seconds for live matches
+    
+    return () => clearInterval(interval);
+  }, [match?.status]);
+
   useEffect(() => {
     if (matchId) {
       initializeMatchData();
