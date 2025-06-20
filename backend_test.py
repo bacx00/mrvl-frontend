@@ -91,13 +91,13 @@ class MarvelRivalsAPITester:
             })
             return False, {}
 
-    def login(self, email="admin@mrvl.net", password="password"):
+    def login(self, email="jhonny@ar-mediia.com", password="password123"):
         """Login to get authentication token"""
         print("\n🔑 Attempting to login...")
         success, data = self.run_test(
             "User Login",
             "POST",
-            "login",
+            "auth/login",  # Updated to use the correct endpoint path
             200,
             {"email": email, "password": password}
         )
@@ -107,7 +107,7 @@ class MarvelRivalsAPITester:
             print(f"✅ Login successful! Token: {self.token[:10]}...")
             
             # Check if user is admin
-            if data.get('user', {}).get('role') == 'admin':
+            if data.get('user', {}).get('roles') and 'admin' in data.get('user', {}).get('roles'):
                 self.admin_token = self.token
                 print("✅ Admin login confirmed!")
             
