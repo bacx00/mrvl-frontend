@@ -407,15 +407,15 @@ function ThreadDetailPage({ params, navigateTo }) {
       <div className="max-w-4xl mx-auto">
         <div className="text-center py-8">
           <div className="text-4xl mb-4">❌</div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Post not found</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Thread not found</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            This forum thread could not be found or may have been deleted.
+            {error || `Thread #${params.id} could not be found or may have been deleted.`}
           </p>
           <button
             onClick={() => navigateTo && navigateTo('forums')}
-            className="text-red-600 dark:text-red-400 hover:underline"
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
           >
-            Back to Forums
+            ← Back to Forums
           </button>
         </div>
       </div>
