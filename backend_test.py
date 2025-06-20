@@ -384,99 +384,228 @@ def main():
     print(f"🌐 Base URL: {tester.base_url}")
     print(f"🌐 API URL: {tester.api_url}")
     
-    # Try to login to get authentication token for admin operations
-    tester.login()
+    # 1. AUTHENTICATION TESTING
+    print("\n===== TESTING AUTHENTICATION =====")
+    login_success = tester.login("jhonny@ar-mediia.com", "password123")
     
-    # 1. Test Match Detail Endpoints
-    print("\n===== TESTING MATCH DETAIL ENDPOINTS =====")
+    if not login_success:
+        print("⚠️ Login failed. Some tests requiring authentication will be skipped.")
+    
+    # 2. MATCH MANAGEMENT API TESTING
+    print("\n===== TESTING MATCH MANAGEMENT ENDPOINTS =====")
+    
+    # 2.1 Test GET /api/matches - List all matches
     success, matches_data = tester.test_get_matches()
-    if success:
+    
+    # 2.2 Test GET /api/matches/{id} - Get specific match details
+    if success and matches_data:
         matches = matches_data if isinstance(matches_data, list) else matches_data.get('data', [])
         if matches and len(matches) > 0:
-            # Test the first match in the list
             match_id = matches[0]['id']
-            success, match_detail = tester.test_get_match_detail(match_id)
-            if success:
-                print(f"✅ Match detail endpoint returns team and player information")
-                # Verify team information
-                if 'team1' in match_detail and 'team2' in match_detail:
-                    print(f"✅ Team data is present in match details")
-                else:
-                    print(f"❌ Team data is missing in match details")
-                
-                # Verify player information
-                if 'players' in match_detail:
-                    print(f"✅ Player data is present in match details")
-                else:
-                    print(f"❌ Player data is missing in match details")
-        else:
-            print("❌ No matches found to test match detail endpoint")
+            tester.test_get_match_detail(match_id)
     
-    # 2. Test Live Scoring Endpoints
-    print("\n===== TESTING LIVE SCORING ENDPOINTS =====")
-    if matches and len(matches) > 0:
-        match_id = matches[0]['id']
-        # Test updating match score
-        score_data = {
-            "score1": 3,
-            "score2": 2
-        }
-        tester.test_update_match_score(match_id, score_data)
+    # 2.3 Test Team and Player APIs
+    print("\n===== TESTING TEAMS & PLAYERS API =====")
+    tester.test_get_teams()
+    tester.test_get_players()
+    
+    # Test specific team IDs as mentioned in the review request
+    test_team_ids = [83, 84]
+    for team_id in test_team_ids:
+        tester.test_get_team_players(team_id)
+    
+    # 2.4 Test Events API
+    print("\n===== TESTING EVENTS API =====")
+    tester.test_get_events()
+    
+    # Test specific event ID as mentioned in the review request
+    event_id = 12
+    tester.test_get_event_matches(event_id)
+    tester.test_get_event_teams(event_id)
+    
+    # 3. SPECIFIC MATCH WORKFLOW TESTS
+    if login_success:
+        print("\n===== TESTING MATCH WORKFLOWS =====")
         
-        # Test updating match details
-        match_data = {
-            "score1": 3,
-            "score2": 2,
-            "date": datetime.now().isoformat()
+        # 3.1 Test BO1 Match Complete Workflow
+        print("\n----- TEST 1: BO1 MATCH COMPLETE WORKFLOW -----")
+        bo1_match_data = {
+            "team1_id": test_team_ids[0],
+            "team2_id": test_team_ids[1],
+            "event_id": event_id,
+            "format": "BO1",
+            "date": datetime.now().isoformat(),
+            "status": "upcoming"
         }
-        tester.test_update_match(match_id, match_data)
-    else:
-        print("❌ No matches found to test live scoring endpoints")
-    
-    # 3. Test News System
-    print("\n===== TESTING NEWS SYSTEM =====")
-    success, news_data = tester.test_get_news()
-    if success:
-        news_articles = news_data if isinstance(news_data, list) else news_data.get('data', [])
-        if news_articles and len(news_articles) > 0:
-            # Test the first news article in the list
-            news_id = news_articles[0]['id']
-            tester.test_get_news_detail(news_id)
+        
+        success, created_match = tester.test_create_match(bo1_match_data)
+        
+        if success and created_match and 'id' in created_match:
+            bo1_match_id = created_match['id']
             
-            # Test non-existent news article (should return 404)
-            non_existent_id = 9999
-            tester.test_get_news_detail_not_found(non_existent_id)
-        else:
-            print("❌ No news articles found to test news detail endpoint")
+            # Verify response includes exactly 1 map
+            if 'maps' in created_match and len(created_match['maps']) == 1:
+                print("✅ BO1 match has exactly 1 map")
+            else:
+                print("❌ BO1 match does not have exactly 1 map")
+            
+            # Update status to "live"
+            tester.test_update_match_status(bo1_match_id, "live")
+            
+            # Update team scores
+            score_data = {
+                "score1": 13,
+                "score2": 7
+            }
+            tester.run_test(
+                f"Update Match Score for ID {bo1_match_id}",
+                "PUT",
+                f"admin/matches/{bo1_match_id}/score",
+                200,
+                data=score_data,
+                admin_auth=True
+            )
+            
+            # Complete match
+            tester.test_update_match_status(bo1_match_id, "completed")
+            
+            # Verify all data persists correctly
+            success, match_detail = tester.test_get_match_detail(bo1_match_id)
+            if success:
+                if match_detail['status'] == 'completed' and match_detail['score1'] == 13 and match_detail['score2'] == 7:
+                    print("✅ BO1 match data persists correctly")
+                else:
+                    print("❌ BO1 match data does not persist correctly")
+        
+        # 3.2 Test BO3 Match Complete Workflow
+        print("\n----- TEST 2: BO3 MATCH COMPLETE WORKFLOW -----")
+        bo3_match_data = {
+            "team1_id": test_team_ids[0],
+            "team2_id": test_team_ids[1],
+            "event_id": event_id,
+            "format": "BO3",
+            "date": datetime.now().isoformat(),
+            "status": "upcoming"
+        }
+        
+        success, created_match = tester.test_create_match(bo3_match_data)
+        
+        if success and created_match and 'id' in created_match:
+            bo3_match_id = created_match['id']
+            
+            # Verify response includes exactly 3 maps
+            if 'maps' in created_match and len(created_match['maps']) == 3:
+                print("✅ BO3 match has exactly 3 maps")
+            else:
+                print("❌ BO3 match does not have exactly 3 maps")
+            
+            # Test map-by-map progression
+            tester.test_update_match_status(bo3_match_id, "live")
+            
+            # Update map 1 scores
+            map1_data = {
+                "map_index": 0,
+                "score1": 13,
+                "score2": 7
+            }
+            tester.run_test(
+                f"Update Map 1 Score for Match ID {bo3_match_id}",
+                "PUT",
+                f"admin/matches/{bo3_match_id}/maps/0",
+                200,
+                data=map1_data,
+                admin_auth=True
+            )
+            
+            # Update map 2 scores
+            map2_data = {
+                "map_index": 1,
+                "score1": 7,
+                "score2": 13
+            }
+            tester.run_test(
+                f"Update Map 2 Score for Match ID {bo3_match_id}",
+                "PUT",
+                f"admin/matches/{bo3_match_id}/maps/1",
+                200,
+                data=map2_data,
+                admin_auth=True
+            )
+            
+            # Update map 3 scores
+            map3_data = {
+                "map_index": 2,
+                "score1": 13,
+                "score2": 11
+            }
+            tester.run_test(
+                f"Update Map 3 Score for Match ID {bo3_match_id}",
+                "PUT",
+                f"admin/matches/{bo3_match_id}/maps/2",
+                200,
+                data=map3_data,
+                admin_auth=True
+            )
+            
+            # Complete match
+            tester.test_update_match_status(bo3_match_id, "completed")
+            
+            # Verify all data persists correctly
+            success, match_detail = tester.test_get_match_detail(bo3_match_id)
+            if success and 'maps' in match_detail and len(match_detail['maps']) == 3:
+                map_scores_correct = (
+                    match_detail['maps'][0]['score1'] == 13 and match_detail['maps'][0]['score2'] == 7 and
+                    match_detail['maps'][1]['score1'] == 7 and match_detail['maps'][1]['score2'] == 13 and
+                    match_detail['maps'][2]['score1'] == 13 and match_detail['maps'][2]['score2'] == 11
+                )
+                if map_scores_correct:
+                    print("✅ BO3 match map scores persist correctly")
+                else:
+                    print("❌ BO3 match map scores do not persist correctly")
+        
+        # 3.3 Test BO5 Match Creation
+        print("\n----- TEST 3: BO5 MATCH CREATION -----")
+        bo5_match_data = {
+            "team1_id": test_team_ids[0],
+            "team2_id": test_team_ids[1],
+            "event_id": event_id,
+            "format": "BO5",
+            "date": datetime.now().isoformat(),
+            "status": "upcoming"
+        }
+        
+        success, created_match = tester.test_create_match(bo5_match_data)
+        
+        if success and created_match and 'id' in created_match:
+            # Verify response includes exactly 5 maps
+            if 'maps' in created_match and len(created_match['maps']) == 5:
+                print("✅ BO5 match has exactly 5 maps")
+            else:
+                print("❌ BO5 match does not have exactly 5 maps")
+            
+            # Clean up by deleting the match
+            tester.test_delete_match(created_match['id'])
+    else:
+        print("\n⚠️ Skipping match workflow tests due to authentication failure")
     
-    # 4. Test Teams and Players
-    print("\n===== TESTING TEAMS AND PLAYERS ENDPOINTS =====")
-    success, teams_data = tester.test_get_teams()
-    if success:
-        teams = teams_data if isinstance(teams_data, list) else teams_data.get('data', [])
-        if teams and len(teams) > 0:
-            # Test specific team IDs as mentioned in the review request
-            test_team_ids = [83, 84]
-            for team_id in test_team_ids:
-                success, players_data = tester.test_get_team_players(team_id)
-                if success:
-                    players = players_data if isinstance(players_data, list) else players_data.get('data', [])
-                    print(f"✅ Team {team_id} has {len(players)} players")
-        else:
-            print("❌ No teams found to test team players endpoint")
+    # 4. ERROR HANDLING TESTS
+    print("\n===== TESTING ERROR HANDLING =====")
     
-    # 5. Test Events Integration
-    print("\n===== TESTING EVENTS INTEGRATION =====")
-    success, events_data = tester.test_get_events()
-    if success:
-        events = events_data if isinstance(events_data, list) else events_data.get('data', [])
-        if events and len(events) > 0:
-            # Test specific event ID as mentioned in the review request
-            event_id = 12
-            tester.test_get_event_matches(event_id)
-            tester.test_get_event_teams(event_id)
-        else:
-            print("❌ No events found to test event integration endpoints")
+    # 4.1 Test invalid match ID
+    tester.run_test(
+        "Get Non-existent Match",
+        "GET",
+        "matches/99999",
+        404
+    )
+    
+    # 4.2 Test unauthorized access to admin endpoints
+    tester.run_test(
+        "Unauthorized Access to Admin Analytics",
+        "GET",
+        "admin/analytics",
+        401
+    )
     
     # Print summary
     tester.print_summary()
