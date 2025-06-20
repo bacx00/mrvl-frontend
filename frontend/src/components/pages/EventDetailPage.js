@@ -327,7 +327,7 @@ function EventDetailPage({ params, navigateTo }) {
                   <div className="text-xs text-gray-500 dark:text-gray-500">Prize Pool</div>
                 </div>
                 <div className="text-center p-3 bg-white dark:bg-gray-800 rounded">
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{event.teams}</div>
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{teams.length}</div>
                   <div className="text-xs text-gray-500 dark:text-gray-500">Teams</div>
                 </div>
                 <div className="text-center p-3 bg-white dark:bg-gray-800 rounded">
