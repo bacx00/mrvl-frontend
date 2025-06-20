@@ -140,6 +140,7 @@ function MatchForm({ matchId, navigateTo }) {
   }, []);
 
   useEffect(() => {
+    const fetchData = async () => {
       setLoading(true);
       try {
         console.log('🔍 MatchForm: Fetching all required data...');
