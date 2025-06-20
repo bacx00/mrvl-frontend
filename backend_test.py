@@ -407,14 +407,9 @@ def main():
     for team_id in test_team_ids:
         tester.test_get_team_players(team_id)
     
-    # 2.4 Test Events API
-    print("\n===== TESTING EVENTS API =====")
-    tester.test_get_events()
-    
-    # Test specific event ID as mentioned in the review request
-    event_id = 12
-    tester.test_get_event_matches(event_id)
-    tester.test_get_event_teams(event_id)
+    # 2.5 Test Heroes API
+    print("\n===== TESTING HEROES API =====")
+    tester.test_get_heroes()
     
     # 3. SPECIFIC MATCH WORKFLOW TESTS
     if login_success:
