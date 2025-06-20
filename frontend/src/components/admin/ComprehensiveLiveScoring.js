@@ -157,8 +157,8 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
   const updateMapStatus = async (mapIndex, status, winner = null) => {
     setMatchStats(prev => {
       const newStats = { ...prev };
-      newStats.mapStats[mapIndex].status = status;
-      newStats.mapStats[mapIndex].winner = winner;
+      newStats.maps[mapIndex].status = status;
+      newStats.maps[mapIndex].winner = winner;
       
       if (winner) {
         newStats.mapWins[winner]++;
