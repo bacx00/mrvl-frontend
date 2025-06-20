@@ -65,6 +65,7 @@ const ROUTES = {
   'user-dashboard': UserDashboard,
   'stats': StatsPage,
   'search': SearchPage,
+  'test': TestPage,
   
   // Admin Routes - Complete and working
   'admin-dashboard': AdminDashboard,
