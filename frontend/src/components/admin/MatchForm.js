@@ -109,35 +109,6 @@ function MatchForm({ matchId, navigateTo }) {
 
   // ✅ FETCH ALL REQUIRED DATA
   // ✅ CRITICAL: Load heroes from live backend API
-  useEffect(() => {
-    const loadHeroesFromAPI = async () => {
-      try {
-        console.log('🎮 Loading heroes from backend API...');
-        const response = await api.get('/heroes');
-        const heroData = response.data || response;
-        
-        console.log('✅ Heroes loaded from API:', heroData);
-        
-        if (heroData && typeof heroData === 'object') {
-          // Update the configuration with live data
-          MARVEL_RIVALS_CONFIG.herosByRole = heroData;
-          console.log('🎮 Heroes configuration updated:', MARVEL_RIVALS_CONFIG.herosByRole);
-        }
-      } catch (error) {
-        console.error('❌ Error loading heroes from API:', error);
-        // Fallback to hardcoded heroes if API fails
-        MARVEL_RIVALS_CONFIG.herosByRole = {
-          Tank: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Peni Parker', 'The Thing', 'Thor', 'Venom'],
-          Duelist: ['Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Human Torch', 'Iron Fist', 'Iron Man', 'Magik', 'Moon Knight', 'Namor', 'Psylocke', 'The Punisher', 'Scarlet Witch', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine'],
-          Support: ['Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon']
-        };
-        console.log('🎮 Using fallback heroes configuration');
-      }
-    };
-    
-    loadHeroesFromAPI();
-  }, []);
-
   // ✅ CRITICAL: Load heroes from live backend API
   useEffect(() => {
     const loadHeroesFromAPI = async () => {
