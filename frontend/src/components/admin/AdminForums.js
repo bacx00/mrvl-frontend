@@ -7,6 +7,9 @@ function AdminForums({ navigateTo }) {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('threads');
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [newCategory, setNewCategory] = useState({ name: '', description: '', slug: '' });
   const [filters, setFilters] = useState({
     search: '',
     category: 'all',
