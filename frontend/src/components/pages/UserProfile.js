@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
+import HeroAvatarSelector from '../HeroAvatarSelector';
 
 function UserProfile({ navigateTo }) {
   const { user, api, updateUser } = useAuth();
