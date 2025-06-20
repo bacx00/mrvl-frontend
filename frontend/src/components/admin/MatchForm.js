@@ -320,7 +320,7 @@ function MatchForm({ matchId, navigateTo }) {
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-6">
         {/* Teams Selection */}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">🎮 Teams</h3>
