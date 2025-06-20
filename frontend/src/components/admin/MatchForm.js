@@ -301,21 +301,22 @@ function MatchForm({ matchId, navigateTo }) {
 
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-            {isEdit ? 'Edit Match' : 'Schedule New Match'}
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            {isEdit ? 'Update match information and live scores' : 'Create a new Marvel Rivals competitive match'}
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            {isEdit ? '✏️ Edit Match' : '⚔️ Create New Match'}
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            {isEdit ? 'Update match details and scoring' : 'Set up a new Marvel Rivals tournament match'}
           </p>
         </div>
-        <button 
-          onClick={() => navigateTo && navigateTo('admin-dashboard')}
-          className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+        <button
+          onClick={() => navigateTo && navigateTo('admin-matches')}
+          className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
         >
-          ← Back to Dashboard
+          ← Back to Matches
         </button>
       </div>
 
