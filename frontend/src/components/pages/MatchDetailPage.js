@@ -995,44 +995,32 @@ function MatchDetailPage({ params, navigateTo }) {
                         </div>
                       </div>
                       
-                      {/* ✅ FIXED: Hero Image Display with Real Marvel Rivals Images */}
+                      {/* ✅ FIXED: Clean Hero Images (VLR.gg Style) */}
                       <div className="flex justify-center">
-                        <div className={`relative rounded-lg overflow-hidden ${
-                          getHeroRole(player.hero) === 'Tank' ? 'bg-blue-600' :
-                          getHeroRole(player.hero) === 'Duelist' ? 'bg-red-600' : 
-                          getHeroRole(player.hero) === 'Support' ? 'bg-green-600' : 'bg-gray-600'
-                        }`}>
+                        <div className="relative w-10 h-10">
                           {getHeroImage(player.hero) ? (
                             <img 
                               src={`https://staging.mrvl.net/Heroes/${getHeroImage(player.hero)}`}
                               alt={player.hero}
-                              className="w-10 h-10 object-cover rounded-lg"
+                              className="w-10 h-10 object-cover rounded"
                               title={`${player.hero} (${getHeroRole(player.hero)})`}
                               onError={(e) => {
-                                console.error(`❌ Failed to load hero image: https://staging.mrvl.net/Heroes/${getHeroImage(player.hero)}`);
-                                // Show role-colored fallback with hero name
+                                console.error(`❌ Failed to load hero image: ${player.hero}`);
                                 e.target.style.display = 'none';
                                 e.target.nextSibling.style.display = 'flex';
                               }}
                             />
                           ) : null}
                           <div 
-                            className="w-10 h-10 flex items-center justify-center text-white text-xs font-bold text-center leading-tight"
+                            className={`w-10 h-10 flex items-center justify-center text-xs font-bold text-center leading-tight rounded ${
+                              getHeroRole(player.hero) === 'Tank' ? 'bg-blue-600 text-white' :
+                              getHeroRole(player.hero) === 'Duelist' ? 'bg-red-600 text-white' : 
+                              getHeroRole(player.hero) === 'Support' ? 'bg-green-600 text-white' : 'bg-gray-600 text-white'
+                            }`}
                             style={{ display: getHeroImage(player.hero) ? 'none' : 'flex' }}
                             title={`${player.hero} (${getHeroRole(player.hero)})`}
                           >
-                            {player.hero.split(' ').map(word => word[0]).join('').slice(0, 3)}
-                          </div>
-                          {/* Role indicator */}
-                          <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full text-xs flex items-center justify-center text-white font-bold" 
-                               style={{
-                                 backgroundColor: getHeroRole(player.hero) === 'Tank' ? '#3B82F6' :
-                                                getHeroRole(player.hero) === 'Duelist' ? '#EF4444' : 
-                                                getHeroRole(player.hero) === 'Support' ? '#10B981' : '#6B7280'
-                               }}>
-                            {getHeroRole(player.hero) === 'Tank' ? '🛡️' :
-                             getHeroRole(player.hero) === 'Duelist' ? '⚔️' : 
-                             getHeroRole(player.hero) === 'Support' ? '💚' : '❓'}
+                            {player.hero ? player.hero.charAt(0) : 'H'}
                           </div>
                         </div>
                       </div>
