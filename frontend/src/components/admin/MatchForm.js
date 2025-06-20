@@ -281,7 +281,11 @@ function MatchForm({ matchId, navigateTo }) {
 
   // ✅ HERO CHANGE HANDLER FOR PLAYER COMPOSITIONS
   const handlePlayerHeroChange = (mapIndex, team, playerIndex, hero, role) => {
-    console.log(`🎮 Player ${playerIndex + 1} on ${team} changing to ${hero} (${role}) for Map ${mapIndex + 1}`);
+    // 🚨 CRITICAL FIX: Ensure hero is always a string, not an object
+    const heroName = typeof hero === 'object' && hero.name ? hero.name : String(hero);
+    const roleString = typeof role === 'object' && role.name ? role.name : String(role);
+    
+    console.log(`🎮 Player ${playerIndex + 1} on ${team} changing to ${heroName} (${roleString}) for Map ${mapIndex + 1}`);
     
     setFormData(prev => ({
       ...prev,
@@ -289,7 +293,7 @@ function MatchForm({ matchId, navigateTo }) {
         index === mapIndex ? {
           ...map,
           [`${team}_composition`]: map[`${team}_composition`].map((player, pIndex) =>
-            pIndex === playerIndex ? { ...player, hero, role } : player
+            pIndex === playerIndex ? { ...player, hero: heroName, role: roleString } : player
           )
         } : map
       )
