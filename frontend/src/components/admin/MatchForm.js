@@ -357,20 +357,16 @@ function MatchForm({ matchId, navigateTo }) {
                 Team 2 *
               </label>
               <select
-                name="team2Id"
-                value={formData.team2Id}
+                name="team2_id"
+                value={formData.team2_id}
                 onChange={handleInputChange}
-                className="form-input"
+                className={`form-input ${errors.team2_id ? 'border-red-500' : ''}`}
                 required
               >
-                <option value="">Select Team 2</option>
-                {teams.map(team => (
-                  <option 
-                    key={team.id} 
-                    value={team.id}
-                    disabled={team.id == formData.team1_id}
-                  >
-                    {team.name} ({team.short_name}) - Rating: {team.rating || 'Unranked'}
+                <option value="">Select Team 2...</option>
+                {teams.filter(team => team.id != formData.team1_id).map(team => (
+                  <option key={team.id} value={team.id}>
+                    {team.name} ({team.short_name})
                   </option>
                 ))}
               </select>
