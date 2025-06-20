@@ -247,45 +247,6 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
       alert('Error saving match statistics. Please try again.');
     }
   };
-  
-  // SAVE MATCH STATS TO BACKEND
-  const handleSaveStats = async () => {
-    try {
-      console.log('💾 Saving match statistics to backend...');
-      
-      // Prepare updated match data
-      const updatedMatch = {
-        ...match,
-        team1_score: matchStats.mapWins.team1,
-        team2_score: matchStats.mapWins.team2,
-        maps: matchStats.mapStats.map((mapStat, index) => ({
-          map_number: index + 1,
-          map_name: mapStat.mapName,
-          team1_score: mapStat.teamStats.team1.eliminations || 0,
-          team2_score: mapStat.teamStats.team2.eliminations || 0,
-          status: mapStat.status,
-          winner_id: mapStat.winner ? (mapStat.winner === 'team1' ? match.team1?.id : match.team2?.id) : null,
-          player_stats: {
-            team1: mapStat.playerStats.team1,
-            team2: mapStat.playerStats.team2
-          }
-        }))
-      };
-      
-      // Call the onUpdate callback with the updated match data
-      if (onUpdate) {
-        await onUpdate(updatedMatch);
-        console.log('✅ Match statistics saved successfully!');
-        alert('Match statistics saved successfully!');
-      } else {
-        console.error('❌ onUpdate callback not provided');
-        alert('Unable to save match statistics. Please try again.');
-      }
-    } catch (error) {
-      console.error('❌ Error saving match statistics:', error);
-      alert('Error saving match statistics. Please try again.');
-    }
-  };
 
   const currentMapData = matchStats.mapStats[activeMap];
 
