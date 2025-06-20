@@ -923,6 +923,7 @@ function MatchDetailPage({ params, navigateTo }) {
                               }}
                             />
                           ) : null}
+                          {/* ✅ CRITICAL FIX: Show hero NAME when image fails */}
                           <div 
                             className={`w-10 h-10 flex items-center justify-center text-xs font-bold text-center leading-tight rounded ${
                               getHeroRole(player.hero) === 'Tank' ? 'bg-blue-600 text-white' :
@@ -932,7 +933,7 @@ function MatchDetailPage({ params, navigateTo }) {
                             style={{ display: getHeroImage(player.hero) ? 'none' : 'flex' }}
                             title={`${player.hero} (${getHeroRole(player.hero)})`}
                           >
-                            {player.hero ? player.hero.charAt(0) : 'H'}
+                            {player.hero || 'H'}
                           </div>
                         </div>
                       </div>
