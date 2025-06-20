@@ -110,15 +110,20 @@ function MatchForm({ matchId, navigateTo }) {
             const matchData = matchResponse?.data?.data || matchResponse?.data;
             
             if (matchData) {
+              // 🚨 CRITICAL FIX: Ensure correct map count for the format
+              const baseData = getInitialMatchData(matchData.format || 'BO3');
               const transformedData = {
-                ...getInitialMatchData(matchData.format || 'BO3'),
-                ...matchData,
+                ...baseData, // Start with correct map structure
+                ...matchData, // Then add match data
                 team1_id: matchData.team1_id || matchData.team1?.id || '',
                 team2_id: matchData.team2_id || matchData.team2?.id || '',
                 event_id: matchData.event_id || matchData.event?.id || '',
                 scheduled_at: matchData.scheduled_at ? 
                   new Date(matchData.scheduled_at).toISOString().slice(0, 16) : 
-                  new Date(Date.now() + 3600000).toISOString().slice(0, 16)
+                  new Date(Date.now() + 3600000).toISOString().slice(0, 16),
+                // 🚨 FORCE correct map structure based on format
+                maps: baseData.maps,
+                map_pool: baseData.map_pool
               };
               
               setFormData(transformedData);
