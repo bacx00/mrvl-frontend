@@ -10,6 +10,7 @@
 - ✅ Events API (/api/events): Working correctly
 - ✅ Rankings API (/api/rankings): Working correctly
 - ✅ Forum Threads API (/api/forum/threads): Working correctly
+- ✅ Heroes API (/api/heroes): Working correctly
 
 ### Match Detail Data
 - ✅ Match detail endpoint (/api/matches/{id}): Working correctly
@@ -17,7 +18,7 @@
 - ✅ Player data in match details: Complete with all required fields
 
 ### Authentication System
-- ❌ Login endpoint (/api/login): Not found (404 error)
+- ✅ Login endpoint (/api/auth/login): Working correctly with provided credentials
 - ❓ Logout endpoint (/api/logout): Not tested due to login failure
 - ❓ User profile endpoint (/api/user): Not tested due to login failure
 
@@ -25,6 +26,10 @@
 - ✅ Live match data structure: Working correctly
 - ✅ Maps data for scoring: Present and correctly structured
 - ✅ Team scores: Present in the response
+
+### Match Management
+- ✅ Create match endpoint (/api/admin/matches): Working correctly for BO1, BO3, and BO5 formats
+- ✅ Match status updates: Working correctly
 
 ### Newly Added Endpoints
 - ✅ Team players endpoint (/api/teams/{id}/players): Working correctly with team IDs 83, 84
