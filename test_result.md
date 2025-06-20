@@ -241,11 +241,12 @@
 - Could not fully test admin features due to login modal interaction issues
 - Authentication system needs further verification
 
-### **🧪 Latest Backend API Testing (June 18, 2025):**
-- **Core API Endpoints**: All working correctly (/api/teams, /api/matches, /api/events, /api/forums/threads)
+### **🧪 Latest Backend API Testing (June 20, 2025):**
+- **Core API Endpoints**: All working correctly (/api/teams, /api/matches, /api/events, /api/forums/threads, /api/heroes)
+- **Authentication**: Login endpoint (/api/auth/login) working correctly with provided credentials
+- **Match Management**: Create match endpoint working correctly for BO1, BO3, and BO5 formats
 - **Newly Added Endpoints**: Team players, Event matches, and Event teams endpoints working correctly
 - **Admin Endpoints**: Require authentication (401 errors) - expected behavior for secured endpoints
-- **Authentication**: Login endpoint not found (404 error) - requires investigation
 - **Data Relationships**: Team-player relationships working correctly with proper data structure
 
 **See detailed testing results in /app/test_result_update.md**
