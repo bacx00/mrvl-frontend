@@ -84,6 +84,7 @@ const ROUTES = {
   'admin-event-edit': (props) => <EventForm {...props} eventId={props.params?.id} />,
   'admin-match-create': (props) => <MatchForm {...props} />,
   'admin-match-edit': (props) => <MatchForm {...props} matchId={props.params?.id} />,
+  'admin-live-scoring': (props) => <ComprehensiveLiveScoring {...props} />,
   'admin-forums': AdminForums,
   
   // Footer pages
