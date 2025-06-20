@@ -551,13 +551,6 @@ function MatchDetailPage({ params, navigateTo }) {
   };
 
   // HELPER FUNCTIONS FOR DATA
-
-
-          const playerCountry = player.country && player.country !== 'US' && player.country !== 'Finland' 
-            ? player.country 
-            : realCountries[i % realCountries.length];
-          
-          return {
             id: player.id, // ✅ REAL PLAYER ID - NAVIGATION WILL WORK!
             name: player.name,
             hero: assignedHero, // ✅ FORCED HERO DIVERSITY - No more all Captain America
