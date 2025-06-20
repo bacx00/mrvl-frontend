@@ -250,6 +250,12 @@ function MatchDetailPage({ params, navigateTo }) {
         return comment;
       }));
 
+      // ✅ FIXED: Save vote state to localStorage for persistence across pages
+      localStorage.setItem('mrvl-comment-votes', JSON.stringify({
+        ...userVotes,
+        [userVoteKey]: voteType
+      }));
+
       console.log('✅ Vote submitted successfully');
     } catch (error) {
       console.error('❌ Error voting on comment:', error);
