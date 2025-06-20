@@ -201,17 +201,15 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
         ...match,
         team1_score: matchStats.mapWins.team1,
         team2_score: matchStats.mapWins.team2,
-        maps: matchStats.mapStats.map((mapStat, index) => ({
+        maps: matchStats.maps.map((mapStat, index) => ({
           map_number: index + 1,
-          map_name: mapStat.mapName,
-          team1_score: mapStat.teamStats.team1.eliminations || 0,
-          team2_score: mapStat.teamStats.team2.eliminations || 0,
+          map_name: mapStat.name || mapStat.map_name,
+          team1_score: mapStat.team1Score || 0,
+          team2_score: mapStat.team2Score || 0,
           status: mapStat.status,
           winner_id: mapStat.winner ? (mapStat.winner === 'team1' ? match.team1?.id : match.team2?.id) : null,
-          player_stats: {
-            team1: mapStat.playerStats.team1,
-            team2: mapStat.playerStats.team2
-          }
+          team1_composition: mapStat.team1Players,
+          team2_composition: mapStat.team2Players
         }))
       };
       
