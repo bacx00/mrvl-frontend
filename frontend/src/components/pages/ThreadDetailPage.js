@@ -59,7 +59,14 @@ function ThreadDetailPage({ params, navigateTo }) {
         }
       } catch (backendError) {
         console.error('❌ ThreadDetailPage: Backend thread not found:', backendError);
-        setThread(null); // ✅ NO MOCK DATA - Show not found instead
+        
+        // ✅ CRITICAL FIX: Handle 404 gracefully - don't show error alerts
+        if (backendError.message.includes('404') || backendError.message.includes('Thread not found')) {
+          setThread(null); // Show "not found" UI instead of error
+          setError(`Thread #${params.id} was not found. It may have been deleted or moved.`);
+        } else {
+          setError('Unable to load thread. Please try again later.');
+        }
       }
       
     } catch (error) {
