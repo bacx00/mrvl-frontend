@@ -22,6 +22,7 @@ import CreateThreadPage from './components/pages/CreateThreadPage';
 import UserDashboard from './components/pages/UserDashboard';
 import StatsPage from './components/pages/StatsPage';
 import SearchPage from './components/pages/SearchPage';
+import TestPage from './components/pages/TestPage';
 import Footer from './components/Footer';
 
 // Footer pages
