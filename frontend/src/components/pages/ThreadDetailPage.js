@@ -7,6 +7,7 @@ function ThreadDetailPage({ params, navigateTo }) {
   const [newPost, setNewPost] = useState('');
   const [posting, setPosting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [replyingTo, setReplyingTo] = useState(null);
   const [expandedReplies, setExpandedReplies] = useState({});
   const [userReactions, setUserReactions] = useState({}); // CRITICAL FIX: Track user reactions
