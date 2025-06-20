@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
 import { TeamLogo } from '../../utils/imageUtils';
 
-// ✅ MARVEL RIVALS PERFECT CONFIGURATION
+// ✅ MARVEL RIVALS PERFECT CONFIGURATION WITH HEROES
 const MARVEL_RIVALS_CONFIG = {
   maps: [
     'Asgard Throne Room',
@@ -14,6 +14,11 @@ const MARVEL_RIVALS_CONFIG = {
     'Helicarrier Command',
     'Bifrost Arena'
   ],
+  herosByRole: {
+    Tank: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Peni Parker', 'The Thing', 'Thor', 'Venom'],
+    Duelist: ['Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Human Torch', 'Iron Fist', 'Iron Man', 'Magik', 'Moon Knight', 'Namor', 'Psylocke', 'The Punisher', 'Scarlet Witch', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine'],
+    Support: ['Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon']
+  },
   formats: [
     { value: 'BO1', label: 'BO1 - Best of 1', maps: 1, description: 'Single elimination match' },
     { value: 'BO3', label: 'BO3 - Best of 3', maps: 3, description: 'First to win 2 maps' },
