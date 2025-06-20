@@ -557,12 +557,14 @@ def main():
         
         # 3.3 Test BO5 Match Creation
         print("\n----- TEST 3: BO5 MATCH CREATION -----")
+        # Set scheduled_at to a future date (tomorrow)
+        tomorrow = (datetime.now() + timedelta(days=1)).isoformat()
         bo5_match_data = {
             "team1_id": test_team_ids[0],
             "team2_id": test_team_ids[1],
             "event_id": 18,  # Using a valid event ID from the events list
             "format": "BO5",
-            "scheduled_at": datetime.now().isoformat(),
+            "scheduled_at": tomorrow,
             "status": "upcoming"
         }
         
