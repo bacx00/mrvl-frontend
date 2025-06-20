@@ -164,6 +164,8 @@ function AdminForums({ navigateTo }) {
     }
     setShowCategoryModal(true);
   };
+
+  const handleThreadAction = async (threadId, action) => {
     try {
       let endpoint = '';
       let method = 'POST';
@@ -218,6 +220,7 @@ function AdminForums({ navigateTo }) {
       console.error(`Error performing ${action} on thread:`, error);
       alert(`✅ Forum action completed! ${action.charAt(0).toUpperCase() + action.slice(1)} functionality working perfectly.`);
     }
+  };
   };
 
   const handleReportAction = async (reportId, action) => {
