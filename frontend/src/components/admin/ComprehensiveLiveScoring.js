@@ -172,7 +172,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
       await api.put(`/matches/${match.id}/maps/${mapIndex}`, {
         status,
         winner,
-        stats: matchStats.mapStats[mapIndex]
+        stats: matchStats.maps[mapIndex]
       });
     } catch (error) {
       console.error('Error updating map:', error);
