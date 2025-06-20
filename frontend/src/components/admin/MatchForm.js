@@ -47,10 +47,10 @@ const getInitialMatchData = (format = 'BO3') => {
     // ✅ CRITICAL: Proper score initialization
     team1_score: 0,
     team2_score: 0,
-    // ✅ CRITICAL: Perfect map structure for each format
+    // 🚨 CRITICAL FIX: Create EXACTLY the right number of maps
     maps: Array.from({ length: mapCount }, (_, index) => ({
       map_number: index + 1,
-      map_name: MARVEL_RIVALS_CONFIG.maps[index % MARVEL_RIVALS_CONFIG.maps.length],
+      map_name: MARVEL_RIVALS_CONFIG.maps[index] || MARVEL_RIVALS_CONFIG.maps[0], // Use exact map, no modulo wrap
       team1_score: 0,
       team2_score: 0,
       status: 'upcoming',
