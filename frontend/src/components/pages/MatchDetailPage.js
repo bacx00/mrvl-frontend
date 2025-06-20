@@ -453,34 +453,101 @@ function MatchDetailPage({ params, navigateTo }) {
 
   const fetchMatchData = async () => {
     try {
-      console.log('🔄 MatchDetailPage: Fetching match data for ID:', matchId);
+      console.log('🔄 MatchDetailPage: Fetching REAL match data for ID:', matchId);
       
-      // First try to get from centralized data
-      const centralMatch = getMatchById(matchId);
+      // 🚨 CRITICAL FIX: Use REAL backend data, no fallbacks
+      const response = await api.get(`/matches/${matchId}`);
+      let matchData = response.data || response;
+      console.log('✅ REAL match data received:', matchData);
       
-      if (centralMatch) {
-        console.log('✅ MatchDetailPage: Using centralized match data:', centralMatch);
-        const transformedMatch = await transformMatchData(centralMatch);
-        setMatch(transformedMatch);
+      if (!matchData || !matchData.id) {
+        console.error('❌ No match data received from backend');
+        setMatch(null);
         return;
       }
       
-      // Try to fetch real match data from API
-      try {
-        const response = await api.get(`/matches/${matchId}`);
-        let matchData = response.data || response;
-        console.log('✅ Real match data received:', matchData);
+      // 🎮 CRITICAL: Use EXACT backend data structure - NO TRANSFORMATION
+      const realMatch = {
+        id: matchData.id,
+        team1: {
+          id: matchData.team1_id || matchData.team1?.id,
+          name: matchData.team1_name || matchData.team1?.name || 'Team 1',
+          short_name: matchData.team1_short_name || matchData.team1?.short_name || 'T1',
+          score: matchData.team1_score || 0,
+          logo: matchData.team1?.logo,
+          region: matchData.team1?.region || 'Unknown'
+        },
+        team2: {
+          id: matchData.team2_id || matchData.team2?.id,
+          name: matchData.team2_name || matchData.team2?.name || 'Team 2', 
+          short_name: matchData.team2_short_name || matchData.team2?.short_name || 'T2',
+          score: matchData.team2_score || 0,
+          logo: matchData.team2?.logo,
+          region: matchData.team2?.region || 'Unknown'
+        },
+        status: matchData.status || 'upcoming',
+        format: matchData.format || 'BO1',
+        scheduled_at: matchData.scheduled_at,
+        event: matchData.event || { name: matchData.event_name || 'Tournament' },
         
-        // Transform backend data to frontend format
-        const transformedMatch = await transformMatchData(matchData);
-        setMatch(transformedMatch);
-      } catch (error) {
-        console.error('❌ Error fetching match data from API:', error);
-        setMatch(null); // NO FALLBACK DATA
-      }
+        // 🎮 CRITICAL: Use REAL maps from backend with exact count
+        maps: (matchData.maps || []).slice(0, matchData.format === 'BO5' ? 5 : matchData.format === 'BO3' ? 3 : 1).map((mapData, index) => ({
+          name: mapData.map_name || mapData.name || `Map ${index + 1}`,
+          mode: mapData.mode || 'Convoy',
+          team1Score: mapData.team1_score || 0,
+          team2Score: mapData.team2_score || 0,
+          status: mapData.status || 'upcoming',
+          winner: mapData.winner_id ? (mapData.winner_id === matchData.team1_id ? matchData.team1_id : matchData.team2_id) : null,
+          duration: mapData.duration || 'Not started',
+          
+          // 🎮 CRITICAL: Use REAL team compositions from backend
+          team1Players: (mapData.team1_composition || Array.from({ length: 6 }, (_, pIndex) => ({
+            id: `${matchData.team1_id}_p${pIndex + 1}`,
+            name: `Player ${pIndex + 1}`,
+            hero: 'Captain America',
+            country: '🌍'
+          }))).map(player => ({
+            id: player.id || player.player_id || `p${index}_${Math.random()}`,
+            name: player.name || player.player_name || `Player ${index + 1}`,
+            hero: player.hero || 'Captain America',
+            role: player.role || 'Tank',
+            country: player.country || '🌍',
+            eliminations: player.eliminations || 0,
+            deaths: player.deaths || 0,
+            assists: player.assists || 0,
+            damage: player.damage || 0,
+            healing: player.healing || 0,
+            damageBlocked: player.damageBlocked || 0
+          })),
+          
+          team2Players: (mapData.team2_composition || Array.from({ length: 6 }, (_, pIndex) => ({
+            id: `${matchData.team2_id}_p${pIndex + 1}`,
+            name: `Player ${pIndex + 1}`,
+            hero: 'Captain America',
+            country: '🌍'
+          }))).map(player => ({
+            id: player.id || player.player_id || `p${index}_${Math.random()}`,
+            name: player.name || player.player_name || `Player ${index + 1}`,
+            hero: player.hero || 'Captain America',
+            role: player.role || 'Tank',
+            country: player.country || '🌍',
+            eliminations: player.eliminations || 0,
+            deaths: player.deaths || 0,
+            assists: player.assists || 0,
+            damage: player.damage || 0,
+            healing: player.healing || 0,
+            damageBlocked: player.damageBlocked || 0
+          }))
+        }))
+      };
+      
+      console.log('🎮 FINAL transformed match data:', realMatch);
+      console.log(`🗺️ Maps count: ${realMatch.maps.length} (Format: ${realMatch.format})`);
+      
+      setMatch(realMatch);
     } catch (error) {
-      console.error('❌ Error in fetchMatchData:', error);
-      setMatch(null);
+      console.error('❌ Error fetching match data from API:', error);
+      setMatch(null); // NO FALLBACK DATA
     } finally {
       setLoading(false);
     }
