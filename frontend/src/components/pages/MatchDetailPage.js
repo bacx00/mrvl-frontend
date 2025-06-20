@@ -1011,12 +1011,10 @@ function MatchDetailPage({ params, navigateTo }) {
                         navigateTo && navigateTo('player-detail', { id: player.id });
                       }}
                     >
-                      {/* ✅ PLAYER AVATAR - NOT FLAG */}
+                      {/* ✅ FIXED: Country Flag + Player Name (Team 2) */}
                       <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 rounded-full bg-gray-600 dark:bg-gray-700 flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">
-                            {player.name.charAt(0)}
-                          </span>
+                        <div className="w-6 h-6 flex items-center justify-center text-lg" title={`Country: ${player.country}`}>
+                          {player.country || '🌍'}
                         </div>
                         <div 
                           className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 cursor-pointer text-sm transition-colors"
