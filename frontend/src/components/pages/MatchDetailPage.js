@@ -223,6 +223,12 @@ function MatchDetailPage({ params, navigateTo }) {
         ...prev,
         [userVoteKey]: voteType
       }));
+      
+      // ✅ FIXED: Save vote state to localStorage for persistence across pages
+      localStorage.setItem('mrvl-comment-votes', JSON.stringify({
+        ...userVotes,
+        [userVoteKey]: voteType
+      }));
 
       // Update comment vote count
       setComments(prev => prev.map(comment => {
