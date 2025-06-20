@@ -197,6 +197,25 @@ function ForumsPage({ navigateTo }) {
 
   useEffect(() => {
     fetchForumData();
+    
+    // ✅ FIXED: Listen for category changes and refresh data
+    const handleCategoryUpdate = () => {
+      console.log('📢 ForumsPage: Category update detected, refreshing data...');
+      fetchForumData();
+    };
+    
+    // Listen for custom events from AdminForums
+    window.addEventListener('mrvl-category-updated', handleCategoryUpdate);
+    
+    // Refresh categories periodically to catch updates
+    const refreshInterval = setInterval(() => {
+      fetchForumData();
+    }, 30000); // Refresh every 30 seconds
+    
+    return () => {
+      window.removeEventListener('mrvl-category-updated', handleCategoryUpdate);
+      clearInterval(refreshInterval);
+    };
   }, [fetchForumData]);
 
   // CRITICAL FIX: Listen for new thread creation to refresh forum list
