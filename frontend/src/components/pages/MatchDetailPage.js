@@ -5,49 +5,7 @@ import { TeamLogo, PlayerAvatar } from '../../utils/imageUtils';
 // 🎮 MARVEL RIVALS HERO SYSTEM - Real Images + Role Data
 const getHeroImage = (heroName) => {
   if (!heroName) return null;
-  
-  // ✅ REAL HERO IMAGES - Convert hero name to actual image filename
-  const heroImageMapping = {
-    'Adam Warlock': 'adam-warlock-headbig.webp',
-    'Black Panther': 'black-panther-headbig.webp', 
-    'Black Widow': 'black-widow-headbig.webp',
-    'Bruce Banner': 'bruce-banner-headbig.webp',
-    'Captain America': 'captain-america-headbig.webp',
-    'Cloak & Dagger': 'cloak-dagger-headbig.webp',
-    'Doctor Strange': 'doctor-strange-headbig.webp',
-    'Emma Frost': 'emma-frost-headbig.webp',
-    'Groot': 'groot-headbig.webp',
-    'Hawkeye': 'hawkeye-headbig.webp',
-    'Hela': 'hela-headbig.webp',
-    'Human Torch': 'human-torch-headbig.webp',
-    'Invisible Woman': 'invisible-woman-headbig.webp',
-    'Iron Fist': 'iron-fist-headbig.webp',
-    'Iron Man': 'iron-man-headbig.webp',
-    'Jeff the Land Shark': 'jeff-the-land-shark-headbig.webp',
-    'Loki': 'loki-headbig.webp',
-    'Luna Snow': 'luna-snow-headbig.webp',
-    'Magik': 'magik-headbig.webp',
-    'Magneto': 'magneto-headbig.webp',
-    'Mantis': 'mantis-headbig.webp',
-    'Mister Fantastic': 'mister-fantastic-headbig.webp',
-    'Moon Knight': 'moon-knight-headbig.webp',
-    'Namor': 'namor-headbig.webp',
-    'Peni Parker': 'peni-parker-headbig.webp',
-    'Psylocke': 'psylocke-headbig.webp',
-    'Rocket Raccoon': 'rocket-raccoon-headbig.webp',
-    'Scarlet Witch': 'scarlet-witch-headbig.webp',
-    'Spider-Man': 'spider-man-headbig.webp',
-    'Squirrel Girl': 'squirrel-girl-headbig.webp',
-    'Star-Lord': 'star-lord-headbig.webp',
-    'Storm': 'storm-headbig.webp',
-    'The Punisher': 'the-punisher-headbig.webp',
-    'The Thing': 'the-thing-headbig.webp',
-    'Thor': 'thor-headbig.webp',
-    'Ultron': 'ultron-headbig.webp',
-    'Venom': 'venom-headbig.webp'
-  };
-  
-  return heroImageMapping[heroName] || null;
+  return `https://staging.mrvl.net/Heroes/${heroName.replace(/\s+/g, '_')}.webp`;
 };
 
 // 🎮 MARVEL RIVALS ROLE SYSTEM - ALIGNED WITH BACKEND
