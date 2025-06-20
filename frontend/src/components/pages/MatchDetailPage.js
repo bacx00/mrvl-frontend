@@ -907,18 +907,14 @@ function MatchDetailPage({ params, navigateTo }) {
                         </div>
                       </div>
                       
-                      {/* ✅ FIXED: Hero Image Display with REAL Production URLs */}
+                      {/* ✅ FIXED: Clean Hero Images (VLR.gg Style) */}
                       <div className="flex justify-center">
-                        <div className={`relative rounded-lg overflow-hidden w-10 h-10 ${
-                          getHeroRole(player.hero) === 'Tank' ? 'bg-blue-600' :
-                          getHeroRole(player.hero) === 'Duelist' ? 'bg-red-600' : 
-                          getHeroRole(player.hero) === 'Support' ? 'bg-green-600' : 'bg-gray-600'
-                        }`}>
+                        <div className="relative w-10 h-10">
                           {getHeroImage(player.hero) ? (
                             <img 
                               src={`https://staging.mrvl.net/Heroes/${getHeroImage(player.hero)}`}
                               alt={player.hero}
-                              className="w-10 h-10 object-cover"
+                              className="w-10 h-10 object-cover rounded"
                               title={`${player.hero} (${getHeroRole(player.hero)})`}
                               onError={(e) => {
                                 console.error(`❌ Failed to load hero image: ${player.hero}`);
@@ -928,7 +924,11 @@ function MatchDetailPage({ params, navigateTo }) {
                             />
                           ) : null}
                           <div 
-                            className="w-10 h-10 flex items-center justify-center text-white text-xs font-bold text-center leading-tight"
+                            className={`w-10 h-10 flex items-center justify-center text-xs font-bold text-center leading-tight rounded ${
+                              getHeroRole(player.hero) === 'Tank' ? 'bg-blue-600 text-white' :
+                              getHeroRole(player.hero) === 'Duelist' ? 'bg-red-600 text-white' : 
+                              getHeroRole(player.hero) === 'Support' ? 'bg-green-600 text-white' : 'bg-gray-600 text-white'
+                            }`}
                             style={{ display: getHeroImage(player.hero) ? 'none' : 'flex' }}
                             title={`${player.hero} (${getHeroRole(player.hero)})`}
                           >
