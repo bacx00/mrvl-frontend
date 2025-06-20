@@ -77,7 +77,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     ]
   };
 
-  // COMPREHENSIVE MATCH STATE
+  // COMPREHENSIVE MATCH STATE WITH PERFECT ALIGNMENT
   const [matchStats, setMatchStats] = useState(() => {
     if (!match) return null;
     
@@ -87,68 +87,52 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
       currentMap: 0,
       mapWins: { team1: match.team1_score || 0, team2: match.team2_score || 0 },
       
-      // Map-specific stats
-      mapStats: marvelRivalsMaps.map((map, index) => ({
-        mapName: map.name,
-        mode: map.mode,
-        status: 'upcoming', // upcoming, live, completed
+      // 🎮 PERFECT ALIGNMENT: Use exact same structure as MatchDetailPage
+      maps: (match.maps || Array.from({ length: match.format === 'BO5' ? 5 : match.format === 'BO3' ? 3 : 1 }, (_, index) => ({
+        map_number: index + 1,
+        map_name: marvelRivalsMaps[index]?.name || 'Tokyo 2099: Spider-Islands',
+        mode: marvelRivalsMaps[index]?.mode || 'Convoy',
+        team1Score: 0,
+        team2Score: 0,
+        status: 'upcoming',
         winner: null,
-        duration: 0,
-        checkpointProgress: { team1: 0, team2: 0 },
-        
-        // Team stats per map
-        teamStats: {
-          team1: {
-            eliminations: 0,
-            deaths: 0,
-            assists: 0,
-            damage: 0,
-            healing: 0,
-            objectiveTime: 0,
-            ultimatesUsed: 0
-          },
-          team2: {
-            eliminations: 0,
-            deaths: 0,
-            assists: 0,
-            damage: 0,
-            healing: 0,
-            objectiveTime: 0,
-            ultimatesUsed: 0
-          }
-        },
-        
-        // Player stats per map
-        playerStats: {
-          team1: Array(6).fill(null).map((_, i) => ({
-            playerName: `${match.team1?.short_name || 'T1'}_Player${i + 1}`,
-            hero: marvelRivalsHeroes.Tank[0] || 'Captain America', // ✅ FIXED: Tank role aligned with backend
-            role: 'Tank',
-            eliminations: 0,
-            deaths: 0,
-            assists: 0,
-            damage: 0,
-            healing: 0,
-            objectiveTime: 0,
-            ultimatesUsed: 0,
-            heroSwitches: 0,
-            timePlayedAsHero: 0
-          })),
-          team2: Array(6).fill(null).map((_, i) => ({
-            playerName: `${match.team2?.short_name || 'T2'}_Player${i + 1}`,
-            hero: marvelRivalsHeroes.Tank[0] || 'Captain America', // ✅ FIXED: Tank role aligned with backend
-            role: 'Tank',
-            eliminations: 0,
-            deaths: 0,
-            assists: 0,
-            damage: 0,
-            healing: 0,
-            objectiveTime: 0,
-            ultimatesUsed: 0,
-            heroSwitches: 0,
-            timePlayedAsHero: 0
-          }))
-        }
+        duration: 'Not started',
+        // 🎮 CRITICAL: Use same player structure as MatchDetailPage
+        team1Players: (match.maps?.[index]?.team1_composition || Array.from({ length: 6 }, (_, pIndex) => ({
+          id: `${match.team1?.id}_p${pIndex + 1}`,
+          name: `${match.team1?.short_name || 'T1'}_Player${pIndex + 1}`,
+          hero: 'Captain America',
+          role: 'Tank',
+          country: '🌍',
+          eliminations: 0,
+          deaths: 0,
+          assists: 0,
+          damage: 0,
+          healing: 0,
+          damageBlocked: 0,
+          objectiveTime: 0,
+          ultimatesUsed: 0
+        }))),
+        team2Players: (match.maps?.[index]?.team2_composition || Array.from({ length: 6 }, (_, pIndex) => ({
+          id: `${match.team2?.id}_p${pIndex + 1}`,
+          name: `${match.team2?.short_name || 'T2'}_Player${pIndex + 1}`,
+          hero: 'Captain America',
+          role: 'Tank',
+          country: '🌍',
+          eliminations: 0,
+          deaths: 0,
+          assists: 0,
+          damage: 0,
+          healing: 0,
+          damageBlocked: 0,
+          objectiveTime: 0,
+          ultimatesUsed: 0
+        })))
+      }))).map((map, index) => ({
+        ...map,
+        map_number: index + 1,
+        map_name: map.map_name || marvelRivalsMaps[index]?.name || 'Tokyo 2099: Spider-Islands',
+        mode: marvelRivalsMaps[index]?.mode || 'Convoy'
       }))
     };
   });
