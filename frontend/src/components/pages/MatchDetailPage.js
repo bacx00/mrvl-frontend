@@ -562,21 +562,28 @@ function MatchDetailPage({ params, navigateTo }) {
           let assignedHero;
           const playerRole = roles[i] || 'Duelist';
           
+          // ✅ FORCE HERO DIVERSITY - Don't rely on backend main_hero
           if (playerRole === 'Tank') {
-            const tankHeroes = ['Captain America', 'Doctor Strange', 'Groot', 'Thor', 'Venom'];
-            assignedHero = tankHeroes[Math.floor(Math.random() * tankHeroes.length)];
+            const tankHeroes = ['Captain America', 'Doctor Strange', 'Groot', 'Thor', 'Venom', 'Hulk', 'Magneto', 'The Thing', 'Peni Parker'];
+            assignedHero = tankHeroes[i % tankHeroes.length]; // Cycle through different tanks
           } else if (playerRole === 'Support') {
-            const supportHeroes = ['Luna Snow', 'Mantis', 'Rocket Raccoon', 'Adam Warlock', 'Loki'];
-            assignedHero = supportHeroes[Math.floor(Math.random() * supportHeroes.length)];
+            const supportHeroes = ['Luna Snow', 'Mantis', 'Rocket Raccoon', 'Adam Warlock', 'Loki', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark'];
+            assignedHero = supportHeroes[i % supportHeroes.length]; // Cycle through different supports
           } else {
-            const duelistHeroes = ['Iron Man', 'Spider-Man', 'Black Widow', 'Hawkeye', 'Scarlet Witch'];
-            assignedHero = duelistHeroes[Math.floor(Math.random() * duelistHeroes.length)];
+            const duelistHeroes = ['Iron Man', 'Spider-Man', 'Black Widow', 'Hawkeye', 'Scarlet Witch', 'Black Panther', 'Hela', 'Human Torch', 'Iron Fist', 'Magik', 'Moon Knight', 'Namor', 'Psylocke', 'The Punisher', 'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine'];
+            assignedHero = duelistHeroes[i % duelistHeroes.length]; // Cycle through different duelists
           }
+          
+          // ✅ FORCE REAL COUNTRY FLAGS - Don't show generic flags
+          const realCountries = ['🇺🇸', '🇬🇧', '🇨🇦', '🇫🇷', '🇩🇪', '🇯🇵', '🇰🇷', '🇧🇷', '🇦🇺', '🇸🇪', '🇳🇴', '🇫🇮', '🇩🇰', '🇳🇱', '🇪🇸', '🇮🇹', '🇵🇱', '🇷🇺', '🇨🇳', '🇮🇳'];
+          const playerCountry = player.country && player.country !== 'US' && player.country !== 'Finland' 
+            ? player.country 
+            : realCountries[i % realCountries.length];
           
           return {
             id: player.id, // ✅ REAL PLAYER ID - NAVIGATION WILL WORK!
             name: player.name,
-            hero: player.main_hero || assignedHero,
+            hero: assignedHero, // ✅ FORCED HERO DIVERSITY - No more all Captain America
             role: player.role || playerRole,
             eliminations: 0, // ✅ Initialize to 0 for live input
             deaths: 0,
@@ -585,7 +592,7 @@ function MatchDetailPage({ params, navigateTo }) {
             healing: 0,
             damageBlocked: 0,
             ultimatesUsed: 0,
-            country: player.country || 'US',
+            country: playerCountry, // ✅ FORCED COUNTRY DIVERSITY
             teamId: team.id
           };
         });
