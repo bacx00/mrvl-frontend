@@ -251,23 +251,6 @@ function MatchForm({ matchId, navigateTo }) {
     }));
   };
 
-  // ✅ HERO CHANGE HANDLER FOR PLAYER COMPOSITIONS
-  const handlePlayerHeroChange = (mapIndex, team, playerIndex, hero, role) => {
-    console.log(`🎮 Player ${playerIndex + 1} on ${team} changing to ${hero} (${role}) for Map ${mapIndex + 1}`);
-    
-    setFormData(prev => ({
-      ...prev,
-      maps: prev.maps.map((map, index) => 
-        index === mapIndex ? {
-          ...map,
-          [`${team}_composition`]: map[`${team}_composition`].map((player, pIndex) =>
-            pIndex === playerIndex ? { ...player, hero, role } : player
-          )
-        } : map
-      )
-    }));
-  };
-
   // ✅ PERFECT MAP CHANGE HANDLER  
   const handleMapChange = (mapIndex, field, value) => {
     console.log(`🗺️ Map ${mapIndex + 1} ${field} changed to:`, value);
