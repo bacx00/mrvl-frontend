@@ -28,39 +28,66 @@ const MARVEL_RIVALS_CONFIG = {
   ]
 };
 
-// ✅ PERFECT MATCH INITIALIZATION
+// ✅ PERFECT MATCH INITIALIZATION WITH HERO PRE-SELECTION
 const getInitialMatchData = (format = 'BO3') => {
   const formatConfig = MARVEL_RIVALS_CONFIG.formats.find(f => f.value === format);
   const mapCount = formatConfig?.maps || 3;
   
-  console.log(`🎮 Initializing ${format} match with ${mapCount} maps`);
+  console.log(`🎮 CRITICAL FIX: Initializing ${format} match with EXACTLY ${mapCount} maps`);
   
   return {
     team1_id: '',
     team2_id: '',
     event_id: '',
-    scheduled_at: new Date(Date.now() + 3600000).toISOString().slice(0, 16), // 1 hour from now
+    scheduled_at: new Date(Date.now() + 3600000).toISOString().slice(0, 16),
     format: format,
     status: 'upcoming',
     stream_url: '',
     description: '',
-    // ✅ CRITICAL: Proper score initialization
     team1_score: 0,
     team2_score: 0,
-    // 🚨 CRITICAL FIX: Create EXACTLY the right number of maps
+    // 🚨 CRITICAL: EXACTLY the right number of maps
     maps: Array.from({ length: mapCount }, (_, index) => ({
       map_number: index + 1,
-      map_name: MARVEL_RIVALS_CONFIG.maps[index] || MARVEL_RIVALS_CONFIG.maps[0], // Use exact map, no modulo wrap
+      map_name: MARVEL_RIVALS_CONFIG.maps[index] || MARVEL_RIVALS_CONFIG.maps[0],
       team1_score: 0,
       team2_score: 0,
       status: 'upcoming',
       winner_id: null,
-      duration: null
+      duration: null,
+      // 🎮 NEW: Player compositions for this map
+      team1_composition: Array.from({ length: 6 }, (_, playerIndex) => ({
+        player_id: null,
+        player_name: `Player ${playerIndex + 1}`,
+        hero: 'Captain America', // Default hero
+        role: 'Tank',
+        eliminations: 0,
+        deaths: 0,
+        assists: 0,
+        damage: 0,
+        healing: 0,
+        damageBlocked: 0,
+        objectiveTime: 0,
+        ultimatesUsed: 0
+      })),
+      team2_composition: Array.from({ length: 6 }, (_, playerIndex) => ({
+        player_id: null,
+        player_name: `Player ${playerIndex + 1}`,
+        hero: 'Captain America', // Default hero
+        role: 'Tank',
+        eliminations: 0,
+        deaths: 0,
+        assists: 0,
+        damage: 0,
+        healing: 0,
+        damageBlocked: 0,
+        objectiveTime: 0,
+        ultimatesUsed: 0
+      }))
     })),
-    // ✅ Additional metadata
     viewers: 0,
     featured: false,
-    map_pool: MARVEL_RIVALS_CONFIG.maps.slice(0, mapCount) // EXACTLY the number of maps needed
+    map_pool: MARVEL_RIVALS_CONFIG.maps.slice(0, mapCount) // EXACTLY mapCount maps
   };
 };
 
