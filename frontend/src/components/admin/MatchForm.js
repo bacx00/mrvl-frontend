@@ -433,10 +433,10 @@ function MatchForm({ matchId, navigateTo }) {
               </label>
               <input
                 type="datetime-local"
-                name="scheduledAt"
-                value={formData.scheduledAt}
+                name="scheduled_at"
+                value={formData.scheduled_at}
                 onChange={handleInputChange}
-                className="form-input"
+                className={`form-input ${errors.scheduled_at ? 'border-red-500' : ''}`}
                 required
               />
             </div>
