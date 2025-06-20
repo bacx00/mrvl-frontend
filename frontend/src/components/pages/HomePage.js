@@ -248,71 +248,39 @@ function HomePage({ navigateTo }) {
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* ✅ NEW: LIVE EVENT BANNER - RED BANNER WITH EVENT IMAGES */}
+      {/* ✅ FIXED: COMPACT LIVE EVENT BANNER - Like Original Design */}
       {liveEventsBanner.length > 0 && (
-        <div className="mb-6 relative">
-          <div className="bg-gradient-to-r from-red-600 via-red-500 to-red-600 text-white rounded-lg overflow-hidden shadow-2xl">
-            <div className="relative">
-              {/* Event Background Image */}
-              {liveEventsBanner[0].featured_image && (
-                <div 
-                  className="absolute inset-0 bg-cover bg-center opacity-20"
-                  style={{
-                    backgroundImage: `url('${liveEventsBanner[0].featured_image}')`
-                  }}
-                />
-              )}
-              
-              <div className="relative z-10 p-6 md:p-8">
-                <div className="flex flex-col md:flex-row items-center justify-between">
-                  <div className="flex items-center space-x-4 mb-4 md:mb-0">
-                    {/* Live Indicator */}
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 bg-white rounded-full animate-pulse"></div>
-                      <span className="text-white font-bold text-lg tracking-wide">🔴 LIVE NOW</span>
-                    </div>
-                    
-                    {/* Event Details */}
-                    <div className="text-center md:text-left">
-                      <h2 className="text-2xl md:text-4xl font-bold mb-2">{liveEventsBanner[0].name}</h2>
-                      <p className="text-lg md:text-xl opacity-90">
-                        {liveEventsBanner[0].stage} • {liveEventsBanner[0].prizePool}
-                      </p>
-                      <p className="text-sm md:text-base opacity-75">
-                        {liveEventsBanner[0].teams} teams • {liveEventsBanner[0].region}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Event Image */}
-                  {liveEventsBanner[0].banner_image && (
-                    <div className="flex-shrink-0">
-                      <img 
-                        src={liveEventsBanner[0].banner_image}
-                        alt={liveEventsBanner[0].name}
-                        className="w-24 h-24 md:w-32 md:h-32 object-cover rounded-lg border-4 border-white/30"
-                      />
-                    </div>
-                  )}
-                  
-                  {/* Action Buttons */}
-                  <div className="flex flex-col space-y-2 mt-4 md:mt-0">
-                    <button 
-                      onClick={() => handleNavigationClick('events')}
-                      className="px-6 py-3 bg-white text-red-600 font-bold rounded-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg"
-                    >
-                      📺 Watch Live
-                    </button>
-                    <button 
-                      onClick={() => handleNavigationClick('matches')}
-                      className="px-6 py-3 bg-white/20 text-white font-bold rounded-lg hover:bg-white/30 transition-all duration-300 border-2 border-white/50"
-                    >
-                      ⚔️ View Matches
-                    </button>
-                  </div>
-                </div>
+        <div className="mb-4">
+          <div className="bg-red-600 text-white rounded-lg p-4 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                <span className="font-bold">🔴 LIVE NOW</span>
+              </div>
+              <div>
+                <h3 className="font-bold">{liveEventsBanner[0].name}</h3>
+                <p className="text-sm opacity-90">{liveEventsBanner[0].stage} • {liveEventsBanner[0].prizePool}</p>
               </div>
             </div>
+            
+            {/* ✅ FIXED: Real Event Image Fetching */}
+            {liveEventsBanner[0].featured_image && (
+              <img 
+                src={liveEventsBanner[0].featured_image}
+                alt={liveEventsBanner[0].name}
+                className="w-12 h-12 object-cover rounded border-2 border-white/30"
+                onError={(e) => {
+                  e.target.style.display = 'none'; // Hide if image fails
+                }}
+              />
+            )}
+            
+            <button 
+              onClick={() => handleNavigationClick('events')}
+              className="px-4 py-2 bg-white text-red-600 font-medium rounded hover:bg-gray-100 transition-colors"
+            >
+              Watch Live →
+            </button>
           </div>
         </div>
       )}
