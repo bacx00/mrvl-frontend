@@ -144,13 +144,10 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
   const updatePlayerStat = (mapIndex, team, playerIndex, statType, value) => {
     setMatchStats(prev => {
       const newStats = { ...prev };
-      newStats.mapStats[mapIndex].playerStats[team][playerIndex][statType] = value;
-      
-      // Update team totals
-      const teamTotal = newStats.mapStats[mapIndex].playerStats[team].reduce((sum, player) => 
-        sum + (player[statType] || 0), 0
-      );
-      newStats.mapStats[mapIndex].teamStats[team][statType] = teamTotal;
+      newStats.maps[mapIndex].team1Players[playerIndex][statType] = team === 'team1' ? value : newStats.maps[mapIndex].team1Players[playerIndex][statType];
+      newStats.maps[mapIndex].team2Players[playerIndex][statType] = team === 'team2' ? value : newStats.maps[mapIndex].team2Players[playerIndex][statType];
+
+      // No team totals needed with new structure
       
       return newStats;
     });
