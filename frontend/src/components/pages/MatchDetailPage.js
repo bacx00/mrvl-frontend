@@ -5,7 +5,43 @@ import { TeamLogo, PlayerAvatar } from '../../utils/imageUtils';
 // 🎮 MARVEL RIVALS HERO SYSTEM - Real Images + Role Data
 const getHeroImage = (heroName) => {
   if (!heroName) return null;
-  return `https://staging.mrvl.net/Heroes/${heroName.replace(/\s+/g, '_')}.webp`;
+  
+  // 🚨 CRITICAL FIX: Try multiple image path formats
+  const heroImageMapping = {
+    'Captain America': 'captain-america.webp',
+    'Iron Man': 'iron-man.webp',
+    'Spider-Man': 'spider-man.webp',
+    'Doctor Strange': 'doctor-strange.webp',
+    'Black Widow': 'black-widow.webp',
+    'Hulk': 'hulk.webp',
+    'Thor': 'thor.webp',
+    'Hawkeye': 'hawkeye.webp',
+    'Scarlet Witch': 'scarlet-witch.webp',
+    'Ant-Man': 'ant-man.webp',
+    'Black Panther': 'black-panther.webp',
+    'Rocket Raccoon': 'rocket-raccoon.webp',
+    'Groot': 'groot.webp',
+    'Star-Lord': 'star-lord.webp',
+    'Gamora': 'gamora.webp',
+    'Drax': 'drax.webp',
+    'Mantis': 'mantis.webp',
+    'Nebula': 'nebula.webp',
+    'Luna Snow': 'luna-snow.webp',
+    'Magneto': 'magneto.webp',
+    'Storm': 'storm.webp',
+    'Wolverine': 'wolverine.webp',
+    'Psylocke': 'psylocke.webp',
+    'The Thing': 'the-thing.webp',
+    'Human Torch': 'human-torch.webp',
+    'Invisible Woman': 'invisible-woman.webp',
+    'Mister Fantastic': 'mister-fantastic.webp',
+    'Deadpool': 'deadpool.webp',
+    'Venom': 'venom.webp',
+    'Carnage': 'carnage.webp'
+  };
+  
+  const imageFileName = heroImageMapping[heroName] || `${heroName.toLowerCase().replace(/\s+/g, '-')}.webp`;
+  return `https://staging.mrvl.net/Heroes/${imageFileName}`;
 };
 
 // 🎮 MARVEL RIVALS ROLE SYSTEM - ALIGNED WITH BACKEND
