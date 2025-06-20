@@ -469,12 +469,14 @@ def main():
         
         # 3.2 Test BO3 Match Complete Workflow
         print("\n----- TEST 2: BO3 MATCH COMPLETE WORKFLOW -----")
+        # Set scheduled_at to a future date (tomorrow)
+        tomorrow = (datetime.now() + timedelta(days=1)).isoformat()
         bo3_match_data = {
             "team1_id": test_team_ids[0],
             "team2_id": test_team_ids[1],
             "event_id": 18,  # Using a valid event ID from the events list
             "format": "BO3",
-            "scheduled_at": datetime.now().isoformat(),
+            "scheduled_at": tomorrow,
             "status": "upcoming"
         }
         
