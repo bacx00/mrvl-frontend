@@ -183,9 +183,10 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
   const changePlayerHero = (mapIndex, team, playerIndex, hero, role) => {
     setMatchStats(prev => {
       const newStats = { ...prev };
-      newStats.mapStats[mapIndex].playerStats[team][playerIndex].hero = hero;
-      newStats.mapStats[mapIndex].playerStats[team][playerIndex].role = role;
-      newStats.mapStats[mapIndex].playerStats[team][playerIndex].heroSwitches++;
+      const targetPlayers = team === 'team1' ? newStats.maps[mapIndex].team1Players : newStats.maps[mapIndex].team2Players;
+      targetPlayers[playerIndex].hero = hero;
+      targetPlayers[playerIndex].role = role;
+      targetPlayers[playerIndex].heroSwitches++;
       return newStats;
     });
   };
