@@ -300,9 +300,9 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
                 className={`px-4 py-3 rounded-lg whitespace-nowrap flex items-center space-x-2 transition-colors ${
                   activeMap === index
                     ? 'bg-red-600 text-white'
-                    : matchStats.mapStats[index].status === 'completed'
+                    : matchStats.maps[index]?.status === 'completed'
                     ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                    : matchStats.mapStats[index].status === 'live'
+                    : matchStats.maps[index]?.status === 'live'
                     ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
                     : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                 }`}
