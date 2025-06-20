@@ -82,7 +82,7 @@ function TestPage({ navigateTo }) {
             <div className="text-center">
               <div className="w-16 h-16 rounded-full overflow-hidden mb-2 mx-auto border-4 border-red-500">
                 <img 
-                  src={`/Heroes/${selectedHero.image}`}
+                  src={`https://staging.mrvl.net/Heroes/${selectedHero.image}`}
                   alt={selectedHero.name}
                   className="w-full h-full object-cover"
                 />
