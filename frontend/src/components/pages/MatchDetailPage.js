@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
 import { TeamLogo, PlayerAvatar } from '../../utils/imageUtils';
-import { getMatchById } from '../../data/matchesData';
-import { REAL_TEAMS, getTeamById, getRandomTeams, getRandomTournament, getCountryFlag } from '../../data/realTeams';
-import { getRealPlayersForTeam } from '../../data/realPlayersMapping';
 
 // 🎮 MARVEL RIVALS HERO SYSTEM - Real Images + Role Data
 const getHeroImage = (heroName) => {
