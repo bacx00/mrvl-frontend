@@ -81,36 +81,26 @@ function HomePage({ navigateTo }) {
         eventsData = [];
       }
 
-      // CRITICAL FIX: Get REAL forum discussions from backend ONLY
+      // CRITICAL FIX: Get REAL forum discussions from backend ONLY  
       try {
         console.log('🔍 HomePage: Fetching REAL forum discussions from backend...');
         const forumsResponse = await api.get('/forums/threads');
         const rawDiscussions = forumsResponse?.data?.data || forumsResponse?.data || [];
         
         if (Array.isArray(rawDiscussions) && rawDiscussions.length > 0) {
-          // ✅ CRITICAL FIX: Only include threads with valid IDs and verify they exist
-          const validDiscussions = [];
-          for (const thread of rawDiscussions.slice(0, 8)) {
-            if (thread.id && thread.title) {
-              // ✅ ADDITIONAL CHECK: Verify thread exists before adding to list
-              try {
-                await api.get(`/forums/threads/${thread.id}`);
-                validDiscussions.push({
-                  id: thread.id,
-                  title: thread.title,
-                  // ✅ FIXED: Use "MRVL User" instead of "Anonymous"
-                  author: thread.user_name || thread.author?.name || 'MRVL User',
-                  replies: thread.replies || thread.replies_count || 0,
-                  lastActivity: formatTimeAgo(thread.updated_at || thread.created_at),
-                  category: formatCategory(thread.category)
-                });
-              } catch (checkError) {
-                console.warn(`⚠️ HomePage: Skipping invalid thread ${thread.id}:`, checkError.message);
-                // Skip threads that return 404
-              }
-            }
-          }
-          discussionsData = validDiscussions;
+          // ✅ SIMPLIFIED FIX: Only include threads with valid IDs and basic validation
+          discussionsData = rawDiscussions
+            .filter(thread => thread.id && thread.title && thread.id > 0) // Only valid threads
+            .slice(0, 8)
+            .map(thread => ({
+              id: thread.id,
+              title: thread.title,
+              // ✅ FIXED: Use "MRVL User" instead of "Anonymous"
+              author: thread.user_name || thread.author?.name || 'MRVL User',
+              replies: thread.replies || thread.replies_count || 0,
+              lastActivity: formatTimeAgo(thread.updated_at || thread.created_at),
+              category: formatCategory(thread.category)
+            }));
           console.log('✅ HomePage: Using REAL valid discussions:', discussionsData.length);
         }
       } catch (error) {
