@@ -114,7 +114,11 @@ function MatchDetailPage({ params, navigateTo }) {
   const [submittingComment, setSubmittingComment] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
-  const [userVotes, setUserVotes] = useState({});
+  const [userVotes, setUserVotes] = useState(() => {
+    // ✅ FIXED: Load vote state from localStorage for persistence
+    const saved = localStorage.getItem('mrvl-comment-votes');
+    return saved ? JSON.parse(saved) : {};
+  });
   const [showReplies, setShowReplies] = useState({});
   
   const { api, user, isAuthenticated } = useAuth();
