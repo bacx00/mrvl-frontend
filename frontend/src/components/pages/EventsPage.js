@@ -39,7 +39,7 @@ function EventsPage({ navigateTo }) {
             format: event.format || 'Swiss + Playoffs',
             description: event.description || 'Professional Marvel Rivals tournament featuring top teams.',
             registrationOpen: event.registration_open || false,
-            streamViewers: event.viewers || (event.status === 'live' ? Math.floor(Math.random() * 50000) + 5000 : 0),
+            streamViewers: event.viewers || 0, // ✅ FIXED: No fake viewers, use real backend data only
             // Additional HLTV.org style fields
             stage: event.stage || 'Main Event',
             onlineEvent: event.online || false,
