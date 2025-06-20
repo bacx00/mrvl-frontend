@@ -1088,13 +1088,9 @@ function MatchDetailPage({ params, navigateTo }) {
                               }}
                             />
                           ) : null}
-                          {/* ✅ CRITICAL FIX: Show hero NAME when image fails */}
+                          {/* ✅ CRITICAL FIX: Show ONLY hero name when image fails - NO BACKGROUND */}
                           <div 
-                            className={`w-10 h-10 flex items-center justify-center text-xs font-bold text-center leading-tight rounded ${
-                              getHeroRole(player.hero) === 'Tank' ? 'bg-blue-600 text-white' :
-                              getHeroRole(player.hero) === 'Duelist' ? 'bg-red-600 text-white' : 
-                              getHeroRole(player.hero) === 'Support' ? 'bg-green-600 text-white' : 'bg-gray-600 text-white'
-                            }`}
+                            className="w-10 h-10 flex items-center justify-center text-xs font-bold text-center leading-tight text-gray-900 dark:text-white"
                             style={{ display: getHeroImage(player.hero) ? 'none' : 'flex' }}
                             title={`${player.hero} (${getHeroRole(player.hero)})`}
                           >
