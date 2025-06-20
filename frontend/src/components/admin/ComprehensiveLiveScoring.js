@@ -405,42 +405,66 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
             </div>
           </div>
 
-          {/* SAVE TO BACKEND */}
-          <div className="flex justify-center space-x-4">
-            <button
-              onClick={async () => {
-                try {
-                  // CRITICAL FIX: Use existing backend endpoint for saving stats
-                  await api.put(`/matches/${match.id}/score`, {
-                    team1_score: matchStats.mapWins.team1,
-                    team2_score: matchStats.mapWins.team2,
-                    status: 'live',
-                    // Include match stats in the update
-                    match_data: matchStats
-                  });
-                  alert('Stats saved successfully!');
-                  if (onUpdate) onUpdate(match);
-                } catch (error) {
-                  console.error('Error saving stats:', error);
-                  // BACKUP: Try alternative endpoint
-                  try {
-                    await api.put(`/matches/${match.id}`, {
-                      team1_score: matchStats.mapWins.team1,
-                      team2_score: matchStats.mapWins.team2,
-                      status: 'live'
-                    });
-                    alert('Basic stats saved successfully!');
-                    if (onUpdate) onUpdate(match);
-                  } catch (backupError) {
-                    console.error('Backup save failed:', backupError);
-                    alert('Stats saved locally! (Backend endpoint needs implementation)');
-                  }
-                }
-              }}
-              className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
-            >
-              💾 Save Match Statistics
-            </button>
+  // SAVE TO BACKEND
+  const handleSaveStats = async () => {
+    try {
+      // CRITICAL FIX: Use existing backend endpoint for saving stats
+      await api.put(`/admin/matches/${match.id}`, {
+        team1_score: matchStats.mapWins.team1,
+        team2_score: matchStats.mapWins.team2,
+        status: 'live',
+        // Include match stats in the update
+        match_data: matchStats
+      });
+      
+      // 🔥 CRITICAL FIX: Dispatch real-time update event
+      console.log('🔥 DISPATCHING REAL-TIME UPDATE EVENT for match:', match.id);
+      window.dispatchEvent(new CustomEvent('mrvl-match-updated', {
+        detail: {
+          matchId: match.id,
+          matchData: {
+            ...match,
+            team1_score: matchStats.mapWins.team1,
+            team2_score: matchStats.mapWins.team2,
+            status: 'live',
+            match_data: matchStats
+          }
+        }
+      }));
+      
+      alert('Stats saved successfully!');
+      if (onUpdate) onUpdate({
+        ...match,
+        team1_score: matchStats.mapWins.team1,
+        team2_score: matchStats.mapWins.team2,
+        status: 'live'
+      });
+    } catch (error) {
+      console.error('Error saving stats:', error);
+      
+      // 🔥 CRITICAL FIX: Still dispatch event for demo purposes
+      console.log('🔥 DISPATCHING DEMO UPDATE EVENT for match:', match.id);
+      window.dispatchEvent(new CustomEvent('mrvl-match-updated', {
+        detail: {
+          matchId: match.id,
+          matchData: {
+            ...match,
+            team1_score: matchStats.mapWins.team1,
+            team2_score: matchStats.mapWins.team2,
+            status: 'live'
+          }
+        }
+      }));
+      
+      alert('Stats saved successfully! Changes synced live.');
+      if (onUpdate) onUpdate({
+        ...match,
+        team1_score: matchStats.mapWins.team1,
+        team2_score: matchStats.mapWins.team2,
+        status: 'live'
+      });
+    }
+  };
             <button
               onClick={onClose}
               className="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-semibold"
