@@ -550,49 +550,7 @@ function MatchDetailPage({ params, navigateTo }) {
     }
   };
 
-  const transformMatchData = async (matchData) => {
-    console.log('🔍 MatchDetailPage: Transforming match data:', matchData);
-    
-    // If this is already from centralized data, return as is with maps
-    if (matchData.team1 && matchData.team2 && matchData.team1.name) {
-      console.log('✅ MatchDetailPage: Using pre-formatted match data');
-      return {
-        ...matchData,
-        maps: await generateMapData(matchData.team1, matchData.team2) // ✅ AWAIT async function
-      };
-    }
-
-    // CRITICAL FIX: Get real teams by ID from backend data
-    console.log('🔍 MatchDetailPage: Getting teams by ID - Team1:', matchData.team1_id, 'Team2:', matchData.team2_id);
-    
-    const team1 = getTeamById(matchData.team1_id);
-    const team2 = getTeamById(matchData.team2_id);
-    
-    if (!team1 || !team2) {
-      console.error('❌ MatchDetailPage: Could not find teams with IDs:', matchData.team1_id, matchData.team2_id);
-      throw new Error('Teams not found');
-    }
-    
-    console.log('✅ MatchDetailPage: Found teams:', team1.name, 'vs', team2.name);
-
-    return {
-      id: matchData.id,
-      team1: { ...team1, score: matchData.team1_score || 0 },
-      team2: { ...team2, score: matchData.team2_score || 0 },
-      status: matchData.status || 'completed',
-      event: {
-        name: matchData.event?.name || matchData.event_name || 'Tournament',
-        tier: matchData.event?.tier || 'S'
-      },
-      date: matchData.match_date || matchData.date,
-      bestOf: matchData.best_of || 3,
-      maps: await generateMapData(team1, team2),
-      broadcast: {
-        stream: 'https://twitch.tv/marvelrivals',
-        vod: 'https://youtube.com/watch?v=example'
-      }
-    };
-  };
+  // HELPER FUNCTIONS FOR DATA
 
   const generateMapData = async (team1, team2) => {
     // ✅ REAL MARVEL RIVALS MAPS - Accurate to the game
