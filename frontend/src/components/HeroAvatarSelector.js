@@ -125,10 +125,11 @@ function HeroAvatarSelector({ currentAvatar, onAvatarSelect, onClose }) {
                   }`}
                 >
                   <img 
-                    src={`/Heroes/${hero.image}`}
+                    src={`https://staging.mrvl.net/Heroes/${hero.image}`}
                     alt={hero.name}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                     onError={(e) => {
+                      // Fallback to emoji if production image fails
                       e.target.style.display = 'none';
                       e.target.nextSibling.style.display = 'flex';
                     }}
