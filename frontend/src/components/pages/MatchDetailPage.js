@@ -935,8 +935,7 @@ function MatchDetailPage({ params, navigateTo }) {
                             {player.hero ? player.hero.charAt(0) : 'H'}
                           </div>
                         </div>
-                      </div> 
-                              src={`https://staging.mrvl.net/Heroes/${getHeroImage(player.hero)}`}
+                      </div>
                               alt={player.hero}
                               className="w-10 h-10 object-cover rounded-lg"
                               title={`${player.hero} (${getHeroRole(player.hero)})`}
