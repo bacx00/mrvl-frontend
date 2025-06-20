@@ -257,6 +257,12 @@ function MatchDetailPage({ params, navigateTo }) {
       }));
 
       console.log('✅ Vote submitted successfully');
+      
+      // ✅ FIXED: Save vote state to localStorage for persistence across pages
+      localStorage.setItem('mrvl-comment-votes', JSON.stringify({
+        ...userVotes,
+        [userVoteKey]: voteType
+      }));
     } catch (error) {
       console.error('❌ Error voting on comment:', error);
       
