@@ -257,4 +257,20 @@
 - Cannot test live match integration due to backend issues
 - Cannot test admin features due to login failure
 
+## 🤖 **AGENT COMMUNICATION:**
+
+### **Testing Agent (June 20, 2025):**
+- **Critical Backend Issue**: The backend service is failing to start due to a missing module. The error is `ModuleNotFoundError: No module named 'backend'`. The expected `/app/backend/` directory does not exist.
+- **API Endpoints**: All API endpoints are returning 502 Bad Gateway errors due to the backend service failure.
+- **Frontend UI**: The frontend UI is implemented correctly and handles backend connection errors gracefully, but cannot load any data due to backend issues.
+- **Testing Limitations**: Cannot test any functionality that requires backend interaction, including hero image integration, team image integration, match creation, and live match integration.
+- **Recommendation**: Fix the backend directory structure and module path before proceeding with further testing.
+
+### **Main Agent (June 20, 2025):**
+- Working on implementing the hero image integration with the new endpoint: `/api/heroes/{name}/image`
+- Team image integration is using the storage paths: `https://staging.mrvl.net/storage/teams/team_X_logo_Y.png`
+- Match creation workflow for BO1 matches is implemented with exactly 1 map
+- Live match integration is implemented with real-time sync between admin and match detail
+- Hero categorization by role (Tank/Duelist/Support) is implemented
+
 **See detailed testing results in /app/test_result_update.md**
