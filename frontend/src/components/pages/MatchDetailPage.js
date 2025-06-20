@@ -10,50 +10,21 @@ const getHeroImage = (heroName) => {
 
 // 🎮 MARVEL RIVALS ROLE SYSTEM - ALIGNED WITH BACKEND
 const getHeroRole = (heroName) => {
+  if (!heroName) return 'Unknown';
+  
   const heroRoles = {
-    // 🛡️ TANK Heroes - BACKEND USES "TANK" NOT "VANGUARD"
-    'Captain America': 'Tank',
-    'Doctor Strange': 'Tank', 
-    'Groot': 'Tank',
-    'Hulk': 'Tank',
-    'Magneto': 'Tank',
-    'Peni Parker': 'Tank',
-    'The Thing': 'Tank',
-    'Thor': 'Tank',
-    'Venom': 'Tank',
-
-    // ⚔️ DUELIST Heroes - 18 heroes
-    'Black Panther': 'Duelist',
-    'Black Widow': 'Duelist',
-    'Hawkeye': 'Duelist',
-    'Hela': 'Duelist',
-    'Human Torch': 'Duelist',
-    'Iron Fist': 'Duelist',
-    'Iron Man': 'Duelist',
-    'Magik': 'Duelist',
-    'Moon Knight': 'Duelist',
-    'Namor': 'Duelist',
-    'Psylocke': 'Duelist',
-    'The Punisher': 'Duelist',
-    'Scarlet Witch': 'Duelist',
-    'Spider-Man': 'Duelist',
-    'Squirrel Girl': 'Duelist',
-    'Star-Lord': 'Duelist',
-    'Storm': 'Duelist',
-    'Wolverine': 'Duelist',
-
-    // 💚 SUPPORT Heroes - 7 heroes
-    'Adam Warlock': 'Support',
-    'Cloak & Dagger': 'Support',
-    'Invisible Woman': 'Support',
-    'Jeff the Land Shark': 'Support',
-    'Loki': 'Support',
-    'Luna Snow': 'Support',
-    'Mantis': 'Support',
-    'Rocket Raccoon': 'Support'
+    Tank: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Peni Parker', 'The Thing', 'Thor', 'Venom'],
+    Duelist: ['Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Human Torch', 'Iron Fist', 'Iron Man', 'Magik', 'Moon Knight', 'Namor', 'Psylocke', 'The Punisher', 'Scarlet Witch', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine'],
+    Support: ['Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon']
   };
   
-  return heroRoles[heroName] || 'Unknown';
+  for (const [role, heroes] of Object.entries(heroRoles)) {
+    if (heroes.includes(heroName)) {
+      return role;
+    }
+  }
+  
+  return 'Unknown';
 };
 
 function MatchDetailPage({ params, navigateTo }) {
