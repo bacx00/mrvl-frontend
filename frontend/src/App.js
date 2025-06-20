@@ -43,6 +43,7 @@ import AdminForums from './components/admin/AdminForums';
 import NewsForm from './components/admin/NewsForm';
 import EventForm from './components/admin/EventForm';
 import MatchForm from './components/admin/MatchForm';
+import ComprehensiveLiveScoring from './components/admin/ComprehensiveLiveScoring';
 
 import './App.css';
 
