@@ -177,6 +177,21 @@ function UserProfile({ navigateTo }) {
             />
           </label>
         </div>
+        
+        {/* ✅ NEW: Hero Avatar Button */}
+        <div className="mb-4">
+          <button
+            onClick={() => setShowAvatarSelector(true)}
+            className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 mx-auto"
+          >
+            <span>🦸</span>
+            <span>Choose Hero Avatar</span>
+          </button>
+          <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+            Select a Marvel Rivals hero as your profile picture
+          </p>
+        </div>
+        
         {uploading && <div className="text-sm text-gray-600 dark:text-gray-400">Uploading...</div>}
       </div>
 
