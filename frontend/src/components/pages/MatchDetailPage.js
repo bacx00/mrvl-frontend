@@ -911,7 +911,7 @@ function MatchDetailPage({ params, navigateTo }) {
                         }`}>
                           {getHeroImage(player.hero) ? (
                             <img 
-                              src={`/Heroes/${getHeroImage(player.hero)}`}
+                              src={`https://staging.mrvl.net/Heroes/${getHeroImage(player.hero)}`}
                               alt={player.hero}
                               className="w-10 h-10 object-cover rounded-lg"
                               title={`${player.hero} (${getHeroRole(player.hero)})`}
