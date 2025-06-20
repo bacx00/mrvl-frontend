@@ -890,12 +890,10 @@ function MatchDetailPage({ params, navigateTo }) {
                         navigateTo && navigateTo('player-detail', { id: player.id });
                       }}
                     >
-                      {/* ✅ PLAYER AVATAR - NOT FLAG */}
+                      {/* ✅ FIXED: Country Flag + Player Name */}
                       <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 rounded-full bg-gray-600 dark:bg-gray-700 flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">
-                            {player.name.charAt(0)}
-                          </span>
+                        <div className="w-6 h-6 flex items-center justify-center text-lg" title={`Country: ${player.country}`}>
+                          {player.country || '🌍'}
                         </div>
                         <div 
                           className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 cursor-pointer text-sm transition-colors"
@@ -909,15 +907,35 @@ function MatchDetailPage({ params, navigateTo }) {
                         </div>
                       </div>
                       
-                      {/* ✅ FIXED: Hero Image Display with Real Marvel Rivals Images */}
+                      {/* ✅ FIXED: Hero Image Display with REAL Production URLs */}
                       <div className="flex justify-center">
-                        <div className={`relative rounded-lg overflow-hidden ${
+                        <div className={`relative rounded-lg overflow-hidden w-10 h-10 ${
                           getHeroRole(player.hero) === 'Tank' ? 'bg-blue-600' :
                           getHeroRole(player.hero) === 'Duelist' ? 'bg-red-600' : 
                           getHeroRole(player.hero) === 'Support' ? 'bg-green-600' : 'bg-gray-600'
                         }`}>
                           {getHeroImage(player.hero) ? (
                             <img 
+                              src={`https://staging.mrvl.net/Heroes/${getHeroImage(player.hero)}`}
+                              alt={player.hero}
+                              className="w-10 h-10 object-cover"
+                              title={`${player.hero} (${getHeroRole(player.hero)})`}
+                              onError={(e) => {
+                                console.error(`❌ Failed to load hero image: ${player.hero}`);
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <div 
+                            className="w-10 h-10 flex items-center justify-center text-white text-xs font-bold text-center leading-tight"
+                            style={{ display: getHeroImage(player.hero) ? 'none' : 'flex' }}
+                            title={`${player.hero} (${getHeroRole(player.hero)})`}
+                          >
+                            {player.hero ? player.hero.charAt(0) : 'H'}
+                          </div>
+                        </div>
+                      </div> 
                               src={`https://staging.mrvl.net/Heroes/${getHeroImage(player.hero)}`}
                               alt={player.hero}
                               className="w-10 h-10 object-cover rounded-lg"
