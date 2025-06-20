@@ -248,44 +248,6 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     }
   };
 
-  const currentMapData = matchStats.mapStats[activeMap];
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-7xl w-full max-h-[95vh] overflow-y-auto">
-        {/* HEADER */}
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center space-x-3">
-                <span>📊</span>
-                <span>Marvel Rivals Live Statistics</span>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 animate-pulse">
-                  🔴 PROFESSIONAL ESPORTS TRACKING
-                </span>
-              </h2>
-              <div className="mt-2 text-gray-600 dark:text-gray-400">
-                {match.team1?.name} vs {match.team2?.name} • {match.format || 'BO3'} • {match.event?.name || match.event_name}
-              </div>
-            </div>
-            <button onClick={onClose} className="text-2xl text-gray-400 hover:text-gray-600">✕</button>
-          </div>
-        </div>
-
-        <div className="p-6 space-y-6">
-          {/* OVERALL MATCH SCOREBOARD */}
-          <div className="bg-gradient-to-r from-blue-50 to-red-50 dark:from-blue-900/20 dark:to-red-900/20 rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div className="text-center flex-1">
-                <div className="flex items-center justify-center space-x-4 mb-4">
-                  <TeamLogo team={match.team1} size="w-20 h-20" />
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{match.team1?.name}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">{match.team1?.region}</div>
-                  </div>
-                </div>
-                <div className="text-8xl font-bold text-blue-600 dark:text-blue-400">
-                  {matchStats.mapWins.team1}
                 </div>
               </div>
               
