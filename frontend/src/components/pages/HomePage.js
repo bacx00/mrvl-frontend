@@ -248,47 +248,10 @@ function HomePage({ navigateTo }) {
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* ✅ FIXED: COMPACT LIVE EVENT BANNER - Like Original Design */}
-      {liveEventsBanner.length > 0 && (
-        <div className="mb-4">
-          <div className="bg-red-600 text-white rounded-lg p-4 flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-                <span className="font-bold">🔴 LIVE NOW</span>
-              </div>
-              <div>
-                <h3 className="font-bold">{liveEventsBanner[0].name}</h3>
-                <p className="text-sm opacity-90">{liveEventsBanner[0].stage} • {liveEventsBanner[0].prizePool}</p>
-              </div>
-            </div>
-            
-            {/* ✅ FIXED: Real Event Image Fetching */}
-            {liveEventsBanner[0].featured_image && (
-              <img 
-                src={liveEventsBanner[0].featured_image}
-                alt={liveEventsBanner[0].name}
-                className="w-12 h-12 object-cover rounded border-2 border-white/30"
-                onError={(e) => {
-                  e.target.style.display = 'none'; // Hide if image fails
-                }}
-              />
-            )}
-            
-            <button 
-              onClick={() => handleNavigationClick('events')}
-              className="px-4 py-2 bg-white text-red-600 font-medium rounded hover:bg-gray-100 transition-colors"
-            >
-              Watch Live →
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* VLR.gg inspired layout - 4 columns */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
         
-        {/* Left Sidebar - Recent Discussions (FIXED: Real backend data) */}
+        {/* Left Sidebar - Recent Discussions */}
         <div className="xl:col-span-3">
           <div className="card">
             <div 
@@ -329,10 +292,51 @@ function HomePage({ navigateTo }) {
           </div>
         </div>
 
-        {/* Center Content - Featured News */}
+        {/* Center Content - Live Banner + Featured News */}
         <div className="xl:col-span-6">
+          {/* ✅ MOVED: LIVE EVENT BANNER - Now in Center Column */}
+          {liveEventsBanner.length > 0 && (
+            <div className="mb-4">
+              <div className="bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg overflow-hidden shadow-lg">
+                {/* Event Background Image */}
+                <div 
+                  className="relative bg-cover bg-center"
+                  style={{
+                    backgroundImage: liveEventsBanner[0].featured_image 
+                      ? `linear-gradient(rgba(220, 38, 38, 0.8), rgba(220, 38, 38, 0.8)), url('${liveEventsBanner[0].featured_image}')`
+                      : 'linear-gradient(135deg, #dc2626, #b91c1c)'
+                  }}
+                >
+                  <div className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                          <span className="font-bold text-sm">🔴 LIVE NOW</span>
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg">{liveEventsBanner[0].name}</h3>
+                          <p className="text-sm opacity-90">
+                            {liveEventsBanner[0].stage} • {liveEventsBanner[0].prizePool}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <button 
+                        onClick={() => handleNavigationClick('events')}
+                        className="px-4 py-2 bg-white text-red-600 font-medium rounded hover:bg-gray-100 transition-colors text-sm"
+                      >
+                        Watch Live →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Featured News */}
-          <div className="card mb-4">
+          <div className="card">
             <div 
               className="px-4 py-3 border-b border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
               onClick={() => handleNavigationClick('news')}
