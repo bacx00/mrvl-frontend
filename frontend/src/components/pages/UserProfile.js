@@ -486,6 +486,23 @@ function UserProfile({ navigateTo }) {
       </div>
 
       {renderContent()}
+      
+      {/* ✅ NEW: Hero Avatar Selector Modal */}
+      {showAvatarSelector && (
+        <HeroAvatarSelector
+          currentAvatar={profileData.heroAvatar}
+          onAvatarSelect={(hero) => {
+            console.log('🦸 Hero avatar selected:', hero);
+            setProfileData(prev => ({ 
+              ...prev, 
+              heroAvatar: hero,
+              avatar: hero ? `/Heroes/${hero.image}` : prev.avatar
+            }));
+            setShowAvatarSelector(false);
+          }}
+          onClose={() => setShowAvatarSelector(false)}
+        />
+      )}
     </div>
   );
 }
