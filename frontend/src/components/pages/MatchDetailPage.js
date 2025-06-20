@@ -2,46 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
 import { TeamLogo, PlayerAvatar } from '../../utils/imageUtils';
 
-// 🎮 MARVEL RIVALS HERO SYSTEM - Real Images + Role Data
+// 🎮 MARVEL RIVALS HERO SYSTEM - Complete Backend Integration
 const getHeroImage = (heroName) => {
   if (!heroName) return null;
   
-  // 🚨 CRITICAL FIX: Try multiple image path formats
-  const heroImageMapping = {
-    'Captain America': 'captain-america.webp',
-    'Iron Man': 'iron-man.webp',
-    'Spider-Man': 'spider-man.webp',
-    'Doctor Strange': 'doctor-strange.webp',
-    'Black Widow': 'black-widow.webp',
-    'Hulk': 'hulk.webp',
-    'Thor': 'thor.webp',
-    'Hawkeye': 'hawkeye.webp',
-    'Scarlet Witch': 'scarlet-witch.webp',
-    'Ant-Man': 'ant-man.webp',
-    'Black Panther': 'black-panther.webp',
-    'Rocket Raccoon': 'rocket-raccoon.webp',
-    'Groot': 'groot.webp',
-    'Star-Lord': 'star-lord.webp',
-    'Gamora': 'gamora.webp',
-    'Drax': 'drax.webp',
-    'Mantis': 'mantis.webp',
-    'Nebula': 'nebula.webp',
-    'Luna Snow': 'luna-snow.webp',
-    'Magneto': 'magneto.webp',
-    'Storm': 'storm.webp',
-    'Wolverine': 'wolverine.webp',
-    'Psylocke': 'psylocke.webp',
-    'The Thing': 'the-thing.webp',
-    'Human Torch': 'human-torch.webp',
-    'Invisible Woman': 'invisible-woman.webp',
-    'Mister Fantastic': 'mister-fantastic.webp',
-    'Deadpool': 'deadpool.webp',
-    'Venom': 'venom.webp',
-    'Carnage': 'carnage.webp'
-  };
+  // 🎯 CRITICAL: Use new backend hero image endpoints
+  const heroSlug = heroName.toLowerCase().replace(/\s+/g, '-');
   
-  const imageFileName = heroImageMapping[heroName] || `${heroName.toLowerCase().replace(/\s+/g, '-')}.webp`;
-  return `https://staging.mrvl.net/Heroes/${imageFileName}`;
+  // Primary: Individual hero image endpoint
+  const primaryUrl = `https://staging.mrvl.net/api/heroes/${heroSlug}/image`;
+  
+  // Fallback: Direct storage path
+  const fallbackUrl = `https://staging.mrvl.net/storage/heroes/${heroSlug.replace('-', '_')}.png`;
+  
+  // Return primary URL (backend will handle fallbacks)
+  return primaryUrl;
 };
 
 // 🎮 MARVEL RIVALS ROLE SYSTEM - ALIGNED WITH BACKEND
