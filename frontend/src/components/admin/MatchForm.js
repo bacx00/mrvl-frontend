@@ -617,7 +617,7 @@ function MatchForm({ matchId, navigateTo }) {
                     </h5>
                     
                     <div className="space-y-3">
-                      {map.team1_composition?.map((player, playerIndex) => (
+                      {(map.team1_composition || []).map((player, playerIndex) => (
                         <div key={playerIndex} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium text-gray-900 dark:text-white">
