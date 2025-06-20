@@ -578,7 +578,7 @@ function MatchForm({ matchId, navigateTo }) {
           </h3>
           
           <div className="space-y-6">
-            {formData.maps.map((map, mapIndex) => (
+            {(formData.maps || []).map((map, mapIndex) => (
               <div key={mapIndex} className="border border-gray-200 dark:border-gray-600 rounded-lg p-6 bg-white dark:bg-gray-800">
                 {/* Map Header */}
                 <div className="flex items-center justify-between mb-4">
