@@ -496,7 +496,7 @@ function UserProfile({ navigateTo }) {
             setProfileData(prev => ({ 
               ...prev, 
               heroAvatar: hero,
-              avatar: hero ? `/Heroes/${hero.image}` : prev.avatar
+              avatar: hero ? `https://staging.mrvl.net/Heroes/${hero.image}` : prev.avatar
             }));
             setShowAvatarSelector(false);
           }}
