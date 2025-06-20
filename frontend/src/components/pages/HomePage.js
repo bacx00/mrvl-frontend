@@ -46,7 +46,8 @@ function HomePage({ navigateTo }) {
             score: match.status === 'completed' || match.status === 'live'
               ? `${match.team1_score || 0}-${match.team2_score || 0}`
               : '0-0',
-            viewers: match.viewers || (match.status === 'live' ? Math.floor(Math.random() * 50000) + 5000 : 0)
+            // ✅ FIXED: No more fake viewer generation - use real backend data only
+            viewers: match.viewers || 0
           }));
           console.log('✅ HomePage: Using REAL backend matches:', matchesData.length);
         }
@@ -68,7 +69,10 @@ function HomePage({ navigateTo }) {
             stage: event.stage || 'Main Event',
             prizePool: event.prize_pool || '$100,000',
             teams: event.teams_count || 16,
-            region: event.region || 'International'
+            region: event.region || 'International',
+            // ✅ NEW: Live Event Banner Data
+            featured_image: event.featured_image,
+            banner_image: event.banner_image
           }));
           console.log('✅ HomePage: Using REAL backend events:', eventsData.length);
         }
@@ -87,7 +91,8 @@ function HomePage({ navigateTo }) {
           discussionsData = rawDiscussions.slice(0, 8).map(thread => ({
             id: thread.id,
             title: thread.title,
-            author: thread.user_name || thread.author?.name || 'Anonymous',
+            // ✅ FIXED: Use "MRVL User" instead of "Anonymous"
+            author: thread.user_name || thread.author?.name || 'MRVL User',
             replies: thread.replies || thread.replies_count || 0,
             lastActivity: formatTimeAgo(thread.updated_at || thread.created_at),
             category: formatCategory(thread.category)
@@ -224,6 +229,7 @@ function HomePage({ navigateTo }) {
 
   const liveMatches = matches.filter(m => m.status === 'live');
   const upcomingMatches = matches.filter(m => m.status === 'upcoming');
+  const liveEventsBanner = liveEvents.filter(e => e.status === 'live');
 
   if (loading) {
     return (
@@ -238,6 +244,75 @@ function HomePage({ navigateTo }) {
 
   return (
     <div className="max-w-7xl mx-auto">
+      {/* ✅ NEW: LIVE EVENT BANNER - RED BANNER WITH EVENT IMAGES */}
+      {liveEventsBanner.length > 0 && (
+        <div className="mb-6 relative">
+          <div className="bg-gradient-to-r from-red-600 via-red-500 to-red-600 text-white rounded-lg overflow-hidden shadow-2xl">
+            <div className="relative">
+              {/* Event Background Image */}
+              {liveEventsBanner[0].featured_image && (
+                <div 
+                  className="absolute inset-0 bg-cover bg-center opacity-20"
+                  style={{
+                    backgroundImage: `url('${liveEventsBanner[0].featured_image}')`
+                  }}
+                />
+              )}
+              
+              <div className="relative z-10 p-6 md:p-8">
+                <div className="flex flex-col md:flex-row items-center justify-between">
+                  <div className="flex items-center space-x-4 mb-4 md:mb-0">
+                    {/* Live Indicator */}
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 bg-white rounded-full animate-pulse"></div>
+                      <span className="text-white font-bold text-lg tracking-wide">🔴 LIVE NOW</span>
+                    </div>
+                    
+                    {/* Event Details */}
+                    <div className="text-center md:text-left">
+                      <h2 className="text-2xl md:text-4xl font-bold mb-2">{liveEventsBanner[0].name}</h2>
+                      <p className="text-lg md:text-xl opacity-90">
+                        {liveEventsBanner[0].stage} • {liveEventsBanner[0].prizePool}
+                      </p>
+                      <p className="text-sm md:text-base opacity-75">
+                        {liveEventsBanner[0].teams} teams • {liveEventsBanner[0].region}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Event Image */}
+                  {liveEventsBanner[0].banner_image && (
+                    <div className="flex-shrink-0">
+                      <img 
+                        src={liveEventsBanner[0].banner_image}
+                        alt={liveEventsBanner[0].name}
+                        className="w-24 h-24 md:w-32 md:h-32 object-cover rounded-lg border-4 border-white/30"
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Action Buttons */}
+                  <div className="flex flex-col space-y-2 mt-4 md:mt-0">
+                    <button 
+                      onClick={() => handleNavigationClick('events')}
+                      className="px-6 py-3 bg-white text-red-600 font-bold rounded-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                    >
+                      📺 Watch Live
+                    </button>
+                    <button 
+                      onClick={() => handleNavigationClick('matches')}
+                      className="px-6 py-3 bg-white/20 text-white font-bold rounded-lg hover:bg-white/30 transition-all duration-300 border-2 border-white/50"
+                    >
+                      ⚔️ View Matches
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* VLR.gg inspired layout - 4 columns */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
         
@@ -284,30 +359,6 @@ function HomePage({ navigateTo }) {
 
         {/* Center Content - Featured News */}
         <div className="xl:col-span-6">
-          {/* Hero Section with Live Events */}
-          {liveEvents.filter(e => e.status === 'live').length > 0 && (
-            <div className="card mb-4 bg-gradient-to-r from-red-500 to-red-600 text-white">
-              <div className="p-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
-                  <span className="text-sm font-semibold">LIVE NOW</span>
-                </div>
-                {liveEvents.filter(e => e.status === 'live').map(event => (
-                  <div key={event.id} className="mb-2">
-                    <h3 className="text-lg font-bold">{event.name}</h3>
-                    <p className="text-sm opacity-90">{event.stage} • {event.prizePool}</p>
-                  </div>
-                ))}
-                <button 
-                  onClick={() => handleNavigationClick('events')}
-                  className="mt-2 px-3 py-1 bg-white text-red-600 text-sm rounded hover:bg-gray-100 transition-colors"
-                >
-                  Watch Live →
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Featured News */}
           <div className="card mb-4">
             <div 
@@ -392,6 +443,12 @@ function HomePage({ navigateTo }) {
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center space-x-1">
                           <span className="text-xs font-medium text-red-600 dark:text-red-400">LIVE</span>
+                          {/* ✅ FIXED: Show real viewers or nothing if 0 */}
+                          {match.viewers > 0 && (
+                            <span className="text-xs text-gray-500 dark:text-gray-500">
+                              👁 {match.viewers.toLocaleString()}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="text-center">
