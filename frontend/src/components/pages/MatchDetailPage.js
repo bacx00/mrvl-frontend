@@ -480,68 +480,6 @@ function MatchDetailPage({ params, navigateTo }) {
   };
 
   // HELPER FUNCTIONS FOR DATA
-            id: player.id, // ✅ REAL PLAYER ID - NAVIGATION WILL WORK!
-            name: player.name,
-            hero: assignedHero, // ✅ FORCED HERO DIVERSITY - No more all Captain America
-            role: player.role || playerRole,
-            eliminations: 0, // ✅ Initialize to 0 for live input
-            deaths: 0,
-            assists: 0,
-            damage: 0,
-            healing: 0,
-            damageBlocked: 0,
-            ultimatesUsed: 0,
-            country: playerCountry, // ✅ FORCED COUNTRY DIVERSITY
-            teamId: team.id
-          };
-        });
-        
-        return enhancedPlayers;
-      } else {
-        console.warn(`⚠️ No players found via API for team ${team.name}, creating placeholder players with Marvel heroes`);
-        
-        // ✅ FALLBACK: Create placeholder players with proper Marvel Rivals heroes
-        const placeholderPlayers = [];
-        for (let i = 0; i < 6; i++) {
-          const playerRole = roles[i] || 'Duelist';
-          let assignedHero;
-          
-          if (playerRole === 'Tank') {
-            const tankHeroes = ['Captain America', 'Doctor Strange', 'Groot', 'Thor', 'Venom'];
-            assignedHero = tankHeroes[i % tankHeroes.length];
-          } else if (playerRole === 'Support') {
-            const supportHeroes = ['Luna Snow', 'Mantis', 'Rocket Raccoon', 'Adam Warlock', 'Loki'];
-            assignedHero = supportHeroes[i % supportHeroes.length];
-          } else {
-            const duelistHeroes = ['Iron Man', 'Spider-Man', 'Black Widow', 'Hawkeye', 'Scarlet Witch'];
-            assignedHero = duelistHeroes[i % duelistHeroes.length];
-          }
-          
-          placeholderPlayers.push({
-            id: `${team.id}_player_${i + 1}`, // Unique placeholder ID
-            name: `${team.short_name}_${i + 1}`,
-            hero: assignedHero,
-            role: playerRole,
-            eliminations: 0,
-            deaths: 0,
-            assists: 0,
-            damage: 0,
-            healing: 0,
-            damageBlocked: 0,
-            ultimatesUsed: 0,
-            country: 'US',
-            teamId: team.id
-          });
-        }
-        
-        return placeholderPlayers;
-      }
-    } catch (error) {
-      console.error(`❌ Failed to fetch players for team ${team.name}:`, error);
-      return [];
-    }
-  };
-
   const getRoleColor = (role) => {
     switch (role) {
       case 'Duelist': return 'text-red-600 dark:text-red-400';
