@@ -368,7 +368,7 @@ function MatchForm({ matchId, navigateTo }) {
                   <option 
                     key={team.id} 
                     value={team.id}
-                    disabled={team.id == formData.team1Id}
+                    disabled={team.id == formData.team1_id}
                   >
                     {team.name} ({team.short_name}) - Rating: {team.rating || 'Unranked'}
                   </option>
