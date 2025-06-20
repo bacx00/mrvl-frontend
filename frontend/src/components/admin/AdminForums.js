@@ -144,6 +144,9 @@ function AdminForums({ navigateTo }) {
       setEditingCategory(null);
       setNewCategory({ name: '', description: '', slug: '' });
       
+      // ✅ FIXED: Notify ForumsPage about category changes
+      window.dispatchEvent(new CustomEvent('mrvl-category-updated'));
+      
       alert(`✅ Category ${action}d successfully!`);
     } catch (error) {
       console.error(`Error ${action}ing category:`, error);
