@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
-import { TeamLogo, PlayerAvatar } from '../../utils/imageUtils';
+import { TeamLogo, PlayerAvatar, getHeroImageSync, getHeroRole } from '../../utils/imageUtils';
 
 // 🎮 MARVEL RIVALS HERO SYSTEM - Production API Integration
 const getHeroImage = async (heroName) => {
