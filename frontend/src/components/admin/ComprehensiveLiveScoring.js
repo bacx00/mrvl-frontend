@@ -438,10 +438,35 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
                       <div key={playerIndex} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center space-x-3">
-                            <div className={`w-10 h-10 rounded text-white text-sm flex items-center justify-center font-bold ${
-                              teamIndex === 0 ? 'bg-blue-500' : 'bg-red-500'
-                            }`}>
-                              P{playerIndex + 1}
+                            <div className="relative">
+                              {/* 🖼️ PLAYER AVATAR: Real player image or fallback */}
+                              <div className={`w-10 h-10 rounded-full overflow-hidden border-2 ${
+                                teamIndex === 0 ? 'border-blue-500' : 'border-red-500'
+                              }`}>
+                                <img 
+                                  src={`https://staging.mrvl.net/storage/players/player_${player.id || `${teamIndex}_${playerIndex}`}_avatar.jpg`}
+                                  alt={player.playerName}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    console.log(`❌ Player avatar failed for: ${player.playerName}`);
+                                    e.target.style.display = 'none';
+                                    e.target.nextElementSibling.style.display = 'flex';
+                                  }}
+                                />
+                                <div 
+                                  className={`w-full h-full ${teamIndex === 0 ? 'bg-blue-500' : 'bg-red-500'} text-white text-sm flex items-center justify-center font-bold`}
+                                  style={{ display: 'none' }}
+                                >
+                                  P{playerIndex + 1}
+                                </div>
+                              </div>
+                              {/* 🏳️ COUNTRY FLAG on avatar */}
+                              <img 
+                                src={`https://flagcdn.com/16x12/${(player.country || 'us').toLowerCase().slice(0, 2)}.png`}
+                                alt={`${player.country} flag`}
+                                className="absolute -bottom-1 -right-1 w-4 h-3 rounded-sm border border-white shadow-sm"
+                                onError={(e) => e.target.style.display = 'none'}
+                              />
                             </div>
                             <div>
                               <div className="font-bold text-gray-900 dark:text-white">{player.playerName}</div>
