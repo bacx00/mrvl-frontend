@@ -31,9 +31,9 @@ const MARVEL_RIVALS_CONFIG = {
 };
 
 // ✅ PERFECT MATCH INITIALIZATION WITH HERO PRE-SELECTION
-const getInitialMatchData = (format = 'BO3') => {
+const getInitialMatchData = (format = 'BO1') => {
   const formatConfig = MARVEL_RIVALS_CONFIG.formats.find(f => f.value === format);
-  const mapCount = formatConfig?.maps || 3;
+  const mapCount = formatConfig?.maps || 1; // Default to 1 map for BO1
   
   console.log(`🎮 CRITICAL FIX: Initializing ${format} match with EXACTLY ${mapCount} maps`);
   
