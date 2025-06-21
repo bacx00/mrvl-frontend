@@ -484,12 +484,13 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
                   
                   <div className="space-y-3">
                     {(currentMapData?.[`${team}Players`] || []).map((player, playerIndex) => (
-                      <div key={playerIndex} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center space-x-3">
+                      <div key={playerIndex} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                        {/* 📊 PLAYER ROW MATCHING HEADERS: PLAYER | HERO | E | D | A | K/D | DMG | HEAL | BLK */}
+                        <div className="grid grid-cols-9 gap-2 items-center text-sm">
+                          {/* PLAYER COLUMN */}
+                          <div className="flex items-center space-x-2">
                             <div className="relative">
-                              {/* 🖼️ PLAYER AVATAR: Real player image or fallback */}
-                              <div className={`w-10 h-10 rounded-full overflow-hidden border-2 ${
+                              <div className={`w-8 h-8 rounded-full overflow-hidden border-2 ${
                                 teamIndex === 0 ? 'border-blue-500' : 'border-red-500'
                               }`}>
                                 <img 
@@ -497,75 +498,122 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
                                   alt={player.name}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
-                                    console.log(`❌ Player avatar failed for: ${player.name}`);
                                     e.target.style.display = 'none';
                                     e.target.nextElementSibling.style.display = 'flex';
                                   }}
                                 />
                                 <div 
-                                  className={`w-full h-full ${teamIndex === 0 ? 'bg-blue-500' : 'bg-red-500'} text-white text-sm flex items-center justify-center font-bold`}
+                                  className={`w-full h-full ${teamIndex === 0 ? 'bg-blue-500' : 'bg-red-500'} text-white text-xs flex items-center justify-center font-bold`}
                                   style={{ display: 'none' }}
                                 >
                                   P{playerIndex + 1}
                                 </div>
                               </div>
-                              {/* 🏳️ COUNTRY FLAG on avatar */}
                               <img 
                                 src={`https://flagcdn.com/16x12/${(player.country || 'us').toLowerCase().slice(0, 2)}.png`}
                                 alt={`${player.country} flag`}
-                                className="absolute -bottom-1 -right-1 w-4 h-3 rounded-sm border border-white shadow-sm"
+                                className="absolute -bottom-1 -right-1 w-3 h-2 rounded-sm border border-white shadow-sm"
                                 onError={(e) => e.target.style.display = 'none'}
                               />
                             </div>
                             <div>
-                              <div className="font-bold text-gray-900 dark:text-white">{player.name}</div>
-                              <div className="text-sm text-gray-600 dark:text-gray-400">{player.role} • {player.hero}</div>
+                              <div className="font-bold text-gray-900 dark:text-white text-xs">{player.name}</div>
                             </div>
                           </div>
                           
-                          {/* Hero Selection */}
-                          <select
-                            value={player.hero}
-                            onChange={(e) => {
-                              const selectedHero = e.target.value;
-                              const heroRole = Object.keys(marvelRivalsHeroes).find(role =>
-                                marvelRivalsHeroes[role].includes(selectedHero)
-                              );
-                              changePlayerHero(activeMap, team, playerIndex, selectedHero, heroRole);
-                            }}
-                            className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800"
-                          >
-                            {Object.entries(marvelRivalsHeroes).map(([role, heroes]) => (
-                              <optgroup key={role} label={role}>
-                                {heroes.map(hero => (
-                                  <option key={hero} value={hero}>{hero}</option>
-                                ))}
-                              </optgroup>
-                            ))}
-                          </select>
-                        </div>
-                        
-                        {/* Player Stat Inputs */}
-                        <div className="grid grid-cols-4 gap-2 text-xs">
-                          {['eliminations', 'deaths', 'assists', 'damage'].map(stat => (
-                            <div key={stat}>
-                              <label className="block text-gray-600 dark:text-gray-400 mb-1 capitalize">
-                                {stat}
-                              </label>
-                              <input
-                                type="number"
-                                value={player[stat] || 0}
-                                onChange={(e) => updatePlayerStat(activeMap, team, playerIndex, stat, parseInt(e.target.value) || 0)}
-                                className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                                min="0"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                        
-                        {/* K/D/A Display */}
-                        <div className="text-center mt-2 font-bold text-gray-900 dark:text-white">
-                          K/D/A: {player.eliminations}/{player.deaths}/{player.assists}
+                          {/* HERO COLUMN */}
+                          <div>
+                            <select
+                              value={player.hero}
+                              onChange={(e) => {
+                                const selectedHero = e.target.value;
+                                const heroRole = Object.keys(marvelRivalsHeroes).find(role =>
+                                  marvelRivalsHeroes[role].includes(selectedHero)
+                                );
+                                changePlayerHero(activeMap, team, playerIndex, selectedHero, heroRole);
+                              }}
+                              className="text-xs border border-gray-300 dark:border-gray-600 rounded px-1 py-1 bg-white dark:bg-gray-800 w-full"
+                            >
+                              {Object.entries(marvelRivalsHeroes).map(([role, heroes]) => (
+                                <optgroup key={role} label={role}>
+                                  {heroes.map(hero => (
+                                    <option key={hero} value={hero}>{hero}</option>
+                                  ))}
+                                </optgroup>
+                              ))}
+                            </select>
+                          </div>
+                          
+                          {/* E (ELIMINATIONS) */}
+                          <div>
+                            <input
+                              type="number"
+                              value={player.eliminations || 0}
+                              onChange={(e) => updatePlayerStat(activeMap, team, playerIndex, 'eliminations', parseInt(e.target.value) || 0)}
+                              className="w-full px-1 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-center text-xs"
+                              min="0"
+                            />
+                          </div>
+                          
+                          {/* D (DEATHS) */}
+                          <div>
+                            <input
+                              type="number"
+                              value={player.deaths || 0}
+                              onChange={(e) => updatePlayerStat(activeMap, team, playerIndex, 'deaths', parseInt(e.target.value) || 0)}
+                              className="w-full px-1 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-center text-xs"
+                              min="0"
+                            />
+                          </div>
+                          
+                          {/* A (ASSISTS) */}
+                          <div>
+                            <input
+                              type="number"
+                              value={player.assists || 0}
+                              onChange={(e) => updatePlayerStat(activeMap, team, playerIndex, 'assists', parseInt(e.target.value) || 0)}
+                              className="w-full px-1 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-center text-xs"
+                              min="0"
+                            />
+                          </div>
+                          
+                          {/* K/D RATIO */}
+                          <div className="text-center font-bold text-gray-900 dark:text-white text-xs">
+                            {(player.eliminations && player.deaths) ? (player.eliminations / player.deaths).toFixed(1) : '0.0'}
+                          </div>
+                          
+                          {/* DMG (DAMAGE) */}
+                          <div>
+                            <input
+                              type="number"
+                              value={player.damage || 0}
+                              onChange={(e) => updatePlayerStat(activeMap, team, playerIndex, 'damage', parseInt(e.target.value) || 0)}
+                              className="w-full px-1 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-center text-xs"
+                              min="0"
+                            />
+                          </div>
+                          
+                          {/* HEAL (HEALING) */}
+                          <div>
+                            <input
+                              type="number"
+                              value={player.healing || 0}
+                              onChange={(e) => updatePlayerStat(activeMap, team, playerIndex, 'healing', parseInt(e.target.value) || 0)}
+                              className="w-full px-1 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-center text-xs"
+                              min="0"
+                            />
+                          </div>
+                          
+                          {/* BLK (DAMAGE BLOCKED) */}
+                          <div>
+                            <input
+                              type="number"
+                              value={player.damageBlocked || 0}
+                              onChange={(e) => updatePlayerStat(activeMap, team, playerIndex, 'damageBlocked', parseInt(e.target.value) || 0)}
+                              className="w-full px-1 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-center text-xs"
+                              min="0"
+                            />
+                          </div>
                         </div>
                       </div>
                     ))}
