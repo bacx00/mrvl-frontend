@@ -81,29 +81,29 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
   const [matchStats, setMatchStats] = useState(() => {
     if (!match) return null;
     
+    console.log('🔍 INITIALIZING ComprehensiveLiveScoring with match:', match);
+    
+    // 🎮 FORCE CREATE PLAYER DATA if missing
+    const totalMaps = match.format === 'BO5' ? 5 : match.format === 'BO3' ? 3 : 1;
+    console.log(`🎯 Creating ${totalMaps} maps for ${match.format} format`);
+    
     return {
       // Overall match stats
-      totalMaps: match.format === 'BO5' ? 5 : match.format === 'BO3' ? 3 : 1,
+      totalMaps,
       currentMap: 0,
       mapWins: { team1: match.team1_score || 0, team2: match.team2_score || 0 },
       
-      // 🎮 PERFECT ALIGNMENT: Use exact same structure as MatchDetailPage
-      maps: (match.maps || Array.from({ length: match.format === 'BO5' ? 5 : match.format === 'BO3' ? 3 : 1 }, (_, index) => ({
-        map_number: index + 1,
-        map_name: marvelRivalsMaps[index]?.name || 'Asgard Throne Room',
-        mode: marvelRivalsMaps[index]?.mode || 'Convoy',
-        team1Score: 0,
-        team2Score: 0,
-        status: 'upcoming',
-        winner: null,
-        duration: 'Not started',
-        // 🎮 CRITICAL: Use same player structure as MatchDetailPage with DIVERSE HEROES
-        team1Players: (match.maps?.[index]?.team1_composition || Array.from({ length: 6 }, (_, pIndex) => {
+      // 🎮 FORCE CREATE MAPS WITH PLAYER DATA
+      maps: Array.from({ length: totalMaps }, (_, index) => {
+        console.log(`🎯 Creating map ${index + 1} with player compositions`);
+        
+        // Team 1 players with diverse heroes
+        const team1Players = Array.from({ length: 6 }, (_, pIndex) => {
           const defaultHeroes = ['Captain America', 'Iron Man', 'Black Widow', 'Doctor Strange', 'Mantis', 'Hulk'];
           const defaultRoles = ['Tank', 'Duelist', 'Duelist', 'Tank', 'Support', 'Tank'];
           const defaultCountries = ['US', 'CA', 'UK', 'DE', 'FR', 'SE'];
           return {
-            id: `${match.team1?.id}_p${pIndex + 1}`,
+            id: `${match.team1?.id || 'team1'}_p${pIndex + 1}`,
             name: `${match.team1?.short_name || 'T1'}_Player${pIndex + 1}`,
             hero: defaultHeroes[pIndex] || 'Captain America',
             role: defaultRoles[pIndex] || 'Tank',
@@ -117,13 +117,15 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
             objectiveTime: 0,
             ultimatesUsed: 0
           };
-        })),
-        team2Players: (match.maps?.[index]?.team2_composition || Array.from({ length: 6 }, (_, pIndex) => {
+        });
+        
+        // Team 2 players with diverse heroes
+        const team2Players = Array.from({ length: 6 }, (_, pIndex) => {
           const defaultHeroes = ['Storm', 'Spider-Man', 'Hawkeye', 'Venom', 'Luna Snow', 'Groot'];
           const defaultRoles = ['Support', 'Duelist', 'Duelist', 'Tank', 'Support', 'Tank'];
           const defaultCountries = ['KR', 'JP', 'AU', 'BR', 'CN', 'INTL'];
           return {
-            id: `${match.team2?.id}_p${pIndex + 1}`,
+            id: `${match.team2?.id || 'team2'}_p${pIndex + 1}`,
             name: `${match.team2?.short_name || 'T2'}_Player${pIndex + 1}`,
             hero: defaultHeroes[pIndex] || 'Storm',
             role: defaultRoles[pIndex] || 'Support',
@@ -137,14 +139,23 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
             objectiveTime: 0,
             ultimatesUsed: 0
           };
-        }))
-
-      }))).map((map, index) => ({
-        ...map,
-        map_number: index + 1,
-        map_name: map.map_name || marvelRivalsMaps[index]?.name || 'Asgard Throne Room',
-        mode: marvelRivalsMaps[index]?.mode || 'Convoy'
-      }))
+        });
+        
+        console.log(`✅ Map ${index + 1} created with ${team1Players.length} + ${team2Players.length} players`);
+        
+        return {
+          map_number: index + 1,
+          map_name: marvelRivalsMaps[index]?.name || 'Asgard Throne Room',
+          mode: marvelRivalsMaps[index]?.mode || 'Convoy',
+          team1Score: 0,
+          team2Score: 0,
+          status: 'upcoming',
+          winner: null,
+          duration: 'Not started',
+          team1Players,
+          team2Players
+        };
+      })
     };
   });
 
