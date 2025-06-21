@@ -142,7 +142,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
       }))).map((map, index) => ({
         ...map,
         map_number: index + 1,
-        map_name: map.map_name || marvelRivalsMaps[index]?.name || 'Tokyo 2099: Spider-Islands',
+        map_name: map.map_name || marvelRivalsMaps[index]?.name || 'Asgard Throne Room',
         mode: marvelRivalsMaps[index]?.mode || 'Convoy'
       }))
     };
