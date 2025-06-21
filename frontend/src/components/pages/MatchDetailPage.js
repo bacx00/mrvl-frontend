@@ -14,15 +14,14 @@ const getHeroImage = async (heroName) => {
     
     if (data.success && data.data.image_url) {
       console.log(`✅ Hero image found: ${heroName} -> ${data.data.image_url}`);
-      // FIXED: Don't concatenate URLs - the API already returns the full URL
       return data.data.image_url;
     } else {
       console.log(`📝 Hero image not found: ${heroName} - using text fallback`);
-      return null; // Will trigger text fallback
+      return null;
     }
   } catch (error) {
     console.error(`❌ Error fetching hero image for ${heroName}:`, error);
-    return null; // Will trigger text fallback
+    return null;
   }
 };
 
