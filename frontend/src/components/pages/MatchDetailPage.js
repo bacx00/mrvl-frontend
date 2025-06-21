@@ -460,17 +460,22 @@ function MatchDetailPage({ params, navigateTo }) {
           duration: mapData.duration || 'Not started',
           
           // 🎮 CRITICAL: Use REAL team compositions from backend
-          team1Players: (mapData.team1_composition || Array.from({ length: 6 }, (_, pIndex) => ({
-            id: `${matchData.team1_id}_p${pIndex + 1}`,
-            name: `Player ${pIndex + 1}`,
-            hero: 'Captain America',
-            country: '🌍'
-          }))).map(player => ({
-            id: player.id || player.player_id || `p${index}_${Math.random()}`,
-            name: player.name || player.player_name || `Player ${index + 1}`,
+          team1Players: (mapData.team1_composition || Array.from({ length: 6 }, (_, pIndex) => {
+            const defaultHeroes = ['Captain America', 'Iron Man', 'Black Widow', 'Doctor Strange', 'Mantis', 'Hulk'];
+            const defaultRoles = ['Tank', 'Duelist', 'Duelist', 'Tank', 'Support', 'Tank'];
+            return {
+              id: `${matchData.team1_id}_p${pIndex + 1}`,
+              name: `Player ${pIndex + 1}`,
+              hero: defaultHeroes[pIndex] || 'Captain America',
+              role: defaultRoles[pIndex] || 'Tank',
+              country: 'US'
+            };
+          })).map(player => ({
+            id: player.id || player.player_id || `p${Math.random()}`,
+            name: player.name || player.player_name || `Player ${Math.random()}`,
             hero: player.hero || 'Captain America',
             role: player.role || 'Tank',
-            country: player.country || '🌍',
+            country: player.country || 'US',
             eliminations: player.eliminations || 0,
             deaths: player.deaths || 0,
             assists: player.assists || 0,
@@ -479,17 +484,22 @@ function MatchDetailPage({ params, navigateTo }) {
             damageBlocked: player.damageBlocked || 0
           })),
           
-          team2Players: (mapData.team2_composition || Array.from({ length: 6 }, (_, pIndex) => ({
-            id: `${matchData.team2_id}_p${pIndex + 1}`,
-            name: `Player ${pIndex + 1}`,
-            hero: 'Captain America',
-            country: '🌍'
-          }))).map(player => ({
-            id: player.id || player.player_id || `p${index}_${Math.random()}`,
-            name: player.name || player.player_name || `Player ${index + 1}`,
-            hero: player.hero || 'Captain America',
-            role: player.role || 'Tank',
-            country: player.country || '🌍',
+          team2Players: (mapData.team2_composition || Array.from({ length: 6 }, (_, pIndex) => {
+            const defaultHeroes = ['Storm', 'Spider-Man', 'Hawkeye', 'Venom', 'Luna Snow', 'Groot'];
+            const defaultRoles = ['Support', 'Duelist', 'Duelist', 'Tank', 'Support', 'Tank'];
+            return {
+              id: `${matchData.team2_id}_p${pIndex + 1}`,
+              name: `Player ${pIndex + 1}`,
+              hero: defaultHeroes[pIndex] || 'Storm',
+              role: defaultRoles[pIndex] || 'Support',
+              country: 'EU'
+            };
+          })).map(player => ({
+            id: player.id || player.player_id || `p${Math.random()}`,
+            name: player.name || player.player_name || `Player ${Math.random()}`,
+            hero: player.hero || 'Storm',
+            role: player.role || 'Support',
+            country: player.country || 'EU',
             eliminations: player.eliminations || 0,
             deaths: player.deaths || 0,
             assists: player.assists || 0,
