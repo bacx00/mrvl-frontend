@@ -153,10 +153,17 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     });
   };
 
-  // UPDATE MAP STATUS
+  // UPDATE MAP STATUS - CRITICAL FIX
   const updateMapStatus = async (mapIndex, status, winner = null) => {
     setMatchStats(prev => {
       const newStats = { ...prev };
+      
+      // 🚨 CRITICAL FIX: Check if map exists before updating
+      if (!newStats.maps || !newStats.maps[mapIndex]) {
+        console.error(`❌ Map ${mapIndex} does not exist in matchStats.maps:`, newStats.maps);
+        return prev; // Return unchanged state
+      }
+      
       newStats.maps[mapIndex].status = status;
       newStats.maps[mapIndex].winner = winner;
       
