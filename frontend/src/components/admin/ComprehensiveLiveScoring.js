@@ -90,7 +90,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
       // 🎮 PERFECT ALIGNMENT: Use exact same structure as MatchDetailPage
       maps: (match.maps || Array.from({ length: match.format === 'BO5' ? 5 : match.format === 'BO3' ? 3 : 1 }, (_, index) => ({
         map_number: index + 1,
-        map_name: marvelRivalsMaps[index]?.name || 'Tokyo 2099: Spider-Islands',
+        map_name: marvelRivalsMaps[index]?.name || 'Asgard Throne Room',
         mode: marvelRivalsMaps[index]?.mode || 'Convoy',
         team1Score: 0,
         team2Score: 0,
