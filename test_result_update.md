@@ -42,9 +42,12 @@
 - ✅ Hero image API endpoint (/api/heroes/{name}/image) is working correctly
 - ✅ API returns proper image URL format: `https://staging.mrvl.net/storage/heroes/captain_america.webp`
 - ✅ Direct access to hero images at `https://staging.mrvl.net/storage/heroes/captain_america.webp` works correctly
-- ❌ Frontend is using incorrect URL format: `https://staging.mrvl.net/Heroes/https://staging.mrvl.net/api/heroes/captain-america/image`
-- ❌ Text fallbacks for heroes without images are not displaying due to the incorrect URL format
-- ❌ Error handling for missing images is not triggering properly due to the incorrect URL format
+- ✅ The fix for the hero image URL construction has been implemented correctly in the `getHeroImage` function
+- ✅ The code now uses the `image_url` from the API response directly without concatenating it with the base URL
+- ✅ Direct access to hero images works correctly for heroes with images (Captain America, Hulk, Black Widow, Venom)
+- ✅ Heroes without images (Iron Man, Spider-Man, Thor, Storm, Rocket Raccoon) correctly return 404 errors when accessed directly
+- ❌ Cannot fully test the hero image integration in the UI due to the backend service failure
+- ❌ Cannot verify the text fallback functionality in the UI due to backend issues
 
 ### 8. **TEAM IMAGE INTEGRATION**
 - ❌ Cannot test team logo loading from storage paths due to backend issues
