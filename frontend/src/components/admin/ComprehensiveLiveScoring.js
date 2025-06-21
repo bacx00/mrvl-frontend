@@ -467,21 +467,6 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
                     </div>
                   </div>
                   
-                  {/* 📊 SCOREBOARD HEADERS */}
-                  <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-2 mb-3">
-                    <div className="grid grid-cols-9 gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                      <div>PLAYER</div>
-                      <div>HERO</div>
-                      <div>E</div>
-                      <div>D</div>
-                      <div>A</div>
-                      <div>K/D</div>
-                      <div>DMG</div>
-                      <div>HEAL</div>
-                      <div>BLK</div>
-                    </div>
-                  </div>
-                  
                   <div className="space-y-3">
                     {(currentMapData?.[`${team}Players`] || []).map((player, playerIndex) => (
                       <div key={playerIndex} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
