@@ -138,16 +138,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
             ultimatesUsed: 0
           };
         }))
-          country: '🌍',
-          eliminations: 0,
-          deaths: 0,
-          assists: 0,
-          damage: 0,
-          healing: 0,
-          damageBlocked: 0,
-          objectiveTime: 0,
-          ultimatesUsed: 0
-        })))
+
       }))).map((map, index) => ({
         ...map,
         map_number: index + 1,
