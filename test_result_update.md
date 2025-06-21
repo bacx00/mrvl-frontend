@@ -105,11 +105,12 @@ REACT_APP_BACKEND_URL=https://e4003c0a-8f1b-4723-a4c1-680f79fe84f6.preview.emerg
    - No data is loaded from the backend
    - Authentication fails due to backend issues
 
-3. **Hero Image System Issues (June 21, 2025):**
-   - Frontend is using incorrect URL format for hero images
-   - The frontend is not correctly extracting the image URL from the API response
-   - Text fallbacks for heroes without images are not displaying properly
-   - This affects all hero images across the platform
+3. **Hero Image System Issues (June 21, 2025 - UPDATE):**
+   - ✅ The URL construction issue in the frontend code has been fixed
+   - ✅ Direct access to hero images works correctly for heroes with images
+   - ✅ Heroes without images correctly return 404 errors when accessed directly
+   - ❌ Cannot fully test the hero image integration in the UI due to backend service failure
+   - This issue is now resolved in the code, but full testing is not possible due to backend issues
 
 ## 🔧 **RECOMMENDATIONS:**
 
