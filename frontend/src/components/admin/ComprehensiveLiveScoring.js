@@ -468,7 +468,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
                   </div>
                   
                   <div className="space-y-3">
-                    {(currentMapData?.[`${team}Players`] || []).map((player, playerIndex) => (
+                    {(currentMapData?.[`${team}Players`] || currentMapData?.[`${team}_composition`] || []).map((player, playerIndex) => (
                       <div key={playerIndex} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
                         {/* 📊 PLAYER ROW MATCHING HEADERS: PLAYER | HERO | E | D | A | K/D | DMG | HEAL | BLK */}
                         <div className="grid grid-cols-9 gap-2 items-center text-sm">
