@@ -456,10 +456,10 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
                               }`}>
                                 <img 
                                   src={`https://staging.mrvl.net/storage/players/player_${player.id || `${teamIndex}_${playerIndex}`}_avatar.jpg`}
-                                  alt={player.playerName}
+                                  alt={player.name}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
-                                    console.log(`❌ Player avatar failed for: ${player.playerName}`);
+                                    console.log(`❌ Player avatar failed for: ${player.name}`);
                                     e.target.style.display = 'none';
                                     e.target.nextElementSibling.style.display = 'flex';
                                   }}
