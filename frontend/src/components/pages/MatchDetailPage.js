@@ -107,26 +107,45 @@ function MatchDetailPage({ params, navigateTo }) {
 
   console.log('🔍 MatchDetailPage - Received match ID:', matchId);
 
-  // ✅ CRITICAL FIX: Add real-time sync listener for match updates
+  // ✅ CRITICAL FIX: Enhanced real-time sync listener for match updates
   useEffect(() => {
     const handleMatchUpdate = (event) => {
-      const { matchId: updatedMatchId, matchData } = event.detail || {};
+      const { matchId: updatedMatchId, matchData, type } = event.detail || {};
       
       if (updatedMatchId && updatedMatchId == matchId) {
-        console.log('🔥 REAL-TIME UPDATE: Match data received:', matchData);
+        console.log('🔥 REAL-TIME UPDATE RECEIVED:', type, matchData);
         
-        // Re-fetch match data to get the latest
-        initializeMatchData();
+        if (type === 'HERO_UPDATE') {
+          console.log('🎮 HERO UPDATE DETECTED - Force refreshing match data...');
+          
+          // Force immediate data refresh for hero updates
+          setTimeout(() => {
+            initializeMatchData();
+          }, 500);
+          
+          // Clear any cached data
+          if ('caches' in window) {
+            caches.delete('match-data-cache');
+          }
+        } else {
+          // Regular update - re-fetch match data
+          initializeMatchData();
+        }
         
         // Show notification
         const notification = document.createElement('div');
-        notification.innerHTML = '🔥 Match Updated Live!';
-        notification.className = 'fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg z-50 animate-pulse';
+        notification.innerHTML = type === 'HERO_UPDATE' ? '🎮 Heroes Updated Live!' : '🔥 Match Updated Live!';
+        notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50 animate-pulse';
         document.body.appendChild(notification);
-        setTimeout(() => document.body.removeChild(notification), 3000);
+        setTimeout(() => {
+          if (notification.parentNode) {
+            document.body.removeChild(notification);
+          }
+        }, 3000);
       }
     };
 
+    console.log('🎧 Setting up enhanced real-time listener for match:', matchId);
     window.addEventListener('mrvl-match-updated', handleMatchUpdate);
     
     return () => {
