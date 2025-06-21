@@ -340,7 +340,5 @@ export default {
   getPlayerAvatarUrl,
   getNewsFeaturedImageUrl,
   TeamLogo,
-  PlayerAvatar,
-  getHeroImageSync,
-  getHeroRole
+  PlayerAvatar
 };
