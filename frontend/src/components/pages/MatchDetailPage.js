@@ -441,8 +441,8 @@ function MatchDetailPage({ params, navigateTo }) {
               country: defaultCountries[pIndex] || 'KR'
             };
           })).map(player => ({
-            id: player.id || player.player_id || `p${Math.random()}`,
-            name: player.name || player.player_name || `Player ${Math.random()}`,
+            id: player.id || player.player_id || `${matchData.team2_id}_player_${index}_${Math.floor(Math.random() * 1000)}`,
+            name: player.name || player.player_name || `Player ${index + 1}`,
             hero: player.hero || 'Storm',
             role: player.role || 'Support',
             country: player.country || 'KR', // This will be real backend player country
