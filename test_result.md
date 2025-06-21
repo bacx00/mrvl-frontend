@@ -281,4 +281,12 @@
 - **Text Fallbacks**: No text fallbacks are being displayed for heroes without images, as the incorrect URL format is preventing the error handling from triggering properly.
 - **Recommendation**: Fix the URL construction in the frontend code. The issue appears to be in how the frontend is using the API response. It should extract the `image_url` from the API response and use it directly, rather than concatenating the API URL with the response.
 
+### **Testing Agent (June 21, 2025 - Update):**
+- **Hero Image System Fix Verification**: The fix for the hero image URL construction has been implemented correctly in the `getHeroImage` function.
+- **Direct URL Testing**: Direct access to hero images at `https://staging.mrvl.net/storage/heroes/captain_america.webp`, `https://staging.mrvl.net/storage/heroes/hulk.webp`, `https://staging.mrvl.net/storage/heroes/black_widow.webp`, and `https://staging.mrvl.net/storage/heroes/venom.webp` works correctly.
+- **Text Fallback Verification**: Heroes without images (Iron Man, Spider-Man, Thor, Storm, Rocket Raccoon) correctly return 404 errors when accessed directly, which should trigger the text fallback in the UI.
+- **Backend Issues**: The backend service is still failing to start due to a missing module. The error is `ModuleNotFoundError: No module named 'backend'`. The expected `/app/backend/` directory does not exist.
+- **Testing Limitations**: Cannot fully test the hero image integration in the UI due to the backend service failure, but the code changes look correct.
+- **Recommendation**: Fix the backend directory structure and module path to enable full testing of the hero image system.
+
 **See detailed testing results in /app/test_result_update.md**
