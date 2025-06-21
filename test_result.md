@@ -273,4 +273,12 @@
 - Live match integration is implemented with real-time sync between admin and match detail
 - Hero categorization by role (Tank/Duelist/Support) is implemented
 
+### **Testing Agent (June 21, 2025):**
+- **Hero Image System Test Results**: Tested the hero image system integration on the match detail page.
+- **API Integration**: The hero image API endpoint `/api/heroes/{name}/image` is working correctly and returns the proper image URL.
+- **Frontend Issue**: Found an issue with the hero image URL construction in the frontend. The frontend is trying to load images from an incorrect URL format: `https://staging.mrvl.net/Heroes/https://staging.mrvl.net/api/heroes/captain-america/image` instead of the correct format: `https://staging.mrvl.net/storage/heroes/captain_america.webp`.
+- **Image Availability**: Direct access to hero images at `https://staging.mrvl.net/storage/heroes/captain_america.webp` works correctly.
+- **Text Fallbacks**: No text fallbacks are being displayed for heroes without images, as the incorrect URL format is preventing the error handling from triggering properly.
+- **Recommendation**: Fix the URL construction in the frontend code. The issue appears to be in how the frontend is using the API response. It should extract the `image_url` from the API response and use it directly, rather than concatenating the API URL with the response.
+
 **See detailed testing results in /app/test_result_update.md**
