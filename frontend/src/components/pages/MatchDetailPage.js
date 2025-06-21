@@ -764,14 +764,32 @@ function MatchDetailPage({ params, navigateTo }) {
                         <div className="relative w-10 h-10">
                           {getHeroImage(player.hero) ? (
                             <img 
-                              src={`https://staging.mrvl.net/Heroes/${getHeroImage(player.hero)}`}
+                              src={getHeroImage(player.hero)}
                               alt={player.hero}
                               className="w-10 h-10 object-cover rounded"
-                              title={`${player.hero} (${getHeroRole(player.hero)})`}
                               onError={(e) => {
-                                console.error(`❌ Failed to load hero image: ${player.hero}`);
-                                e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'flex';
+                                console.log(`❌ Failed to load hero image: ${player.hero}`);
+                                
+                                // Try multiple fallback URLs
+                                const fallbackUrls = [
+                                  `https://staging.mrvl.net/storage/heroes/${player.hero.toLowerCase().replace(/\s+/g, '-')}.png`,
+                                  `https://staging.mrvl.net/storage/heroes/${player.hero.toLowerCase().replace(/\s+/g, '_')}.png`,
+                                  `https://staging.mrvl.net/Heroes/${player.hero.replace(/\s+/g, '_')}.webp`,
+                                  `https://staging.mrvl.net/Heroes/${player.hero.toLowerCase().replace(/\s+/g, '-')}.webp`
+                                ];
+                                
+                                const currentSrc = e.target.src;
+                                const currentIndex = fallbackUrls.findIndex(url => url === currentSrc);
+                                const nextIndex = currentIndex + 1;
+                                
+                                if (nextIndex < fallbackUrls.length) {
+                                  console.log(`🔄 Trying fallback ${nextIndex + 1}: ${fallbackUrls[nextIndex]}`);
+                                  e.target.src = fallbackUrls[nextIndex];
+                                } else {
+                                  console.log(`💥 All image URLs failed for ${player.hero}, hiding image`);
+                                  e.target.style.display = 'none';
+                                  e.target.nextElementSibling.style.display = 'flex';
+                                }
                               }}
                             />
                           ) : null}
