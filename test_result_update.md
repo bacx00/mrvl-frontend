@@ -38,9 +38,13 @@
 - ❌ Cannot test match creation workflow due to login failure
 - ❌ Cannot test live match integration due to login failure
 
-### 7. **HERO IMAGE INTEGRATION**
-- ❌ Cannot test hero image endpoint (/api/heroes/{name}/image) due to backend issues
-- ❌ Cannot test hero role categorization (Tank/Duelist/Support) due to backend issues
+### 7. **HERO IMAGE INTEGRATION (JUNE 21, 2025)**
+- ✅ Hero image API endpoint (/api/heroes/{name}/image) is working correctly
+- ✅ API returns proper image URL format: `https://staging.mrvl.net/storage/heroes/captain_america.webp`
+- ✅ Direct access to hero images at `https://staging.mrvl.net/storage/heroes/captain_america.webp` works correctly
+- ❌ Frontend is using incorrect URL format: `https://staging.mrvl.net/Heroes/https://staging.mrvl.net/api/heroes/captain-america/image`
+- ❌ Text fallbacks for heroes without images are not displaying due to the incorrect URL format
+- ❌ Error handling for missing images is not triggering properly due to the incorrect URL format
 
 ### 8. **TEAM IMAGE INTEGRATION**
 - ❌ Cannot test team logo loading from storage paths due to backend issues
@@ -98,6 +102,12 @@ REACT_APP_BACKEND_URL=https://e4003c0a-8f1b-4723-a4c1-680f79fe84f6.preview.emerg
    - No data is loaded from the backend
    - Authentication fails due to backend issues
 
+3. **Hero Image System Issues (June 21, 2025):**
+   - Frontend is using incorrect URL format for hero images
+   - The frontend is not correctly extracting the image URL from the API response
+   - Text fallbacks for heroes without images are not displaying properly
+   - This affects all hero images across the platform
+
 ## 🔧 **RECOMMENDATIONS:**
 
 1. **Fix Backend Directory Structure:**
@@ -112,11 +122,18 @@ REACT_APP_BACKEND_URL=https://e4003c0a-8f1b-4723-a4c1-680f79fe84f6.preview.emerg
    - Test API endpoints after backend is fixed
    - Ensure all required endpoints are working correctly
 
+4. **Fix Hero Image System (June 21, 2025):**
+   - Fix the URL construction in the frontend code
+   - Extract the `image_url` from the API response and use it directly
+   - Example: `const imageUrl = data.data.image_url;`
+   - Ensure proper error handling for missing images
+   - Test with both heroes that have images and those that don't
+
 ## 🎯 **CONCLUSION:**
 
-The Marvel Rivals platform frontend UI is implemented correctly, but the backend service is not functioning. The backend service is configured to run but fails due to a missing module. All API endpoints return 502 errors, preventing any data from being loaded or any functionality that requires backend interaction from working.
+The Marvel Rivals platform frontend UI is implemented correctly, but there are issues with both the backend service and the hero image system. The backend service is not functioning due to a missing module, and the hero image system has an issue with URL construction in the frontend code.
 
-**Overall Status: NOT READY FOR PRODUCTION - CRITICAL BACKEND ISSUES**
+**Overall Status: NOT READY FOR PRODUCTION - CRITICAL BACKEND ISSUES AND HERO IMAGE SYSTEM ISSUES**
 
 ---
-**Test Date**: June 20, 2025
+**Test Date**: June 21, 2025
