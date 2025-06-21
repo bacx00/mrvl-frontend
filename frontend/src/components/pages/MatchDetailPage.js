@@ -870,8 +870,15 @@ function MatchDetailPage({ params, navigateTo }) {
                       key={player.id}
                       className="grid grid-cols-9 gap-2 items-center px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                       onClick={() => {
-                        console.log('🔗 CRITICAL FIX: Navigating to player profile with REAL ID:', player.name, player.id);
-                        navigateTo && navigateTo('player-detail', { id: player.id });
+                        // 🚨 CRITICAL FIX: Generate proper player ID for navigation
+                        const playerId = player.id || `${match.team1?.id}_player_${index + 1}`;
+                        console.log('🔗 FIXED: Navigating to player with ID:', playerId, 'Name:', player.name);
+                        
+                        // For now, show player info in alert until backend player pages exist
+                        alert(`Player: ${player.name}\nTeam: ${match.team1?.name}\nHero: ${player.hero}\nRole: ${player.role}`);
+                        
+                        // Uncomment when player detail pages are ready
+                        // navigateTo && navigateTo('player-detail', { id: playerId });
                       }}
                     >
                       {/* ✅ FIXED: Country Flag + Player Name (Team 2) */}
