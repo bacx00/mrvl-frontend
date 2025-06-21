@@ -488,7 +488,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
                               />
                             </div>
                             <div>
-                              <div className="font-bold text-gray-900 dark:text-white">{player.playerName}</div>
+                              <div className="font-bold text-gray-900 dark:text-white">{player.name}</div>
                               <div className="text-sm text-gray-600 dark:text-gray-400">{player.role} • {player.hero}</div>
                             </div>
                           </div>
