@@ -97,27 +97,47 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
         status: 'upcoming',
         winner: null,
         duration: 'Not started',
-        // 🎮 CRITICAL: Use same player structure as MatchDetailPage
-        team1Players: (match.maps?.[index]?.team1_composition || Array.from({ length: 6 }, (_, pIndex) => ({
-          id: `${match.team1?.id}_p${pIndex + 1}`,
-          name: `${match.team1?.short_name || 'T1'}_Player${pIndex + 1}`,
-          hero: 'Captain America',
-          role: 'Tank',
-          country: '🌍',
-          eliminations: 0,
-          deaths: 0,
-          assists: 0,
-          damage: 0,
-          healing: 0,
-          damageBlocked: 0,
-          objectiveTime: 0,
-          ultimatesUsed: 0
-        }))),
-        team2Players: (match.maps?.[index]?.team2_composition || Array.from({ length: 6 }, (_, pIndex) => ({
-          id: `${match.team2?.id}_p${pIndex + 1}`,
-          name: `${match.team2?.short_name || 'T2'}_Player${pIndex + 1}`,
-          hero: 'Captain America',
-          role: 'Tank',
+        // 🎮 CRITICAL: Use same player structure as MatchDetailPage with DIVERSE HEROES
+        team1Players: (match.maps?.[index]?.team1_composition || Array.from({ length: 6 }, (_, pIndex) => {
+          const defaultHeroes = ['Captain America', 'Iron Man', 'Black Widow', 'Doctor Strange', 'Mantis', 'Hulk'];
+          const defaultRoles = ['Tank', 'Duelist', 'Duelist', 'Tank', 'Support', 'Tank'];
+          const defaultCountries = ['US', 'CA', 'UK', 'DE', 'FR', 'SE'];
+          return {
+            id: `${match.team1?.id}_p${pIndex + 1}`,
+            name: `${match.team1?.short_name || 'T1'}_Player${pIndex + 1}`,
+            hero: defaultHeroes[pIndex] || 'Captain America',
+            role: defaultRoles[pIndex] || 'Tank',
+            country: defaultCountries[pIndex] || 'US',
+            eliminations: 0,
+            deaths: 0,
+            assists: 0,
+            damage: 0,
+            healing: 0,
+            damageBlocked: 0,
+            objectiveTime: 0,
+            ultimatesUsed: 0
+          };
+        })),
+        team2Players: (match.maps?.[index]?.team2_composition || Array.from({ length: 6 }, (_, pIndex) => {
+          const defaultHeroes = ['Storm', 'Spider-Man', 'Hawkeye', 'Venom', 'Luna Snow', 'Groot'];
+          const defaultRoles = ['Support', 'Duelist', 'Duelist', 'Tank', 'Support', 'Tank'];
+          const defaultCountries = ['KR', 'JP', 'AU', 'BR', 'CN', 'INTL'];
+          return {
+            id: `${match.team2?.id}_p${pIndex + 1}`,
+            name: `${match.team2?.short_name || 'T2'}_Player${pIndex + 1}`,
+            hero: defaultHeroes[pIndex] || 'Storm',
+            role: defaultRoles[pIndex] || 'Support',
+            country: defaultCountries[pIndex] || 'KR',
+            eliminations: 0,
+            deaths: 0,
+            assists: 0,
+            damage: 0,
+            healing: 0,
+            damageBlocked: 0,
+            objectiveTime: 0,
+            ultimatesUsed: 0
+          };
+        }))
           country: '🌍',
           eliminations: 0,
           deaths: 0,
