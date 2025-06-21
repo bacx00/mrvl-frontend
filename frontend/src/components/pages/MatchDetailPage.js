@@ -899,8 +899,24 @@ function MatchDetailPage({ params, navigateTo }) {
                     >
                       {/* ✅ FIXED: Country Flag + Player Name (Team 2) */}
                       <div className="flex items-center space-x-2">
-                        <div className="w-6 h-6 flex items-center justify-center text-lg" title={`Country: ${player.country}`}>
-                          {player.country || '🌍'}
+                        <div className="w-6 h-6 flex items-center justify-center" title={`Country: ${player.country}`}>
+                          {/* 🚨 CRITICAL FIX: Show actual country flag image */}
+                          <img 
+                            src={`https://flagcdn.com/24x18/${(player.country || 'us').toLowerCase().slice(0, 2)}.png`}
+                            alt={`${player.country} flag`}
+                            className="w-6 h-4 object-cover rounded-sm shadow-sm"
+                            onError={(e) => {
+                              console.log(`❌ Flag failed for country: ${player.country}`);
+                              e.target.style.display = 'none';
+                              e.target.nextElementSibling.style.display = 'block';
+                            }}
+                          />
+                          <div 
+                            className="w-6 h-4 bg-gray-300 dark:bg-gray-600 rounded-sm flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-300"
+                            style={{ display: 'none' }}
+                          >
+                            {(player.country || 'US').slice(0, 2).toUpperCase()}
+                          </div>
                         </div>
                         <div 
                           className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 cursor-pointer text-sm transition-colors"
