@@ -502,22 +502,6 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
           </div>
 
           {/* SAVE TO BACKEND */}
-          <div className="flex justify-center space-x-4">
-            <button
-              onClick={handleSaveStats}
-              className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
-            >
-              💾 Save Match Statistics
-            </button>
-            <button
-              onClick={onClose}
-              className="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-semibold"
-            >
-              Close
-            </button>
-          </div>
-
-          {/* SAVE TO BACKEND */}
           <div className="flex justify-center space-x-4 mt-6">
             <button
               onClick={handleSaveStats}
