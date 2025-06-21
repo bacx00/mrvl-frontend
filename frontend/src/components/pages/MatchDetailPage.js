@@ -403,23 +403,24 @@ function MatchDetailPage({ params, navigateTo }) {
           winner: mapData.winner_id ? (mapData.winner_id === matchData.team1_id ? matchData.team1_id : matchData.team2_id) : null,
           duration: mapData.duration || 'Not started',
           
-          // 🎮 CRITICAL: Use REAL team compositions from backend
+          // 🎮 ENHANCED: Use REAL team compositions with player data from backend
           team1Players: (mapData.team1_composition || Array.from({ length: 6 }, (_, pIndex) => {
             const defaultHeroes = ['Captain America', 'Iron Man', 'Black Widow', 'Doctor Strange', 'Mantis', 'Hulk'];
             const defaultRoles = ['Tank', 'Duelist', 'Duelist', 'Tank', 'Support', 'Tank'];
+            const defaultCountries = ['US', 'CA', 'UK', 'DE', 'FR', 'SE']; // Real country codes
             return {
               id: `${matchData.team1_id}_p${pIndex + 1}`,
               name: `Player ${pIndex + 1}`,
               hero: defaultHeroes[pIndex] || 'Captain America',
               role: defaultRoles[pIndex] || 'Tank',
-              country: 'US'
+              country: defaultCountries[pIndex] || 'US'
             };
           })).map(player => ({
             id: player.id || player.player_id || `p${Math.random()}`,
             name: player.name || player.player_name || `Player ${Math.random()}`,
             hero: player.hero || 'Captain America',
             role: player.role || 'Tank',
-            country: player.country || 'US',
+            country: player.country || 'US', // This will be real backend player country
             eliminations: player.eliminations || 0,
             deaths: player.deaths || 0,
             assists: player.assists || 0,
@@ -431,19 +432,20 @@ function MatchDetailPage({ params, navigateTo }) {
           team2Players: (mapData.team2_composition || Array.from({ length: 6 }, (_, pIndex) => {
             const defaultHeroes = ['Storm', 'Spider-Man', 'Hawkeye', 'Venom', 'Luna Snow', 'Groot'];
             const defaultRoles = ['Support', 'Duelist', 'Duelist', 'Tank', 'Support', 'Tank'];
+            const defaultCountries = ['KR', 'JP', 'AU', 'BR', 'CN', 'INTL']; // Real country codes  
             return {
               id: `${matchData.team2_id}_p${pIndex + 1}`,
               name: `Player ${pIndex + 1}`,
               hero: defaultHeroes[pIndex] || 'Storm',
               role: defaultRoles[pIndex] || 'Support',
-              country: 'EU'
+              country: defaultCountries[pIndex] || 'KR'
             };
           })).map(player => ({
             id: player.id || player.player_id || `p${Math.random()}`,
             name: player.name || player.player_name || `Player ${Math.random()}`,
             hero: player.hero || 'Storm',
             role: player.role || 'Support',
-            country: player.country || 'EU',
+            country: player.country || 'KR', // This will be real backend player country
             eliminations: player.eliminations || 0,
             deaths: player.deaths || 0,
             assists: player.assists || 0,
