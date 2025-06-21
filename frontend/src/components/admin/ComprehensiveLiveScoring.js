@@ -325,6 +325,9 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
   console.log('🎯 ComprehensiveLiveScoring - currentMapData:', currentMapData);
   console.log('🎯 ComprehensiveLiveScoring - team1Players:', currentMapData.team1Players);
   console.log('🎯 ComprehensiveLiveScoring - team2Players:', currentMapData.team2Players);
+  console.log('🎯 ComprehensiveLiveScoring - team1_composition:', currentMapData.team1_composition);
+  console.log('🎯 ComprehensiveLiveScoring - team2_composition:', currentMapData.team2_composition);
+  console.log('🎯 ComprehensiveLiveScoring - matchStats.maps:', matchStats.maps);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
