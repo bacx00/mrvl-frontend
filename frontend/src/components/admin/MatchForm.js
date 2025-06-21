@@ -57,35 +57,43 @@ const getInitialMatchData = (format = 'BO3') => {
       status: 'upcoming',
       winner_id: null,
       duration: null,
-      // 🎮 NEW: Player compositions for this map
-      team1_composition: Array.from({ length: 6 }, (_, playerIndex) => ({
-        player_id: null,
-        player_name: `Player ${playerIndex + 1}`,
-        hero: 'Captain America', // Default hero
-        role: 'Tank',
-        eliminations: 0,
-        deaths: 0,
-        assists: 0,
-        damage: 0,
-        healing: 0,
-        damageBlocked: 0,
-        objectiveTime: 0,
-        ultimatesUsed: 0
-      })),
-      team2_composition: Array.from({ length: 6 }, (_, playerIndex) => ({
-        player_id: null,
-        player_name: `Player ${playerIndex + 1}`,
-        hero: 'Captain America', // Default hero
-        role: 'Tank',
-        eliminations: 0,
-        deaths: 0,
-        assists: 0,
-        damage: 0,
-        healing: 0,
-        damageBlocked: 0,
-        objectiveTime: 0,
-        ultimatesUsed: 0
-      }))
+      // 🎮 FIXED: Player compositions with DIFFERENT default heroes per role
+      team1_composition: Array.from({ length: 6 }, (_, playerIndex) => {
+        const defaultHeroes = ['Captain America', 'Iron Man', 'Black Widow', 'Doctor Strange', 'Mantis', 'Hulk'];
+        const defaultRoles = ['Tank', 'Duelist', 'Duelist', 'Tank', 'Support', 'Tank'];
+        return {
+          player_id: null,
+          player_name: `Player ${playerIndex + 1}`,
+          hero: defaultHeroes[playerIndex] || 'Captain America',
+          role: defaultRoles[playerIndex] || 'Tank',
+          eliminations: 0,
+          deaths: 0,
+          assists: 0,
+          damage: 0,
+          healing: 0,
+          damageBlocked: 0,
+          objectiveTime: 0,
+          ultimatesUsed: 0
+        };
+      }),
+      team2_composition: Array.from({ length: 6 }, (_, playerIndex) => {
+        const defaultHeroes = ['Storm', 'Spider-Man', 'Hawkeye', 'Venom', 'Luna Snow', 'Groot'];
+        const defaultRoles = ['Support', 'Duelist', 'Duelist', 'Tank', 'Support', 'Tank'];
+        return {
+          player_id: null,
+          player_name: `Player ${playerIndex + 1}`,
+          hero: defaultHeroes[playerIndex] || 'Storm',
+          role: defaultRoles[playerIndex] || 'Support',
+          eliminations: 0,
+          deaths: 0,
+          assists: 0,
+          damage: 0,
+          healing: 0,
+          damageBlocked: 0,
+          objectiveTime: 0,
+          ultimatesUsed: 0
+        };
+      })
     })),
     viewers: 0,
     featured: false,
