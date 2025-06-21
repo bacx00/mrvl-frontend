@@ -296,26 +296,26 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
             </div>
           </div>
 
-          {/* MAP SELECTION TABS */}
+          {/* MAP SELECTION TABS - CRITICAL FIX: Show only match maps */}
           <div className="flex space-x-2 overflow-x-auto">
-            {marvelRivalsMaps.map((map, index) => (
+            {(matchStats.maps || []).map((matchMap, index) => (
               <button
                 key={index}
                 onClick={() => setActiveMap(index)}
                 className={`px-4 py-3 rounded-lg whitespace-nowrap flex items-center space-x-2 transition-colors ${
                   activeMap === index
                     ? 'bg-red-600 text-white'
-                    : matchStats.maps[index]?.status === 'completed'
+                    : matchMap?.status === 'completed'
                     ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                    : matchStats.maps[index]?.status === 'live'
+                    : matchMap?.status === 'live'
                     ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
                     : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                 }`}
               >
-                <span className="text-xl">{map.icon}</span>
+                <span className="text-xl">🗺️</span>
                 <div>
-                  <div className="font-bold">{map.name}</div>
-                  <div className="text-xs">{map.mode}</div>
+                  <div className="font-bold">{matchMap.name || matchMap.map_name || `Map ${index + 1}`}</div>
+                  <div className="text-xs">{matchMap.mode || 'Convoy'}</div>
                 </div>
               </button>
             ))}
