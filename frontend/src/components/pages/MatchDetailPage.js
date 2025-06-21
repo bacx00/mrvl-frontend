@@ -2,21 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
 import { TeamLogo, PlayerAvatar } from '../../utils/imageUtils';
 
-// 🎮 MARVEL RIVALS HERO SYSTEM - Complete Backend Integration
+// 🎮 MARVEL RIVALS HERO SYSTEM - Multiple Fallback Strategy
 const getHeroImage = (heroName) => {
   if (!heroName) return null;
   
-  // 🎯 CRITICAL: Use new backend hero image endpoints
+  // 🎯 CRITICAL: Multiple fallback URLs for hero images
   const heroSlug = heroName.toLowerCase().replace(/\s+/g, '-');
   
-  // Primary: Individual hero image endpoint
-  const primaryUrl = `https://staging.mrvl.net/api/heroes/${heroSlug}/image`;
+  // Try multiple possible image paths
+  const possibleUrls = [
+    `https://staging.mrvl.net/api/heroes/${heroSlug}/image`,
+    `https://staging.mrvl.net/storage/heroes/${heroSlug}.png`,
+    `https://staging.mrvl.net/storage/heroes/${heroSlug}.webp`,
+    `https://staging.mrvl.net/Heroes/${heroName.replace(/\s+/g, '_')}.webp`,
+    `https://staging.mrvl.net/Heroes/${heroSlug}.webp`,
+    `https://staging.mrvl.net/storage/heroes/${heroName.replace(/\s+/g, '_')}.png`
+  ];
   
-  // Fallback: Direct storage path
-  const fallbackUrl = `https://staging.mrvl.net/storage/heroes/${heroSlug.replace('-', '_')}.png`;
-  
-  // Return primary URL (backend will handle fallbacks)
-  return primaryUrl;
+  // Return first URL (browser will try others via onError handling)
+  return possibleUrls[0];
 };
 
 // 🎮 MARVEL RIVALS ROLE SYSTEM - ALIGNED WITH BACKEND
