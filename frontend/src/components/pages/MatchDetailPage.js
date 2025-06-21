@@ -2,25 +2,49 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
 import { TeamLogo, PlayerAvatar } from '../../utils/imageUtils';
 
-// 🎮 MARVEL RIVALS HERO SYSTEM - Multiple Fallback Strategy
-const getHeroImage = (heroName) => {
+// 🎮 MARVEL RIVALS HERO SYSTEM - Production API Integration
+const getHeroImage = async (heroName) => {
   if (!heroName) return null;
   
-  // 🎯 CRITICAL: Multiple fallback URLs for hero images
-  const heroSlug = heroName.toLowerCase().replace(/\s+/g, '-');
+  try {
+    // 🎯 CRITICAL: Use new production hero image API
+    const heroSlug = heroName.toLowerCase().replace(/\s+/g, '-');
+    const response = await fetch(`https://staging.mrvl.net/api/heroes/${heroSlug}/image`);
+    const data = await response.json();
+    
+    if (data.success && data.data.image_url) {
+      console.log(`✅ Hero image found: ${heroName} -> ${data.data.image_url}`);
+      return `https://staging.mrvl.net${data.data.image_url}`;
+    } else {
+      console.log(`📝 Hero image not found: ${heroName} - using text fallback`);
+      return null; // Will trigger text fallback
+    }
+  } catch (error) {
+    console.error(`❌ Error fetching hero image for ${heroName}:`, error);
+    return null; // Will trigger text fallback
+  }
+};
+
+// 🎮 SYNCHRONOUS VERSION FOR IMMEDIATE USE
+const getHeroImageSync = (heroName) => {
+  if (!heroName) return null;
   
-  // Try multiple possible image paths
-  const possibleUrls = [
-    `https://staging.mrvl.net/api/heroes/${heroSlug}/image`,
-    `https://staging.mrvl.net/storage/heroes/${heroSlug}.png`,
-    `https://staging.mrvl.net/storage/heroes/${heroSlug}.webp`,
-    `https://staging.mrvl.net/Heroes/${heroName.replace(/\s+/g, '_')}.webp`,
-    `https://staging.mrvl.net/Heroes/${heroSlug}.webp`,
-    `https://staging.mrvl.net/storage/heroes/${heroName.replace(/\s+/g, '_')}.png`
+  // 🎯 HEROES WITH CONFIRMED IMAGES (17/22)
+  const heroesWithImages = [
+    'Black Widow', 'Hawkeye', 'Star-Lord', 'Punisher', 'Winter Soldier', 
+    'Squirrel Girl', 'Hulk', 'Groot', 'Doctor Strange', 'Magneto', 
+    'Captain America', 'Venom', 'Mantis', 'Luna Snow', 'Adam Warlock', 
+    'Cloak & Dagger', 'Jeff the Land Shark'
   ];
   
-  // Return first URL (browser will try others via onError handling)
-  return possibleUrls[0];
+  if (heroesWithImages.includes(heroName)) {
+    const heroSlug = heroName.toLowerCase().replace(/\s+/g, '_');
+    return `https://staging.mrvl.net/storage/heroes/${heroSlug}.webp`;
+  }
+  
+  // Heroes without images: Iron Man, Spider-Man, Thor, Storm, Rocket Raccoon
+  console.log(`📝 ${heroName} - using text fallback (no image available)`);
+  return null; // Will trigger text fallback
 };
 
 // 🎮 MARVEL RIVALS ROLE SYSTEM - ALIGNED WITH BACKEND
