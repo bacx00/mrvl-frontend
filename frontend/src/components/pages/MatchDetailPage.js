@@ -25,61 +25,6 @@ const getHeroImage = async (heroName) => {
   }
 };
 
-// 🎮 PRODUCTION HERO SYSTEM: Corrected implementation
-const getHeroImageSync = (heroName) => {
-  if (!heroName) return null;
-  
-  // 🎯 HEROES WITH CONFIRMED IMAGES (17/22) - Direct .webp URLs
-  const heroesWithImages = {
-    'Black Widow': 'black_widow.webp',
-    'Hawkeye': 'hawkeye.webp', 
-    'Star-Lord': 'star_lord.webp',
-    'Punisher': 'punisher.webp',
-    'Winter Soldier': 'winter_soldier.webp',
-    'Squirrel Girl': 'squirrel_girl.webp',
-    'Hulk': 'hulk.webp',
-    'Groot': 'groot.webp',
-    'Doctor Strange': 'doctor_strange.webp',
-    'Magneto': 'magneto.webp',
-    'Captain America': 'captain_america.webp',
-    'Venom': 'venom.webp',
-    'Mantis': 'mantis.webp',
-    'Luna Snow': 'luna_snow.webp',
-    'Adam Warlock': 'adam_warlock.webp',
-    'Cloak & Dagger': 'cloak_dagger.webp',
-    'Jeff the Land Shark': 'jeff_the_land_shark.webp'
-  };
-  
-  if (heroesWithImages[heroName]) {
-    const imageUrl = `https://staging.mrvl.net/storage/heroes/${heroesWithImages[heroName]}`;
-    console.log(`✅ Hero image available: ${heroName} -> ${imageUrl}`);
-    return imageUrl;
-  }
-  
-  // Heroes without images: Iron Man, Spider-Man, Thor, Storm, Rocket Raccoon
-  console.log(`📝 ${heroName} - using text fallback (no image available)`);
-  return null; // Will trigger text fallback
-};
-
-// 🎮 MARVEL RIVALS ROLE SYSTEM - ALIGNED WITH BACKEND
-const getHeroRole = (heroName) => {
-  if (!heroName) return 'Unknown';
-  
-  const heroRoles = {
-    Tank: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Peni Parker', 'The Thing', 'Thor', 'Venom'],
-    Duelist: ['Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Human Torch', 'Iron Fist', 'Iron Man', 'Magik', 'Moon Knight', 'Namor', 'Psylocke', 'The Punisher', 'Scarlet Witch', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine'],
-    Support: ['Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon']
-  };
-  
-  for (const [role, heroes] of Object.entries(heroRoles)) {
-    if (heroes.includes(heroName)) {
-      return role;
-    }
-  }
-  
-  return 'Unknown';
-};
-
 function MatchDetailPage({ params, navigateTo }) {
   const [match, setMatch] = useState(null);
   const [activeMap, setActiveMap] = useState(0);
