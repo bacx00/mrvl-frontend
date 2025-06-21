@@ -357,7 +357,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
                   </h4>
                   
                   <div className="space-y-3">
-                    {currentMapData.playerStats[team].map((player, playerIndex) => (
+                    {(currentMapData?.[`${team}Players`] || []).map((player, playerIndex) => (
                       <div key={playerIndex} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center space-x-3">
