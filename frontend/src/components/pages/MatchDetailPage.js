@@ -847,20 +847,38 @@ function MatchDetailPage({ params, navigateTo }) {
                       {/* ✅ FIXED: Clean Hero Images (VLR.gg Style) */}
                       <div className="flex justify-center">
                         <div className="relative w-10 h-10">
-                          {getHeroImage(player.hero) ? (
-                            <img 
-                              src={`https://staging.mrvl.net/Heroes/${getHeroImage(player.hero)}`}
-                              alt={player.hero}
-                              className="w-10 h-10 object-cover rounded"
-                              title={`${player.hero} (${getHeroRole(player.hero)})`}
-                              onError={(e) => {
-                                console.error(`❌ Failed to load hero image: ${player.hero}`);
+                          <img
+                            src={getHeroImage(player.hero)}
+                            alt={player.hero}
+                            className="w-10 h-10 rounded object-cover"
+                            onError={(e) => {
+                              console.log(`❌ Failed to load hero image: ${player.hero}`);
+                              
+                              // Try multiple fallback URLs
+                              const fallbackUrls = [
+                                `https://staging.mrvl.net/storage/heroes/${player.hero.toLowerCase().replace(/\s+/g, '-')}.png`,
+                                `https://staging.mrvl.net/storage/heroes/${player.hero.toLowerCase().replace(/\s+/g, '_')}.png`,
+                                `https://staging.mrvl.net/Heroes/${player.hero.replace(/\s+/g, '_')}.webp`,
+                                `https://staging.mrvl.net/Heroes/${player.hero.toLowerCase().replace(/\s+/g, '-')}.webp`
+                              ];
+                              
+                              const currentSrc = e.target.src;
+                              const currentIndex = fallbackUrls.findIndex(url => url === currentSrc);
+                              const nextIndex = currentIndex + 1;
+                              
+                              if (nextIndex < fallbackUrls.length) {
+                                console.log(`🔄 Trying fallback ${nextIndex + 1}: ${fallbackUrls[nextIndex]}`);
+                                e.target.src = fallbackUrls[nextIndex];
+                              } else {
+                                console.log(`💥 All image URLs failed for ${player.hero}, hiding image`);
                                 e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'flex';
-                              }}
-                            />
-                          ) : null}
-                          {/* ✅ CRITICAL FIX: Show ONLY hero name when image fails - NO BACKGROUND */}
+                                e.target.nextElementSibling.style.display = 'flex';
+                              }
+                            }}
+                            style={{ display: getHeroImage(player.hero) ? 'block' : 'none' }}
+                          />
+                          
+                          {/* ✅ CRITICAL FIX: Show ONLY hero name when all images fail - NO BACKGROUND */}
                           <div 
                             className="w-10 h-10 flex items-center justify-center text-xs font-bold text-center leading-tight text-gray-900 dark:text-white"
                             style={{ display: getHeroImage(player.hero) ? 'none' : 'flex' }}
