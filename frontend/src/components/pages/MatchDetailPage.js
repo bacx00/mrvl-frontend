@@ -166,19 +166,6 @@ function MatchDetailPage({ params, navigateTo }) {
     return () => clearInterval(interval);
   }, [match?.status]);
 
-  // ✅ CRITICAL FIX: Add auto-refresh for live matches
-  useEffect(() => {
-    if (!match || match.status !== 'live') return;
-    
-    console.log('🔴 LIVE MATCH: Setting up auto-refresh every 15 seconds');
-    const interval = setInterval(() => {
-      console.log('🔄 Auto-refreshing live match data...');
-      initializeMatchData();
-    }, 15000); // Refresh every 15 seconds for live matches
-    
-    return () => clearInterval(interval);
-  }, [match?.status]);
-
   useEffect(() => {
     if (matchId) {
       initializeMatchData();
