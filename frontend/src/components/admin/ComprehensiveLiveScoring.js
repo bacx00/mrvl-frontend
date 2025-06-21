@@ -316,7 +316,15 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     }
   };
 
-  const currentMapData = matchStats.maps?.[activeMap] || matchStats.maps?.[0];
+  const currentMapData = matchStats.maps?.[activeMap] || matchStats.maps?.[0] || {
+    team1Players: [],
+    team2Players: []
+  };
+
+  // 🔍 DEBUG: Log current map data
+  console.log('🎯 ComprehensiveLiveScoring - currentMapData:', currentMapData);
+  console.log('🎯 ComprehensiveLiveScoring - team1Players:', currentMapData.team1Players);
+  console.log('🎯 ComprehensiveLiveScoring - team2Players:', currentMapData.team2Players);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
