@@ -492,9 +492,9 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
                     {match[team]?.name} Players - {marvelRivalsMaps[activeMap].name}
                   </h4>
                   
-                  {/* 📊 SCOREBOARD HEADERS */}
+                  {/* 📊 SCOREBOARD HEADERS - MATCHING GRID LAYOUT */}
                   <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-2 mb-3">
-                    <div className="grid grid-cols-9 gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300">
+                    <div className="grid grid-cols-[2fr_2fr_1fr_1fr_1fr_1fr_1.5fr_1.5fr_1.5fr] gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300">
                       <div>PLAYER</div>
                       <div>HERO</div>
                       <div>E</div>
