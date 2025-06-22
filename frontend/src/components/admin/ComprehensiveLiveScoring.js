@@ -19,42 +19,47 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     hasToken: !!token
   });
 
-  // 🎮 REAL MARVEL RIVALS MAPS - ACTUAL GAME MAPS
+  // 🎮 REAL MARVEL RIVALS MAPS - ACTUAL GAME MAPS WITH CORRECT MODES
   const marvelRivalsMaps = [
     { 
       name: 'Asgard Throne Room', 
-      mode: 'Convoy', 
+      mode: 'Domination', 
       icon: '⚡',
       checkpoints: ['Royal Entrance', 'Throne Hall', 'Rainbow Bridge'],
-      description: 'Fight through the majestic halls of Asgard'
+      description: 'Control the single point in Thor\'s majestic throne room',
+      duration: 'Best of 3 rounds'
     },
     { 
       name: 'Helicarrier Command', 
       mode: 'Convoy', 
       icon: '🚁',
       checkpoints: ['Landing Deck', 'Command Center', 'Engine Bay'],
-      description: 'Battle aboard S.H.I.E.L.D.\'s flying fortress'
+      description: 'Escort payload through S.H.I.E.L.D.\'s flying fortress',
+      duration: '5:00 → 3:00+ → 1:30+'
     },
     { 
       name: 'Sanctum Sanctorum', 
-      mode: 'Domination', 
+      mode: 'Convergence', 
       icon: '🔮',
       checkpoints: ['Mystic Portal', 'Library of Spells', 'Astral Plane'],
-      description: 'Master the mystical arts in Doctor Strange\'s sanctuary'
+      description: 'Capture then escort through Doctor Strange\'s sanctuary',
+      duration: '4:00 capture → 1:30 escort'
     },
     { 
       name: 'Wakanda Vibranium Mines', 
       mode: 'Convoy', 
       icon: '💎',
       checkpoints: ['Mine Entrance', 'Vibranium Core', 'Royal Palace'],
-      description: 'Secure the precious vibranium deposits'
+      description: 'Push payload through the precious vibranium deposits',
+      duration: '5:00 → 3:00+ → 1:30+'
     },
     { 
       name: 'X-Mansion Training Grounds', 
-      mode: 'Domination', 
+      mode: 'Conquest', 
       icon: '🎓',
       checkpoints: ['Cerebro Chamber', 'Danger Room', 'Main Hall'],
-      description: 'Train like the X-Men in Professor X\'s school'
+      description: 'Battle for 50 Chromium points in mutant training facility',
+      duration: '3:50 minutes'
     }
   ];
 
