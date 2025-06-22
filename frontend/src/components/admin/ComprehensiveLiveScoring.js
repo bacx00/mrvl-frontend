@@ -77,7 +77,47 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     ]
   };
 
-  // COMPREHENSIVE MATCH STATE WITH PERFECT ALIGNMENT
+  // 🎮 FETCH REAL TEAM PLAYERS FROM BACKEND
+  const fetchTeamPlayers = async (teamId, teamName) => {
+    try {
+      console.log(`🔍 Fetching real players for team: ${teamName} (ID: ${teamId})`);
+      const response = await fetch(`https://staging.mrvl.net/api/teams/${teamId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const teamPlayers = data.data?.players || [];
+        console.log(`✅ Found ${teamPlayers.length} real players for ${teamName}:`, teamPlayers);
+        
+        // Convert real players to match format
+        return teamPlayers.slice(0, 6).map((player, index) => ({
+          id: player.id,
+          name: player.name,
+          hero: player.primary_hero || 'Captain America', // Use player's primary hero
+          role: player.role || 'Tank',
+          country: player.country || 'US', // Use player's REAL country
+          eliminations: 0,
+          deaths: 0,
+          assists: 0,
+          damage: 0,
+          healing: 0,
+          damageBlocked: 0,
+          objectiveTime: 0,
+          ultimatesUsed: 0
+        }));
+      } else {
+        console.log(`⚠️ Failed to fetch players for ${teamName}, using defaults`);
+        return [];
+      }
+    } catch (error) {
+      console.error(`❌ Error fetching team players for ${teamName}:`, error);
+      return [];
+    }
+  };
   const [matchStats, setMatchStats] = useState(() => {
     if (!match) return null;
     
