@@ -189,35 +189,61 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
   useEffect(() => {
     const loadRealPlayers = async () => {
       if (match?.team1?.id && match?.team2?.id && token) {
-        console.log('🔍 Loading REAL team players...');
+        console.log('🔍 Loading REAL team players for match:', match.id);
+        console.log('🔍 Team 1:', match.team1.name, 'ID:', match.team1.id);
+        console.log('🔍 Team 2:', match.team2.name, 'ID:', match.team2.id);
         
-        const [team1Players, team2Players] = await Promise.all([
-          fetchTeamPlayers(match.team1.id, match.team1.name),
-          fetchTeamPlayers(match.team2.id, match.team2.name)
-        ]);
-        
-        console.log('✅ Real players loaded:', { team1Players, team2Players });
-        
-        // 🔄 UPDATE MATCH STATS WITH REAL PLAYERS
-        if (team1Players.length > 0 || team2Players.length > 0) {
-          setMatchStats(prevStats => {
-            if (!prevStats) return prevStats;
+        try {
+          const [team1Players, team2Players] = await Promise.all([
+            fetchTeamPlayers(match.team1.id, match.team1.name),
+            fetchTeamPlayers(match.team2.id, match.team2.name)
+          ]);
+          
+          console.log('✅ Real players fetched:');
+          console.log('Team 1 players:', team1Players);
+          console.log('Team 2 players:', team2Players);
+          
+          // 🚨 FORCE UPDATE MATCH STATS WITH REAL PLAYERS
+          if (team1Players.length > 0 || team2Players.length > 0) {
+            console.log('🔄 FORCING state update with real players...');
             
-            return {
-              ...prevStats,
-              maps: prevStats.maps.map(map => ({
-                ...map,
-                team1Players: team1Players.length > 0 ? team1Players : map.team1Players,
-                team2Players: team2Players.length > 0 ? team2Players : map.team2Players
-              }))
-            };
-          });
+            setMatchStats(prevStats => {
+              if (!prevStats) {
+                console.log('❌ prevStats is null, cannot update');
+                return prevStats;
+              }
+              
+              const updatedStats = {
+                ...prevStats,
+                maps: prevStats.maps.map((map, mapIndex) => {
+                  console.log(`🗺️ Updating map ${mapIndex + 1} with real players`);
+                  return {
+                    ...map,
+                    team1Players: team1Players.length > 0 ? team1Players : map.team1Players,
+                    team2Players: team2Players.length > 0 ? team2Players : map.team2Players
+                  };
+                })
+              };
+              
+              console.log('✅ Updated matchStats with real players:', updatedStats);
+              return updatedStats;
+            });
+          } else {
+            console.log('⚠️ No real players found, keeping mock data');
+          }
+        } catch (error) {
+          console.error('❌ Error loading real players:', error);
         }
+      } else {
+        console.log('⚠️ Missing required data for player loading:');
+        console.log('- Team 1 ID:', match?.team1?.id);
+        console.log('- Team 2 ID:', match?.team2?.id);
+        console.log('- Token:', !!token);
       }
     };
     
     loadRealPlayers();
-  }, [match?.team1?.id, match?.team2?.id, token]);
+  }, [match?.team1?.id, match?.team2?.id, token, match?.id]);
 
   // CRITICAL FIX: Null check for match AFTER hooks
   if (!isOpen || !match || !matchStats) return null;
