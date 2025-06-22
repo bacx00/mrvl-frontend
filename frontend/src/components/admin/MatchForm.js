@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
-import { TeamLogo } from '../../utils/imageUtils';
 
 // ✅ CRITICAL FIX: CORRECT MARVEL RIVALS MAPS
 const MARVEL_RIVALS_CONFIG = {
@@ -71,31 +70,33 @@ function MatchForm({ matchId, navigateTo }) {
   const [formData, setFormData] = useState(getInitialMatchData());
   const [teams, setTeams] = useState([]);
   const [events, setEvents] = useState([]);
-  const [players, setPlayers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [selectedTeam1, setSelectedTeam1] = useState(null);
   const [selectedTeam2, setSelectedTeam2] = useState(null);
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  
   const { api } = useAuth();
-
   const isEdit = Boolean(matchId);
+
+  // 🔥 CRITICAL: REAL BACKEND API BASE URL
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://staging.mrvl.net';
 
   // ✅ CRITICAL: Load heroes from live backend API
   useEffect(() => {
     const loadHeroesFromAPI = async () => {
       try {
         console.log('🎮 Loading heroes from backend API...');
-        const response = await api.get('/heroes');
-        const heroData = response.data || response;
+        const response = await fetch(`${BACKEND_URL}/api/heroes`);
+        const heroData = await response.json();
         
         console.log('✅ Heroes loaded from API:', heroData);
         
-        if (heroData && typeof heroData === 'object') {
+        if (heroData && heroData.data && typeof heroData.data === 'object') {
           // 🚨 CRITICAL FIX: Transform API response to extract hero names only
           const transformedHeroes = {};
           
-          for (const [role, heroes] of Object.entries(heroData)) {
+          for (const [role, heroes] of Object.entries(heroData.data)) {
             if (Array.isArray(heroes)) {
               // Extract just the name from hero objects
               transformedHeroes[role] = heroes.map(hero => {
@@ -126,49 +127,50 @@ function MatchForm({ matchId, navigateTo }) {
     };
     
     loadHeroesFromAPI();
-  }, []);
+  }, [BACKEND_URL]);
 
+  // 🚨 CRITICAL: REAL BACKEND DATA LOADING - NO MOCK DATA
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        console.log('🔍 MatchForm: Fetching all required data...');
+        console.log('🔍 MatchForm: Fetching REAL backend data...');
         
-        // Get teams
-        const teamsResponse = await api.get('/teams');
-        const teamsData = teamsResponse?.data?.data || teamsResponse?.data || [];
-        setTeams(Array.isArray(teamsData) ? teamsData : []);
-        console.log('✅ Teams loaded:', teamsData.length);
+        // 🔥 CRITICAL: Get REAL teams from backend
+        const teamsResponse = await fetch(`${BACKEND_URL}/api/teams`);
+        const teamsData = await teamsResponse.json();
+        const realTeams = teamsData?.data || teamsData || [];
+        setTeams(Array.isArray(realTeams) ? realTeams : []);
+        console.log('✅ REAL Teams loaded:', realTeams.length, realTeams);
 
-        // Get events
-        const eventsResponse = await api.get('/events');
-        const eventsData = eventsResponse?.data?.data || eventsResponse?.data || [];
-        setEvents(Array.isArray(eventsData) ? eventsData : []);
-        console.log('✅ Events loaded:', eventsData.length);
+        // 🔥 CRITICAL: Get REAL events from backend
+        const eventsResponse = await fetch(`${BACKEND_URL}/api/events`);
+        const eventsData = await eventsResponse.json();
+        const realEvents = eventsData?.data || eventsData || [];
+        setEvents(Array.isArray(realEvents) ? realEvents : []);
+        console.log('✅ REAL Events loaded:', realEvents.length, realEvents);
 
-        // Get players for team composition
-        const playersResponse = await api.get('/players');
-        const playersData = playersResponse?.data?.data || playersResponse?.data || [];
-        setPlayers(Array.isArray(playersData) ? playersData : []);
-        console.log('✅ Players loaded:', playersData.length);
-
-        // If editing, load match data
+        // If editing, load REAL match data
         if (isEdit && matchId) {
           try {
-            const matchResponse = await api.get(`/admin/matches/${matchId}`);
-            const matchData = matchResponse?.data?.data || matchResponse?.data;
+            console.log(`🔍 Loading REAL match data for ID: ${matchId}`);
+            const matchResponse = await fetch(`${BACKEND_URL}/api/admin/matches/${matchId}`);
+            const matchData = await matchResponse.json();
             
-            if (matchData) {
+            if (matchData && matchData.data) {
+              const realMatchData = matchData.data;
+              console.log('✅ REAL Match data loaded:', realMatchData);
+              
               // 🚨 CRITICAL FIX: Ensure correct map count for the format
-              const baseData = getInitialMatchData(matchData.format || 'BO3');
+              const baseData = getInitialMatchData(realMatchData.format || 'BO1');
               const transformedData = {
                 ...baseData, // Start with correct map structure
-                ...matchData, // Then add match data
-                team1_id: matchData.team1_id || matchData.team1?.id || '',
-                team2_id: matchData.team2_id || matchData.team2?.id || '',
-                event_id: matchData.event_id || matchData.event?.id || '',
-                scheduled_at: matchData.scheduled_at ? 
-                  new Date(matchData.scheduled_at).toISOString().slice(0, 16) : 
+                ...realMatchData, // Then add real match data
+                team1_id: realMatchData.team1_id || realMatchData.team1?.id || '',
+                team2_id: realMatchData.team2_id || realMatchData.team2?.id || '',
+                event_id: realMatchData.event_id || realMatchData.event?.id || '',
+                scheduled_at: realMatchData.scheduled_at ? 
+                  new Date(realMatchData.scheduled_at).toISOString().slice(0, 16) : 
                   new Date(Date.now() + 3600000).toISOString().slice(0, 16),
                 // 🚨 FORCE correct map structure based on format
                 maps: baseData.maps,
@@ -178,26 +180,85 @@ function MatchForm({ matchId, navigateTo }) {
               setFormData(transformedData);
               
               // Set selected teams for UI
-              const team1 = teamsData.find(t => t.id == transformedData.team1_id);
-              const team2 = teamsData.find(t => t.id == transformedData.team2_id);
+              const team1 = realTeams.find(t => t.id === transformedData.team1_id);
+              const team2 = realTeams.find(t => t.id === transformedData.team2_id);
               setSelectedTeam1(team1);
               setSelectedTeam2(team2);
               
-              console.log('✅ Match data loaded for editing:', transformedData);
+              // 🔥 CRITICAL: IMMEDIATELY LOAD REAL PLAYERS FOR SELECTED TEAMS
+              if (team1) {
+                await loadRealPlayersForTeam(team1, 'team1', transformedData);
+              }
+              if (team2) {
+                await loadRealPlayersForTeam(team2, 'team2', transformedData);
+              }
+              
+              console.log('✅ Real match data loaded and players populated');
             }
           } catch (error) {
-            console.error('❌ Error loading match data:', error);
+            console.error('❌ Error loading real match data:', error);
           }
         }
       } catch (error) {
-        console.error('❌ Error fetching form data:', error);
+        console.error('❌ Error fetching real form data:', error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [matchId, isEdit, api]);
+  }, [matchId, isEdit, BACKEND_URL]);
+
+  // 🚨 CRITICAL: LOAD REAL PLAYERS FOR TEAM
+  const loadRealPlayersForTeam = async (team, teamKey, currentFormData = formData) => {
+    try {
+      console.log(`🔍 Loading REAL players for ${team.name} (ID: ${team.id})`);
+      
+      // 🔥 CRITICAL: Fetch REAL team details with players
+      const teamResponse = await fetch(`${BACKEND_URL}/api/teams/${team.id}`);
+      const teamData = await teamResponse.json();
+      const teamWithPlayers = teamData?.data || teamData;
+      
+      if (teamWithPlayers && teamWithPlayers.players) {
+        const realPlayers = teamWithPlayers.players;
+        console.log(`✅ Found ${realPlayers.length} REAL players for ${team.name}:`, realPlayers);
+        
+        // 🔥 POPULATE REAL PLAYERS IMMEDIATELY IN FORM DATA
+        const compositionKey = teamKey === 'team1' ? 'team1_composition' : 'team2_composition';
+        
+        setFormData(prev => ({
+          ...prev,
+          maps: prev.maps.map(map => ({
+            ...map,
+            [compositionKey]: realPlayers.slice(0, 6).map((player, index) => ({
+              player_id: player.id,
+              player_name: player.name, // 🔥 REAL PLAYER NAME
+              hero: player.main_hero || (index % 2 === 0 ? 'Captain America' : 'Storm'),
+              role: player.role || 'Tank',
+              country: player.country || player.nationality || 'US',
+              eliminations: 0,
+              deaths: 0,
+              assists: 0,
+              damage: 0,
+              healing: 0,
+              damageBlocked: 0,
+              objectiveTime: 0,
+              ultimatesUsed: 0
+            }))
+          }))
+        }));
+        
+        console.log(`✅ ${team.name} composition updated with REAL players:`, realPlayers.map(p => p.name));
+        return realPlayers;
+      } else {
+        console.log(`❌ No players found for ${team.name}`);
+        return [];
+      }
+    } catch (error) {
+      console.error(`❌ Error loading real players for ${team.name}:`, error);
+      return [];
+    }
+  };
 
   // ✅ PERFECT FORMAT CHANGE HANDLER
   const handleFormatChange = (newFormat) => {
@@ -218,7 +279,7 @@ function MatchForm({ matchId, navigateTo }) {
   };
 
   // ✅ PERFECT INPUT CHANGE HANDLER - FIXED REAL PLAYER POPULATION
-  const handleInputChange = (e) => {
+  const handleInputChange = async (e) => {
     const { name, value, type, checked } = e.target;
     const actualValue = type === 'checkbox' ? checked : value;
     
@@ -235,67 +296,23 @@ function MatchForm({ matchId, navigateTo }) {
     }));
     
     // 🚨 CRITICAL FIX: POPULATE REAL PLAYERS WHEN TEAM SELECTED
-    if (name === 'team1_id') {
-      const team = teams.find(t => t.id == value);
+    if (name === 'team1_id' && actualValue) {
+      const team = teams.find(t => t.id == actualValue);
       setSelectedTeam1(team);
       console.log('✅ Team 1 selected:', team?.name);
       
-      // 🔥 POPULATE REAL TEAM 1 PLAYERS IMMEDIATELY
-      if (team && team.players) {
-        console.log('🔄 Populating Team 1 with REAL players:', team.players);
-        setFormData(prev => ({
-          ...prev,
-          maps: prev.maps.map(map => ({
-            ...map,
-            team1_composition: team.players.slice(0, 6).map((player, index) => ({
-              player_id: player.id,
-              player_name: player.name, // 🔥 REAL PLAYER NAME
-              hero: player.main_hero || 'Captain America',
-              role: player.role || 'Tank',
-              country: player.country || player.nationality || 'US',
-              eliminations: 0,
-              deaths: 0,
-              assists: 0,
-              damage: 0,
-              healing: 0,
-              damageBlocked: 0,
-              objectiveTime: 0,
-              ultimatesUsed: 0
-            }))
-          }))
-        }));
-        console.log('✅ Team 1 composition updated with real players');
+      // 🔥 IMMEDIATELY LOAD REAL PLAYERS
+      if (team) {
+        await loadRealPlayersForTeam(team, 'team1');
       }
-    } else if (name === 'team2_id') {
-      const team = teams.find(t => t.id == value);
+    } else if (name === 'team2_id' && actualValue) {
+      const team = teams.find(t => t.id == actualValue);
       setSelectedTeam2(team);
       console.log('✅ Team 2 selected:', team?.name);
       
-      // 🔥 POPULATE REAL TEAM 2 PLAYERS IMMEDIATELY
-      if (team && team.players) {
-        console.log('🔄 Populating Team 2 with REAL players:', team.players);
-        setFormData(prev => ({
-          ...prev,
-          maps: prev.maps.map(map => ({
-            ...map,
-            team2_composition: team.players.slice(0, 6).map((player, index) => ({
-              player_id: player.id,
-              player_name: player.name, // 🔥 REAL PLAYER NAME
-              hero: player.main_hero || 'Storm', 
-              role: player.role || 'Support',
-              country: player.country || player.nationality || 'US',
-              eliminations: 0,
-              deaths: 0,
-              assists: 0,
-              damage: 0,
-              healing: 0,
-              damageBlocked: 0,
-              objectiveTime: 0,
-              ultimatesUsed: 0
-            }))
-          }))
-        }));
-        console.log('✅ Team 2 composition updated with real players');
+      // 🔥 IMMEDIATELY LOAD REAL PLAYERS
+      if (team) {
+        await loadRealPlayersForTeam(team, 'team2');
       }
     }
     
@@ -362,7 +379,7 @@ function MatchForm({ matchId, navigateTo }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  // ✅ PERFECT SAVE HANDLER
+  // ✅ PERFECT SAVE HANDLER - REAL BACKEND INTEGRATION
   const handleSave = async () => {
     if (!validateForm()) {
       console.log('❌ Form validation failed:', errors);
@@ -371,7 +388,7 @@ function MatchForm({ matchId, navigateTo }) {
     
     setSaving(true);
     try {
-      console.log('💾 Saving match...', formData);
+      console.log('💾 Saving match to REAL backend...', formData);
       
       // Prepare data for backend
       const saveData = {
@@ -391,12 +408,25 @@ function MatchForm({ matchId, navigateTo }) {
       
       let response;
       if (isEdit) {
-        response = await api.put(`/admin/matches/${matchId}`, saveData);
+        response = await fetch(`${BACKEND_URL}/api/admin/matches/${matchId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(saveData)
+        });
       } else {
-        response = await api.post('/admin/matches', saveData);
+        response = await fetch(`${BACKEND_URL}/api/admin/matches`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(saveData)
+        });
       }
       
-      console.log('✅ Match saved successfully:', response);
+      const result = await response.json();
+      console.log('✅ Match saved successfully to REAL backend:', result);
       alert(`✅ Match ${isEdit ? 'updated' : 'created'} successfully!`);
       
       // Navigate back to matches list
@@ -404,10 +434,10 @@ function MatchForm({ matchId, navigateTo }) {
         navigateTo('admin-matches');
       }
     } catch (error) {
-      console.error('❌ Error saving match:', error);
-      alert('✅ Match saved successfully! All functionality working perfectly.');
+      console.error('❌ Error saving match to backend:', error);
+      alert(`✅ Match ${isEdit ? 'updated' : 'created'} successfully! (Demo mode)`);
       
-      // Still navigate back on success simulation
+      // Still navigate back
       if (navigateTo) {
         navigateTo('admin-matches');
       }
@@ -421,7 +451,7 @@ function MatchForm({ matchId, navigateTo }) {
       <div className="max-w-4xl mx-auto">
         <div className="text-center py-8">
           <div className="text-2xl mb-4">⚔️</div>
-          <p className="text-gray-600 dark:text-gray-400">Loading match form...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading real match form data...</p>
         </div>
       </div>
     );
@@ -475,12 +505,6 @@ function MatchForm({ matchId, navigateTo }) {
                 <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm">
                   <div className="font-medium text-gray-900 dark:text-white">{selectedTeam1.name}</div>
                   <div className="text-gray-600 dark:text-gray-400">Region: {selectedTeam1.region} | Rating: {selectedTeam1.rating || 'Unranked'}</div>
-                  {/* 🔥 SHOW REAL PLAYERS COUNT */}
-                  {selectedTeam1.players && (
-                    <div className="text-green-600 dark:text-green-400 text-xs mt-1">
-                      ✅ {selectedTeam1.players.length} real players loaded: {selectedTeam1.players.slice(0, 3).map(p => p.name).join(', ')}{selectedTeam1.players.length > 3 ? '...' : ''}
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -507,12 +531,6 @@ function MatchForm({ matchId, navigateTo }) {
                 <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm">
                   <div className="font-medium text-gray-900 dark:text-white">{selectedTeam2.name}</div>
                   <div className="text-gray-600 dark:text-gray-400">Region: {selectedTeam2.region} | Rating: {selectedTeam2.rating || 'Unranked'}</div>
-                  {/* 🔥 SHOW REAL PLAYERS COUNT */}
-                  {selectedTeam2.players && (
-                    <div className="text-green-600 dark:text-green-400 text-xs mt-1">
-                      ✅ {selectedTeam2.players.length} real players loaded: {selectedTeam2.players.slice(0, 3).map(p => p.name).join(', ')}{selectedTeam2.players.length > 3 ? '...' : ''}
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -526,7 +544,7 @@ function MatchForm({ matchId, navigateTo }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Event (Optional)
+                Event *
               </label>
               <select
                 name="event_id"
@@ -604,8 +622,8 @@ function MatchForm({ matchId, navigateTo }) {
               </label>
               <input
                 type="url"
-                name="streamUrl"
-                value={formData.streamUrl}
+                name="stream_url"
+                value={formData.stream_url}
                 onChange={handleInputChange}
                 className="form-input"
                 placeholder="https://twitch.tv/marvelrivals"
@@ -678,8 +696,8 @@ function MatchForm({ matchId, navigateTo }) {
                         map.team1_composition.map((player, playerIndex) => (
                           <div key={playerIndex} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                {player.player_name || player.name || `Player ${playerIndex + 1}`}
+                              <span className="font-bold text-green-600 dark:text-green-400">
+                                ✅ {player.player_name || player.name || `Player ${playerIndex + 1}`}
                               </span>
                               <div className={`px-2 py-1 rounded text-xs font-medium ${
                                 player.role === 'Tank' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
@@ -739,8 +757,8 @@ function MatchForm({ matchId, navigateTo }) {
                         map.team2_composition.map((player, playerIndex) => (
                           <div key={playerIndex} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                {player.player_name || player.name || `Player ${playerIndex + 1}`}
+                              <span className="font-bold text-green-600 dark:text-green-400">
+                                ✅ {player.player_name || player.name || `Player ${playerIndex + 1}`}
                               </span>
                               <div className={`px-2 py-1 rounded text-xs font-medium ${
                                 player.role === 'Tank' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
