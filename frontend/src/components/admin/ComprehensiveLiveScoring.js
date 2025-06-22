@@ -261,15 +261,20 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     team2FirstPlayer: currentMapData?.team2Players?.[0]?.name
   });
 
-  // UPDATE PLAYER STAT
+  // UPDATE PLAYER STAT - FIXED CRITICAL BUG
   const updatePlayerStat = (mapIndex, team, playerIndex, statType, value) => {
+    console.log(`📊 Updating ${team} player ${playerIndex} ${statType} to ${value}`);
     setMatchStats(prev => {
       const newStats = { ...prev };
-      newStats.maps[mapIndex].team1Players[playerIndex][statType] = team === 'team1' ? value : newStats.maps[mapIndex].team1Players[playerIndex][statType];
-      newStats.maps[mapIndex].team2Players[playerIndex][statType] = team === 'team2' ? value : newStats.maps[mapIndex].team2Players[playerIndex][statType];
-
-      // No team totals needed with new structure
       
+      // 🚨 CRITICAL FIX: Update only the correct team's player
+      if (team === 'team1') {
+        newStats.maps[mapIndex].team1Players[playerIndex][statType] = value;
+      } else if (team === 'team2') {
+        newStats.maps[mapIndex].team2Players[playerIndex][statType] = value;
+      }
+      
+      console.log(`✅ Stat updated: ${team} player ${playerIndex} now has ${statType}=${value}`);
       return newStats;
     });
   };
