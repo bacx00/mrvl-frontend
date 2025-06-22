@@ -92,15 +92,17 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
         const teamPlayers = data.data?.players || [];
         console.log(`✅ Found ${teamPlayers.length} real players for ${teamName}:`, teamPlayers);
         
-        // Convert real players to match format
+        // Convert real players to match format - FIXED AVATAR AND COUNTRY
         return teamPlayers.slice(0, 6).map((player, index) => {
-          console.log(`🏳️ Player ${player.name} country: ${player.country}`);
+          console.log(`🏳️ Player ${player.name} full data:`, player);
+          console.log(`🖼️ Player ${player.name} avatar path:`, player.avatar);
           return {
             id: player.id,
             name: player.name,
-            hero: player.main_hero || 'Captain America', // ✅ FIXED: Use main_hero not primary_hero
+            hero: player.main_hero || 'Captain America',
             role: player.role || 'Tank',
-            country: player.country || 'US', // ✅ REAL player country from backend
+            country: player.country || player.nationality || 'US', // ✅ FIXED: Try both fields
+            avatar: player.avatar, // ✅ Keep backend avatar path
             eliminations: 0,
             deaths: 0,
             assists: 0,
