@@ -517,7 +517,58 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg max-w-7xl w-full max-h-[95vh] overflow-y-auto">
-        {/* HEADER */}
+        {/* 🎮 MARVEL RIVALS MATCH CONTROL PANEL */}
+        <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-6">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+            🎮 Marvel Rivals Match Control
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* MATCH STATUS */}
+            <div className="bg-white dark:bg-gray-700 rounded-lg p-3">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Match Status</h4>
+              <select
+                value={matchStatus}
+                onChange={(e) => handleMatchStatusChange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                <option value="upcoming">⏳ Upcoming</option>
+                <option value="live">🔴 Live</option>
+                <option value="paused">⏸️ Paused</option>
+                <option value="completed">✅ Completed</option>
+              </select>
+            </div>
+            
+            {/* MATCH TIMER */}
+            <div className="bg-white dark:bg-gray-700 rounded-lg p-3">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Match Timer</h4>
+              <div className="text-2xl font-mono font-bold text-center">
+                {matchStatus === 'live' ? (
+                  <span className="text-red-500">🔴 {matchTimer}</span>
+                ) : matchStatus === 'paused' ? (
+                  <span className="text-yellow-500">⏸️ {matchTimer}</span>
+                ) : matchStatus === 'completed' ? (
+                  <span className="text-green-500">✅ {matchTimer}</span>
+                ) : (
+                  <span className="text-gray-500">⏳ 00:00</span>
+                )}
+              </div>
+            </div>
+            
+            {/* GAME MODE INFO */}
+            <div className="bg-white dark:bg-gray-700 rounded-lg p-3">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                {marvelRivalsMaps[activeMap]?.icon} {marvelRivalsMaps[activeMap]?.mode}
+              </h4>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {getGameModeTiming(marvelRivalsMaps[activeMap]?.mode).description}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                Duration: {getGameModeTiming(marvelRivalsMaps[activeMap]?.mode).totalTime}
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
