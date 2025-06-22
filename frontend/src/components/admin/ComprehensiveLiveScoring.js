@@ -165,9 +165,9 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     console.log('- token exists:', !!token);
     
     const loadRealPlayers = async () => {
-      // 🚨 FORCE RUN - Remove all conditions temporarily
-      if (match && token) {
-        console.log('🔍 ADMIN: FORCE Loading real players...');
+      // 🚨 FORCE RUN - Remove token requirement for demo
+      if (match) {
+        console.log('🔍 ADMIN: FORCE Loading real players (no auth required)...');
         
         const team1Id = match.team1?.id || match.team1_id;
         const team2Id = match.team2?.id || match.team2_id;
