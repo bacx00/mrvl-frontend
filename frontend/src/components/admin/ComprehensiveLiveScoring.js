@@ -579,13 +579,13 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
                                 teamIndex === 0 ? 'border-blue-500' : 'border-red-500'
                               }`}>
                                 <img 
-                                  src={`https://staging.mrvl.net/storage/players/${player.id}/avatar.jpg`}
+                                  src={`https://staging.mrvl.net${player.avatar || `/storage/players/player_${player.id}_avatar.png`}`}
                                   alt={player.name}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
                                     console.log(`❌ Real player avatar failed for: ${player.name} (ID: ${player.id}), trying fallback...`);
-                                    // Try alternative avatar URL
-                                    e.target.src = `https://staging.mrvl.net/api/players/${player.id}/avatar`;
+                                    // Try direct storage path as fallback
+                                    e.target.src = `https://staging.mrvl.net/storage/players/player_${player.id}_avatar.png`;
                                     e.target.onerror = () => {
                                       console.log(`❌ All avatar attempts failed for: ${player.name}, showing fallback`);
                                       e.target.style.display = 'none';
