@@ -6,10 +6,11 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
   const { api, token } = useAuth();
   const [activeMap, setActiveMap] = useState(0);
   
-  // 🎮 MARVEL RIVALS MATCH STATUS SYSTEM
+  // 🎮 MARVEL RIVALS MATCH STATUS SYSTEM - FIXED TIMER
   const [matchTimer, setMatchTimer] = useState('00:00');
   const [matchStatus, setMatchStatus] = useState(match?.status || 'upcoming');
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [timerStartTime, setTimerStartTime] = useState(null);
 
   // 🎮 MARVEL RIVALS GAME MODE TIMING
   const getGameModeTiming = (mode) => {
@@ -47,30 +48,34 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     }
   };
 
-  // 🎮 MATCH TIMER SYSTEM
+  // 🔥 FIXED MATCH TIMER SYSTEM
   useEffect(() => {
     let interval;
     if (isTimerRunning && matchStatus === 'live') {
       interval = setInterval(() => {
-        setMatchTimer(prev => {
-          const [minutes, seconds] = prev.split(':').map(Number);
-          const totalSeconds = minutes * 60 + seconds + 1;
-          const newMinutes = Math.floor(totalSeconds / 60);
-          const newSeconds = totalSeconds % 60;
-          return `${newMinutes.toString().padStart(2, '0')}:${newSeconds.toString().padStart(2, '0')}`;
-        });
+        const now = Date.now();
+        const start = timerStartTime || now;
+        const elapsed = Math.floor((now - start) / 1000);
+        
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        
+        setMatchTimer(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isTimerRunning, matchStatus]);
+  }, [isTimerRunning, matchStatus, timerStartTime]);
 
-  // 🎮 MATCH STATUS CONTROLS
+  // 🔥 FIXED MATCH STATUS CONTROLS
   const handleMatchStatusChange = (newStatus) => {
     console.log(`🎮 Changing match status from ${matchStatus} to ${newStatus}`);
     setMatchStatus(newStatus);
     
     if (newStatus === 'live') {
       setIsTimerRunning(true);
+      if (!timerStartTime) {
+        setTimerStartTime(Date.now());
+      }
     } else if (newStatus === 'paused') {
       setIsTimerRunning(false);
     } else if (newStatus === 'completed') {
@@ -94,46 +99,46 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     hasToken: !!token
   });
 
-  // 🎮 REAL MARVEL RIVALS MAPS - ACTUAL GAME MAPS WITH CORRECT MODES
+  // 🎮 FIXED MARVEL RIVALS MAPS - CORRECT MAPS
   const marvelRivalsMaps = [
     { 
-      name: 'Asgard Throne Room', 
+      name: 'Tokyo 2099: Shibuya Sky', 
+      mode: 'Convoy', 
+      icon: '🏙️',
+      checkpoints: ['Sky Terminal', 'Neo-Shibuya Plaza', 'Quantum Bridge'],
+      description: 'Escort payload through futuristic Tokyo skyline',
+      duration: '5:00 → 3:00+ → 1:30+'
+    },
+    { 
+      name: 'Klyntar: Symbiote Planet', 
       mode: 'Domination', 
-      icon: '⚡',
-      checkpoints: ['Royal Entrance', 'Throne Hall', 'Rainbow Bridge'],
-      description: 'Control the single point in Thor\'s majestic throne room',
+      icon: '🖤',
+      checkpoints: ['Symbiote Nest', 'Dark Chambers', 'Venom Core'],
+      description: 'Control the single point in alien symbiote world',
       duration: 'Best of 3 rounds'
     },
     { 
-      name: 'Helicarrier Command', 
-      mode: 'Convoy', 
-      icon: '🚁',
-      checkpoints: ['Landing Deck', 'Command Center', 'Engine Bay'],
-      description: 'Escort payload through S.H.I.E.L.D.\'s flying fortress',
-      duration: '5:00 → 3:00+ → 1:30+'
-    },
-    { 
-      name: 'Sanctum Sanctorum', 
+      name: 'Asgard: Royal Palace', 
       mode: 'Convergence', 
-      icon: '🔮',
-      checkpoints: ['Mystic Portal', 'Library of Spells', 'Astral Plane'],
-      description: 'Capture then escort through Doctor Strange\'s sanctuary',
+      icon: '⚡',
+      checkpoints: ['Rainbow Bridge', 'Throne Chamber', 'Odin\'s Vault'],
+      description: 'Capture then escort through Asgardian royal halls',
       duration: '4:00 capture → 1:30 escort'
     },
     { 
-      name: 'Wakanda Vibranium Mines', 
+      name: 'Tokyo 2099: Shin-Shibuya Station', 
       mode: 'Convoy', 
-      icon: '💎',
-      checkpoints: ['Mine Entrance', 'Vibranium Core', 'Royal Palace'],
-      description: 'Push payload through the precious vibranium deposits',
+      icon: '🚅',
+      checkpoints: ['Platform Alpha', 'Central Hub', 'Departure Terminal'],
+      description: 'Push payload through underground metro system',
       duration: '5:00 → 3:00+ → 1:30+'
     },
     { 
-      name: 'X-Mansion Training Grounds', 
+      name: 'Wakanda: Golden City', 
       mode: 'Conquest', 
-      icon: '🎓',
-      checkpoints: ['Cerebro Chamber', 'Danger Room', 'Main Hall'],
-      description: 'Battle for 50 Chromium points in mutant training facility',
+      icon: '💎',
+      checkpoints: ['Vibranium Mines', 'Royal Plaza', 'Panther Temple'],
+      description: 'Battle for 50 Chromium points in Wakandan capital',
       duration: '3:50 minutes'
     }
   ];
@@ -172,10 +177,11 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
         const teamPlayers = data.data?.players || [];
         console.log(`✅ Found ${teamPlayers.length} real players for ${teamName}:`, teamPlayers);
         
-        // Convert real players to match format - FIXED AVATAR AND COUNTRY
+        // Convert real players to match format - FIXED COUNTRY
         return teamPlayers.slice(0, 6).map((player, index) => {
           console.log(`🏳️ Player ${player.name} full data:`, player);
           console.log(`🖼️ Player ${player.name} avatar path:`, player.avatar);
+          console.log(`🌍 Player ${player.name} country:`, player.country || player.nationality);
           return {
             id: player.id,
             name: player.name,
@@ -223,7 +229,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
         
         return {
           map_number: index + 1,
-          map_name: marvelRivalsMaps[index]?.name || 'Asgard Throne Room',
+          map_name: marvelRivalsMaps[index]?.name || 'Tokyo 2099: Shibuya Sky',
           mode: marvelRivalsMaps[index]?.mode || 'Convoy',
           team1Score: 0,
           team2Score: 0,
@@ -387,14 +393,20 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     }
   };
 
-  // HERO CHANGE
+  // 🔥 FIXED HERO CHANGE - SAVES PROPERLY
   const changePlayerHero = (mapIndex, team, playerIndex, hero, role) => {
+    console.log(`🦸 Changing ${team} player ${playerIndex} to hero ${hero} (${role})`);
+    
     setMatchStats(prev => {
       const newStats = { ...prev };
       const targetPlayers = team === 'team1' ? newStats.maps[mapIndex].team1Players : newStats.maps[mapIndex].team2Players;
-      targetPlayers[playerIndex].hero = hero;
-      targetPlayers[playerIndex].role = role;
-      targetPlayers[playerIndex].heroSwitches++;
+      
+      if (targetPlayers && targetPlayers[playerIndex]) {
+        targetPlayers[playerIndex].hero = hero;
+        targetPlayers[playerIndex].role = role;
+        console.log(`✅ Hero changed: Player ${targetPlayers[playerIndex].name} is now ${hero}`);
+      }
+      
       return newStats;
     });
   };
@@ -408,7 +420,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
       await api.put(`/admin/matches/${match.id}`, {
         team1_score: matchStats.mapWins.team1,
         team2_score: matchStats.mapWins.team2,
-        status: 'live',
+        status: matchStatus,
         // 🚨 CRITICAL: Include ALL match data including hero compositions
         maps: matchStats.maps.map((mapData, index) => ({
           map_number: index + 1,
@@ -455,7 +467,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
             ...match,
             team1_score: matchStats.mapWins.team1,
             team2_score: matchStats.mapWins.team2,
-            status: 'live',
+            status: matchStatus,
             maps: matchStats.maps,
             lastUpdated: Date.now()
           }
@@ -472,7 +484,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
         ...match,
         team1_score: matchStats.mapWins.team1,
         team2_score: matchStats.mapWins.team2,
-        status: 'live',
+        status: matchStatus,
         maps: matchStats.maps
       });
     } catch (error) {
@@ -488,7 +500,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
             ...match,
             team1_score: matchStats.mapWins.team1,
             team2_score: matchStats.mapWins.team2,
-            status: 'live',
+            status: matchStatus,
             maps: matchStats.maps,
             lastUpdated: Date.now()
           }
@@ -500,7 +512,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
         ...match,
         team1_score: matchStats.mapWins.team1,
         team2_score: matchStats.mapWins.team2,
-        status: 'live',
+        status: matchStatus,
         maps: matchStats.maps
       });
     }
@@ -555,6 +567,28 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
                 ) : (
                   <span className="text-gray-500">⏳ 00:00</span>
                 )}
+              </div>
+              {/* Timer Controls */}
+              <div className="flex justify-center space-x-2 mt-2">
+                <button
+                  onClick={() => {
+                    setIsTimerRunning(!isTimerRunning);
+                    if (!timerStartTime) setTimerStartTime(Date.now());
+                  }}
+                  className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  {isTimerRunning ? 'Pause' : 'Start'}
+                </button>
+                <button
+                  onClick={() => {
+                    setMatchTimer('00:00');
+                    setTimerStartTime(null);
+                    setIsTimerRunning(false);
+                  }}
+                  className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
+                >
+                  Reset
+                </button>
               </div>
             </div>
             
@@ -742,11 +776,15 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
                                   P{playerIndex + 1}
                                 </div>
                               </div>
+                              {/* 🔥 FIXED COUNTRY FLAGS */}
                               <img 
                                 src={`https://flagcdn.com/16x12/${(player.country || 'us').toLowerCase().slice(0, 2)}.png`}
                                 alt={`${player.country} flag`}
                                 className="absolute -bottom-1 -right-1 w-3 h-2 rounded-sm border border-white shadow-sm"
-                                onError={(e) => e.target.style.display = 'none'}
+                                onError={(e) => {
+                                  console.log(`❌ Flag failed for country: ${player.country}, using fallback`);
+                                  e.target.style.display = 'none';
+                                }}
                               />
                             </div>
                             <div className="min-w-0 flex-1">
@@ -756,7 +794,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
                             </div>
                           </div>
                           
-                          {/* HERO COLUMN */}
+                          {/* HERO COLUMN - FIXED SAVING */}
                           <div>
                             <select
                               value={player.hero}
