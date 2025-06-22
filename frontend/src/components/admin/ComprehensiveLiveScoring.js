@@ -510,11 +510,11 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
                   <div className="space-y-3">
                     {(currentMapData?.[`${team}Players`] || currentMapData?.[`${team}_composition`] || []).map((player, playerIndex) => (
                       <div key={playerIndex} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-                        {/* 📊 PLAYER ROW MATCHING HEADERS: PLAYER | HERO | E | D | A | K/D | DMG | HEAL | BLK */}
-                        <div className="grid grid-cols-9 gap-2 items-center text-sm">
-                          {/* PLAYER COLUMN */}
-                          <div className="flex items-center space-x-2">
-                            <div className="relative">
+                        {/* 📊 PLAYER ROW: PLAYER | HERO | E | D | A | K/D | DMG | HEAL | BLK */}
+                        <div className="grid grid-cols-[2fr_2fr_1fr_1fr_1fr_1fr_1.5fr_1.5fr_1.5fr] gap-2 items-center text-sm">
+                          {/* PLAYER COLUMN - MORE SPACE */}
+                          <div className="flex items-center space-x-2 min-w-0">
+                            <div className="relative flex-shrink-0">
                               <div className={`w-8 h-8 rounded-full overflow-hidden border-2 ${
                                 teamIndex === 0 ? 'border-blue-500' : 'border-red-500'
                               }`}>
@@ -541,8 +541,10 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
                                 onError={(e) => e.target.style.display = 'none'}
                               />
                             </div>
-                            <div>
-                              <div className="font-bold text-gray-900 dark:text-white text-xs">{player.name}</div>
+                            <div className="min-w-0 flex-1">
+                              <div className="font-bold text-gray-900 dark:text-white text-sm truncate" title={player.name}>
+                                {player.name}
+                              </div>
                             </div>
                           </div>
                           
