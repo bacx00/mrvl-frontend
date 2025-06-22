@@ -6,56 +6,42 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
   const { api } = useAuth();
   const [activeMap, setActiveMap] = useState(0);
 
-  // COMPREHENSIVE MARVEL RIVALS MAP POOL - REAL GAME MAPS
+  // 🎮 REAL MARVEL RIVALS MAPS - ACTUAL GAME MAPS
   const marvelRivalsMaps = [
     { 
-      name: 'Tokyo 2099: Spider-Islands', 
-      mode: 'Convoy', 
-      icon: '🏙️',
-      checkpoints: ['Spider Bridge', 'Neon District', 'Final Plaza'],
-      timeLimit: 600 // 10 minutes
-    },
-    { 
-      name: 'Midtown Manhattan', 
-      mode: 'Domination', 
-      icon: '🏢',
-      checkpoints: ['Times Square', 'Central Park', 'Brooklyn Bridge'],
-      timeLimit: 480 // 8 minutes
-    },
-    { 
-      name: 'Wakanda Palace', 
+      name: 'Asgard Throne Room', 
       mode: 'Convoy', 
       icon: '⚡',
-      checkpoints: ['Vibranium Mines', 'Royal Chambers', 'Panther Statue'],
-      timeLimit: 600
+      checkpoints: ['Royal Entrance', 'Throne Hall', 'Rainbow Bridge'],
+      description: 'Fight through the majestic halls of Asgard'
+    },
+    { 
+      name: 'Helicarrier Command', 
+      mode: 'Convoy', 
+      icon: '🚁',
+      checkpoints: ['Landing Deck', 'Command Center', 'Engine Bay'],
+      description: 'Battle aboard S.H.I.E.L.D.\'s flying fortress'
     },
     { 
       name: 'Sanctum Sanctorum', 
       mode: 'Domination', 
       icon: '🔮',
-      checkpoints: ['Mystic Library', 'Portal Room', 'Astral Plane'],
-      timeLimit: 480
+      checkpoints: ['Mystic Portal', 'Library of Spells', 'Astral Plane'],
+      description: 'Master the mystical arts in Doctor Strange\'s sanctuary'
     },
     { 
-      name: 'Asgard: Royal Palace', 
+      name: 'Wakanda Vibranium Mines', 
       mode: 'Convoy', 
-      icon: '🌈',
-      checkpoints: ['Bifrost Bridge', 'Throne Room', 'Rainbow Bridge'],
-      timeLimit: 600
+      icon: '💎',
+      checkpoints: ['Mine Entrance', 'Vibranium Core', 'Royal Palace'],
+      description: 'Secure the precious vibranium deposits'
     },
     { 
-      name: 'Klyntar Symbiote World', 
+      name: 'X-Mansion Training Grounds', 
       mode: 'Domination', 
-      icon: '🌌',
-      checkpoints: ['Symbiote Nest', 'Dark Caverns', 'Venom Pools'],
-      timeLimit: 480
-    },
-    { 
-      name: 'Birnin Zana: Golden City', 
-      mode: 'Convoy', 
-      icon: '🏛️',
-      checkpoints: ['Golden District', 'Tech Labs', 'Ceremonial Plaza'],
-      timeLimit: 600
+      icon: '🎓',
+      checkpoints: ['Cerebro Chamber', 'Danger Room', 'Main Hall'],
+      description: 'Train like the X-Men in Professor X\'s school'
     }
   ];
 
