@@ -83,9 +83,9 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
         return teamPlayers.slice(0, 6).map((player, index) => ({
           id: player.id,
           name: player.name,
-          hero: player.primary_hero || 'Captain America', // Use player's primary hero
+          hero: player.main_hero || 'Captain America', // ✅ FIXED: Use main_hero not primary_hero
           role: player.role || 'Tank',
-          country: player.country || 'US', // Use player's REAL country
+          country: 'US', // ✅ TODO: Get from player profile or team country
           eliminations: 0,
           deaths: 0,
           assists: 0,
