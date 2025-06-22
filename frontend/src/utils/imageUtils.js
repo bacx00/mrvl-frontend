@@ -340,6 +340,34 @@ export const getCleanHeroName = (heroName) => {
 };
 
 /**
+ * 🎮 GET CLEAN HERO DISPLAY NAME FOR TEXT FALLBACKS
+ */
+export const getCleanHeroName = (heroName) => {
+  if (!heroName) return 'Hero';
+  
+  // For text fallbacks, return a clean abbreviated version that fits in small spaces
+  const abbreviations = {
+    'Iron Man': 'IM',
+    'Spider-Man': 'SM', 
+    'Thor': 'Thor',
+    'Storm': 'Storm',
+    'Rocket Raccoon': 'Rocket',
+    'Jeff the Land Shark': 'Jeff',
+    'Cloak & Dagger': 'C&D',
+    'Doctor Strange': 'Strange',
+    'Captain America': 'Cap',
+    'Star-Lord': 'Star',
+    'Black Widow': 'Widow',
+    'Winter Soldier': 'Winter',
+    'Squirrel Girl': 'Squirrel',
+    'Adam Warlock': 'Warlock',
+    'Luna Snow': 'Luna'
+  };
+  
+  return abbreviations[heroName] || heroName.split(' ')[0] || heroName;
+};
+
+/**
  * 🎮 GET HERO ROLE FOR STYLING
  */
 export const getHeroRole = (heroName) => {
