@@ -197,6 +197,57 @@ function MatchDetailPage({ params, navigateTo }) {
     }
   }, [matchId]);
 
+  // 🎮 FETCH REAL TEAM PLAYERS AND UPDATE MATCH DATA
+  useEffect(() => {
+    const updateMatchWithRealPlayers = async () => {
+      if (match?.team1?.id && match?.team2?.id && token) {
+        console.log('🔍 MatchDetail: Loading REAL team players for match:', match.id);
+        console.log('🔍 MatchDetail: Team 1:', match.team1.name, 'ID:', match.team1.id);
+        console.log('🔍 MatchDetail: Team 2:', match.team2.name, 'ID:', match.team2.id);
+        
+        try {
+          const [team1RealPlayers, team2RealPlayers] = await Promise.all([
+            fetchRealTeamPlayers(match.team1.id, match.team1.name),
+            fetchRealTeamPlayers(match.team2.id, match.team2.name)
+          ]);
+          
+          console.log('✅ MatchDetail: Real players fetched:');
+          console.log('Team 1 real players:', team1RealPlayers);
+          console.log('Team 2 real players:', team2RealPlayers);
+          
+          // 🚨 FORCE UPDATE MATCH DATA WITH REAL PLAYERS
+          if (team1RealPlayers.length > 0 || team2RealPlayers.length > 0) {
+            console.log('🔄 MatchDetail: FORCING match data update with real players...');
+            
+            setMatch(prevMatch => {
+              if (!prevMatch) return prevMatch;
+              
+              const updatedMatch = {
+                ...prevMatch,
+                maps: prevMatch.maps?.map(map => ({
+                  ...map,
+                  team1Players: team1RealPlayers.length > 0 ? team1RealPlayers : map.team1Players,
+                  team2Players: team2RealPlayers.length > 0 ? team2RealPlayers : map.team2Players
+                })) || []
+              };
+              
+              console.log('✅ MatchDetail: Updated match with real players:', updatedMatch);
+              setRealPlayersLoaded(true);
+              return updatedMatch;
+            });
+          }
+        } catch (error) {
+          console.error('❌ MatchDetail: Error loading real players:', error);
+        }
+      }
+    };
+    
+    // Only run if we have match data and haven't loaded real players yet
+    if (match && !realPlayersLoaded) {
+      updateMatchWithRealPlayers();
+    }
+  }, [match?.team1?.id, match?.team2?.id, match?.id, token, realPlayersLoaded]);
+
   // PHASE 4: FETCH MATCH COMMENTS
   const fetchComments = async () => {
     if (!matchId) return;
