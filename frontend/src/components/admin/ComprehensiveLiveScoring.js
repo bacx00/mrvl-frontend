@@ -152,87 +152,78 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     };
   });
 
-  // 🔄 FORCE LOAD REAL TEAM PLAYERS IMMEDIATELY
+  // 🚨 FORCE LOAD REAL TEAM PLAYERS IMMEDIATELY - TRIGGER ON EVERY RENDER
   useEffect(() => {
+    console.log('🚨 ADMIN useEffect TRIGGERED!');
+    console.log('- isOpen:', isOpen);
+    console.log('- match exists:', !!match);
+    console.log('- match.team1:', match?.team1);
+    console.log('- match.team2:', match?.team2);
+    console.log('- token exists:', !!token);
+    
     const loadRealPlayers = async () => {
-      console.log('🚨 useEffect TRIGGERED with conditions:');
-      console.log('- match exists:', !!match);
-      console.log('- team1 ID:', match?.team1?.id);
-      console.log('- team2 ID:', match?.team2?.id);
-      console.log('- token exists:', !!token);
-      console.log('- isOpen:', isOpen);
-      
-      if (match?.team1?.id && match?.team2?.id && token && isOpen) {
-        console.log('🔍 Loading REAL team players for match:', match.id);
-        console.log('🔍 Team 1:', match.team1.name, 'ID:', match.team1.id);
-        console.log('🔍 Team 2:', match.team2.name, 'ID:', match.team2.id);
+      // 🚨 FORCE RUN - Remove all conditions temporarily
+      if (match && token) {
+        console.log('🔍 ADMIN: FORCE Loading real players...');
         
-        try {
-          const [team1Players, team2Players] = await Promise.all([
-            fetchTeamPlayers(match.team1.id, match.team1.name),
-            fetchTeamPlayers(match.team2.id, match.team2.name)
-          ]);
-          
-          console.log('✅ Real players fetched:');
-          console.log('Team 1 players:', team1Players);
-          console.log('Team 2 players:', team2Players);
-          
-          // 🚨 FORCE UPDATE MATCH STATS WITH REAL PLAYERS ONLY
-          if (team1Players.length > 0 || team2Players.length > 0) {
-            console.log('🔄 FORCING state update with ONLY real players...');
-            console.log('Current matchStats structure:', matchStats?.maps?.[0]);
+        const team1Id = match.team1?.id || match.team1_id;
+        const team2Id = match.team2?.id || match.team2_id;
+        
+        console.log('🔍 ADMIN: Team IDs - Team1:', team1Id, 'Team2:', team2Id);
+        
+        if (team1Id && team2Id) {
+          try {
+            const [team1Players, team2Players] = await Promise.all([
+              fetchTeamPlayers(team1Id, match.team1?.name || 'Team1'),
+              fetchTeamPlayers(team2Id, match.team2?.name || 'Team2')
+            ]);
             
-            setMatchStats(prevStats => {
-              if (!prevStats) {
-                console.log('❌ prevStats is null, cannot update');
-                return prevStats;
-              }
+            console.log('✅ ADMIN: Real players fetched:');
+            console.log('Team 1 real players:', team1Players);
+            console.log('Team 2 real players:', team2Players);
+            
+            // 🚨 FORCE UPDATE WITH REAL PLAYERS
+            if (team1Players.length > 0 || team2Players.length > 0) {
+              console.log('🔄 ADMIN: FORCING state update with real players...');
               
-              const updatedStats = {
-                ...prevStats,
-                maps: prevStats.maps.map((map, mapIndex) => {
-                  console.log(`🗺️ Map ${mapIndex + 1} BEFORE update:`, {
-                    team1PlayersCount: map.team1Players?.length,
-                    team2PlayersCount: map.team2Players?.length
-                  });
-                  
-                  const updatedMap = {
+              setMatchStats(prevStats => {
+                if (!prevStats) {
+                  console.log('❌ ADMIN: prevStats is null');
+                  return prevStats;
+                }
+                
+                const updatedStats = {
+                  ...prevStats,
+                  maps: prevStats.maps.map((map, mapIndex) => ({
                     ...map,
                     team1Players: team1Players.length > 0 ? team1Players : [],
                     team2Players: team2Players.length > 0 ? team2Players : []
-                  };
-                  
-                  console.log(`🗺️ Map ${mapIndex + 1} AFTER update:`, {
-                    team1PlayersCount: updatedMap.team1Players?.length,
-                    team2PlayersCount: updatedMap.team2Players?.length,
-                    team1FirstPlayer: updatedMap.team1Players?.[0]?.name,
-                    team2FirstPlayer: updatedMap.team2Players?.[0]?.name
-                  });
-                  
-                  return updatedMap;
-                })
-              };
-              
-              console.log('✅ Final updated matchStats with REAL players only');
-              return updatedStats;
-            });
-          } else {
-            console.log('❌ NO REAL PLAYERS FOUND! This should not happen.');
+                  }))
+                };
+                
+                console.log('✅ ADMIN: Updated with real players:', {
+                  team1Count: updatedStats.maps[0]?.team1Players?.length,
+                  team2Count: updatedStats.maps[0]?.team2Players?.length,
+                  team1First: updatedStats.maps[0]?.team1Players?.[0]?.name,
+                  team2First: updatedStats.maps[0]?.team2Players?.[0]?.name
+                });
+                
+                return updatedStats;
+              });
+            }
+          } catch (error) {
+            console.error('❌ ADMIN: Error loading real players:', error);
           }
-        } catch (error) {
-          console.error('❌ Error loading real players:', error);
+        } else {
+          console.log('❌ ADMIN: Missing team IDs:', { team1Id, team2Id });
         }
       } else {
-        console.log('⚠️ Missing required data for player loading:');
-        console.log('- Team 1 ID:', match?.team1?.id);
-        console.log('- Team 2 ID:', match?.team2?.id);
-        console.log('- Token:', !!token);
-        console.log('- Is Open:', isOpen);
+        console.log('❌ ADMIN: Missing requirements:', { hasMatch: !!match, hasToken: !!token });
       }
     };
     
     loadRealPlayers();
-  }, [match?.team1?.id, match?.team2?.id, token, match?.id, isOpen]);
+  }, [match, token, isOpen]); // 🚨 Simplified dependencies
 
   // CRITICAL FIX: Null check for match AFTER hooks
   if (!isOpen || !match || !matchStats) return null;
