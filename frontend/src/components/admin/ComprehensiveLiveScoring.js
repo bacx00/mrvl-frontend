@@ -6,6 +6,19 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
   const { api, token } = useAuth();
   const [activeMap, setActiveMap] = useState(0);
 
+  // 🔍 DEBUG: Log what data we receive
+  console.log('🎯 ComprehensiveLiveScoring MOUNTED with:', {
+    isOpen,
+    match: match ? {
+      id: match.id,
+      team1: match.team1,
+      team2: match.team2,
+      team1_id: match.team1_id,
+      team2_id: match.team2_id
+    } : null,
+    hasToken: !!token
+  });
+
   // 🎮 REAL MARVEL RIVALS MAPS - ACTUAL GAME MAPS
   const marvelRivalsMaps = [
     { 
