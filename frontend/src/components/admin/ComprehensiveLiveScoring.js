@@ -152,10 +152,17 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     };
   });
 
-  // 🔄 FETCH REAL TEAM PLAYERS ON MOUNT
+  // 🔄 FORCE LOAD REAL TEAM PLAYERS IMMEDIATELY
   useEffect(() => {
     const loadRealPlayers = async () => {
-      if (match?.team1?.id && match?.team2?.id && token) {
+      console.log('🚨 useEffect TRIGGERED with conditions:');
+      console.log('- match exists:', !!match);
+      console.log('- team1 ID:', match?.team1?.id);
+      console.log('- team2 ID:', match?.team2?.id);
+      console.log('- token exists:', !!token);
+      console.log('- isOpen:', isOpen);
+      
+      if (match?.team1?.id && match?.team2?.id && token && isOpen) {
         console.log('🔍 Loading REAL team players for match:', match.id);
         console.log('🔍 Team 1:', match.team1.name, 'ID:', match.team1.id);
         console.log('🔍 Team 2:', match.team2.name, 'ID:', match.team2.id);
@@ -170,9 +177,9 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
           console.log('Team 1 players:', team1Players);
           console.log('Team 2 players:', team2Players);
           
-          // 🚨 FORCE UPDATE MATCH STATS WITH REAL PLAYERS
+          // 🚨 FORCE UPDATE MATCH STATS WITH REAL PLAYERS ONLY
           if (team1Players.length > 0 || team2Players.length > 0) {
-            console.log('🔄 FORCING state update with real players...');
+            console.log('🔄 FORCING state update with ONLY real players...');
             console.log('Current matchStats structure:', matchStats?.maps?.[0]);
             
             setMatchStats(prevStats => {
@@ -185,30 +192,32 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
                 ...prevStats,
                 maps: prevStats.maps.map((map, mapIndex) => {
                   console.log(`🗺️ Map ${mapIndex + 1} BEFORE update:`, {
-                    team1Players: map.team1Players?.slice(0, 2),
-                    team2Players: map.team2Players?.slice(0, 2)
+                    team1PlayersCount: map.team1Players?.length,
+                    team2PlayersCount: map.team2Players?.length
                   });
                   
                   const updatedMap = {
                     ...map,
-                    team1Players: team1Players.length > 0 ? team1Players : map.team1Players,
-                    team2Players: team2Players.length > 0 ? team2Players : map.team2Players
+                    team1Players: team1Players.length > 0 ? team1Players : [],
+                    team2Players: team2Players.length > 0 ? team2Players : []
                   };
                   
                   console.log(`🗺️ Map ${mapIndex + 1} AFTER update:`, {
-                    team1Players: updatedMap.team1Players?.slice(0, 2),
-                    team2Players: updatedMap.team2Players?.slice(0, 2)
+                    team1PlayersCount: updatedMap.team1Players?.length,
+                    team2PlayersCount: updatedMap.team2Players?.length,
+                    team1FirstPlayer: updatedMap.team1Players?.[0]?.name,
+                    team2FirstPlayer: updatedMap.team2Players?.[0]?.name
                   });
                   
                   return updatedMap;
                 })
               };
               
-              console.log('✅ Final updated matchStats:', updatedStats.maps[0]?.team1Players?.slice(0, 2));
+              console.log('✅ Final updated matchStats with REAL players only');
               return updatedStats;
             });
           } else {
-            console.log('⚠️ No real players found, keeping mock data');
+            console.log('❌ NO REAL PLAYERS FOUND! This should not happen.');
           }
         } catch (error) {
           console.error('❌ Error loading real players:', error);
@@ -218,11 +227,12 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
         console.log('- Team 1 ID:', match?.team1?.id);
         console.log('- Team 2 ID:', match?.team2?.id);
         console.log('- Token:', !!token);
+        console.log('- Is Open:', isOpen);
       }
     };
     
     loadRealPlayers();
-  }, [match?.team1?.id, match?.team2?.id, token, match?.id]);
+  }, [match?.team1?.id, match?.team2?.id, token, match?.id, isOpen]);
 
   // CRITICAL FIX: Null check for match AFTER hooks
   if (!isOpen || !match || !matchStats) return null;
