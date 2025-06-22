@@ -238,6 +238,11 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     return null;
   }
 
+  const currentMapData = matchStats.maps?.[activeMap] || matchStats.maps?.[0] || {
+    team1Players: [],
+    team2Players: []
+  };
+
   console.log('🎯 ADMIN: Rendering with data:', {
     matchId: match.id,
     team1: match.team1?.name,
