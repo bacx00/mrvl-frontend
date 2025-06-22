@@ -93,21 +93,24 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
         console.log(`✅ Found ${teamPlayers.length} real players for ${teamName}:`, teamPlayers);
         
         // Convert real players to match format
-        return teamPlayers.slice(0, 6).map((player, index) => ({
-          id: player.id,
-          name: player.name,
-          hero: player.main_hero || 'Captain America', // ✅ FIXED: Use main_hero not primary_hero
-          role: player.role || 'Tank',
-          country: 'US', // ✅ TODO: Get from player profile or team country
-          eliminations: 0,
-          deaths: 0,
-          assists: 0,
-          damage: 0,
-          healing: 0,
-          damageBlocked: 0,
-          objectiveTime: 0,
-          ultimatesUsed: 0
-        }));
+        return teamPlayers.slice(0, 6).map((player, index) => {
+          console.log(`🏳️ Player ${player.name} country: ${player.country}`);
+          return {
+            id: player.id,
+            name: player.name,
+            hero: player.main_hero || 'Captain America', // ✅ FIXED: Use main_hero not primary_hero
+            role: player.role || 'Tank',
+            country: player.country || 'US', // ✅ REAL player country from backend
+            eliminations: 0,
+            deaths: 0,
+            assists: 0,
+            damage: 0,
+            healing: 0,
+            damageBlocked: 0,
+            objectiveTime: 0,
+            ultimatesUsed: 0
+          };
+        });
       } else {
         console.log(`⚠️ Failed to fetch players for ${teamName}, using defaults`);
         return [];
