@@ -2,17 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
 import { TeamLogo } from '../../utils/imageUtils';
 
-// ✅ CRITICAL FIX: Load heroes from live backend API
+// ✅ CRITICAL FIX: CORRECT MARVEL RIVALS MAPS
 const MARVEL_RIVALS_CONFIG = {
   maps: [
-    'Asgard Throne Room',
-    'Wakanda Palace', 
-    'Sanctum Sanctorum',
-    'Tokyo 2099',
-    'Klyntar Symbiote World',
-    'Midtown Manhattan',
-    'Helicarrier Command',
-    'Bifrost Arena'
+    'Tokyo 2099: Shibuya Sky',
+    'Klyntar: Symbiote Planet', 
+    'Asgard: Royal Palace',
+    'Tokyo 2099: Shin-Shibuya Station',
+    'Wakanda: Golden City',
+    'Sanctum Sanctorum: Astral Plane',
+    'Yggsgard: Yggdrasil',
+    'Midtown Manhattan: Oscorp Tower'
   ],
   // Heroes will be loaded from API
   herosByRole: {},
@@ -57,43 +57,9 @@ const getInitialMatchData = (format = 'BO1') => {
       status: 'upcoming',
       winner_id: null,
       duration: null,
-      // 🎮 FIXED: Player compositions with DIFFERENT default heroes per role
-      team1_composition: Array.from({ length: 6 }, (_, playerIndex) => {
-        const defaultHeroes = ['Captain America', 'Iron Man', 'Black Widow', 'Doctor Strange', 'Mantis', 'Hulk'];
-        const defaultRoles = ['Tank', 'Duelist', 'Duelist', 'Tank', 'Support', 'Tank'];
-        return {
-          player_id: null,
-          player_name: `Player ${playerIndex + 1}`,
-          hero: defaultHeroes[playerIndex] || 'Captain America',
-          role: defaultRoles[playerIndex] || 'Tank',
-          eliminations: 0,
-          deaths: 0,
-          assists: 0,
-          damage: 0,
-          healing: 0,
-          damageBlocked: 0,
-          objectiveTime: 0,
-          ultimatesUsed: 0
-        };
-      }),
-      team2_composition: Array.from({ length: 6 }, (_, playerIndex) => {
-        const defaultHeroes = ['Storm', 'Spider-Man', 'Hawkeye', 'Venom', 'Luna Snow', 'Groot'];
-        const defaultRoles = ['Support', 'Duelist', 'Duelist', 'Tank', 'Support', 'Tank'];
-        return {
-          player_id: null,
-          player_name: `Player ${playerIndex + 1}`,
-          hero: defaultHeroes[playerIndex] || 'Storm',
-          role: defaultRoles[playerIndex] || 'Support',
-          eliminations: 0,
-          deaths: 0,
-          assists: 0,
-          damage: 0,
-          healing: 0,
-          damageBlocked: 0,
-          objectiveTime: 0,
-          ultimatesUsed: 0
-        };
-      })
+      // 🎮 EMPTY COMPOSITIONS - WILL BE POPULATED WITH REAL PLAYERS
+      team1_composition: [],
+      team2_composition: []
     })),
     viewers: 0,
     featured: false,
@@ -115,8 +81,6 @@ function MatchForm({ matchId, navigateTo }) {
 
   const isEdit = Boolean(matchId);
 
-  // ✅ FETCH ALL REQUIRED DATA
-  // ✅ CRITICAL: Load heroes from live backend API
   // ✅ CRITICAL: Load heroes from live backend API
   useEffect(() => {
     const loadHeroesFromAPI = async () => {
@@ -253,7 +217,7 @@ function MatchForm({ matchId, navigateTo }) {
     console.log(`✅ Format changed to ${newFormat} with ${newMatchData.maps.length} maps`);
   };
 
-  // ✅ PERFECT INPUT CHANGE HANDLER
+  // ✅ PERFECT INPUT CHANGE HANDLER - FIXED REAL PLAYER POPULATION
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     const actualValue = type === 'checkbox' ? checked : value;
@@ -270,22 +234,22 @@ function MatchForm({ matchId, navigateTo }) {
       [name]: actualValue
     }));
     
-    // Update selected teams for UI and POPULATE REAL PLAYERS
+    // 🚨 CRITICAL FIX: POPULATE REAL PLAYERS WHEN TEAM SELECTED
     if (name === 'team1_id') {
       const team = teams.find(t => t.id == value);
       setSelectedTeam1(team);
       console.log('✅ Team 1 selected:', team?.name);
       
-      // 🎮 POPULATE REAL TEAM 1 PLAYERS
-      if (team?.players) {
-        console.log('🔄 Populating real Team 1 players:', team.players);
+      // 🔥 POPULATE REAL TEAM 1 PLAYERS IMMEDIATELY
+      if (team && team.players) {
+        console.log('🔄 Populating Team 1 with REAL players:', team.players);
         setFormData(prev => ({
           ...prev,
           maps: prev.maps.map(map => ({
             ...map,
             team1_composition: team.players.slice(0, 6).map((player, index) => ({
               player_id: player.id,
-              player_name: player.name,
+              player_name: player.name, // 🔥 REAL PLAYER NAME
               hero: player.main_hero || 'Captain America',
               role: player.role || 'Tank',
               country: player.country || player.nationality || 'US',
@@ -300,24 +264,25 @@ function MatchForm({ matchId, navigateTo }) {
             }))
           }))
         }));
+        console.log('✅ Team 1 composition updated with real players');
       }
     } else if (name === 'team2_id') {
       const team = teams.find(t => t.id == value);
       setSelectedTeam2(team);
       console.log('✅ Team 2 selected:', team?.name);
       
-      // 🎮 POPULATE REAL TEAM 2 PLAYERS  
-      if (team?.players) {
-        console.log('🔄 Populating real Team 2 players:', team.players);
+      // 🔥 POPULATE REAL TEAM 2 PLAYERS IMMEDIATELY
+      if (team && team.players) {
+        console.log('🔄 Populating Team 2 with REAL players:', team.players);
         setFormData(prev => ({
           ...prev,
           maps: prev.maps.map(map => ({
             ...map,
             team2_composition: team.players.slice(0, 6).map((player, index) => ({
               player_id: player.id,
-              player_name: player.name,
-              hero: player.main_hero || 'Captain America', 
-              role: player.role || 'Tank',
+              player_name: player.name, // 🔥 REAL PLAYER NAME
+              hero: player.main_hero || 'Storm', 
+              role: player.role || 'Support',
               country: player.country || player.nationality || 'US',
               eliminations: 0,
               deaths: 0,
@@ -330,6 +295,7 @@ function MatchForm({ matchId, navigateTo }) {
             }))
           }))
         }));
+        console.log('✅ Team 2 composition updated with real players');
       }
     }
     
@@ -461,8 +427,6 @@ function MatchForm({ matchId, navigateTo }) {
     );
   }
 
-
-
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
@@ -511,6 +475,12 @@ function MatchForm({ matchId, navigateTo }) {
                 <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm">
                   <div className="font-medium text-gray-900 dark:text-white">{selectedTeam1.name}</div>
                   <div className="text-gray-600 dark:text-gray-400">Region: {selectedTeam1.region} | Rating: {selectedTeam1.rating || 'Unranked'}</div>
+                  {/* 🔥 SHOW REAL PLAYERS COUNT */}
+                  {selectedTeam1.players && (
+                    <div className="text-green-600 dark:text-green-400 text-xs mt-1">
+                      ✅ {selectedTeam1.players.length} real players loaded: {selectedTeam1.players.slice(0, 3).map(p => p.name).join(', ')}{selectedTeam1.players.length > 3 ? '...' : ''}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -537,6 +507,12 @@ function MatchForm({ matchId, navigateTo }) {
                 <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm">
                   <div className="font-medium text-gray-900 dark:text-white">{selectedTeam2.name}</div>
                   <div className="text-gray-600 dark:text-gray-400">Region: {selectedTeam2.region} | Rating: {selectedTeam2.rating || 'Unranked'}</div>
+                  {/* 🔥 SHOW REAL PLAYERS COUNT */}
+                  {selectedTeam2.players && (
+                    <div className="text-green-600 dark:text-green-400 text-xs mt-1">
+                      ✅ {selectedTeam2.players.length} real players loaded: {selectedTeam2.players.slice(0, 3).map(p => p.name).join(', ')}{selectedTeam2.players.length > 3 ? '...' : ''}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -652,10 +628,10 @@ function MatchForm({ matchId, navigateTo }) {
           </div>
         </div>
 
-        {/* Marvel Rivals Maps Configuration + Hero Pre-selection */}
+        {/* Marvel Rivals Maps Configuration + Real Player Display */}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            🗺️ Marvel Rivals Maps & Hero Compositions ({formData.format})
+            🗺️ Marvel Rivals Maps & Team Compositions ({formData.format})
           </h3>
           
           <div className="space-y-6">
@@ -689,7 +665,7 @@ function MatchForm({ matchId, navigateTo }) {
                   </select>
                 </div>
 
-                {/* Hero Compositions */}
+                {/* 🔥 REAL PLAYER COMPOSITIONS DISPLAY */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Team 1 Composition */}
                   <div className="border border-blue-200 dark:border-blue-700 rounded-lg p-4 bg-blue-50 dark:bg-blue-900/10">
@@ -698,51 +674,57 @@ function MatchForm({ matchId, navigateTo }) {
                     </h5>
                     
                     <div className="space-y-3">
-                      {(map.team1_composition || []).map((player, playerIndex) => (
-                        <div key={playerIndex} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              Player {playerIndex + 1}
-                            </span>
-                            <div className={`px-2 py-1 rounded text-xs font-medium ${
-                              player.role === 'Tank' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
-                              player.role === 'Duelist' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
-                              'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                            }`}>
-                              {player.role}
+                      {(map.team1_composition || []).length > 0 ? (
+                        map.team1_composition.map((player, playerIndex) => (
+                          <div key={playerIndex} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                {player.player_name || player.name || `Player ${playerIndex + 1}`}
+                              </span>
+                              <div className={`px-2 py-1 rounded text-xs font-medium ${
+                                player.role === 'Tank' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
+                                player.role === 'Duelist' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
+                                'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                              }`}>
+                                {player.role}
+                              </div>
                             </div>
-                          </div>
-                          
-                          <select
-                            value={player.hero}
-                            onChange={(e) => {
-                              const selectedHero = e.target.value;
-                              const heroRole = Object.keys(MARVEL_RIVALS_CONFIG.herosByRole || {
+                            
+                            <select
+                              value={player.hero}
+                              onChange={(e) => {
+                                const selectedHero = e.target.value;
+                                const heroRole = Object.keys(MARVEL_RIVALS_CONFIG.herosByRole || {
+                                  Tank: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Peni Parker', 'The Thing', 'Thor', 'Venom'],
+                                  Duelist: ['Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Human Torch', 'Iron Fist', 'Iron Man', 'Magik', 'Moon Knight', 'Namor', 'Psylocke', 'The Punisher', 'Scarlet Witch', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine'],
+                                  Support: ['Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon']
+                                }).find(role => 
+                                  (MARVEL_RIVALS_CONFIG.herosByRole?.[role] || []).includes(selectedHero)
+                                ) || 'Tank';
+                                
+                                handlePlayerHeroChange(mapIndex, 'team1', playerIndex, selectedHero, heroRole);
+                              }}
+                              className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            >
+                              {Object.entries(MARVEL_RIVALS_CONFIG.herosByRole || {
                                 Tank: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Peni Parker', 'The Thing', 'Thor', 'Venom'],
                                 Duelist: ['Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Human Torch', 'Iron Fist', 'Iron Man', 'Magik', 'Moon Knight', 'Namor', 'Psylocke', 'The Punisher', 'Scarlet Witch', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine'],
                                 Support: ['Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon']
-                              }).find(role => 
-                                (MARVEL_RIVALS_CONFIG.herosByRole?.[role] || []).includes(selectedHero)
-                              ) || 'Tank';
-                              
-                              handlePlayerHeroChange(mapIndex, 'team1', playerIndex, selectedHero, heroRole);
-                            }}
-                            className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          >
-                            {Object.entries(MARVEL_RIVALS_CONFIG.herosByRole || {
-                              Tank: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Peni Parker', 'The Thing', 'Thor', 'Venom'],
-                              Duelist: ['Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Human Torch', 'Iron Fist', 'Iron Man', 'Magik', 'Moon Knight', 'Namor', 'Psylocke', 'The Punisher', 'Scarlet Witch', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine'],
-                              Support: ['Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon']
-                            }).map(([role, heroes]) => (
-                              <optgroup key={role} label={role}>
-                                {Array.isArray(heroes) ? heroes.map(hero => (
-                                  <option key={hero} value={hero}>{hero}</option>
-                                )) : null}
-                              </optgroup>
-                            ))}
-                          </select>
+                              }).map(([role, heroes]) => (
+                                <optgroup key={role} label={role}>
+                                  {Array.isArray(heroes) ? heroes.map(hero => (
+                                    <option key={hero} value={hero}>{hero}</option>
+                                  )) : null}
+                                </optgroup>
+                              ))}
+                            </select>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center text-gray-500 dark:text-gray-400 py-4">
+                          Select Team 1 to load real players
                         </div>
-                      )) || []}
+                      )}
                     </div>
                   </div>
 
@@ -753,51 +735,57 @@ function MatchForm({ matchId, navigateTo }) {
                     </h5>
                     
                     <div className="space-y-3">
-                      {(map.team2_composition || []).map((player, playerIndex) => (
-                        <div key={playerIndex} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              Player {playerIndex + 1}
-                            </span>
-                            <div className={`px-2 py-1 rounded text-xs font-medium ${
-                              player.role === 'Tank' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
-                              player.role === 'Duelist' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
-                              'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                            }`}>
-                              {player.role}
+                      {(map.team2_composition || []).length > 0 ? (
+                        map.team2_composition.map((player, playerIndex) => (
+                          <div key={playerIndex} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                {player.player_name || player.name || `Player ${playerIndex + 1}`}
+                              </span>
+                              <div className={`px-2 py-1 rounded text-xs font-medium ${
+                                player.role === 'Tank' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
+                                player.role === 'Duelist' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
+                                'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                              }`}>
+                                {player.role}
+                              </div>
                             </div>
-                          </div>
-                          
-                          <select
-                            value={player.hero}
-                            onChange={(e) => {
-                              const selectedHero = e.target.value;
-                              const heroRole = Object.keys(MARVEL_RIVALS_CONFIG.herosByRole || {
+                            
+                            <select
+                              value={player.hero}
+                              onChange={(e) => {
+                                const selectedHero = e.target.value;
+                                const heroRole = Object.keys(MARVEL_RIVALS_CONFIG.herosByRole || {
+                                  Tank: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Peni Parker', 'The Thing', 'Thor', 'Venom'],
+                                  Duelist: ['Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Human Torch', 'Iron Fist', 'Iron Man', 'Magik', 'Moon Knight', 'Namor', 'Psylocke', 'The Punisher', 'Scarlet Witch', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine'],
+                                  Support: ['Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon']
+                                }).find(role => 
+                                  (MARVEL_RIVALS_CONFIG.herosByRole?.[role] || []).includes(selectedHero)
+                                ) || 'Tank';
+                                
+                                handlePlayerHeroChange(mapIndex, 'team2', playerIndex, selectedHero, heroRole);
+                              }}
+                              className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            >
+                              {Object.entries(MARVEL_RIVALS_CONFIG.herosByRole || {
                                 Tank: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Peni Parker', 'The Thing', 'Thor', 'Venom'],
                                 Duelist: ['Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Human Torch', 'Iron Fist', 'Iron Man', 'Magik', 'Moon Knight', 'Namor', 'Psylocke', 'The Punisher', 'Scarlet Witch', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine'],
                                 Support: ['Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon']
-                              }).find(role => 
-                                (MARVEL_RIVALS_CONFIG.herosByRole?.[role] || []).includes(selectedHero)
-                              ) || 'Tank';
-                              
-                              handlePlayerHeroChange(mapIndex, 'team2', playerIndex, selectedHero, heroRole);
-                            }}
-                            className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          >
-                            {Object.entries(MARVEL_RIVALS_CONFIG.herosByRole || {
-                              Tank: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Peni Parker', 'The Thing', 'Thor', 'Venom'],
-                              Duelist: ['Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Human Torch', 'Iron Fist', 'Iron Man', 'Magik', 'Moon Knight', 'Namor', 'Psylocke', 'The Punisher', 'Scarlet Witch', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine'],
-                              Support: ['Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon']
-                            }).map(([role, heroes]) => (
-                              <optgroup key={role} label={role}>
-                                {Array.isArray(heroes) ? heroes.map(hero => (
-                                  <option key={hero} value={hero}>{hero}</option>
-                                )) : null}
-                              </optgroup>
-                            ))}
-                          </select>
+                              }).map(([role, heroes]) => (
+                                <optgroup key={role} label={role}>
+                                  {Array.isArray(heroes) ? heroes.map(hero => (
+                                    <option key={hero} value={hero}>{hero}</option>
+                                  )) : null}
+                                </optgroup>
+                              ))}
+                            </select>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center text-gray-500 dark:text-gray-400 py-4">
+                          Select Team 2 to load real players
                         </div>
-                      )) || []}
+                      )}
                     </div>
                   </div>
                 </div>
@@ -843,35 +831,25 @@ function MatchForm({ matchId, navigateTo }) {
                 {selectedTeam1?.short_name || 'Team 1'}: <span className="font-bold">{formData.team1_score}</span> - 
                 {selectedTeam2?.short_name || 'Team 2'}: <span className="font-bold">{formData.team2_score}</span>
               </div>
-              <div className="text-xs mt-2 opacity-75">
-                Format: {formData.format} • Maps: {formData.maps.length} • Hero compositions pre-configured
-              </div>
             </div>
           </div>
         </div>
 
-        {/* Submit Buttons */}
-        <div className="flex justify-end space-x-4">
-          <button
-            type="button"
-            onClick={() => navigateTo && navigateTo('admin-dashboard')}
-            className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-          >
-            Cancel
-          </button>
+        {/* Save/Submit */}
+        <div className="flex justify-center space-x-4">
           <button
             type="submit"
             disabled={saving}
-            className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold"
           >
-            {saving ? (
-              <span className="flex items-center">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                {isEdit ? 'Updating...' : 'Creating...'}
-              </span>
-            ) : (
-              isEdit ? 'Update Match' : 'Schedule Match'
-            )}
+            {saving ? '💾 Saving...' : isEdit ? '💾 Update Match' : '🚀 Create Match'}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateTo && navigateTo('admin-matches')}
+            className="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-semibold"
+          >
+            Cancel
           </button>
         </div>
       </form>
