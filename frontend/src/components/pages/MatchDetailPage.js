@@ -496,33 +496,43 @@ function MatchDetailPage({ params, navigateTo }) {
           
           // 🎮 ENHANCED: Use REAL team compositions with player data from backend
           // 🚨 USE REAL BACKEND PLAYERS - NO MORE MOCK DATA!
-          team1Players: (matchData.team1?.players || []).map(player => ({
-            id: player.id,
-            name: player.name,
-            hero: player.main_hero || 'Captain America',
-            role: player.role || 'Tank',
-            country: player.country || 'US',
-            eliminations: 0,
-            deaths: 0,
-            assists: 0,
-            damage: 0,
-            healing: 0,
-            damageBlocked: 0
-          })),
+          team1Players: (matchData.team1?.players || []).map((player, index) => {
+            const diverseDefaultHeroes = ['Captain America', 'Iron Man', 'Black Widow', 'Doctor Strange', 'Mantis', 'Hulk'];
+            const assignedHero = player.main_hero || diverseDefaultHeroes[index] || 'Captain America';
+            console.log(`🦸 Team1 Player ${player.name}: main_hero="${player.main_hero}" → assigned="${assignedHero}"`);
+            return {
+              id: player.id,
+              name: player.name,
+              hero: assignedHero,
+              role: player.role || 'Tank',
+              country: player.country || player.nationality || 'US',
+              eliminations: 0,
+              deaths: 0,
+              assists: 0,
+              damage: 0,
+              healing: 0,
+              damageBlocked: 0
+            };
+          }),
           
-          team2Players: (matchData.team2?.players || []).map(player => ({
-            id: player.id,
-            name: player.name,
-            hero: player.main_hero || 'Captain America',
-            role: player.role || 'Tank',
-            country: player.country || 'US',
-            eliminations: 0,
-            deaths: 0,
-            assists: 0,
-            damage: 0,
-            healing: 0,
-            damageBlocked: 0
-          }))
+          team2Players: (matchData.team2?.players || []).map((player, index) => {
+            const diverseDefaultHeroes = ['Storm', 'Spider-Man', 'Hawkeye', 'Venom', 'Luna Snow', 'Groot'];
+            const assignedHero = player.main_hero || diverseDefaultHeroes[index] || 'Storm';
+            console.log(`🦸 Team2 Player ${player.name}: main_hero="${player.main_hero}" → assigned="${assignedHero}"`);
+            return {
+              id: player.id,
+              name: player.name,
+              hero: assignedHero,
+              role: player.role || 'Tank',
+              country: player.country || player.nationality || 'US',
+              eliminations: 0,
+              deaths: 0,
+              assists: 0,
+              damage: 0,
+              healing: 0,
+              damageBlocked: 0
+            };
+          })
         }))
       };
       
