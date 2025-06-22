@@ -89,6 +89,46 @@ function MatchDetailPage({ params, navigateTo }) {
     }
   };
 
+  // 🎮 FETCH REAL TEAM PLAYERS FROM BACKEND (SAME AS ADMIN)
+  const fetchRealTeamPlayers = async (teamId, teamName) => {
+    try {
+      console.log(`🔍 MatchDetail: Fetching real players for team: ${teamName} (ID: ${teamId})`);
+      const response = await fetch(`https://staging.mrvl.net/api/teams/${teamId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const teamPlayers = data.data?.players || [];
+        console.log(`✅ MatchDetail: Found ${teamPlayers.length} real players for ${teamName}:`, teamPlayers);
+        
+        // Convert real players to match format
+        return teamPlayers.slice(0, 6).map((player, index) => ({
+          id: player.id,
+          name: player.name,
+          hero: player.primary_hero || 'Captain America',
+          role: player.role || 'Tank',
+          country: player.country || 'US', // REAL player country
+          eliminations: 0,
+          deaths: 0,
+          assists: 0,
+          damage: 0,
+          healing: 0,
+          damageBlocked: 0
+        }));
+      } else {
+        console.log(`⚠️ MatchDetail: Failed to fetch players for ${teamName}, using defaults`);
+        return [];
+      }
+    } catch (error) {
+      console.error(`❌ MatchDetail: Error fetching team players for ${teamName}:`, error);
+      return [];
+    }
+  };
+
   console.log('🔍 MatchDetailPage - Received match ID:', matchId);
 
   // ✅ CRITICAL FIX: Enhanced real-time sync listener for match updates
