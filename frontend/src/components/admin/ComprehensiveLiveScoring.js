@@ -226,7 +226,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     };
     
     loadRealPlayers();
-  }, [match, token, isOpen]); // 🚨 Simplified dependencies
+  }, [match, isOpen]); // 🚨 Removed token dependency for demo
 
   // CRITICAL FIX: Null check for match AFTER hooks
   if (!isOpen || !match || !matchStats) {
