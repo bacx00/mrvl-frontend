@@ -53,7 +53,7 @@ const ROUTES = {
   'news': NewsPage,
   'news-detail': NewsDetailPage,
   'matches': MatchesPage,
-  'match-detail': MatchDetailPage,
+  'match-detail': (props) => <MatchDetailPage {...props} matchId={props.params?.id} />,
   'team-detail': TeamDetailPage,
   'players': PlayersPage,
   'player-detail': PlayerDetailPage,
