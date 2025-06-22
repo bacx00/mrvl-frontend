@@ -3,7 +3,7 @@ import { useAuth } from '../../hooks';
 import { TeamLogo } from '../../utils/imageUtils';
 
 function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
-  const { api } = useAuth();
+  const { api, token } = useAuth();
   const [activeMap, setActiveMap] = useState(0);
 
   // 🎮 REAL MARVEL RIVALS MAPS - ACTUAL GAME MAPS
