@@ -69,9 +69,9 @@ function MatchDetailPage({ params, navigateTo }) {
         return teamPlayers.slice(0, 6).map((player, index) => ({
           id: player.id,
           name: player.name,
-          hero: player.primary_hero || 'Captain America',
+          hero: player.main_hero || 'Captain America', // ✅ FIXED: Use main_hero not primary_hero
           role: player.role || 'Tank',
-          country: player.country || 'US', // REAL player country
+          country: 'US', // ✅ TODO: Get from player profile or team country
           eliminations: 0,
           deaths: 0,
           assists: 0,
