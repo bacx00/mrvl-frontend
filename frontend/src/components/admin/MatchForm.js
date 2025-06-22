@@ -270,15 +270,67 @@ function MatchForm({ matchId, navigateTo }) {
       [name]: actualValue
     }));
     
-    // Update selected teams for UI
+    // Update selected teams for UI and POPULATE REAL PLAYERS
     if (name === 'team1_id') {
       const team = teams.find(t => t.id == value);
       setSelectedTeam1(team);
       console.log('✅ Team 1 selected:', team?.name);
+      
+      // 🎮 POPULATE REAL TEAM 1 PLAYERS
+      if (team?.players) {
+        console.log('🔄 Populating real Team 1 players:', team.players);
+        setFormData(prev => ({
+          ...prev,
+          maps: prev.maps.map(map => ({
+            ...map,
+            team1_composition: team.players.slice(0, 6).map((player, index) => ({
+              player_id: player.id,
+              player_name: player.name,
+              hero: player.main_hero || 'Captain America',
+              role: player.role || 'Tank',
+              country: player.country || player.nationality || 'US',
+              eliminations: 0,
+              deaths: 0,
+              assists: 0,
+              damage: 0,
+              healing: 0,
+              damageBlocked: 0,
+              objectiveTime: 0,
+              ultimatesUsed: 0
+            }))
+          }))
+        }));
+      }
     } else if (name === 'team2_id') {
       const team = teams.find(t => t.id == value);
       setSelectedTeam2(team);
       console.log('✅ Team 2 selected:', team?.name);
+      
+      // 🎮 POPULATE REAL TEAM 2 PLAYERS  
+      if (team?.players) {
+        console.log('🔄 Populating real Team 2 players:', team.players);
+        setFormData(prev => ({
+          ...prev,
+          maps: prev.maps.map(map => ({
+            ...map,
+            team2_composition: team.players.slice(0, 6).map((player, index) => ({
+              player_id: player.id,
+              player_name: player.name,
+              hero: player.main_hero || 'Captain America', 
+              role: player.role || 'Tank',
+              country: player.country || player.nationality || 'US',
+              eliminations: 0,
+              deaths: 0,
+              assists: 0,
+              damage: 0,
+              healing: 0,
+              damageBlocked: 0,
+              objectiveTime: 0,
+              ultimatesUsed: 0
+            }))
+          }))
+        }));
+      }
     }
     
     // Clear errors when user starts typing
