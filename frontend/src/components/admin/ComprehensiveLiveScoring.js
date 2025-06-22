@@ -419,11 +419,6 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     }
   };
 
-  const currentMapData = matchStats.maps?.[activeMap] || matchStats.maps?.[0] || {
-    team1Players: [],
-    team2Players: []
-  };
-
   // 🔍 DEBUG: Log current map data structure
   console.log('🎯 ADMIN: currentMapData analysis:', {
     activeMap,
