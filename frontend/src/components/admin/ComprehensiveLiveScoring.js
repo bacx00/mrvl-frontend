@@ -226,7 +226,25 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
   }, [match, token, isOpen]); // 🚨 Simplified dependencies
 
   // CRITICAL FIX: Null check for match AFTER hooks
-  if (!isOpen || !match || !matchStats) return null;
+  if (!isOpen || !match || !matchStats) {
+    console.log('🚨 ADMIN: Early return - not rendering because:', {
+      isOpen,
+      hasMatch: !!match,
+      hasMatchStats: !!matchStats
+    });
+    return null;
+  }
+
+  console.log('🎯 ADMIN: Rendering with data:', {
+    matchId: match.id,
+    team1: match.team1?.name,
+    team2: match.team2?.name,
+    mapsCount: matchStats.maps?.length,
+    team1PlayersCount: currentMapData?.team1Players?.length,
+    team2PlayersCount: currentMapData?.team2Players?.length,
+    team1FirstPlayer: currentMapData?.team1Players?.[0]?.name,
+    team2FirstPlayer: currentMapData?.team2Players?.[0]?.name
+  });
 
   // UPDATE PLAYER STAT
   const updatePlayerStat = (mapIndex, team, playerIndex, statType, value) => {
