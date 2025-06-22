@@ -206,6 +206,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
           // 🚨 FORCE UPDATE MATCH STATS WITH REAL PLAYERS
           if (team1Players.length > 0 || team2Players.length > 0) {
             console.log('🔄 FORCING state update with real players...');
+            console.log('Current matchStats structure:', prevStats?.maps?.[0]);
             
             setMatchStats(prevStats => {
               if (!prevStats) {
@@ -216,16 +217,27 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
               const updatedStats = {
                 ...prevStats,
                 maps: prevStats.maps.map((map, mapIndex) => {
-                  console.log(`🗺️ Updating map ${mapIndex + 1} with real players`);
-                  return {
+                  console.log(`🗺️ Map ${mapIndex + 1} BEFORE update:`, {
+                    team1Players: map.team1Players?.slice(0, 2),
+                    team2Players: map.team2Players?.slice(0, 2)
+                  });
+                  
+                  const updatedMap = {
                     ...map,
                     team1Players: team1Players.length > 0 ? team1Players : map.team1Players,
                     team2Players: team2Players.length > 0 ? team2Players : map.team2Players
                   };
+                  
+                  console.log(`🗺️ Map ${mapIndex + 1} AFTER update:`, {
+                    team1Players: updatedMap.team1Players?.slice(0, 2),
+                    team2Players: updatedMap.team2Players?.slice(0, 2)
+                  });
+                  
+                  return updatedMap;
                 })
               };
               
-              console.log('✅ Updated matchStats with real players:', updatedStats);
+              console.log('✅ Final updated matchStats:', updatedStats.maps[0]?.team1Players?.slice(0, 2));
               return updatedStats;
             });
           } else {
