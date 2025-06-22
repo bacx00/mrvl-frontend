@@ -3,8 +3,80 @@ import { useAuth } from '../../hooks';
 import { TeamLogo } from '../../utils/imageUtils';
 
 function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
-  const { api, token } = useAuth();
-  const [activeMap, setActiveMap] = useState(0);
+  // 🎮 MARVEL RIVALS MATCH STATUS SYSTEM
+  const [matchTimer, setMatchTimer] = useState('00:00');
+  const [matchStatus, setMatchStatus] = useState(match?.status || 'upcoming');
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+
+  // 🎮 MARVEL RIVALS GAME MODE TIMING
+  const getGameModeTiming = (mode) => {
+    switch (mode) {
+      case 'Convoy':
+        return {
+          phases: ['Checkpoint 1: 5:00', 'Checkpoint 2: 3:00+', 'Checkpoint 3: 1:30+'],
+          totalTime: '9:30',
+          description: 'Escort payload through 3 checkpoints'
+        };
+      case 'Convergence':
+        return {
+          phases: ['Capture: 4:00', 'Escort: 1:30'],
+          totalTime: '5:30',
+          description: 'Capture point then escort payload'
+        };
+      case 'Domination':
+        return {
+          phases: ['Round 1', 'Round 2', 'Round 3 (if needed)'],
+          totalTime: 'Best of 3',
+          description: 'Control single point, best of 3 rounds'
+        };
+      case 'Conquest':
+        return {
+          phases: ['Single Phase: 3:50'],
+          totalTime: '3:50',
+          description: 'First to 50 Chromium points wins'
+        };
+      default:
+        return {
+          phases: ['Game Phase'],
+          totalTime: '10:00',
+          description: 'Standard match'
+        };
+    }
+  };
+
+  // 🎮 MATCH TIMER SYSTEM
+  useEffect(() => {
+    let interval;
+    if (isTimerRunning && matchStatus === 'live') {
+      interval = setInterval(() => {
+        setMatchTimer(prev => {
+          const [minutes, seconds] = prev.split(':').map(Number);
+          const totalSeconds = minutes * 60 + seconds + 1;
+          const newMinutes = Math.floor(totalSeconds / 60);
+          const newSeconds = totalSeconds % 60;
+          return `${newMinutes.toString().padStart(2, '0')}:${newSeconds.toString().padStart(2, '0')}`;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isTimerRunning, matchStatus]);
+
+  // 🎮 MATCH STATUS CONTROLS
+  const handleMatchStatusChange = (newStatus) => {
+    console.log(`🎮 Changing match status from ${matchStatus} to ${newStatus}`);
+    setMatchStatus(newStatus);
+    
+    if (newStatus === 'live') {
+      setIsTimerRunning(true);
+    } else if (newStatus === 'paused') {
+      setIsTimerRunning(false);
+    } else if (newStatus === 'completed') {
+      setIsTimerRunning(false);
+    }
+    
+    // Update backend
+    api.put(`/admin/matches/${match.id}`, { status: newStatus });
+  };
 
   // 🔍 DEBUG: Log what data we receive
   console.log('🎯 ComprehensiveLiveScoring MOUNTED with:', {
