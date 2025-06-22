@@ -206,7 +206,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
           // 🚨 FORCE UPDATE MATCH STATS WITH REAL PLAYERS
           if (team1Players.length > 0 || team2Players.length > 0) {
             console.log('🔄 FORCING state update with real players...');
-            console.log('Current matchStats structure:', prevStats?.maps?.[0]);
+            console.log('Current matchStats structure:', matchStats?.maps?.[0]);
             
             setMatchStats(prevStats => {
               if (!prevStats) {
