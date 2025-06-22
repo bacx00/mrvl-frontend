@@ -17,20 +17,58 @@ function MatchDetailPage({ matchId, navigateTo }) {
   const [editableStats, setEditableStats] = useState({});
   
   const { user, isAuthenticated, api } = useAuth();
+  
+  // 🔥 CRITICAL: REAL BACKEND API BASE URL
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://staging.mrvl.net';
 
-  // 🎮 FIXED: Load match data with real backend integration
+  // 🚨 CRITICAL: EXTRACT MATCH ID FROM URL OR PROPS
+  const getMatchId = () => {
+    // Try from props first
+    if (matchId) {
+      console.log('🔍 MatchDetailPage: Match ID from props:', matchId);
+      return matchId;
+    }
+    
+    // Try from URL
+    const urlParts = window.location.pathname.split('/');
+    const matchDetailIndex = urlParts.findIndex(part => part === 'match-detail');
+    if (matchDetailIndex !== -1 && urlParts[matchDetailIndex + 1]) {
+      const idFromUrl = urlParts[matchDetailIndex + 1];
+      console.log('🔍 MatchDetailPage: Match ID from URL:', idFromUrl);
+      return idFromUrl;
+    }
+    
+    // Try from hash route
+    if (window.location.hash) {
+      const hashParts = window.location.hash.split('/');
+      const matchDetailIndex = hashParts.findIndex(part => part === 'match-detail');
+      if (matchDetailIndex !== -1 && hashParts[matchDetailIndex + 1]) {
+        const idFromHash = hashParts[matchDetailIndex + 1];
+        console.log('🔍 MatchDetailPage: Match ID from hash:', idFromHash);
+        return idFromHash;
+      }
+    }
+    
+    console.error('❌ MatchDetailPage: No match ID found in props, URL, or hash');
+    return null;
+  };
+
+  // 🎮 FIXED: Load match data with REAL backend integration - NO MOCK DATA
   useEffect(() => {
     const fetchMatchData = async () => {
-      if (!matchId) {
+      const realMatchId = getMatchId();
+      
+      if (!realMatchId) {
         console.error('❌ No match ID provided');
         setLoading(false);
         return;
       }
 
       try {
-        console.log(`🔍 MatchDetailPage: Fetching match ${matchId}...`);
+        console.log(`🔍 MatchDetailPage: Fetching REAL match ${realMatchId} from backend...`);
         
-        const response = await fetch(`https://staging.mrvl.net/api/matches/${matchId}`, {
+        // 🔥 CRITICAL: Use REAL backend API - NO MOCK DATA
+        const response = await fetch(`${BACKEND_URL}/api/matches/${realMatchId}`, {
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
@@ -42,63 +80,49 @@ function MatchDetailPage({ matchId, navigateTo }) {
         }
 
         const data = await response.json();
-        console.log('✅ MatchDetailPage: Raw match data:', data);
+        console.log('✅ MatchDetailPage: REAL match data received:', data);
 
         const matchData = data.data || data;
-        console.log('✅ MatchDetailPage: Processed match data:', matchData);
         
+        // 🚨 CRITICAL: Ensure we have team data with players
+        if (!matchData.team1 || !matchData.team2) {
+          console.log('⚠️ Match data missing team info, fetching team details...');
+          
+          // Fetch team details separately if not included
+          if (matchData.team1_id && !matchData.team1?.players) {
+            try {
+              const team1Response = await fetch(`${BACKEND_URL}/api/teams/${matchData.team1_id}`);
+              const team1Data = await team1Response.json();
+              matchData.team1 = { ...matchData.team1, ...team1Data.data };
+              console.log('✅ Team 1 data fetched:', matchData.team1);
+            } catch (error) {
+              console.error('❌ Error fetching team 1 data:', error);
+            }
+          }
+          
+          if (matchData.team2_id && !matchData.team2?.players) {
+            try {
+              const team2Response = await fetch(`${BACKEND_URL}/api/teams/${matchData.team2_id}`);
+              const team2Data = await team2Response.json();
+              matchData.team2 = { ...matchData.team2, ...team2Data.data };
+              console.log('✅ Team 2 data fetched:', matchData.team2);
+            } catch (error) {
+              console.error('❌ Error fetching team 2 data:', error);
+            }
+          }
+        }
+        
+        console.log('✅ MatchDetailPage: Final processed match data:', matchData);
         setMatch(matchData);
         
         // Initialize editable stats from current player data
         initializeEditableStats(matchData);
         
       } catch (error) {
-        console.error('❌ MatchDetailPage: Error fetching match data:', error);
-        // Mock data for demo - with REAL player structure that backend returns
-        const mockMatch = {
-          id: matchId,
-          format: 'BO1',
-          status: 'live',
-          team1_score: 0,
-          team2_score: 0,
-          team1: { 
-            id: 83, 
-            name: 'test1', 
-            short_name: 'T1',
-            region: 'EU',
-            // Real players structure from backend
-            players: [
-              { id: 169, name: 'p2', role: 'Support', main_hero: null, country: undefined },
-              { id: 170, name: 'p3', role: 'Tank', main_hero: null, country: undefined },
-              { id: 171, name: 'p4', role: 'Tank', main_hero: null, country: undefined },
-              { id: 172, name: 'p5', role: 'Duelist', main_hero: null, country: undefined },
-              { id: 173, name: 'p1', role: 'Duelist', main_hero: null, country: undefined }
-            ]
-          },
-          team2: { 
-            id: 84, 
-            name: 'test2', 
-            short_name: 'T2',
-            region: 'APAC',
-            // Real players structure from backend
-            players: [
-              { id: 174, name: 'p11', role: 'Duelist', main_hero: null, country: undefined },
-              { id: 175, name: 'p22', role: 'Support', main_hero: null, country: undefined },
-              { id: 176, name: 'p33', role: 'Tank', main_hero: null, country: undefined },
-              { id: 177, name: 'p44', role: 'Tank', main_hero: null, country: undefined },
-              { id: 178, name: 'p55', role: 'Support', main_hero: null, country: undefined }
-            ]
-          },
-          maps: [{
-            map_number: 1,
-            map_name: 'Tokyo 2099: Shibuya Sky',
-            team1_score: 0,
-            team2_score: 0,
-            status: 'live'
-          }]
-        };
-        setMatch(mockMatch);
-        initializeEditableStats(mockMatch);
+        console.error('❌ MatchDetailPage: Error fetching REAL match data:', error);
+        
+        // 🚨 CRITICAL: NO MOCK DATA FALLBACK - SHOW ERROR
+        setMatch(null);
       } finally {
         setLoading(false);
       }
@@ -109,7 +133,8 @@ function MatchDetailPage({ matchId, navigateTo }) {
     // Listen for real-time match updates
     const handleMatchUpdate = (event) => {
       const { detail } = event;
-      if (detail.matchId == matchId) {
+      const currentMatchId = getMatchId();
+      if (detail.matchId == currentMatchId) {
         console.log('🔥 MatchDetailPage: Received real-time update:', detail);
         setMatch(detail.matchData);
         initializeEditableStats(detail.matchData);
@@ -118,7 +143,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
 
     window.addEventListener('mrvl-match-updated', handleMatchUpdate);
     return () => window.removeEventListener('mrvl-match-updated', handleMatchUpdate);
-  }, [matchId]);
+  }, [matchId, BACKEND_URL]);
 
   // 🔥 Initialize editable stats from match data
   const initializeEditableStats = (matchData) => {
@@ -133,6 +158,13 @@ function MatchDetailPage({ matchId, navigateTo }) {
     const team2Players = matchData.team2?.players || 
                         (matchData.maps?.[0]?.team2_composition) || 
                         [];
+    
+    console.log('🎯 Initializing stats for players:', {
+      team1Count: team1Players.length,
+      team2Count: team2Players.length,
+      team1Names: team1Players.map(p => p.name),
+      team2Names: team2Players.map(p => p.name)
+    });
     
     // Initialize stats for team1 players
     team1Players.forEach((player, index) => {
@@ -159,6 +191,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
     });
     
     setEditableStats(stats);
+    console.log('✅ Editable stats initialized:', stats);
   };
 
   // 🔥 Update individual player stat
@@ -171,12 +204,13 @@ function MatchDetailPage({ matchId, navigateTo }) {
         [statType]: parseInt(value) || 0
       }
     }));
+    console.log(`📊 Updated ${team} player ${playerIndex} ${statType} to ${value}`);
   };
 
-  // 🔥 Save stats to backend
+  // 🔥 Save stats to REAL backend
   const saveStats = async () => {
     try {
-      console.log('💾 Saving updated stats...', editableStats);
+      console.log('💾 Saving updated stats to REAL backend...', editableStats);
       
       // Format stats for backend
       const updatedMaps = match.maps.map((map, mapIndex) => {
@@ -202,16 +236,29 @@ function MatchDetailPage({ matchId, navigateTo }) {
         };
       });
       
-      await api.put(`/admin/matches/${match.id}`, {
-        maps: updatedMaps
+      // 🚨 CRITICAL: Save to REAL backend
+      const response = await fetch(`${BACKEND_URL}/api/admin/matches/${match.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          maps: updatedMaps
+        })
       });
       
-      alert('✅ Stats saved successfully!');
+      if (response.ok) {
+        console.log('✅ Stats saved successfully to REAL backend');
+        alert('✅ Stats saved successfully!');
+      } else {
+        throw new Error('Backend save failed');
+      }
+      
       setIsEditingStats(false);
       
     } catch (error) {
-      console.error('❌ Error saving stats:', error);
-      alert('✅ Stats saved successfully! (Demo mode)');
+      console.error('❌ Error saving stats to backend:', error);
+      alert('✅ Stats updated locally! (Backend connection issue)');
       setIsEditingStats(false);
     }
   };
@@ -219,16 +266,20 @@ function MatchDetailPage({ matchId, navigateTo }) {
   // Load comments
   useEffect(() => {
     fetchComments();
-  }, [matchId]);
+  }, []);
 
   const fetchComments = async () => {
-    if (!matchId) return;
+    const currentMatchId = getMatchId();
+    if (!currentMatchId) return;
     
     setCommentsLoading(true);
     try {
-      const response = await api.get(`/matches/${matchId}/comments`);
-      const commentsData = response?.data?.data || response?.data || [];
-      setComments(Array.isArray(commentsData) ? commentsData : []);
+      const response = await fetch(`${BACKEND_URL}/api/matches/${currentMatchId}/comments`);
+      if (response.ok) {
+        const data = await response.json();
+        const commentsData = data?.data || data || [];
+        setComments(Array.isArray(commentsData) ? commentsData : []);
+      }
     } catch (error) {
       console.error('❌ Error fetching comments:', error);
       setComments([]);
@@ -242,12 +293,20 @@ function MatchDetailPage({ matchId, navigateTo }) {
     
     setSubmittingComment(true);
     try {
-      const response = await api.post(`/matches/${matchId}/comments`, {
-        content: newComment
+      const currentMatchId = getMatchId();
+      const response = await fetch(`${BACKEND_URL}/api/matches/${currentMatchId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content: newComment
+        })
       });
       
-      if (response?.data) {
-        setComments(prev => [response.data, ...prev]);
+      if (response.ok) {
+        const data = await response.json();
+        setComments(prev => [data, ...prev]);
         setNewComment('');
       }
     } catch (error) {
@@ -262,13 +321,21 @@ function MatchDetailPage({ matchId, navigateTo }) {
     if (!replyText.trim()) return;
     
     try {
-      const response = await api.post(`/matches/${matchId}/comments`, {
-        content: replyText,
-        parent_id: parentId
+      const currentMatchId = getMatchId();
+      const response = await fetch(`${BACKEND_URL}/api/matches/${currentMatchId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content: replyText,
+          parent_id: parentId
+        })
       });
       
-      if (response?.data) {
-        setComments(prev => [response.data, ...prev]);
+      if (response.ok) {
+        const data = await response.json();
+        setComments(prev => [data, ...prev]);
         setReplyText('');
         setReplyingTo(null);
       }
@@ -280,7 +347,13 @@ function MatchDetailPage({ matchId, navigateTo }) {
 
   const voteOnComment = async (commentId, voteType) => {
     try {
-      await api.post(`/comments/${commentId}/vote`, { vote_type: voteType });
+      await fetch(`${BACKEND_URL}/api/comments/${commentId}/vote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ vote_type: voteType })
+      });
       
       // Update local state
       const voteKey = `${commentId}_${user?.id}`;
@@ -306,7 +379,9 @@ function MatchDetailPage({ matchId, navigateTo }) {
 
   const deleteComment = async (commentId) => {
     try {
-      await api.delete(`/comments/${commentId}`);
+      await fetch(`${BACKEND_URL}/api/comments/${commentId}`, {
+        method: 'DELETE'
+      });
       setComments(prev => prev.filter(c => c.id !== commentId));
     } catch (error) {
       console.error('❌ Error deleting comment:', error);
@@ -318,7 +393,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
       <div className="max-w-7xl mx-auto p-6">
         <div className="text-center py-12">
           <div className="text-4xl mb-4">⚔️</div>
-          <p className="text-gray-600 dark:text-gray-400">Loading match details...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading real match details...</p>
         </div>
       </div>
     );
@@ -331,7 +406,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
           <div className="text-4xl mb-4">❌</div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Match Not Found</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            The match you're looking for doesn't exist or has been removed.
+            The match you're looking for doesn't exist in the backend database or has been removed.
           </p>
           <button
             onClick={() => navigateTo && navigateTo('matches')}
@@ -344,12 +419,19 @@ function MatchDetailPage({ matchId, navigateTo }) {
     );
   }
 
-  // 🎮 PROCESS MATCH DATA FOR DISPLAY
+  // 🎮 PROCESS REAL MATCH DATA FOR DISPLAY
   const currentMap = match.maps?.[currentMapIndex] || match.maps?.[0];
   
-  // 🚨 CRITICAL: GET REAL PLAYERS FROM BACKEND STRUCTURE
+  // 🚨 CRITICAL: GET REAL PLAYERS FROM BACKEND STRUCTURE - NO MOCK DATA
   const team1Players = match.team1?.players || currentMap?.team1_composition || [];
   const team2Players = match.team2?.players || currentMap?.team2_composition || [];
+
+  console.log('🎯 MatchDetailPage: Real players data:', {
+    team1Count: team1Players.length,
+    team2Count: team2Players.length,
+    team1Names: team1Players.map(p => p.name),
+    team2Names: team2Players.map(p => p.name)
+  });
 
   // Assign diverse heroes to players if they don't have any
   const diverseHeroes = [
@@ -382,13 +464,6 @@ function MatchDetailPage({ matchId, navigateTo }) {
     }))
   };
 
-  console.log('🎯 MatchDetailPage: Current players data:', {
-    team1Count: currentMapData.team1Players.length,
-    team2Count: currentMapData.team2Players.length,
-    team1Names: currentMapData.team1Players.map(p => p.name),
-    team2Names: currentMapData.team2Players.map(p => p.name)
-  });
-
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
       {/* Header */}
@@ -415,7 +490,10 @@ function MatchDetailPage({ matchId, navigateTo }) {
         </div>
         
         <div className="text-lg text-gray-600 dark:text-gray-400">
-          {match.format || 'BO1'} • {currentMap?.map_name || 'Tokyo 2099: Shibuya Sky'}
+          {/* 🔥 FIXED: CORRECT BO FORMAT DISPLAY */}
+          {match.format === 'BO1' ? 'Best of 1' : 
+           match.format === 'BO3' ? 'Best of 3' :
+           match.format === 'BO5' ? 'Best of 5' : 'Best of 1'} • {currentMap?.map_name || 'Tokyo 2099: Shibuya Sky'}
         </div>
       </div>
 
@@ -430,6 +508,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
           <div className="text-center">
             <div className="text-4xl text-gray-500 dark:text-gray-500">VS</div>
             <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+              {/* 🔥 FIXED: CORRECT BO FORMAT DISPLAY */}
               {match.format === 'BO1' ? 'Best of 1' : 
                match.format === 'BO3' ? 'Best of 3' :
                match.format === 'BO5' ? 'Best of 5' : 'Best of 1'}
