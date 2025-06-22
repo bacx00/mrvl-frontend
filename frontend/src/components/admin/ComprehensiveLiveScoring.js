@@ -106,6 +106,40 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
   };
   const [matchStats, setMatchStats] = useState(() => {
     if (!match) return null;
+
+    // 🔄 FETCH REAL TEAM PLAYERS ON MOUNT
+    useEffect(() => {
+      const loadRealPlayers = async () => {
+        if (match?.team1?.id && match?.team2?.id && token) {
+          console.log('🔍 Loading REAL team players...');
+          
+          const [team1Players, team2Players] = await Promise.all([
+            fetchTeamPlayers(match.team1.id, match.team1.name),
+            fetchTeamPlayers(match.team2.id, match.team2.name)
+          ]);
+          
+          console.log('✅ Real players loaded:', { team1Players, team2Players });
+          
+          // 🔄 UPDATE MATCH STATS WITH REAL PLAYERS
+          if (team1Players.length > 0 || team2Players.length > 0) {
+            setMatchStats(prevStats => {
+              if (!prevStats) return prevStats;
+              
+              return {
+                ...prevStats,
+                maps: prevStats.maps.map(map => ({
+                  ...map,
+                  team1Players: team1Players.length > 0 ? team1Players : map.team1Players,
+                  team2Players: team2Players.length > 0 ? team2Players : map.team2Players
+                }))
+              };
+            });
+          }
+        }
+      };
+      
+      loadRealPlayers();
+    }, [match?.team1?.id, match?.team2?.id, token]);
     
     console.log('🔍 INITIALIZING ComprehensiveLiveScoring with match:', match);
     
