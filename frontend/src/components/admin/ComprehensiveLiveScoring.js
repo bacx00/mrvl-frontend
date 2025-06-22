@@ -3,6 +3,9 @@ import { useAuth } from '../../hooks';
 import { TeamLogo } from '../../utils/imageUtils';
 
 function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
+  const { api, token } = useAuth();
+  const [activeMap, setActiveMap] = useState(0);
+  
   // 🎮 MARVEL RIVALS MATCH STATUS SYSTEM
   const [matchTimer, setMatchTimer] = useState('00:00');
   const [matchStatus, setMatchStatus] = useState(match?.status || 'upcoming');
