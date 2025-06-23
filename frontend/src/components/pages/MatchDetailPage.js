@@ -328,23 +328,23 @@ function MatchDetailPage({ matchId, navigateTo }) {
       ...player,
       hero: player.hero || player.main_hero || diverseHeroes[index] || 'Captain America',
       country: player.country || player.nationality || 'US',
-      eliminations: editableStats[`team1_${index}`]?.eliminations || player.eliminations || 0,
-      deaths: editableStats[`team1_${index}`]?.deaths || player.deaths || 0,
-      assists: editableStats[`team1_${index}`]?.assists || player.assists || 0,
-      damage: editableStats[`team1_${index}`]?.damage || player.damage || 0,
-      healing: editableStats[`team1_${index}`]?.healing || player.healing || 0,
-      damageBlocked: editableStats[`team1_${index}`]?.damageBlocked || player.damageBlocked || 0
+      eliminations: player.eliminations || 0,
+      deaths: player.deaths || 0,
+      assists: player.assists || 0,
+      damage: player.damage || 0,
+      healing: player.healing || 0,
+      damageBlocked: player.damageBlocked || 0
     })),
     team2Players: team2Players.map((player, index) => ({
       ...player,
       hero: player.hero || player.main_hero || diverseHeroes[index + 6] || 'Storm',
       country: player.country || player.nationality || 'US',
-      eliminations: editableStats[`team2_${index}`]?.eliminations || player.eliminations || 0,
-      deaths: editableStats[`team2_${index}`]?.deaths || player.deaths || 0,
-      assists: editableStats[`team2_${index}`]?.assists || player.assists || 0,
-      damage: editableStats[`team2_${index}`]?.damage || player.damage || 0,
-      healing: editableStats[`team2_${index}`]?.healing || player.healing || 0,
-      damageBlocked: editableStats[`team2_${index}`]?.damageBlocked || player.damageBlocked || 0
+      eliminations: player.eliminations || 0,
+      deaths: player.deaths || 0,
+      assists: player.assists || 0,
+      damage: player.damage || 0,
+      healing: player.healing || 0,
+      damageBlocked: player.damageBlocked || 0
     }))
   };
 
