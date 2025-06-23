@@ -393,7 +393,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     }
   };
 
-  // 🔥 FIXED HERO CHANGE - SAVES PROPERLY
+  // 🔥 ENHANCED HERO CHANGE WITH IMMEDIATE SYNC
   const changePlayerHero = (mapIndex, team, playerIndex, hero, role) => {
     console.log(`🦸 Changing ${team} player ${playerIndex} to hero ${hero} (${role})`);
     
@@ -409,6 +409,18 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
       
       return newStats;
     });
+
+    // 🔥 IMMEDIATE REAL-TIME SYNC EVENT
+    window.dispatchEvent(new CustomEvent('mrvl-hero-updated', {
+      detail: {
+        matchId: match.id,
+        type: 'HERO_CHANGE',
+        timestamp: Date.now(),
+        changes: { mapIndex, team, playerIndex, hero, role }
+      }
+    }));
+
+    console.log('🔥 Hero change event dispatched for immediate sync');
   };
   
   // SAVE TO BACKEND - ENHANCED REAL-TIME SYNC
