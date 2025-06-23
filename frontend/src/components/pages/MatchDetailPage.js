@@ -54,25 +54,29 @@ function MatchDetailPage({ matchId, navigateTo }) {
     return null;
   };
 
-  // 🎮 FIXED: Load match data with REAL backend integration - NO MOCK DATA
+  // 🔥 PERFECT REAL-TIME SYNC SYSTEM
   useEffect(() => {
-    const fetchMatchData = async () => {
+    const fetchMatchData = async (showLoading = true) => {
       const realMatchId = getMatchId();
       
       if (!realMatchId) {
         console.error('❌ No match ID provided');
-        setLoading(false);
+        if (showLoading) setLoading(false);
         return;
       }
 
       try {
-        console.log(`🔍 MatchDetailPage: Fetching REAL match ${realMatchId} from backend...`);
+        if (showLoading) {
+          console.log(`🔍 MatchDetailPage: Fetching REAL match ${realMatchId} from backend...`);
+        }
         
         // 🔥 CRITICAL: Use REAL backend API via API helper - NO DIRECT FETCH
         const response = await api.get(`/matches/${realMatchId}`);
         const matchData = response?.data;
 
-        console.log('✅ MatchDetailPage: REAL match data received:', matchData);
+        if (showLoading) {
+          console.log('✅ MatchDetailPage: REAL match data received:', matchData);
+        }
         
         // 🚨 CRITICAL: Ensure we have team data with players
         if (!matchData.team1 || !matchData.team2) {
@@ -114,25 +118,61 @@ function MatchDetailPage({ matchId, navigateTo }) {
         // 🚨 CRITICAL: NO MOCK DATA FALLBACK - SHOW ERROR
         setMatch(null);
       } finally {
-        setLoading(false);
+        if (showLoading) setLoading(false);
       }
     };
 
     fetchMatchData();
 
-    // Listen for real-time match updates
+    // 🔥 PERFECT REAL-TIME SYNC: Listen for multiple event types
     const handleMatchUpdate = (event) => {
       const { detail } = event;
       const currentMatchId = getMatchId();
       if (detail.matchId == currentMatchId) {
-        console.log('🔥 MatchDetailPage: Received real-time update:', detail);
-        setMatch(detail.matchData);
-        initializeEditableStats(detail.matchData);
+        console.log('🔥 MatchDetailPage: Received real-time update:', detail.type, detail);
+        
+        // Force refresh data from backend for perfect sync
+        fetchMatchData(false); // Don't show loading spinner
+        
+        // Cache busting for browser
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('mrvl-data-refresh', {
+            detail: { matchId: currentMatchId, timestamp: Date.now() }
+          }));
+        }, 500);
       }
     };
 
+    const handleHeroUpdate = (event) => {
+      const { detail } = event;
+      const currentMatchId = getMatchId();
+      if (detail.matchId == currentMatchId) {
+        console.log('🦸 MatchDetailPage: Hero update received:', detail);
+        fetchMatchData(false); // Refresh without loading
+      }
+    };
+
+    const handleStatsUpdate = (event) => {
+      const { detail } = event;
+      const currentMatchId = getMatchId();
+      if (detail.matchId == currentMatchId) {
+        console.log('📊 MatchDetailPage: Stats update received:', detail);
+        fetchMatchData(false); // Refresh without loading
+      }
+    };
+
+    // Listen for ALL sync events
     window.addEventListener('mrvl-match-updated', handleMatchUpdate);
-    return () => window.removeEventListener('mrvl-match-updated', handleMatchUpdate);
+    window.addEventListener('mrvl-hero-updated', handleHeroUpdate);
+    window.addEventListener('mrvl-stats-updated', handleStatsUpdate);
+    window.addEventListener('mrvl-data-refresh', handleMatchUpdate);
+    
+    return () => {
+      window.removeEventListener('mrvl-match-updated', handleMatchUpdate);
+      window.removeEventListener('mrvl-hero-updated', handleHeroUpdate);
+      window.removeEventListener('mrvl-stats-updated', handleStatsUpdate);
+      window.removeEventListener('mrvl-data-refresh', handleMatchUpdate);
+    };
   }, [matchId, api]);
 
   // 🔥 Initialize editable stats from match data
