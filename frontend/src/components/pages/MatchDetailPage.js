@@ -13,8 +13,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [userVotes, setUserVotes] = useState({});
-  const [isEditingStats, setIsEditingStats] = useState(false);
-  const [editableStats, setEditableStats] = useState({});
+  const [lastUpdate, setLastUpdate] = useState(Date.now());
   
   const { user, isAuthenticated, api } = useAuth();
   
