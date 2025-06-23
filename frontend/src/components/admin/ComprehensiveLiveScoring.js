@@ -370,8 +370,10 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     }));
   };
 
-  // UPDATE MAP STATUS - CRITICAL FIX
+  // UPDATE MAP STATUS - ENHANCED WITH IMMEDIATE SYNC
   const updateMapStatus = async (mapIndex, status, winner = null) => {
+    console.log(`🏆 Updating map ${mapIndex} status to ${status}, winner: ${winner}`);
+    
     setMatchStats(prev => {
       const newStats = { ...prev };
       
@@ -384,23 +386,27 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
       newStats.maps[mapIndex].status = status;
       newStats.maps[mapIndex].winner = winner;
       
-      if (winner) {
-        newStats.mapWins[winner]++;
+      // 🔥 CRITICAL: Update map wins properly
+      if (winner && status === 'completed') {
+        console.log(`🏆 ${winner} wins map ${mapIndex}! Current wins:`, newStats.mapWins);
+        newStats.mapWins[winner] = (newStats.mapWins[winner] || 0) + 1;
+        console.log(`🏆 Updated wins:`, newStats.mapWins);
       }
       
       return newStats;
     });
 
-    // Send to backend
-    try {
-      await api.put(`/matches/${match.id}/maps/${mapIndex}`, {
-        status,
-        winner,
-        stats: matchStats.maps[mapIndex]
-      });
-    } catch (error) {
-      console.error('Error updating map:', error);
-    }
+    // 🔥 IMMEDIATE SYNC EVENT FOR MAP UPDATES
+    window.dispatchEvent(new CustomEvent('mrvl-match-updated', {
+      detail: {
+        matchId: match.id,
+        type: 'MAP_STATUS_UPDATE',
+        timestamp: Date.now(),
+        changes: { mapIndex, status, winner }
+      }
+    }));
+
+    console.log(`✅ Map ${mapIndex} updated and sync event dispatched`);
   };
 
   // 🔥 ENHANCED HERO CHANGE WITH IMMEDIATE SYNC
