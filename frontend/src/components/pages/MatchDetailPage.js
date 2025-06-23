@@ -608,23 +608,34 @@ function MatchDetailPage({ matchId, navigateTo }) {
                     alert(`Player: ${player.name}\nTeam: ${match.team1?.name}\nHero: ${player.hero}\nRole: ${player.role}`);
                   }}
                 >
-                  {/* ✅ FIXED: Country Flag + Player Name */}
+                  {/* ✅ ENHANCED COUNTRY FLAG SYSTEM - MULTIPLE FALLBACKS */}
                   <div className="flex items-center space-x-2">
                     <div className="w-6 h-6 flex items-center justify-center" title={`Country: ${player.country}`}>
-                      {/* 🚨 CRITICAL FIX: Show actual country flag image */}
+                      {/* 🚨 CRITICAL FIX: Enhanced flag system with multiple attempts */}
                       <img 
                         src={`https://flagcdn.com/24x18/${(player.country || 'us').toLowerCase().slice(0, 2)}.png`}
                         alt={`${player.country} flag`}
                         className="w-6 h-4 object-cover rounded-sm shadow-sm"
                         onError={(e) => {
-                          console.log(`❌ Flag failed for country: ${player.country}`);
-                          e.target.style.display = 'none';
-                          e.target.nextElementSibling.style.display = 'block';
+                          console.log(`❌ Primary flag failed for country: ${player.country}, trying alternative...`);
+                          // Try alternative CDN
+                          e.target.src = `https://flagcdn.com/w20/${(player.country || 'us').toLowerCase().slice(0, 2)}.png`;
+                          e.target.onerror = (e2) => {
+                            console.log(`❌ Alternative flag failed for country: ${player.country}, trying third option...`);
+                            // Try third CDN option
+                            e2.target.src = `https://flagcdn.com/${(player.country || 'us').toLowerCase().slice(0, 2)}.svg`;
+                            e2.target.onerror = () => {
+                              console.log(`❌ All flag attempts failed for country: ${player.country}, showing text fallback`);
+                              e2.target.style.display = 'none';
+                              e2.target.nextElementSibling.style.display = 'flex';
+                            };
+                          };
                         }}
                       />
                       <div 
-                        className="w-6 h-4 bg-gray-300 dark:bg-gray-600 rounded-sm flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-300"
+                        className="w-6 h-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-sm flex items-center justify-center text-xs font-bold text-white shadow-sm"
                         style={{ display: 'none' }}
+                        title={`${player.country || 'Unknown'} - Flag not available`}
                       >
                         {(player.country || 'US').slice(0, 2).toUpperCase()}
                       </div>
