@@ -109,9 +109,6 @@ function MatchDetailPage({ matchId, navigateTo }) {
         console.log('✅ MatchDetailPage: Final processed match data:', matchData);
         setMatch(matchData);
         
-        // Initialize editable stats from current player data
-        initializeEditableStats(matchData);
-        
       } catch (error) {
         console.error('❌ MatchDetailPage: Error fetching REAL match data:', error);
         
