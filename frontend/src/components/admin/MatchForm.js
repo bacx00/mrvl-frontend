@@ -79,24 +79,26 @@ function MatchForm({ matchId, navigateTo }) {
   const { api } = useAuth();
   const isEdit = Boolean(matchId);
 
-  // 🔥 CRITICAL: REAL BACKEND API BASE URL FROM ENV
+  // 🔥 CRITICAL: REAL BACKEND API BASE URL FROM ENV ONLY
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
+  console.log('🔍 MatchForm: Using backend URL:', BACKEND_URL);
 
   // ✅ CRITICAL: Load heroes from live backend API
   useEffect(() => {
     const loadHeroesFromAPI = async () => {
       try {
         console.log('🎮 Loading heroes from backend API...');
-        const response = await fetch(`${BACKEND_URL}/api/heroes`);
-        const heroData = await response.json();
+        const response = await api.get('/heroes');
+        const heroData = response?.data;
         
         console.log('✅ Heroes loaded from API:', heroData);
         
-        if (heroData && heroData.data && typeof heroData.data === 'object') {
+        if (heroData && typeof heroData === 'object') {
           // 🚨 CRITICAL FIX: Transform API response to extract hero names only
           const transformedHeroes = {};
           
-          for (const [role, heroes] of Object.entries(heroData.data)) {
+          for (const [role, heroes] of Object.entries(heroData)) {
             if (Array.isArray(heroes)) {
               // Extract just the name from hero objects
               transformedHeroes[role] = heroes.map(hero => {
@@ -127,7 +129,7 @@ function MatchForm({ matchId, navigateTo }) {
     };
     
     loadHeroesFromAPI();
-  }, [BACKEND_URL]);
+  }, [api]);
 
   // 🚨 CRITICAL: REAL BACKEND DATA LOADING - NO MOCK DATA
   useEffect(() => {
@@ -136,17 +138,15 @@ function MatchForm({ matchId, navigateTo }) {
       try {
         console.log('🔍 MatchForm: Fetching REAL backend data...');
         
-        // 🔥 CRITICAL: Get REAL teams from backend
-        const teamsResponse = await fetch(`${BACKEND_URL}/api/teams`);
-        const teamsData = await teamsResponse.json();
-        const realTeams = teamsData?.data || teamsData || [];
+        // 🔥 CRITICAL: Get REAL teams from backend using API helper
+        const teamsResponse = await api.get('/teams');
+        const realTeams = teamsResponse?.data || [];
         setTeams(Array.isArray(realTeams) ? realTeams : []);
         console.log('✅ REAL Teams loaded:', realTeams.length, realTeams);
 
-        // 🔥 CRITICAL: Get REAL events from backend
-        const eventsResponse = await fetch(`${BACKEND_URL}/api/events`);
-        const eventsData = await eventsResponse.json();
-        const realEvents = eventsData?.data || eventsData || [];
+        // 🔥 CRITICAL: Get REAL events from backend using API helper
+        const eventsResponse = await api.get('/events');
+        const realEvents = eventsResponse?.data || [];
         setEvents(Array.isArray(realEvents) ? realEvents : []);
         console.log('✅ REAL Events loaded:', realEvents.length, realEvents);
 
@@ -154,11 +154,10 @@ function MatchForm({ matchId, navigateTo }) {
         if (isEdit && matchId) {
           try {
             console.log(`🔍 Loading REAL match data for ID: ${matchId}`);
-            const matchResponse = await fetch(`${BACKEND_URL}/api/admin/matches/${matchId}`);
-            const matchData = await matchResponse.json();
+            const matchResponse = await api.get(`/admin/matches/${matchId}`);
+            const realMatchData = matchResponse?.data;
             
-            if (matchData && matchData.data) {
-              const realMatchData = matchData.data;
+            if (realMatchData) {
               console.log('✅ REAL Match data loaded:', realMatchData);
               
               // 🚨 CRITICAL FIX: Ensure correct map count for the format
@@ -207,17 +206,16 @@ function MatchForm({ matchId, navigateTo }) {
     };
 
     fetchData();
-  }, [matchId, isEdit, BACKEND_URL]);
+  }, [matchId, isEdit, api]);
 
   // 🚨 CRITICAL: LOAD REAL PLAYERS FOR TEAM
   const loadRealPlayersForTeam = async (team, teamKey, currentFormData = formData) => {
     try {
       console.log(`🔍 Loading REAL players for ${team.name} (ID: ${team.id})`);
       
-      // 🔥 CRITICAL: Fetch REAL team details with players
-      const teamResponse = await fetch(`${BACKEND_URL}/api/teams/${team.id}`);
-      const teamData = await teamResponse.json();
-      const teamWithPlayers = teamData?.data || teamData;
+      // 🔥 CRITICAL: Fetch REAL team details with players using API helper
+      const teamResponse = await api.get(`/teams/${team.id}`);
+      const teamWithPlayers = teamResponse?.data;
       
       if (teamWithPlayers && teamWithPlayers.players) {
         const realPlayers = teamWithPlayers.players;
@@ -379,7 +377,7 @@ function MatchForm({ matchId, navigateTo }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  // ✅ PERFECT SAVE HANDLER - REAL BACKEND INTEGRATION
+  // ✅ PERFECT SAVE HANDLER - REAL BACKEND INTEGRATION WITH API HELPER
   const handleSave = async () => {
     if (!validateForm()) {
       console.log('❌ Form validation failed:', errors);
@@ -388,7 +386,7 @@ function MatchForm({ matchId, navigateTo }) {
     
     setSaving(true);
     try {
-      console.log('💾 Saving match to REAL backend...', formData);
+      console.log('💾 Saving match to REAL backend using API helper...', formData);
       
       // Prepare data for backend
       const saveData = {
@@ -408,25 +406,14 @@ function MatchForm({ matchId, navigateTo }) {
       
       let response;
       if (isEdit) {
-        response = await fetch(`${BACKEND_URL}/api/admin/matches/${matchId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(saveData)
-        });
+        console.log('🔄 Updating existing match via API...');
+        response = await api.put(`/admin/matches/${matchId}`, saveData);
       } else {
-        response = await fetch(`${BACKEND_URL}/api/admin/matches`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(saveData)
-        });
+        console.log('🚀 Creating new match via API...');
+        response = await api.post('/admin/matches', saveData);
       }
       
-      const result = await response.json();
-      console.log('✅ Match saved successfully to REAL backend:', result);
+      console.log('✅ Match saved successfully to REAL backend:', response);
       alert(`✅ Match ${isEdit ? 'updated' : 'created'} successfully!`);
       
       // Navigate back to matches list
@@ -434,13 +421,8 @@ function MatchForm({ matchId, navigateTo }) {
         navigateTo('admin-matches');
       }
     } catch (error) {
-      console.error('❌ Error saving match to backend:', error);
-      alert(`✅ Match ${isEdit ? 'updated' : 'created'} successfully! (Demo mode)`);
-      
-      // Still navigate back
-      if (navigateTo) {
-        navigateTo('admin-matches');
-      }
+      console.error('❌ Error saving match to backend via API:', error);
+      alert(`❌ Error saving match: ${error.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
