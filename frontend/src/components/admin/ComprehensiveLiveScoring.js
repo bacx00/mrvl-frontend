@@ -979,7 +979,12 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
           {/* SAVE TO BACKEND */}
           <div className="flex justify-center space-x-4 mt-6">
             <button
-              onClick={handleSaveStats}
+              onClick={() => {
+                console.log('🔥 SAVE BUTTON CLICKED - Current matchStats:', matchStats);
+                console.log('🔥 Map wins before save:', matchStats.mapWins);
+                console.log('🔥 Match status before save:', matchStatus);
+                handleSaveStats();
+              }}
               className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
             >
               💾 Save Match Statistics & Heroes
