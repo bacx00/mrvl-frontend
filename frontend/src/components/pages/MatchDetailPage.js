@@ -18,8 +18,10 @@ function MatchDetailPage({ matchId, navigateTo }) {
   
   const { user, isAuthenticated, api } = useAuth();
   
-  // 🔥 CRITICAL: REAL BACKEND API BASE URL
-  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://staging.mrvl.net';
+  // 🔥 CRITICAL: REAL BACKEND API BASE URL FROM ENV ONLY
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
+  console.log('🔍 MatchDetailPage: Using backend URL:', BACKEND_URL);
 
   // 🚨 CRITICAL: EXTRACT MATCH ID FROM URL OR PROPS
   const getMatchId = () => {
@@ -67,22 +69,11 @@ function MatchDetailPage({ matchId, navigateTo }) {
       try {
         console.log(`🔍 MatchDetailPage: Fetching REAL match ${realMatchId} from backend...`);
         
-        // 🔥 CRITICAL: Use REAL backend API - NO MOCK DATA
-        const response = await fetch(`${BACKEND_URL}/api/matches/${realMatchId}`, {
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
-        });
+        // 🔥 CRITICAL: Use REAL backend API via API helper - NO DIRECT FETCH
+        const response = await api.get(`/matches/${realMatchId}`);
+        const matchData = response?.data;
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log('✅ MatchDetailPage: REAL match data received:', data);
-
-        const matchData = data.data || data;
+        console.log('✅ MatchDetailPage: REAL match data received:', matchData);
         
         // 🚨 CRITICAL: Ensure we have team data with players
         if (!matchData.team1 || !matchData.team2) {
@@ -91,9 +82,9 @@ function MatchDetailPage({ matchId, navigateTo }) {
           // Fetch team details separately if not included
           if (matchData.team1_id && !matchData.team1?.players) {
             try {
-              const team1Response = await fetch(`${BACKEND_URL}/api/teams/${matchData.team1_id}`);
-              const team1Data = await team1Response.json();
-              matchData.team1 = { ...matchData.team1, ...team1Data.data };
+              const team1Response = await api.get(`/teams/${matchData.team1_id}`);
+              const team1Data = team1Response?.data;
+              matchData.team1 = { ...matchData.team1, ...team1Data };
               console.log('✅ Team 1 data fetched:', matchData.team1);
             } catch (error) {
               console.error('❌ Error fetching team 1 data:', error);
@@ -102,9 +93,9 @@ function MatchDetailPage({ matchId, navigateTo }) {
           
           if (matchData.team2_id && !matchData.team2?.players) {
             try {
-              const team2Response = await fetch(`${BACKEND_URL}/api/teams/${matchData.team2_id}`);
-              const team2Data = await team2Response.json();
-              matchData.team2 = { ...matchData.team2, ...team2Data.data };
+              const team2Response = await api.get(`/teams/${matchData.team2_id}`);
+              const team2Data = team2Response?.data;
+              matchData.team2 = { ...matchData.team2, ...team2Data };
               console.log('✅ Team 2 data fetched:', matchData.team2);
             } catch (error) {
               console.error('❌ Error fetching team 2 data:', error);
@@ -143,7 +134,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
 
     window.addEventListener('mrvl-match-updated', handleMatchUpdate);
     return () => window.removeEventListener('mrvl-match-updated', handleMatchUpdate);
-  }, [matchId, BACKEND_URL]);
+  }, [matchId, api]);
 
   // 🔥 Initialize editable stats from match data
   const initializeEditableStats = (matchData) => {
@@ -207,10 +198,10 @@ function MatchDetailPage({ matchId, navigateTo }) {
     console.log(`📊 Updated ${team} player ${playerIndex} ${statType} to ${value}`);
   };
 
-  // 🔥 Save stats to REAL backend
+  // 🔥 Save stats to REAL backend using API helper
   const saveStats = async () => {
     try {
-      console.log('💾 Saving updated stats to REAL backend...', editableStats);
+      console.log('💾 Saving updated stats to REAL backend via API helper...', editableStats);
       
       // Format stats for backend
       const updatedMaps = match.maps.map((map, mapIndex) => {
@@ -236,34 +227,23 @@ function MatchDetailPage({ matchId, navigateTo }) {
         };
       });
       
-      // 🚨 CRITICAL: Save to REAL backend
-      const response = await fetch(`${BACKEND_URL}/api/admin/matches/${match.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          maps: updatedMaps
-        })
+      // 🚨 CRITICAL: Save to REAL backend using API helper
+      await api.put(`/admin/matches/${match.id}`, {
+        maps: updatedMaps
       });
       
-      if (response.ok) {
-        console.log('✅ Stats saved successfully to REAL backend');
-        alert('✅ Stats saved successfully!');
-      } else {
-        throw new Error('Backend save failed');
-      }
-      
+      console.log('✅ Stats saved successfully to REAL backend via API helper');
+      alert('✅ Stats saved successfully!');
       setIsEditingStats(false);
       
     } catch (error) {
-      console.error('❌ Error saving stats to backend:', error);
-      alert('✅ Stats updated locally! (Backend connection issue)');
+      console.error('❌ Error saving stats to backend via API helper:', error);
+      alert(`❌ Error saving stats: ${error.message || 'Unknown error'}`);
       setIsEditingStats(false);
     }
   };
 
-  // Load comments
+  // Load comments using API helper
   useEffect(() => {
     fetchComments();
   }, []);
@@ -274,12 +254,9 @@ function MatchDetailPage({ matchId, navigateTo }) {
     
     setCommentsLoading(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/api/matches/${currentMatchId}/comments`);
-      if (response.ok) {
-        const data = await response.json();
-        const commentsData = data?.data || data || [];
-        setComments(Array.isArray(commentsData) ? commentsData : []);
-      }
+      const response = await api.get(`/matches/${currentMatchId}/comments`);
+      const commentsData = response?.data || [];
+      setComments(Array.isArray(commentsData) ? commentsData : []);
     } catch (error) {
       console.error('❌ Error fetching comments:', error);
       setComments([]);
@@ -294,19 +271,12 @@ function MatchDetailPage({ matchId, navigateTo }) {
     setSubmittingComment(true);
     try {
       const currentMatchId = getMatchId();
-      const response = await fetch(`${BACKEND_URL}/api/matches/${currentMatchId}/comments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          content: newComment
-        })
+      const response = await api.post(`/matches/${currentMatchId}/comments`, {
+        content: newComment
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        setComments(prev => [data, ...prev]);
+      if (response?.data) {
+        setComments(prev => [response.data, ...prev]);
         setNewComment('');
       }
     } catch (error) {
@@ -322,20 +292,13 @@ function MatchDetailPage({ matchId, navigateTo }) {
     
     try {
       const currentMatchId = getMatchId();
-      const response = await fetch(`${BACKEND_URL}/api/matches/${currentMatchId}/comments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          content: replyText,
-          parent_id: parentId
-        })
+      const response = await api.post(`/matches/${currentMatchId}/comments`, {
+        content: replyText,
+        parent_id: parentId
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        setComments(prev => [data, ...prev]);
+      if (response?.data) {
+        setComments(prev => [response.data, ...prev]);
         setReplyText('');
         setReplyingTo(null);
       }
@@ -347,13 +310,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
 
   const voteOnComment = async (commentId, voteType) => {
     try {
-      await fetch(`${BACKEND_URL}/api/comments/${commentId}/vote`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ vote_type: voteType })
-      });
+      await api.post(`/comments/${commentId}/vote`, { vote_type: voteType });
       
       // Update local state
       const voteKey = `${commentId}_${user?.id}`;
@@ -379,9 +336,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
 
   const deleteComment = async (commentId) => {
     try {
-      await fetch(`${BACKEND_URL}/api/comments/${commentId}`, {
-        method: 'DELETE'
-      });
+      await api.delete(`/comments/${commentId}`);
       setComments(prev => prev.filter(c => c.id !== commentId));
     } catch (error) {
       console.error('❌ Error deleting comment:', error);
