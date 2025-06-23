@@ -788,22 +788,12 @@ function MatchDetailPage({ matchId, navigateTo }) {
                     </div>
                   </div>
                   
-                  {/* Stats - EDITABLE OR READ-ONLY */}
+                  {/* Stats - READ-ONLY DISPLAY */}
                   {['eliminations', 'deaths', 'assists'].map((stat) => (
                     <div key={stat} className="text-center text-sm">
-                      {isEditingStats ? (
-                        <input
-                          type="number"
-                          value={editableStats[`team2_${index}`]?.[stat] || 0}
-                          onChange={(e) => updatePlayerStat('team2', index, stat, e.target.value)}
-                          className="w-16 px-2 py-1 text-center border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                          min="0"
-                        />
-                      ) : (
-                        <span className="font-medium text-gray-800 dark:text-gray-200">
-                          {player[stat]}
-                        </span>
-                      )}
+                      <span className="font-medium text-gray-800 dark:text-gray-200">
+                        {player[stat]}
+                      </span>
                     </div>
                   ))}
                   
@@ -813,22 +803,12 @@ function MatchDetailPage({ matchId, navigateTo }) {
                   
                   {['damage', 'healing', 'damageBlocked'].map((stat) => (
                     <div key={stat} className="text-center text-sm">
-                      {isEditingStats ? (
-                        <input
-                          type="number"
-                          value={editableStats[`team2_${index}`]?.[stat] || 0}
-                          onChange={(e) => updatePlayerStat('team2', index, stat, e.target.value)}
-                          className="w-20 px-2 py-1 text-center border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                          min="0"
-                        />
-                      ) : (
-                        <span className="font-medium text-gray-800 dark:text-gray-200">
-                          {stat === 'damage' || stat === 'healing' || stat === 'damageBlocked' ? 
-                            (player[stat] > 0 ? `${(player[stat] / 1000).toFixed(1)}k` : '-') :
-                            player[stat]
-                          }
-                        </span>
-                      )}
+                      <span className="font-medium text-gray-800 dark:text-gray-200">
+                        {stat === 'damage' || stat === 'healing' || stat === 'damageBlocked' ? 
+                          (player[stat] > 0 ? `${(player[stat] / 1000).toFixed(1)}k` : '-') :
+                          player[stat]
+                        }
+                      </span>
                     </div>
                   ))}
                 </div>
