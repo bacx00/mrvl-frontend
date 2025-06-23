@@ -79,8 +79,8 @@ function MatchForm({ matchId, navigateTo }) {
   const { api } = useAuth();
   const isEdit = Boolean(matchId);
 
-  // 🔥 CRITICAL: REAL BACKEND API BASE URL
-  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://staging.mrvl.net';
+  // 🔥 CRITICAL: REAL BACKEND API BASE URL FROM ENV
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
   // ✅ CRITICAL: Load heroes from live backend API
   useEffect(() => {
