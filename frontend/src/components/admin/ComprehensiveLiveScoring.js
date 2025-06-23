@@ -469,12 +469,15 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
         }))
       });
       
-      // 🔥 CRITICAL FIX: Enhanced real-time update event with hero data
-      console.log('🔥 DISPATCHING ENHANCED REAL-TIME UPDATE EVENT for match:', match.id);
+      // 🔥 ENHANCED REAL-TIME SYNC SYSTEM - MULTIPLE EVENTS
+      console.log('🔥 DISPATCHING COMPREHENSIVE SYNC EVENTS for match:', match.id);
+      
+      // Primary match update event
       window.dispatchEvent(new CustomEvent('mrvl-match-updated', {
         detail: {
           matchId: match.id,
-          type: 'HERO_UPDATE', // Add event type for better handling
+          type: 'COMPREHENSIVE_UPDATE',
+          timestamp: Date.now(),
           matchData: {
             ...match,
             team1_score: matchStats.mapWins.team1,
@@ -486,10 +489,32 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
         }
       }));
       
-      // Force browser cache refresh
-      if ('caches' in window) {
-        caches.delete('match-data-cache');
-      }
+      // Hero composition update event
+      window.dispatchEvent(new CustomEvent('mrvl-hero-updated', {
+        detail: {
+          matchId: match.id,
+          type: 'BULK_HERO_UPDATE',
+          timestamp: Date.now(),
+          heroData: matchStats.maps
+        }
+      }));
+      
+      // Stats update event
+      window.dispatchEvent(new CustomEvent('mrvl-stats-updated', {
+        detail: {
+          matchId: match.id,
+          type: 'BULK_STATS_UPDATE',
+          timestamp: Date.now(),
+          statsData: matchStats.maps
+        }
+      }));
+      
+      // Force cache refresh
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('mrvl-data-refresh', {
+          detail: { matchId: match.id, timestamp: Date.now() }
+        }));
+      }, 100);
       
       alert('✅ Stats and hero compositions saved successfully! Changes synced live.');
       if (onUpdate) onUpdate({
