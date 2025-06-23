@@ -540,35 +540,21 @@ function MatchDetailPage({ matchId, navigateTo }) {
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Match Statistics</h3>
           
-          {/* 🔥 EDIT/SAVE STATS CONTROLS */}
-          <div className="flex space-x-2">
-            {!isEditingStats ? (
-              <button
-                onClick={() => setIsEditingStats(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-              >
-                ✏️ Edit Stats
-              </button>
-            ) : (
-              <>
-                <button
-                  onClick={saveStats}
-                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                >
-                  💾 Save
-                </button>
-                <button
-                  onClick={() => {
-                    setIsEditingStats(false);
-                    initializeEditableStats(match);
-                  }}
-                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-                >
-                  Cancel
-                </button>
-              </>
-            )}
-          </div>
+          {/* 🛠️ ADMIN LINK - Professional VLR.gg Style */}
+          {user && (user.role === 'admin' || user.role === 'moderator') && (
+            <a
+              href={`#admin-live-scoring/${match.id}`}
+              onClick={(e) => {
+                e.preventDefault();
+                console.log('🛠️ Navigating to admin scoring interface');
+                navigateTo && navigateTo('admin-live-scoring', { id: match.id });
+              }}
+              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              <span className="text-lg mr-2">🛠️</span>
+              <span className="font-semibold">Admin Edit</span>
+            </a>
+          )}
         </div>
 
         {/* Stats Table Header */}
