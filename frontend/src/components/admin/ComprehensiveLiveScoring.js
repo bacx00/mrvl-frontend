@@ -342,7 +342,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     team2FirstPlayer: currentMapData?.team2Players?.[0]?.name
   });
 
-  // UPDATE PLAYER STAT - FIXED CRITICAL BUG
+  // UPDATE PLAYER STAT - ENHANCED WITH REAL-TIME SYNC
   const updatePlayerStat = (mapIndex, team, playerIndex, statType, value) => {
     console.log(`📊 Updating ${team} player ${playerIndex} ${statType} to ${value}`);
     setMatchStats(prev => {
@@ -358,6 +358,16 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
       console.log(`✅ Stat updated: ${team} player ${playerIndex} now has ${statType}=${value}`);
       return newStats;
     });
+
+    // 🔥 IMMEDIATE SYNC EVENT FOR STAT UPDATES
+    window.dispatchEvent(new CustomEvent('mrvl-stats-updated', {
+      detail: {
+        matchId: match.id,
+        type: 'STAT_CHANGE',
+        timestamp: Date.now(),
+        changes: { mapIndex, team, playerIndex, statType, value }
+      }
+    }));
   };
 
   // UPDATE MAP STATUS - CRITICAL FIX
