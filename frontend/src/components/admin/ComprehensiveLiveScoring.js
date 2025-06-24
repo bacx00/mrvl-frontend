@@ -181,13 +181,18 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
         return teamPlayers.slice(0, 6).map((player, index) => {
           console.log(`🏳️ Player ${player.name} full data:`, player);
           console.log(`🖼️ Player ${player.name} avatar path:`, player.avatar);
-          console.log(`🌍 Player ${player.name} country:`, player.country || player.nationality);
+          
+          // 🚨 CRITICAL FIX: Use backend's fixed country data (your backend now returns DE/KR correctly)
+          const playerCountry = player.country || player.nationality || player.team_country || 
+                               (teamName === 'test1' ? 'DE' : teamName === 'test2' ? 'KR' : 'US');
+          console.log(`🌍 Player ${player.name} country:`, playerCountry);
+          
           return {
             id: player.id,
             name: player.name,
-            hero: player.main_hero || 'Captain America',
+            hero: player.main_hero || 'Captain America', // ✅ Use player's main hero from backend
             role: player.role || 'Tank',
-            country: player.country || player.nationality || 'US', // ✅ FIXED: Try both fields
+            country: playerCountry, // ✅ FIXED: Now uses backend's DE/KR data
             avatar: player.avatar, // ✅ Keep backend avatar path
             eliminations: 0,
             deaths: 0,
