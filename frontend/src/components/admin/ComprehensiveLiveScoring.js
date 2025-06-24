@@ -86,18 +86,20 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     api.put(`/admin/matches/${match.id}`, { status: newStatus });
   };
 
-  // 🔍 DEBUG: Log what data we receive
-  console.log('🎯 ComprehensiveLiveScoring MOUNTED with:', {
-    isOpen,
-    match: match ? {
-      id: match.id,
-      team1: match.team1,
-      team2: match.team2,
-      team1_id: match.team1_id,
-      team2_id: match.team2_id
-    } : null,
-    hasToken: !!token
-  });
+  // 🔍 DEBUG: Log what data we receive (ONCE)
+  useEffect(() => {
+    console.log('🎯 ComprehensiveLiveScoring MOUNTED with:', {
+      isOpen,
+      match: match ? {
+        id: match.id,
+        team1: match.team1?.name,
+        team2: match.team2?.name,
+        team1_id: match.team1_id,
+        team2_id: match.team2_id
+      } : null,
+      hasToken: !!token
+    });
+  }, []); // Only log once on mount
 
   // 🎮 FIXED MARVEL RIVALS MAPS - CORRECT MAPS
   const marvelRivalsMaps = [
