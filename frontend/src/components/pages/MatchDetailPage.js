@@ -344,7 +344,12 @@ function MatchDetailPage({ matchId, navigateTo }) {
     team1Players: team1Players.map((player, index) => ({
       ...player,
       hero: player.hero || player.main_hero || diverseHeroes[index] || 'Captain America',
-      country: player.country || player.nationality || 'US',
+      // 🏳️ ENHANCED COUNTRY DETECTION - Multiple sources
+      country: player.country || 
+               player.nationality || 
+               player.team_country ||
+               (match.team1?.country) ||
+               'US',
       eliminations: player.eliminations || 0,
       deaths: player.deaths || 0,
       assists: player.assists || 0,
@@ -355,7 +360,12 @@ function MatchDetailPage({ matchId, navigateTo }) {
     team2Players: team2Players.map((player, index) => ({
       ...player,
       hero: player.hero || player.main_hero || diverseHeroes[index + 6] || 'Storm',
-      country: player.country || player.nationality || 'US',
+      // 🏳️ ENHANCED COUNTRY DETECTION - Multiple sources
+      country: player.country || 
+               player.nationality || 
+               player.team_country ||
+               (match.team2?.country) ||
+               'US',
       eliminations: player.eliminations || 0,
       deaths: player.deaths || 0,
       assists: player.assists || 0,
