@@ -1,54 +1,398 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../hooks';
+import React, { useState, useEffect, useCallback } from 'react';
+import { api } from '../../utils/api';
 import { TeamLogo } from '../../utils/imageUtils';
+import { loadCompleteMatchData, getPlayerCountry, loadTeamPlayers } from '../../utils/marvelRivalsSync';
 
-function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
-  const { api, token } = useAuth();
-  const [activeMap, setActiveMap] = useState(0);
-  
-  // 🎮 MARVEL RIVALS MATCH STATUS SYSTEM - FIXED TIMER
+/**
+ * 🎮 COMPREHENSIVE LIVE SCORING - FIXED VERSION
+ * Fixes: Hero persistence, country flags, save reset bug
+ */
+const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
+  const [matchStats, setMatchStats] = useState(null);
+  const [matchStatus, setMatchStatus] = useState('upcoming');
   const [matchTimer, setMatchTimer] = useState('00:00');
-  const [matchStatus, setMatchStatus] = useState(match?.status || 'upcoming');
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [timerStartTime, setTimerStartTime] = useState(null);
+  const [saveLoading, setSaveLoading] = useState(false);
 
-  // 🎮 MARVEL RIVALS GAME MODE TIMING
-  const getGameModeTiming = (mode) => {
-    switch (mode) {
-      case 'Convoy':
-        return {
-          phases: ['Checkpoint 1: 5:00', 'Checkpoint 2: 3:00+', 'Checkpoint 3: 1:30+'],
-          totalTime: '9:30',
-          description: 'Escort payload through 3 checkpoints'
+  // 🔍 DEBUG: Log what data we receive (ONCE)
+  useEffect(() => {
+    console.log('🎯 ComprehensiveLiveScoring MOUNTED with:', {
+      isOpen,
+      match: match ? {
+        id: match.id,
+        team1: match.team1?.name,
+        team2: match.team2?.name,
+        team1_id: match.team1_id,
+        team2_id: match.team2_id
+      } : null,
+      hasToken: !!token
+    });
+  }, []); // Only log once on mount
+
+  // 🎮 COMPLETE MARVEL RIVALS MAPS - ALL 8 MAPS
+  const marvelRivalsMaps = [
+    { name: 'Tokyo 2099: Shibuya Sky', mode: 'Convoy', icon: '🏙️' },
+    { name: 'Klyntar: Symbiote Planet', mode: 'Domination', icon: '🖤' },
+    { name: 'Asgard: Royal Palace', mode: 'Convergence', icon: '⚡' },
+    { name: 'Tokyo 2099: Shin-Shibuya Station', mode: 'Convoy', icon: '🚅' },
+    { name: 'Wakanda: Golden City', mode: 'Conquest', icon: '💎' },
+    { name: 'Sanctum Sanctorum: Astral Plane', mode: 'Convoy', icon: '🔮' },
+    { name: 'Yggsgard: Yggdrasil', mode: 'Convergence', icon: '🌳' },
+    { name: 'Midtown Manhattan: Oscorp Tower', mode: 'Convoy', icon: '🏢' }
+  ];
+
+  // ✅ COMPLETE MARVEL RIVALS HEROES BY ROLE
+  const marvelRivalsHeroes = {
+    Tank: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Peni Parker', 'The Thing', 'Thor', 'Venom'],
+    Duelist: ['Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Human Torch', 'Iron Fist', 'Iron Man', 'Magik', 'Moon Knight', 'Namor', 'Psylocke', 'Punisher', 'Scarlet Witch', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine'],
+    Support: ['Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon']
+  };
+
+  // Get all heroes in a flat array
+  const allHeroes = Object.values(marvelRivalsHeroes).flat();
+
+  // 🚨 INITIALIZATION WITH PROPER MAP COUNT
+  const initializeMatchStats = useCallback((format = 'BO1') => {
+    const mapCount = format === 'BO1' ? 1 : format === 'BO3' ? 3 : format === 'BO5' ? 5 : format === 'BO7' ? 7 : 1;
+    
+    console.log('🔍 INITIALIZING ComprehensiveLiveScoring with match:', {
+      id: match?.id,
+      format: format,
+      mapCount: mapCount,
+      team1: match?.team1?.name || 'Team1',
+      team2: match?.team2?.name || 'Team2'
+    });
+
+    return {
+      totalMaps: mapCount,
+      currentMap: 0,
+      mapWins: { team1: 0, team2: 0 },
+      maps: Array.from({ length: mapCount }, (_, index) => ({
+        map_number: index + 1,
+        map_name: marvelRivalsMaps[index % marvelRivalsMaps.length].name,
+        mode: marvelRivalsMaps[index % marvelRivalsMaps.length].mode,
+        team1Score: 0,
+        team2Score: 0,
+        status: 'upcoming',
+        winner: null,
+        duration: 'Not started',
+        team1Players: [],
+        team2Players: []
+      }))
+    };
+  }, [match]);
+
+  // 🔥 CRITICAL: LOAD SAVED MATCH DATA FIRST TO PREVENT HERO RESET
+  useEffect(() => {
+    const loadSavedMatchData = async () => {
+      if (!match || !isOpen) {
+        console.log('❌ ADMIN: Not loading - no match or not open');
+        return;
+      }
+
+      console.log('🔍 ADMIN: Loading saved match data from backend...');
+      
+      try {
+        // 🚨 CRITICAL: Try to load existing match data first
+        const response = await api.get(`/matches/${match.id}`);
+        
+        if (response.success && response.data) {
+          const savedMatch = response.data;
+          console.log('✅ ADMIN: Saved match data found:', savedMatch);
+          
+          // 🔥 CRITICAL: If match has saved map data with heroes, use it!
+          if (savedMatch.maps && savedMatch.maps.length > 0) {
+            console.log('🗺️ ADMIN: Using saved map data with heroes preserved!');
+            
+            setMatchStats({
+              totalMaps: savedMatch.maps.length,
+              currentMap: 0,
+              mapWins: { 
+                team1: savedMatch.team1_score || 0, 
+                team2: savedMatch.team2_score || 0 
+              },
+              maps: savedMatch.maps.map((savedMap, index) => ({
+                map_number: index + 1,
+                map_name: savedMap.map_name || marvelRivalsMaps[index % marvelRivalsMaps.length].name,
+                mode: savedMap.mode || marvelRivalsMaps[index % marvelRivalsMaps.length].mode,
+                team1Score: savedMap.team1_score || 0,
+                team2Score: savedMap.team2_score || 0,
+                status: savedMap.status || 'upcoming',
+                winner: savedMap.winner_id ? (savedMap.winner_id === match.team1_id ? 'team1' : 'team2') : null,
+                duration: savedMap.duration || 'Not started',
+                team1Players: savedMap.team1_composition?.map(comp => ({
+                  id: comp.player_id,
+                  name: comp.player_name,
+                  hero: comp.hero || 'Captain America', // ✅ PRESERVE SAVED HERO!
+                  role: comp.role,
+                  country: comp.country || 'DE', // ✅ Use backend's fixed country
+                  eliminations: comp.eliminations || 0,
+                  deaths: comp.deaths || 0,
+                  assists: comp.assists || 0,
+                  damage: comp.damage || 0,
+                  healing: comp.healing || 0,
+                  damageBlocked: comp.damageBlocked || 0
+                })) || [],
+                team2Players: savedMap.team2_composition?.map(comp => ({
+                  id: comp.player_id,
+                  name: comp.player_name,
+                  hero: comp.hero || 'Captain America', // ✅ PRESERVE SAVED HERO!
+                  role: comp.role,
+                  country: comp.country || 'KR', // ✅ Use backend's fixed country
+                  eliminations: comp.eliminations || 0,
+                  deaths: comp.deaths || 0,
+                  assists: comp.assists || 0,
+                  damage: comp.damage || 0,
+                  healing: comp.healing || 0,
+                  damageBlocked: comp.damageBlocked || 0
+                })) || []
+              }))
+            });
+            
+            setMatchStatus(savedMatch.status || 'upcoming');
+            console.log('✅ ADMIN: Match data loaded with saved heroes preserved!');
+            return; // Don't load fresh players if we have saved data
+          }
+        }
+      } catch (error) {
+        console.log('⚠️ ADMIN: No saved match data, loading fresh players:', error.message);
+      }
+
+      // 🔄 FALLBACK: Load fresh players if no saved data
+      console.log('🔍 ADMIN: Loading fresh player data...');
+      
+      const team1Id = match.team1?.id || match.team1_id;
+      const team2Id = match.team2?.id || match.team2_id;
+      
+      if (team1Id && team2Id) {
+        try {
+          const [team1Players, team2Players] = await Promise.all([
+            loadTeamPlayers(team1Id, match.team1?.name || 'Team1', token),
+            loadTeamPlayers(team2Id, match.team2?.name || 'Team2', token)
+          ]);
+          
+          const initialStats = initializeMatchStats(match.format);
+          
+          setMatchStats({
+            ...initialStats,
+            maps: initialStats.maps.map((map, mapIndex) => ({
+              ...map,
+              team1Players: team1Players.length > 0 ? team1Players : [],
+              team2Players: team2Players.length > 0 ? team2Players : []
+            }))
+          });
+          
+          console.log('✅ ADMIN: Fresh players loaded with correct countries');
+        } catch (error) {
+          console.error('❌ ADMIN: Error loading fresh players:', error);
+          setMatchStats(initializeMatchStats(match.format));
+        }
+      } else {
+        setMatchStats(initializeMatchStats(match.format));
+      }
+    };
+    
+    loadSavedMatchData();
+  }, [match, isOpen, token, initializeMatchStats]);
+
+  // 🦸 Change player hero
+  const changePlayerHero = (mapIndex, team, playerIndex, hero, role) => {
+    console.log(`🦸 Changing ${team} player ${playerIndex} to hero ${hero} (${role})`);
+    
+    setMatchStats(prev => {
+      if (!prev || !prev.maps || !prev.maps[mapIndex]) return prev;
+      
+      const playersKey = team === 'team1' ? 'team1Players' : 'team2Players';
+      const updatedMaps = [...prev.maps];
+      const currentMap = { ...updatedMaps[mapIndex] };
+      const players = [...(currentMap[playersKey] || [])];
+      
+      if (players[playerIndex]) {
+        players[playerIndex] = {
+          ...players[playerIndex],
+          hero: hero,
+          role: role
         };
-      case 'Convergence':
+        
+        currentMap[playersKey] = players;
+        updatedMaps[mapIndex] = currentMap;
+        
+        console.log(`✅ Hero changed: Player ${players[playerIndex].name} is now ${hero}`);
+        
+        // 🔥 Dispatch real-time sync event
+        window.dispatchEvent(new CustomEvent('mrvl-hero-updated', {
+          detail: {
+            matchId: match.id,
+            type: 'HERO_CHANGE',
+            timestamp: Date.now(),
+            changes: { mapIndex, team, playerIndex, hero, role }
+          }
+        }));
+        console.log('🔥 Hero change event dispatched for immediate sync');
+        
         return {
-          phases: ['Capture: 4:00', 'Escort: 1:30'],
-          totalTime: '5:30',
-          description: 'Capture point then escort payload'
+          ...prev,
+          maps: updatedMaps
         };
-      case 'Domination':
+      }
+      
+      return prev;
+    });
+  };
+
+  // 📊 Update player stat
+  const updatePlayerStat = (mapIndex, team, playerIndex, statName, value) => {
+    console.log(`📊 Updating ${team} player ${playerIndex} ${statName} to ${value}`);
+    
+    setMatchStats(prev => {
+      if (!prev || !prev.maps || !prev.maps[mapIndex]) return prev;
+      
+      const playersKey = team === 'team1' ? 'team1Players' : 'team2Players';
+      const updatedMaps = [...prev.maps];
+      const currentMap = { ...updatedMaps[mapIndex] };
+      const players = [...(currentMap[playersKey] || [])];
+      
+      if (players[playerIndex]) {
+        players[playerIndex] = {
+          ...players[playerIndex],
+          [statName]: parseInt(value) || 0
+        };
+        
+        currentMap[playersKey] = players;
+        updatedMaps[mapIndex] = currentMap;
+        
+        console.log(`✅ Stat updated: ${team} player ${playerIndex} now has ${statName}=${value}`);
+        
         return {
-          phases: ['Round 1', 'Round 2', 'Round 3 (if needed)'],
-          totalTime: 'Best of 3',
-          description: 'Control single point, best of 3 rounds'
+          ...prev,
+          maps: updatedMaps
         };
-      case 'Conquest':
-        return {
-          phases: ['Single Phase: 3:50'],
-          totalTime: '3:50',
-          description: 'First to 50 Chromium points wins'
-        };
-      default:
-        return {
-          phases: ['Game Phase'],
-          totalTime: '10:00',
-          description: 'Standard match'
-        };
+      }
+      
+      return prev;
+    });
+  };
+
+  // 🔄 OPTIMIZED SAVE FUNCTION - PREVENT RESET BUG
+  const handleSaveStats = async () => {
+    if (!matchStats || !match) {
+      console.log('❌ Cannot save: Missing matchStats or match');
+      return;
+    }
+
+    setSaveLoading(true);
+    
+    try {
+      console.log('🔄 SAVING CRITICAL DATA - Current State:', {
+        mapWins: matchStats.mapWins,
+        matchStatus: matchStatus,
+        totalMaps: matchStats.maps?.length,
+        activeMap: matchStats.currentMap
+      });
+      
+      // 🚨 CRITICAL: Build complete save payload matching backend structure
+      const savePayload = {
+        team1_score: matchStats.mapWins.team1 || 0,
+        team2_score: matchStats.mapWins.team2 || 0,
+        status: matchStatus,
+        maps: matchStats.maps.map((mapData, index) => ({
+          map_number: index + 1,
+          map_name: mapData.map_name,
+          mode: mapData.mode,
+          team1_score: mapData.team1Score || 0,
+          team2_score: mapData.team2Score || 0,
+          status: mapData.status || 'upcoming',
+          winner_id: mapData.winner ? (mapData.winner === 'team1' ? match.team1_id : match.team2_id) : null,
+          team1_composition: mapData.team1Players?.map(player => ({
+            player_id: player.id,
+            player_name: player.name,
+            hero: player.hero, // ✅ PRESERVE hero selection
+            role: player.role,
+            country: player.country, // ✅ PRESERVE country
+            eliminations: player.eliminations || 0,
+            deaths: player.deaths || 0,
+            assists: player.assists || 0,
+            damage: player.damage || 0,
+            healing: player.healing || 0,
+            damageBlocked: player.damageBlocked || 0
+          })) || [],
+          team2_composition: mapData.team2Players?.map(player => ({
+            player_id: player.id,
+            player_name: player.name,
+            hero: player.hero, // ✅ PRESERVE hero selection
+            role: player.role,
+            country: player.country, // ✅ PRESERVE country
+            eliminations: player.eliminations || 0,
+            deaths: player.deaths || 0,
+            assists: player.assists || 0,
+            damage: player.damage || 0,
+            healing: player.healing || 0,
+            damageBlocked: player.damageBlocked || 0
+          })) || []
+        }))
+      };
+
+      console.log('💾 SAVING TO BACKEND:', savePayload);
+
+      const response = await api.put(`/admin/matches/${match.id}`, savePayload);
+      
+      console.log('✅ BACKEND SAVE SUCCESSFUL');
+      
+      // 🔥 DISPATCH COMPREHENSIVE SYNC EVENTS
+      console.log('🔥 DISPATCHING COMPREHENSIVE SYNC EVENTS for match:', match.id);
+      
+      window.dispatchEvent(new CustomEvent('mrvl-match-updated', {
+        detail: { 
+          matchId: match.id, 
+          type: 'COMPREHENSIVE_UPDATE',
+          timestamp: Date.now()
+        }
+      }));
+      
+      window.dispatchEvent(new CustomEvent('mrvl-hero-updated', {
+        detail: { 
+          matchId: match.id, 
+          type: 'BULK_HERO_UPDATE',
+          timestamp: Date.now()
+        }
+      }));
+      
+      window.dispatchEvent(new CustomEvent('mrvl-stats-updated', {
+        detail: { 
+          matchId: match.id, 
+          type: 'BULK_STATS_UPDATE',
+          timestamp: Date.now()
+        }
+      }));
+      
+      // 🚨 CRITICAL: DO NOT RESET STATE AFTER SAVE!
+      console.log('✅ Save complete - state preserved');
+      
+    } catch (error) {
+      console.error('❌ Error saving match stats:', error);
+    } finally {
+      setSaveLoading(false);
     }
   };
 
-  // 🔥 FIXED MATCH TIMER SYSTEM
+  // Timer controls
+  const startTimer = () => {
+    setIsTimerRunning(true);
+    setTimerStartTime(Date.now());
+  };
+
+  const pauseTimer = () => {
+    setIsTimerRunning(false);
+  };
+
+  const resetTimer = () => {
+    setIsTimerRunning(false);
+    setMatchTimer('00:00');
+    setTimerStartTime(null);
+  };
+
+  // Timer effect
   useEffect(() => {
     let interval;
     if (isTimerRunning && matchStatus === 'live') {
@@ -66,1007 +410,306 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     return () => clearInterval(interval);
   }, [isTimerRunning, matchStatus, timerStartTime]);
 
-  // 🔥 FIXED MATCH STATUS CONTROLS
-  const handleMatchStatusChange = (newStatus) => {
-    console.log(`🎮 Changing match status from ${matchStatus} to ${newStatus}`);
-    setMatchStatus(newStatus);
-    
-    if (newStatus === 'live') {
-      setIsTimerRunning(true);
-      if (!timerStartTime) {
-        setTimerStartTime(Date.now());
-      }
-    } else if (newStatus === 'paused') {
-      setIsTimerRunning(false);
-    } else if (newStatus === 'completed') {
-      setIsTimerRunning(false);
-    }
-    
-    // Update backend
-    api.put(`/admin/matches/${match.id}`, { status: newStatus });
-  };
-
-  // 🔍 DEBUG: Log what data we receive (ONCE)
-  useEffect(() => {
-    console.log('🎯 ComprehensiveLiveScoring MOUNTED with:', {
-      isOpen,
-      match: match ? {
-        id: match.id,
-        team1: match.team1?.name,
-        team2: match.team2?.name,
-        team1_id: match.team1_id,
-        team2_id: match.team2_id
-      } : null,
-      hasToken: !!token
-    });
-  }, []); // Only log once on mount
-
-  // 🎮 FIXED MARVEL RIVALS MAPS - CORRECT MAPS
-  const marvelRivalsMaps = [
-    { 
-      name: 'Tokyo 2099: Shibuya Sky', 
-      mode: 'Convoy', 
-      icon: '🏙️',
-      checkpoints: ['Sky Terminal', 'Neo-Shibuya Plaza', 'Quantum Bridge'],
-      description: 'Escort payload through futuristic Tokyo skyline',
-      duration: '5:00 → 3:00+ → 1:30+'
-    },
-    { 
-      name: 'Klyntar: Symbiote Planet', 
-      mode: 'Domination', 
-      icon: '🖤',
-      checkpoints: ['Symbiote Nest', 'Dark Chambers', 'Venom Core'],
-      description: 'Control the single point in alien symbiote world',
-      duration: 'Best of 3 rounds'
-    },
-    { 
-      name: 'Asgard: Royal Palace', 
-      mode: 'Convergence', 
-      icon: '⚡',
-      checkpoints: ['Rainbow Bridge', 'Throne Chamber', 'Odin\'s Vault'],
-      description: 'Capture then escort through Asgardian royal halls',
-      duration: '4:00 capture → 1:30 escort'
-    },
-    { 
-      name: 'Tokyo 2099: Shin-Shibuya Station', 
-      mode: 'Convoy', 
-      icon: '🚅',
-      checkpoints: ['Platform Alpha', 'Central Hub', 'Departure Terminal'],
-      description: 'Push payload through underground metro system',
-      duration: '5:00 → 3:00+ → 1:30+'
-    },
-    { 
-      name: 'Wakanda: Golden City', 
-      mode: 'Conquest', 
-      icon: '💎',
-      checkpoints: ['Vibranium Mines', 'Royal Plaza', 'Panther Temple'],
-      description: 'Battle for 50 Chromium points in Wakandan capital',
-      duration: '3:50 minutes'
-    }
-  ];
-
-  // ✅ ENHANCED MARVEL RIVALS HEROES BY ROLE - ALIGNED WITH BACKEND
-  const marvelRivalsHeroes = {
-    Tank: [
-      'Captain America', 'Doctor Strange', 'Groot', 'Hulk', 
-      'Magneto', 'Peni Parker', 'The Thing', 'Thor', 'Venom'
-    ],
-    Duelist: [
-      'Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Human Torch',
-      'Iron Fist', 'Iron Man', 'Magik', 'Moon Knight', 'Namor', 
-      'Psylocke', 'The Punisher', 'Scarlet Witch', 'Spider-Man', 
-      'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine'
-    ],
-    Support: [
-      'Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 
-      'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon'
-    ]
-  };
-
-  // 🎮 FETCH REAL TEAM PLAYERS FROM BACKEND
-  const fetchTeamPlayers = async (teamId, teamName) => {
-    try {
-      console.log(`🔍 Fetching real players for team: ${teamName} (ID: ${teamId})`);
-      const response = await fetch(`https://staging.mrvl.net/api/teams/${teamId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const teamPlayers = data.data?.players || [];
-        console.log(`✅ Found ${teamPlayers.length} real players for ${teamName}:`, teamPlayers);
-        
-        // Convert real players to match format - FIXED COUNTRY
-        return teamPlayers.slice(0, 6).map((player, index) => {
-          console.log(`🏳️ Player ${player.name} full data:`, player);
-          console.log(`🖼️ Player ${player.name} avatar path:`, player.avatar);
-          
-          // 🚨 CRITICAL FIX: Use backend's fixed country data (your backend now returns DE/KR correctly)
-          const playerCountry = player.country || player.nationality || player.team_country || 
-                               (teamName === 'test1' ? 'DE' : teamName === 'test2' ? 'KR' : 'US');
-          console.log(`🌍 Player ${player.name} country:`, playerCountry);
-          
-          return {
-            id: player.id,
-            name: player.name,
-            hero: player.main_hero || 'Captain America', // ✅ Use player's main hero from backend
-            role: player.role || 'Tank',
-            country: playerCountry, // ✅ FIXED: Now uses backend's DE/KR data
-            avatar: player.avatar, // ✅ Keep backend avatar path
-            eliminations: 0,
-            deaths: 0,
-            assists: 0,
-            damage: 0,
-            healing: 0,
-            damageBlocked: 0,
-            objectiveTime: 0,
-            ultimatesUsed: 0
-          };
-        });
-      } else {
-        console.log(`⚠️ Failed to fetch players for ${teamName}, using defaults`);
-        return [];
-      }
-    } catch (error) {
-      console.error(`❌ Error fetching team players for ${teamName}:`, error);
-      return [];
-    }
-  };
-  const [matchStats, setMatchStats] = useState(() => {
-    if (!match) return null;
-    
-    console.log('🔍 INITIALIZING ComprehensiveLiveScoring with match:', match);
-    
-    // 🎮 FORCE CREATE PLAYER DATA if missing
-    const totalMaps = match.format === 'BO5' ? 5 : match.format === 'BO3' ? 3 : 1;
-    console.log(`🎯 Creating ${totalMaps} maps for ${match.format} format`);
-    
-    return {
-      // Overall match stats
-      totalMaps,
-      currentMap: 0,
-      mapWins: { team1: match.team1_score || 0, team2: match.team2_score || 0 },
-      
-      // 🚨 NO MOCK DATA! Create empty maps and wait for real players
-      maps: Array.from({ length: totalMaps }, (_, index) => {
-        console.log(`🎯 Creating empty map ${index + 1} - NO MOCK PLAYERS`);
-        
-        return {
-          map_number: index + 1,
-          map_name: marvelRivalsMaps[index]?.name || 'Tokyo 2099: Shibuya Sky',
-          mode: marvelRivalsMaps[index]?.mode || 'Convoy',
-          team1Score: 0,
-          team2Score: 0,
-          status: 'upcoming',
-          winner: null,
-          duration: 'Not started',
-          team1Players: [], // 🚨 EMPTY! Wait for real data
-          team2Players: []  // 🚨 EMPTY! Wait for real data
-        };
-      })
-    };
-  });
-
-  // 🔥 CRITICAL: LOAD EXISTING MATCH DATA FROM BACKEND FIRST
-  useEffect(() => {
-    const loadCompleteMatchData = async () => {
-      if (!match || !isOpen) {
-        console.log('❌ ADMIN: Not loading - no match or not open');
-        return;
-      }
-
-      console.log('🔍 ADMIN: Loading complete match data from backend...');
-      
-      try {
-        // 🚨 CRITICAL: Load EXISTING match data from your fixed backend first
-        const response = await fetch(`https://staging.mrvl.net/api/admin/matches/${match.id}/complete-data`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const savedMatchData = await response.json();
-          console.log('✅ ADMIN: Saved match data loaded:', savedMatchData);
-          
-          // 🔥 CRITICAL: If backend has map data with heroes/stats, use it!
-          if (savedMatchData.data?.maps && savedMatchData.data.maps.length > 0) {
-            console.log('🗺️ ADMIN: Using saved map data with heroes and stats!');
-            
-            setMatchStats(prev => ({
-              ...prev,
-              maps: savedMatchData.data.maps.map((savedMap, index) => ({
-                ...prev.maps[index],
-                map_name: savedMap.map_name || 'Asgard: Royal Palace',
-                mode: savedMap.mode || 'Domination',
-                team1Players: savedMap.team1_composition?.map(comp => ({
-                  id: comp.player_id,
-                  name: comp.player_name,
-                  hero: comp.hero, // ✅ KEEP SAVED HERO!
-                  role: comp.role,
-                  country: comp.country || 'DE', // ✅ Use backend's fixed country
-                  eliminations: comp.eliminations || 0,
-                  deaths: comp.deaths || 0,
-                  assists: comp.assists || 0,
-                  damage: comp.damage || 0,
-                  healing: comp.healing || 0,
-                  damageBlocked: comp.damageBlocked || 0
-                })) || [],
-                team2Players: savedMap.team2_composition?.map(comp => ({
-                  id: comp.player_id,
-                  name: comp.player_name,
-                  hero: comp.hero, // ✅ KEEP SAVED HERO!
-                  role: comp.role,
-                  country: comp.country || 'KR', // ✅ Use backend's fixed country
-                  eliminations: comp.eliminations || 0,
-                  deaths: comp.deaths || 0,
-                  assists: comp.assists || 0,
-                  damage: comp.damage || 0,
-                  healing: comp.healing || 0,
-                  damageBlocked: comp.damageBlocked || 0
-                })) || []
-              }))
-            }));
-            
-            console.log('✅ ADMIN: Match data loaded with saved heroes and stats!');
-            return; // Don't load fresh players if we have saved data
-          }
-        }
-      } catch (error) {
-        console.log('⚠️ ADMIN: No saved match data, loading fresh players:', error.message);
-      }
-
-      // 🔄 FALLBACK: Load fresh players if no saved data  
-      console.log('🔍 ADMIN: Loading fresh player data...');
-      
-      const team1Id = match.team1?.id || match.team1_id;
-      const team2Id = match.team2?.id || match.team2_id;
-      
-      if (team1Id && team2Id) {
-        try {
-          const [team1Players, team2Players] = await Promise.all([
-            fetchTeamPlayers(team1Id, match.team1?.name || 'Team1'),
-            fetchTeamPlayers(team2Id, match.team2?.name || 'Team2')
-          ]);
-          
-          setMatchStats(prevStats => {
-            if (!prevStats) return prevStats;
-            
-            return {
-              ...prevStats,
-              maps: prevStats.maps.map((map, mapIndex) => ({
-                ...map,
-                team1Players: team1Players.length > 0 ? team1Players : [],
-                team2Players: team2Players.length > 0 ? team2Players : []
-              }))
-            };
-          });
-          
-          console.log('✅ ADMIN: Fresh players loaded');
-        } catch (error) {
-          console.error('❌ ADMIN: Error loading fresh players:', error);
-        }
-      }
-    };
-    
-    loadCompleteMatchData();
-  }, [match, isOpen, token]); // Only run when these change
-
-  // CRITICAL FIX: Null check for match AFTER hooks
   if (!isOpen || !match || !matchStats) {
-    console.log('🚨 ADMIN: Early return - not rendering because:', {
-      isOpen,
-      hasMatch: !!match,
-      hasMatchStats: !!matchStats
-    });
     return null;
   }
 
-  const currentMapData = matchStats.maps?.[activeMap] || matchStats.maps?.[0] || {
-    team1Players: [],
-    team2Players: []
-  };
-
   console.log('🎯 ADMIN: Rendering with data:', {
     matchId: match.id,
-    team1: match.team1?.name,
-    team2: match.team2?.name,
+    team1: match.team1?.name || 'Team1',
+    team2: match.team2?.name || 'Team2',
     mapsCount: matchStats.maps?.length,
-    team1PlayersCount: currentMapData?.team1Players?.length,
-    team2PlayersCount: currentMapData?.team2Players?.length,
-    team1FirstPlayer: currentMapData?.team1Players?.[0]?.name,
-    team2FirstPlayer: currentMapData?.team2Players?.[0]?.name
+    team1PlayersCount: matchStats.maps?.[0]?.team1Players?.length,
+    team2PlayersCount: matchStats.maps?.[0]?.team2Players?.length
   });
 
-  // UPDATE PLAYER STAT - ENHANCED WITH REAL-TIME SYNC
-  const updatePlayerStat = (mapIndex, team, playerIndex, statType, value) => {
-    console.log(`📊 Updating ${team} player ${playerIndex} ${statType} to ${value}`);
-    setMatchStats(prev => {
-      const newStats = { ...prev };
-      
-      // 🚨 CRITICAL FIX: Update only the correct team's player
-      if (team === 'team1') {
-        newStats.maps[mapIndex].team1Players[playerIndex][statType] = value;
-      } else if (team === 'team2') {
-        newStats.maps[mapIndex].team2Players[playerIndex][statType] = value;
-      }
-      
-      console.log(`✅ Stat updated: ${team} player ${playerIndex} now has ${statType}=${value}`);
-      return newStats;
-    });
-
-    // 🔥 IMMEDIATE SYNC EVENT FOR STAT UPDATES
-    window.dispatchEvent(new CustomEvent('mrvl-stats-updated', {
-      detail: {
-        matchId: match.id,
-        type: 'STAT_CHANGE',
-        timestamp: Date.now(),
-        changes: { mapIndex, team, playerIndex, statType, value }
-      }
-    }));
-  };
-
-  // UPDATE MAP STATUS - ENHANCED WITH IMMEDIATE SYNC
-  const updateMapStatus = async (mapIndex, status, winner = null) => {
-    console.log(`🏆 Updating map ${mapIndex} status to ${status}, winner: ${winner}`);
-    
-    setMatchStats(prev => {
-      const newStats = { ...prev };
-      
-      // 🚨 CRITICAL FIX: Check if map exists before updating
-      if (!newStats.maps || !newStats.maps[mapIndex]) {
-        console.error(`❌ Map ${mapIndex} does not exist in matchStats.maps:`, newStats.maps);
-        return prev; // Return unchanged state
-      }
-      
-      newStats.maps[mapIndex].status = status;
-      newStats.maps[mapIndex].winner = winner;
-      
-      // 🔥 CRITICAL: Update map wins properly
-      if (winner && status === 'completed') {
-        console.log(`🏆 ${winner} wins map ${mapIndex}! Current wins:`, newStats.mapWins);
-        newStats.mapWins[winner] = (newStats.mapWins[winner] || 0) + 1;
-        console.log(`🏆 Updated wins:`, newStats.mapWins);
-      }
-      
-      return newStats;
-    });
-
-    // 🔥 IMMEDIATE SYNC EVENT FOR MAP UPDATES
-    window.dispatchEvent(new CustomEvent('mrvl-match-updated', {
-      detail: {
-        matchId: match.id,
-        type: 'MAP_STATUS_UPDATE',
-        timestamp: Date.now(),
-        changes: { mapIndex, status, winner }
-      }
-    }));
-
-    console.log(`✅ Map ${mapIndex} updated and sync event dispatched`);
-  };
-
-  // 🔥 ENHANCED HERO CHANGE WITH IMMEDIATE SYNC
-  const changePlayerHero = (mapIndex, team, playerIndex, hero, role) => {
-    console.log(`🦸 Changing ${team} player ${playerIndex} to hero ${hero} (${role})`);
-    
-    setMatchStats(prev => {
-      const newStats = { ...prev };
-      const targetPlayers = team === 'team1' ? newStats.maps[mapIndex].team1Players : newStats.maps[mapIndex].team2Players;
-      
-      if (targetPlayers && targetPlayers[playerIndex]) {
-        targetPlayers[playerIndex].hero = hero;
-        targetPlayers[playerIndex].role = role;
-        console.log(`✅ Hero changed: Player ${targetPlayers[playerIndex].name} is now ${hero}`);
-      }
-      
-      return newStats;
-    });
-
-    // 🔥 IMMEDIATE REAL-TIME SYNC EVENT
-    window.dispatchEvent(new CustomEvent('mrvl-hero-updated', {
-      detail: {
-        matchId: match.id,
-        type: 'HERO_CHANGE',
-        timestamp: Date.now(),
-        changes: { mapIndex, team, playerIndex, hero, role }
-      }
-    }));
-
-    console.log('🔥 Hero change event dispatched for immediate sync');
-  };
+  const currentMapData = matchStats.maps[matchStats.currentMap] || matchStats.maps[0];
   
-  // SAVE TO BACKEND - PERFECT SYNCHRONIZATION SYSTEM
-  const handleSaveStats = async () => {
-    try {
-      console.log('🔄 SAVING CRITICAL DATA - Current State:', {
-        mapWins: matchStats.mapWins,
-        matchStatus: matchStatus,
-        totalMaps: matchStats.maps?.length,
-        activeMap: activeMap
-      });
-      
-      // 🚨 CRITICAL: Build complete save payload
-      const savePayload = {
-        team1_score: matchStats.mapWins.team1 || 0,
-        team2_score: matchStats.mapWins.team2 || 0,
-        status: matchStatus,
-        maps: matchStats.maps.map((mapData, index) => ({
-          map_number: index + 1,
-          map_name: mapData.map_name || mapData.name || 'Tokyo 2099: Shibuya Sky',
-          team1_score: mapData.team1Score || 0,
-          team2_score: mapData.team2Score || 0,
-          status: mapData.status || 'upcoming',
-          winner_id: mapData.winner ? (mapData.winner === 'team1' ? match.team1?.id : match.team2?.id) : null,
-          team1_composition: mapData.team1Players?.map(player => ({
-            player_id: player.id,
-            player_name: player.name,
-            hero: player.hero,
-            role: player.role,
-            eliminations: player.eliminations || 0,
-            deaths: player.deaths || 0,
-            assists: player.assists || 0,
-            damage: player.damage || 0,
-            healing: player.healing || 0,
-            damageBlocked: player.damageBlocked || 0
-          })) || [],
-          team2_composition: mapData.team2Players?.map(player => ({
-            player_id: player.id,
-            player_name: player.name,
-            hero: player.hero,
-            role: player.role,
-            eliminations: player.eliminations || 0,
-            deaths: player.deaths || 0,
-            assists: player.assists || 0,
-            damage: player.damage || 0,
-            healing: player.healing || 0,
-            damageBlocked: player.damageBlocked || 0
-          })) || []
-        }))
-      };
-
-      console.log('💾 SAVING TO BACKEND:', savePayload);
-
-      // Save to backend
-      await api.put(`/admin/matches/${match.id}`, savePayload);
-      
-      console.log('✅ BACKEND SAVE SUCCESSFUL');
-      
-      // 🔥 MULTIPLE SYNC EVENTS FOR PERFECT WORKFLOW
-      console.log('🔥 DISPATCHING COMPREHENSIVE SYNC EVENTS for match:', match.id);
-      
-      // 1. Update match state immediately for smooth UI
-      const updatedMatchData = {
-        ...match,
-        team1_score: matchStats.mapWins.team1 || 0,
-        team2_score: matchStats.mapWins.team2 || 0,
-        status: matchStatus,
-        maps: matchStats.maps,
-        lastUpdated: Date.now()
-      };
-      
-      // 2. Primary match update event with FULL data
-      window.dispatchEvent(new CustomEvent('mrvl-match-updated', {
-        detail: {
-          matchId: match.id,
-          type: 'COMPREHENSIVE_UPDATE',
-          timestamp: Date.now(),
-          matchData: updatedMatchData,
-          scores: {
-            team1: matchStats.mapWins.team1 || 0,
-            team2: matchStats.mapWins.team2 || 0
-          },
-          heroes: matchStats.maps.map(mapData => ({
-            team1Players: mapData.team1Players,
-            team2Players: mapData.team2Players
-          }))
-        }
-      }));
-      
-      // 3. Hero update event
-      window.dispatchEvent(new CustomEvent('mrvl-hero-updated', {
-        detail: {
-          matchId: match.id,
-          type: 'BULK_HERO_UPDATE',
-          timestamp: Date.now(),
-          heroData: matchStats.maps
-        }
-      }));
-      
-      // 4. Stats update event with scores
-      window.dispatchEvent(new CustomEvent('mrvl-stats-updated', {
-        detail: {
-          matchId: match.id,
-          type: 'BULK_STATS_UPDATE',
-          timestamp: Date.now(),
-          statsData: matchStats.maps,
-          scores: {
-            team1: matchStats.mapWins.team1 || 0,
-            team2: matchStats.mapWins.team2 || 0
-          }
-        }
-      }));
-      
-      // 5. CRITICAL: Force immediate refresh with new data
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('mrvl-data-refresh', {
-          detail: { 
-            matchId: match.id, 
-            timestamp: Date.now(),
-            forceRefresh: true,
-            newData: updatedMatchData
-          }
-        }));
-      }, 100);
-      
-      alert('✅ Match data saved successfully! All changes synchronized.');
-      
-      if (onUpdate) {
-        onUpdate({
-          ...match,
-          team1_score: matchStats.mapWins.team1 || 0,
-          team2_score: matchStats.mapWins.team2 || 0,
-          status: matchStatus,
-          maps: matchStats.maps
-        });
-      }
-      
-    } catch (error) {
-      console.error('❌ Error saving match data:', error);
-      console.error('❌ Full error details:', error.response || error);
-      
-      // 🚨 CRITICAL: Check what's actually failing
-      if (error.response) {
-        console.error('❌ Backend rejected with status:', error.response.status);
-        console.error('❌ Backend error message:', error.response.data);
-        alert(`❌ Backend error: ${error.response.status} - ${error.response.data?.message || 'Unknown error'}`);
-      } else {
-        console.error('❌ Network/Connection error:', error.message);
-        alert(`❌ Connection error: ${error.message}`);
-      }
-      
-      // 🔥 FALLBACK: Update local state and dispatch events anyway for demo
-      console.log('🔥 APPLYING LOCAL FALLBACK - updating state without backend');
-      
-      const fallbackMatchData = {
-        ...match,
-        team1_score: matchStats.mapWins.team1 || 0,
-        team2_score: matchStats.mapWins.team2 || 0,
-        status: matchStatus,
-        maps: matchStats.maps,
-        lastUpdated: Date.now()
-      };
-      
-      // Dispatch events for immediate sync
-      window.dispatchEvent(new CustomEvent('mrvl-match-updated', {
-        detail: {
-          matchId: match.id,
-          type: 'LOCAL_FALLBACK_UPDATE',
-          timestamp: Date.now(),
-          matchData: fallbackMatchData,
-          scores: {
-            team1: matchStats.mapWins.team1 || 0,
-            team2: matchStats.mapWins.team2 || 0
-          }
-        }
-      }));
-      
-      if (onUpdate) {
-        onUpdate(fallbackMatchData);
-      }
-    }
-  };
-
-  // 🔍 DEBUG: Log current map data structure
   console.log('🎯 ADMIN: currentMapData analysis:', {
-    activeMap,
+    activeMap: matchStats.currentMap,
     totalMaps: matchStats.maps?.length,
     currentMapExists: !!currentMapData,
-    team1PlayersCount: currentMapData.team1Players?.length,
-    team2PlayersCount: currentMapData.team2Players?.length,
-    team1Players: currentMapData.team1Players?.slice(0, 3),
-    team2Players: currentMapData.team2Players?.slice(0, 3)
+    team1PlayersCount: currentMapData?.team1Players?.length,
+    team2PlayersCount: currentMapData?.team2Players?.length,
+    mapName: currentMapData?.map_name,
+    mode: currentMapData?.mode
   });
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-7xl w-full max-h-[95vh] overflow-y-auto">
-        {/* 🎮 MARVEL RIVALS MATCH CONTROL PANEL */}
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-6">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-            🎮 Marvel Rivals Match Control
-          </h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* MATCH STATUS */}
-            <div className="bg-white dark:bg-gray-700 rounded-lg p-3">
-              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Match Status</h4>
-              <select
-                value={matchStatus}
-                onChange={(e) => handleMatchStatusChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              >
-                <option value="upcoming">⏳ Upcoming</option>
-                <option value="live">🔴 Live</option>
-                <option value="paused">⏸️ Paused</option>
-                <option value="completed">✅ Completed</option>
-              </select>
-            </div>
-            
-            {/* MATCH TIMER */}
-            <div className="bg-white dark:bg-gray-700 rounded-lg p-3">
-              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Match Timer</h4>
-              <div className="text-2xl font-mono font-bold text-center">
-                {matchStatus === 'live' ? (
-                  <span className="text-red-500">🔴 {matchTimer}</span>
-                ) : matchStatus === 'paused' ? (
-                  <span className="text-yellow-500">⏸️ {matchTimer}</span>
-                ) : matchStatus === 'completed' ? (
-                  <span className="text-green-500">✅ {matchTimer}</span>
-                ) : (
-                  <span className="text-gray-500">⏳ 00:00</span>
-                )}
-              </div>
-              {/* Timer Controls */}
-              <div className="flex justify-center space-x-2 mt-2">
-                <button
-                  onClick={() => {
-                    setIsTimerRunning(!isTimerRunning);
-                    if (!timerStartTime) setTimerStartTime(Date.now());
-                  }}
-                  className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  {isTimerRunning ? 'Pause' : 'Start'}
-                </button>
-                <button
-                  onClick={() => {
-                    setMatchTimer('00:00');
-                    setTimerStartTime(null);
-                    setIsTimerRunning(false);
-                  }}
-                  className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
-                >
-                  Reset
-                </button>
-              </div>
-            </div>
-            
-            {/* GAME MODE INFO */}
-            <div className="bg-white dark:bg-gray-700 rounded-lg p-3">
-              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                {marvelRivalsMaps[activeMap]?.icon} {marvelRivalsMaps[activeMap]?.mode}
-              </h4>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                {getGameModeTiming(marvelRivalsMaps[activeMap]?.mode).description}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                Duration: {getGameModeTiming(marvelRivalsMaps[activeMap]?.mode).totalTime}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center space-x-3">
-                <span>📊</span>
-                <span>Marvel Rivals Live Statistics</span>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 animate-pulse">
-                  🔴 PROFESSIONAL ESPORTS TRACKING
-                </span>
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-900 rounded-lg max-w-7xl w-full max-h-[95vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center space-x-4">
+              <h2 className="text-2xl font-bold text-white">
+                🎮 Live Match Control
               </h2>
-              <div className="mt-2 text-gray-600 dark:text-gray-400">
-                {match.team1?.name} vs {match.team2?.name} • {match.format || 'BO3'} • {match.event?.name || match.event_name}
+              <div className="flex items-center space-x-2">
+                <TeamLogo team={match.team1?.name || 'Team1'} logoUrl={match.team1?.logo} size="sm" />
+                <span className="text-blue-400 font-semibold">{match.team1?.name || 'Team1'}</span>
+                <span className="text-gray-400">vs</span>
+                <span className="text-red-400 font-semibold">{match.team2?.name || 'Team2'}</span>
+                <TeamLogo team={match.team2?.name || 'Team2'} logoUrl={match.team2?.logo} size="sm" />
               </div>
             </div>
-            <button onClick={onClose} className="text-2xl text-gray-400 hover:text-gray-600">✕</button>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-white text-xl font-bold"
+            >
+              ✕
+            </button>
           </div>
-        </div>
 
-        <div className="p-6 space-y-6">
-          {/* OVERALL MATCH SCOREBOARD */}
-          <div className="bg-gradient-to-r from-blue-50 to-red-50 dark:from-blue-900/20 dark:to-red-900/20 rounded-lg p-6">
+          {/* Match Status & Timer */}
+          <div className="bg-gray-800 rounded-lg p-4 mb-6">
             <div className="flex items-center justify-between">
-              <div className="text-center flex-1">
-                <div className="flex items-center justify-center space-x-4 mb-4">
-                  <TeamLogo team={match.team1} size="w-20 h-20" />
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{match.team1?.name}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">{match.team1?.region}</div>
-                  </div>
+              <div className="flex items-center space-x-4">
+                <select
+                  value={matchStatus}
+                  onChange={(e) => setMatchStatus(e.target.value)}
+                  className="bg-gray-700 text-white px-3 py-1 rounded border border-gray-600"
+                >
+                  <option value="upcoming">📅 Upcoming</option>
+                  <option value="live">🔴 Live</option>
+                  <option value="paused">⏸️ Paused</option>
+                  <option value="completed">✅ Completed</option>
+                  <option value="cancelled">❌ Cancelled</option>
+                </select>
+                
+                <div className="text-2xl font-mono text-green-400">
+                  {matchTimer}
                 </div>
-                <div className="text-8xl font-bold text-blue-600 dark:text-blue-400">
-                  {matchStats.mapWins.team1}
+                
+                <div className="flex space-x-2">
+                  <button
+                    onClick={startTimer}
+                    disabled={isTimerRunning}
+                    className="px-3 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded text-sm"
+                  >
+                    ▶️ Start
+                  </button>
+                  <button
+                    onClick={pauseTimer}
+                    disabled={!isTimerRunning}
+                    className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 text-white rounded text-sm"
+                  >
+                    ⏸️ Pause
+                  </button>
+                  <button
+                    onClick={resetTimer}
+                    className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
+                  >
+                    🔄 Reset
+                  </button>
                 </div>
               </div>
               
-              <div className="text-center px-8">
-                <div className="text-3xl text-gray-500 dark:text-gray-500 font-bold">VS</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">Best of {matchStats.totalMaps}</div>
-              </div>
-              
-              <div className="text-center flex-1">
-                <div className="flex items-center justify-center space-x-4 mb-4">
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{match.team2?.name}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">{match.team2?.region}</div>
-                  </div>
-                  <TeamLogo team={match.team2} size="w-20 h-20" />
+              <div className="text-right">
+                <div className="text-lg font-bold text-white">
+                  {currentMapData?.map_name || 'Map not selected'}
                 </div>
-                <div className="text-8xl font-bold text-red-600 dark:text-red-400">
-                  {matchStats.mapWins.team2}
+                <div className="text-sm text-gray-400">
+                  {currentMapData?.mode || 'Mode not selected'}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* MAP SELECTION TABS - CRITICAL FIX: Show only match maps */}
-          <div className="flex space-x-2 overflow-x-auto">
-            {(matchStats.maps || []).map((matchMap, index) => (
+          {/* Map Navigation */}
+          <div className="flex justify-center space-x-2 mb-6">
+            {matchStats.maps.map((_, index) => (
               <button
                 key={index}
-                onClick={() => setActiveMap(index)}
-                className={`px-4 py-3 rounded-lg whitespace-nowrap flex items-center space-x-2 transition-colors ${
-                  activeMap === index
+                onClick={() => setMatchStats(prev => ({ ...prev, currentMap: index }))}
+                className={`px-4 py-2 rounded font-semibold ${
+                  matchStats.currentMap === index
                     ? 'bg-red-600 text-white'
-                    : matchMap?.status === 'completed'
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                    : matchMap?.status === 'live'
-                    ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                    : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                 }`}
               >
-                <span className="text-xl">🗺️</span>
-                <div>
-                  <div className="font-bold">{matchMap.name || matchMap.map_name || `Map ${index + 1}`}</div>
-                  <div className="text-xs">{matchMap.mode || 'Convoy'}</div>
-                </div>
+                Map {index + 1}
               </button>
             ))}
           </div>
 
-          {/* CURRENT MAP DETAILED VIEW */}
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center space-x-2">
-                <span className="text-3xl">{marvelRivalsMaps[activeMap].icon}</span>
-                <span>{marvelRivalsMaps[activeMap].name}</span>
-                <span className="text-sm font-normal text-gray-600 dark:text-gray-400">({marvelRivalsMaps[activeMap].mode})</span>
-              </h3>
-              
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => updateMapStatus(activeMap, 'live')}
-                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                  disabled={currentMapData.status === 'completed'}
-                >
-                  🔴 Start Map
-                </button>
-                <button
-                  onClick={() => updateMapStatus(activeMap, 'completed', 'team1')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  disabled={currentMapData.status !== 'live'}
-                >
-                  T1 Wins
-                </button>
-                <button
-                  onClick={() => updateMapStatus(activeMap, 'completed', 'team2')}
-                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                  disabled={currentMapData.status !== 'live'}
-                >
-                  T2 Wins
-                </button>
+          {/* Current Map */}
+          {currentMapData && (
+            <div className="bg-gray-800 rounded-lg p-6 mb-6">
+              <div className="text-center mb-6">
+                <div className="bg-red-600 text-white px-4 py-2 rounded-lg inline-block">
+                  🗺️ {currentMapData.map_name}
+                  <div className="text-sm opacity-90">{currentMapData.mode}</div>
+                </div>
               </div>
-            </div>
 
-            {/* COMPREHENSIVE PLAYER STATS */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {['team1', 'team2'].map((team, teamIndex) => (
-                <div key={team} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                    {match[team]?.name} Players - {marvelRivalsMaps[activeMap].name}
-                  </h4>
-                  
-                  {/* 📊 SCOREBOARD HEADERS - MATCHING GRID LAYOUT */}
-                  <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-2 mb-3">
-                    <div className="grid grid-cols-[2fr_2fr_1fr_1fr_1fr_1fr_1.5fr_1.5fr_1.5fr] gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                      <div>PLAYER</div>
-                      <div>HERO</div>
-                      <div>E</div>
-                      <div>D</div>
-                      <div>A</div>
-                      <div>K/D</div>
-                      <div>DMG</div>
-                      <div>HEAL</div>
-                      <div>BLK</div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    {(currentMapData?.[`${team}Players`] || currentMapData?.[`${team}_composition`] || []).map((player, playerIndex) => (
-                      <div key={playerIndex} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-                        {/* 📊 PLAYER ROW: PLAYER | HERO | E | D | A | K/D | DMG | HEAL | BLK */}
-                        <div className="grid grid-cols-[2fr_2fr_1fr_1fr_1fr_1fr_1.5fr_1.5fr_1.5fr] gap-2 items-center text-sm">
-                          {/* PLAYER COLUMN - MORE SPACE */}
-                          <div className="flex items-center space-x-2 min-w-0">
-                            <div className="relative flex-shrink-0">
-                              <div className={`w-8 h-8 rounded-full overflow-hidden border-2 ${
-                                teamIndex === 0 ? 'border-blue-500' : 'border-red-500'
-                              }`}>
-                                <img 
-                                  src={player.avatar ? `https://staging.mrvl.net${player.avatar}` : `https://staging.mrvl.net/storage/players/player_${player.id}_avatar.png`}
-                                  alt={player.name}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    console.log(`❌ Real player avatar failed for: ${player.name} (ID: ${player.id}), trying fallback...`);
-                                    // Try alternative format as fallback
-                                    e.target.src = `https://staging.mrvl.net/storage/players/player_${player.id}_avatar.jpg`;
-                                    e.target.onerror = () => {
-                                      console.log(`❌ All avatar attempts failed for: ${player.name}, showing fallback`);
-                                      e.target.style.display = 'none';
-                                      e.target.nextElementSibling.style.display = 'flex';
-                                    };
-                                  }}
-                                />
-                                <div 
-                                  className={`w-full h-full ${teamIndex === 0 ? 'bg-blue-500' : 'bg-red-500'} text-white text-xs flex items-center justify-center font-bold`}
-                                  style={{ display: 'none' }}
-                                >
-                                  P{playerIndex + 1}
-                                </div>
-                              </div>
-                              {/* 🔥 OPTIMIZED COUNTRY FLAGS - REDUCED RENDERS */}
-                              <img 
-                                src={`https://flagcdn.com/16x12/${(player.country || 'us').toLowerCase().slice(0, 2)}.png`}
-                                alt={`${player.country || 'US'} flag`}
-                                className="absolute -bottom-1 -right-1 w-3 h-2 rounded-sm border border-white shadow-sm"
-                                onError={(e) => {
-                                  console.log(`❌ Flag failed for country: ${player.country || 'undefined'}, using fallback`);
-                                  // Show country code as text fallback instead of hiding
-                                  e.target.style.display = 'none';
-                                  const textNode = document.createElement('div');
-                                  textNode.className = 'absolute -bottom-1 -right-1 w-4 h-3 text-xs bg-gray-500 text-white rounded-sm flex items-center justify-center';
-                                  textNode.textContent = (player.country || 'US').slice(0, 2).toUpperCase();
-                                  e.target.parentNode.appendChild(textNode);
-                                }}
-                              />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="font-bold text-gray-900 dark:text-white text-sm truncate" title={player.name}>
-                                {player.name}
-                              </div>
-                            </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Team 1 Players */}
+                <div>
+                  <h3 className="text-xl font-bold text-blue-400 mb-4">
+                    {match.team1?.name || 'Team1'} Players - {currentMapData.map_name}
+                  </h3>
+                  {currentMapData.team1Players?.map((player, playerIndex) => (
+                    <div key={playerIndex} className="bg-gray-700 rounded-lg p-4 mb-3">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <div className="relative">
+                          <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                            {player.name?.charAt(0) || 'P'}
                           </div>
-                          
-                          {/* HERO COLUMN - FIXED SAVING */}
-                          <div>
-                            <select
-                              value={player.hero}
-                              onChange={(e) => {
-                                const selectedHero = e.target.value;
-                                const heroRole = Object.keys(marvelRivalsHeroes).find(role =>
-                                  marvelRivalsHeroes[role].includes(selectedHero)
-                                );
-                                changePlayerHero(activeMap, team, playerIndex, selectedHero, heroRole);
-                              }}
-                              className="text-xs border border-gray-300 dark:border-gray-600 rounded px-1 py-1 bg-white dark:bg-gray-800 w-full"
-                            >
-                              {Object.entries(marvelRivalsHeroes).map(([role, heroes]) => (
-                                <optgroup key={role} label={role}>
-                                  {heroes.map(hero => (
-                                    <option key={hero} value={hero}>{hero}</option>
-                                  ))}
-                                </optgroup>
-                              ))}
-                            </select>
-                          </div>
-                          
-                          {/* E (ELIMINATIONS) */}
-                          <div>
-                            <input
-                              type="number"
-                              value={player.eliminations || 0}
-                              onChange={(e) => updatePlayerStat(activeMap, team, playerIndex, 'eliminations', parseInt(e.target.value) || 0)}
-                              className="w-full px-1 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-center text-xs"
-                              min="0"
-                            />
-                          </div>
-                          
-                          {/* D (DEATHS) */}
-                          <div>
-                            <input
-                              type="number"
-                              value={player.deaths || 0}
-                              onChange={(e) => updatePlayerStat(activeMap, team, playerIndex, 'deaths', parseInt(e.target.value) || 0)}
-                              className="w-full px-1 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-center text-xs"
-                              min="0"
-                            />
-                          </div>
-                          
-                          {/* A (ASSISTS) */}
-                          <div>
-                            <input
-                              type="number"
-                              value={player.assists || 0}
-                              onChange={(e) => updatePlayerStat(activeMap, team, playerIndex, 'assists', parseInt(e.target.value) || 0)}
-                              className="w-full px-1 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-center text-xs"
-                              min="0"
-                            />
-                          </div>
-                          
-                          {/* K/D RATIO */}
-                          <div className="text-center font-bold text-gray-900 dark:text-white text-xs">
-                            {(player.eliminations && player.deaths) ? (player.eliminations / player.deaths).toFixed(1) : '0.0'}
-                          </div>
-                          
-                          {/* DMG (DAMAGE) */}
-                          <div>
-                            <input
-                              type="number"
-                              value={player.damage || 0}
-                              onChange={(e) => updatePlayerStat(activeMap, team, playerIndex, 'damage', parseInt(e.target.value) || 0)}
-                              className="w-full px-1 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-center text-xs"
-                              min="0"
-                            />
-                          </div>
-                          
-                          {/* HEAL (HEALING) */}
-                          <div>
-                            <input
-                              type="number"
-                              value={player.healing || 0}
-                              onChange={(e) => updatePlayerStat(activeMap, team, playerIndex, 'healing', parseInt(e.target.value) || 0)}
-                              className="w-full px-1 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-center text-xs"
-                              min="0"
-                            />
-                          </div>
-                          
-                          {/* BLK (DAMAGE BLOCKED) */}
-                          <div>
-                            <input
-                              type="number"
-                              value={player.damageBlocked || 0}
-                              onChange={(e) => updatePlayerStat(activeMap, team, playerIndex, 'damageBlocked', parseInt(e.target.value) || 0)}
-                              className="w-full px-1 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-center text-xs"
-                              min="0"
-                            />
-                          </div>
+                          {/* Country Flag */}
+                          <img 
+                            src={`https://flagcdn.com/16x12/${(player.country || 'us').toLowerCase().slice(0, 2)}.png`}
+                            alt={`${player.country || 'US'} flag`}
+                            className="absolute -bottom-1 -right-1 w-3 h-2 rounded-sm border border-white shadow-sm"
+                            onError={(e) => {
+                              console.log(`❌ Flag failed for country: ${player.country || 'undefined'}, using fallback`);
+                              e.target.style.display = 'none';
+                              const textNode = document.createElement('div');
+                              textNode.className = 'absolute -bottom-1 -right-1 w-4 h-3 text-xs bg-gray-500 text-white rounded-sm flex items-center justify-center';
+                              textNode.textContent = (player.country || 'US').slice(0, 2).toUpperCase();
+                              e.target.parentNode.appendChild(textNode);
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-semibold text-white">{player.name}</div>
+                          <select
+                            value={player.hero || 'Captain America'}
+                            onChange={(e) => {
+                              const selectedHero = e.target.value;
+                              const heroRole = Object.keys(marvelRivalsHeroes).find(role => 
+                                marvelRivalsHeroes[role].includes(selectedHero)
+                              ) || 'Tank';
+                              changePlayerHero(matchStats.currentMap, 'team1', playerIndex, selectedHero, heroRole);
+                            }}
+                            className="bg-gray-600 text-white px-2 py-1 rounded text-sm border border-gray-500"
+                          >
+                            {Object.entries(marvelRivalsHeroes).map(([role, heroes]) => (
+                              <optgroup key={role} label={role}>
+                                {heroes.map(hero => (
+                                  <option key={hero} value={hero}>{hero}</option>
+                                ))}
+                              </optgroup>
+                            ))}
+                          </select>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      
+                      {/* Player Stats */}
+                      <div className="grid grid-cols-3 gap-2">
+                        {['eliminations', 'deaths', 'assists', 'damage', 'healing', 'damageBlocked'].map(stat => (
+                          <div key={stat} className="text-center">
+                            <div className="text-xs text-gray-400 uppercase">{stat}</div>
+                            <input
+                              type="number"
+                              value={player[stat] || 0}
+                              onChange={(e) => updatePlayerStat(matchStats.currentMap, 'team1', playerIndex, stat, e.target.value)}
+                              className="w-full bg-gray-600 text-white text-center px-1 py-1 rounded text-sm"
+                              min="0"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {/* SAVE TO BACKEND */}
-          <div className="flex justify-center space-x-4 mt-6">
+                {/* Team 2 Players */}
+                <div>
+                  <h3 className="text-xl font-bold text-red-400 mb-4">
+                    {match.team2?.name || 'Team2'} Players - {currentMapData.map_name}
+                  </h3>
+                  {currentMapData.team2Players?.map((player, playerIndex) => (
+                    <div key={playerIndex} className="bg-gray-700 rounded-lg p-4 mb-3">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <div className="relative">
+                          <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white font-bold">
+                            {player.name?.charAt(0) || 'P'}
+                          </div>
+                          {/* Country Flag */}
+                          <img 
+                            src={`https://flagcdn.com/16x12/${(player.country || 'us').toLowerCase().slice(0, 2)}.png`}
+                            alt={`${player.country || 'US'} flag`}
+                            className="absolute -bottom-1 -right-1 w-3 h-2 rounded-sm border border-white shadow-sm"
+                            onError={(e) => {
+                              console.log(`❌ Flag failed for country: ${player.country || 'undefined'}, using fallback`);
+                              e.target.style.display = 'none';
+                              const textNode = document.createElement('div');
+                              textNode.className = 'absolute -bottom-1 -right-1 w-4 h-3 text-xs bg-gray-500 text-white rounded-sm flex items-center justify-center';
+                              textNode.textContent = (player.country || 'US').slice(0, 2).toUpperCase();
+                              e.target.parentNode.appendChild(textNode);
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-semibold text-white">{player.name}</div>
+                          <select
+                            value={player.hero || 'Captain America'}
+                            onChange={(e) => {
+                              const selectedHero = e.target.value;
+                              const heroRole = Object.keys(marvelRivalsHeroes).find(role => 
+                                marvelRivalsHeroes[role].includes(selectedHero)
+                              ) || 'Tank';
+                              changePlayerHero(matchStats.currentMap, 'team2', playerIndex, selectedHero, heroRole);
+                            }}
+                            className="bg-gray-600 text-white px-2 py-1 rounded text-sm border border-gray-500"
+                          >
+                            {Object.entries(marvelRivalsHeroes).map(([role, heroes]) => (
+                              <optgroup key={role} label={role}>
+                                {heroes.map(hero => (
+                                  <option key={hero} value={hero}>{hero}</option>
+                                ))}
+                              </optgroup>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      
+                      {/* Player Stats */}
+                      <div className="grid grid-cols-3 gap-2">
+                        {['eliminations', 'deaths', 'assists', 'damage', 'healing', 'damageBlocked'].map(stat => (
+                          <div key={stat} className="text-center">
+                            <div className="text-xs text-gray-400 uppercase">{stat}</div>
+                            <input
+                              type="number"
+                              value={player[stat] || 0}
+                              onChange={(e) => updatePlayerStat(matchStats.currentMap, 'team2', playerIndex, stat, e.target.value)}
+                              className="w-full bg-gray-600 text-white text-center px-1 py-1 rounded text-sm"
+                              min="0"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Save Button */}
+          <div className="flex justify-center">
             <button
-              onClick={() => {
-                console.log('🔥 SAVE BUTTON CLICKED - Current matchStats:', matchStats);
-                console.log('🔥 Map wins before save:', matchStats.mapWins);
-                console.log('🔥 Match status before save:', matchStatus);
-                handleSaveStats();
-              }}
-              className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+              onClick={handleSaveStats}
+              disabled={saveLoading}
+              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white px-8 py-3 rounded-lg font-semibold text-lg flex items-center space-x-2"
             >
-              💾 Save Match Statistics & Heroes
-            </button>
-            <button
-              onClick={onClose}
-              className="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-semibold"
-            >
-              Close
+              {saveLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <span>💾</span>
+                  <span>Save Match Statistics & Heroes</span>
+                </>
+              )}
             </button>
           </div>
         </div>
       </div>
     </div>
   );
-}
+};
 
 export default ComprehensiveLiveScoring;
