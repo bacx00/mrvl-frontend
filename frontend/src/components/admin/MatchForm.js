@@ -682,6 +682,23 @@ function MatchForm({ matchId, navigateTo }) {
                   </select>
                 </div>
 
+                {/* 🎮 GAME MODE SELECTION */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    Game Mode
+                  </label>
+                  <select
+                    value={map.mode || 'Convoy'}
+                    onChange={(e) => handleMapChange(mapIndex, 'mode', e.target.value)}
+                    className="form-input"
+                  >
+                    <option value="Convoy">Convoy</option>
+                    <option value="Domination">Domination</option>
+                    <option value="Convergence">Convergence</option>
+                    <option value="Conquest">Conquest</option>
+                  </select>
+                </div>
+
                 {/* 🔥 REAL PLAYER COMPOSITIONS DISPLAY */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Team 1 Composition */}
