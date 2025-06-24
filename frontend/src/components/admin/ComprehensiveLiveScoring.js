@@ -576,36 +576,46 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
       
     } catch (error) {
       console.error('❌ Error saving match data:', error);
+      console.error('❌ Full error details:', error.response || error);
       
-      // 🔥 STILL DISPATCH EVENTS FOR DEMO/SYNC PURPOSES
-      console.log('🔥 DISPATCHING SYNC EVENTS DESPITE ERROR for match:', match.id);
+      // 🚨 CRITICAL: Check what's actually failing
+      if (error.response) {
+        console.error('❌ Backend rejected with status:', error.response.status);
+        console.error('❌ Backend error message:', error.response.data);
+        alert(`❌ Backend error: ${error.response.status} - ${error.response.data?.message || 'Unknown error'}`);
+      } else {
+        console.error('❌ Network/Connection error:', error.message);
+        alert(`❌ Connection error: ${error.message}`);
+      }
       
+      // 🔥 FALLBACK: Update local state and dispatch events anyway for demo
+      console.log('🔥 APPLYING LOCAL FALLBACK - updating state without backend');
+      
+      const fallbackMatchData = {
+        ...match,
+        team1_score: matchStats.mapWins.team1 || 0,
+        team2_score: matchStats.mapWins.team2 || 0,
+        status: matchStatus,
+        maps: matchStats.maps,
+        lastUpdated: Date.now()
+      };
+      
+      // Dispatch events for immediate sync
       window.dispatchEvent(new CustomEvent('mrvl-match-updated', {
         detail: {
           matchId: match.id,
-          type: 'COMPREHENSIVE_UPDATE',
+          type: 'LOCAL_FALLBACK_UPDATE',
           timestamp: Date.now(),
-          matchData: {
-            ...match,
-            team1_score: matchStats.mapWins.team1 || 0,
-            team2_score: matchStats.mapWins.team2 || 0,
-            status: matchStatus,
-            maps: matchStats.maps,
-            lastUpdated: Date.now()
+          matchData: fallbackMatchData,
+          scores: {
+            team1: matchStats.mapWins.team1 || 0,
+            team2: matchStats.mapWins.team2 || 0
           }
         }
       }));
       
-      alert('✅ Match data synchronized locally! (Check console for any backend issues)');
-      
       if (onUpdate) {
-        onUpdate({
-          ...match,
-          team1_score: matchStats.mapWins.team1 || 0,
-          team2_score: matchStats.mapWins.team2 || 0,
-          status: matchStatus,
-          maps: matchStats.maps
-        });
+        onUpdate(fallbackMatchData);
       }
     }
   };
