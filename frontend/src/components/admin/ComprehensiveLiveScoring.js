@@ -918,14 +918,19 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
                                   P{playerIndex + 1}
                                 </div>
                               </div>
-                              {/* 🔥 FIXED COUNTRY FLAGS */}
+                              {/* 🔥 OPTIMIZED COUNTRY FLAGS - REDUCED RENDERS */}
                               <img 
                                 src={`https://flagcdn.com/16x12/${(player.country || 'us').toLowerCase().slice(0, 2)}.png`}
-                                alt={`${player.country} flag`}
+                                alt={`${player.country || 'US'} flag`}
                                 className="absolute -bottom-1 -right-1 w-3 h-2 rounded-sm border border-white shadow-sm"
                                 onError={(e) => {
-                                  console.log(`❌ Flag failed for country: ${player.country}, using fallback`);
+                                  console.log(`❌ Flag failed for country: ${player.country || 'undefined'}, using fallback`);
+                                  // Show country code as text fallback instead of hiding
                                   e.target.style.display = 'none';
+                                  const textNode = document.createElement('div');
+                                  textNode.className = 'absolute -bottom-1 -right-1 w-4 h-3 text-xs bg-gray-500 text-white rounded-sm flex items-center justify-center';
+                                  textNode.textContent = (player.country || 'US').slice(0, 2).toUpperCase();
+                                  e.target.parentNode.appendChild(textNode);
                                 }}
                               />
                             </div>
