@@ -23,7 +23,7 @@ return [
         'https://staging.mrvl.net', 
         'http://localhost:3000',
         'http://127.0.0.1:3000',
-        'https://4403fb61-ff73-4f47-b23f-bb2a003ca29f.preview.emergentagent.com'
+        'https://d4e0083a-6fb1-458d-82c0-237195c36027.preview.emergentagent.com'
     ],
 
     'allowed_origins_patterns' => [
