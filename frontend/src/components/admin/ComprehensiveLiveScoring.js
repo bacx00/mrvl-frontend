@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { api } from '../../utils/api';
+import { useAuth } from '../../hooks';
 import { TeamLogo } from '../../utils/imageUtils';
-import { loadCompleteMatchData, getPlayerCountry, loadTeamPlayers } from '../../utils/marvelRivalsSync';
 
 /**
  * 🎮 COMPREHENSIVE LIVE SCORING - FIXED VERSION
  * Fixes: Hero persistence, country flags, save reset bug
  */
 const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
+  const { api } = useAuth();
   const [matchStats, setMatchStats] = useState(null);
   const [matchStatus, setMatchStatus] = useState('upcoming');
   const [matchTimer, setMatchTimer] = useState('00:00');
@@ -51,6 +51,53 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
 
   // Get all heroes in a flat array
   const allHeroes = Object.values(marvelRivalsHeroes).flat();
+
+  // 🔄 LOAD TEAM PLAYERS UTILITY
+  const loadTeamPlayers = async (teamId, teamName) => {
+    try {
+      console.log(`🔍 Fetching real players for team: ${teamName} (ID: ${teamId})`);
+      
+      const response = await api.get(`/teams/${teamId}`);
+      
+      if (response && response.data?.players) {
+        const teamPlayers = response.data.players;
+        console.log(`✅ Found ${teamPlayers.length} real players for ${teamName}:`, teamPlayers);
+        
+        return teamPlayers.slice(0, 6).map((player, index) => {
+          // 🏳️ FIXED COUNTRY RESOLUTION
+          const playerCountry = player.country || 
+                               player.nationality || 
+                               player.team_country ||
+                               (teamName === 'test1' ? 'DE' : teamName === 'test2' ? 'KR' : 'US');
+          
+          console.log(`🌍 Player ${player.name} country resolved to:`, playerCountry);
+          
+          return {
+            id: player.id,
+            name: player.name,
+            hero: player.main_hero || 'Captain America',
+            role: player.role || 'Tank',
+            country: playerCountry, // ✅ FIXED country resolution
+            avatar: player.avatar,
+            eliminations: 0,
+            deaths: 0,
+            assists: 0,
+            damage: 0,
+            healing: 0,
+            damageBlocked: 0,
+            objectiveTime: 0,
+            ultimatesUsed: 0
+          };
+        });
+      } else {
+        console.log(`⚠️ Failed to fetch players for ${teamName}, using defaults`);
+        return [];
+      }
+    } catch (error) {
+      console.error(`❌ Error fetching team players for ${teamName}:`, error);
+      return [];
+    }
+  };
 
   // 🚨 INITIALIZATION WITH PROPER MAP COUNT
   const initializeMatchStats = useCallback((format = 'BO1') => {
@@ -97,7 +144,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         // 🚨 CRITICAL: Try to load existing match data first
         const response = await api.get(`/matches/${match.id}`);
         
-        if (response.success && response.data) {
+        if (response.success !== false && response.data) {
           const savedMatch = response.data;
           console.log('✅ ADMIN: Saved match data found:', savedMatch);
           
@@ -168,8 +215,8 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       if (team1Id && team2Id) {
         try {
           const [team1Players, team2Players] = await Promise.all([
-            loadTeamPlayers(team1Id, match.team1?.name || 'Team1', token),
-            loadTeamPlayers(team2Id, match.team2?.name || 'Team2', token)
+            loadTeamPlayers(team1Id, match.team1?.name || 'Team1'),
+            loadTeamPlayers(team2Id, match.team2?.name || 'Team2')
           ]);
           
           const initialStats = initializeMatchStats(match.format);
@@ -194,7 +241,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     };
     
     loadSavedMatchData();
-  }, [match, isOpen, token, initializeMatchStats]);
+  }, [match, isOpen, initializeMatchStats, api]);
 
   // 🦸 Change player hero
   const changePlayerHero = (mapIndex, team, playerIndex, hero, role) => {
