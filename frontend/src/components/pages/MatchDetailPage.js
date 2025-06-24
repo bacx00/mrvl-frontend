@@ -122,30 +122,47 @@ function MatchDetailPage({ matchId, navigateTo }) {
     const handleMatchUpdate = (event) => {
       const { detail } = event;
       const currentMatchId = getMatchId();
+      console.log('🔥 MatchDetailPage: Event received:', {
+        eventType: detail.type,
+        eventMatchId: detail.matchId,
+        currentMatchId: currentMatchId,
+        willProcess: detail.matchId == currentMatchId
+      });
+      
       if (detail.matchId == currentMatchId) {
-        console.log('🔥 MatchDetailPage: Received real-time update:', detail.type, detail);
+        console.log('🔥 MatchDetailPage: Processing real-time update:', detail.type, detail);
         
         // 🚨 CRITICAL: If we have new data in the event, use it immediately
-        if (detail.newData) {
-          console.log('🚀 MatchDetailPage: Using immediate data from event:', detail.newData);
-          setMatch(detail.newData);
+        if (detail.matchData) {
+          console.log('🚀 MatchDetailPage: Using immediate data from event:', detail.matchData);
+          setMatch(detail.matchData);
         }
         
-        // Always fetch fresh data from backend for complete sync
-        fetchMatchData(false); // Don't show loading spinner
+        // 🚨 CRITICAL: If scores are in the event, update immediately  
+        if (detail.scores) {
+          console.log('🏆 MatchDetailPage: Updating scores immediately:', detail.scores);
+          setMatch(prev => prev ? {
+            ...prev,
+            team1_score: detail.scores.team1,
+            team2_score: detail.scores.team2,
+            lastUpdated: Date.now()
+          } : prev);
+        }
         
-        // Cache busting for browser
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('mrvl-data-refresh', {
-            detail: { matchId: currentMatchId, timestamp: Date.now() }
-          }));
-        }, 500);
+        // Always fetch fresh data from backend for complete sync (but silently)
+        fetchMatchData(false); // Don't show loading spinner
       }
     };
 
     const handleHeroUpdate = (event) => {
       const { detail } = event;
       const currentMatchId = getMatchId();
+      console.log('🦸 MatchDetailPage: Hero event received:', {
+        eventMatchId: detail.matchId,
+        currentMatchId: currentMatchId,
+        willProcess: detail.matchId == currentMatchId
+      });
+      
       if (detail.matchId == currentMatchId) {
         console.log('🦸 MatchDetailPage: Hero update received:', detail);
         fetchMatchData(false); // Refresh without loading
@@ -155,12 +172,18 @@ function MatchDetailPage({ matchId, navigateTo }) {
     const handleStatsUpdate = (event) => {
       const { detail } = event;
       const currentMatchId = getMatchId();
+      console.log('📊 MatchDetailPage: Stats event received:', {
+        eventMatchId: detail.matchId,
+        currentMatchId: currentMatchId,
+        willProcess: detail.matchId == currentMatchId
+      });
+      
       if (detail.matchId == currentMatchId) {
         console.log('📊 MatchDetailPage: Stats update received:', detail);
         
         // 🚨 CRITICAL: If scores are included, update immediately
         if (detail.scores) {
-          console.log('🏆 MatchDetailPage: Updating scores immediately:', detail.scores);
+          console.log('🏆 MatchDetailPage: Updating scores immediately from stats event:', detail.scores);
           setMatch(prev => prev ? {
             ...prev,
             team1_score: detail.scores.team1,
