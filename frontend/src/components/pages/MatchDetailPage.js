@@ -69,7 +69,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
           console.log(`🔍 MatchDetailPage: Fetching REAL match ${realMatchId} from backend...`);
         }
         
-        // 🔥 CRITICAL: Use REAL backend API via API helper - NO DIRECT FETCH
+        // 🚨 CRITICAL: Use REAL backend API via API helper - NO DIRECT FETCH
         const response = await api.get(`/matches/${realMatchId}`);
         const matchData = response?.data;
 
@@ -77,36 +77,34 @@ function MatchDetailPage({ matchId, navigateTo }) {
           console.log('✅ MatchDetailPage: REAL match data received:', matchData);
         }
         
-        // 🚨 CRITICAL: Ensure we have team data with players
-        if (!matchData.team1 || !matchData.team2) {
-          console.log('⚠️ Match data missing team info, fetching team details...');
+        // 🚨 CRITICAL FIX: Use the match data AS-IS from backend with updated scores
+        if (matchData) {
+          // 🔥 CRITICAL: Map the backend data structure correctly
+          const processedMatch = {
+            ...matchData,
+            // 🏆 ENSURE SCORES ARE PROPERLY MAPPED
+            team1_score: matchData.team1_score || 0,
+            team2_score: matchData.team2_score || 0,
+            status: matchData.status || 'upcoming',
+            // 🗺️ ENSURE MAPS DATA IS PRESERVED
+            maps: matchData.maps || [],
+            // 🦸 ENSURE TEAM DATA WITH PLAYERS IS PRESERVED
+            team1: matchData.team1 || {},
+            team2: matchData.team2 || {}
+          };
           
-          // Fetch team details separately if not included
-          if (matchData.team1_id && !matchData.team1?.players) {
-            try {
-              const team1Response = await api.get(`/teams/${matchData.team1_id}`);
-              const team1Data = team1Response?.data;
-              matchData.team1 = { ...matchData.team1, ...team1Data };
-              console.log('✅ Team 1 data fetched:', matchData.team1);
-            } catch (error) {
-              console.error('❌ Error fetching team 1 data:', error);
-            }
-          }
+          console.log('🔥 MatchDetailPage: Processed match with scores:', {
+            team1_score: processedMatch.team1_score,
+            team2_score: processedMatch.team2_score,
+            status: processedMatch.status,
+            mapCount: processedMatch.maps?.length
+          });
           
-          if (matchData.team2_id && !matchData.team2?.players) {
-            try {
-              const team2Response = await api.get(`/teams/${matchData.team2_id}`);
-              const team2Data = team2Response?.data;
-              matchData.team2 = { ...matchData.team2, ...team2Data };
-              console.log('✅ Team 2 data fetched:', matchData.team2);
-            } catch (error) {
-              console.error('❌ Error fetching team 2 data:', error);
-            }
-          }
+          setMatch(processedMatch);
+        } else {
+          console.error('❌ No match data received from backend');
+          setMatch(null);
         }
-        
-        console.log('✅ MatchDetailPage: Final processed match data:', matchData);
-        setMatch(matchData);
         
       } catch (error) {
         console.error('❌ MatchDetailPage: Error fetching REAL match data:', error);
