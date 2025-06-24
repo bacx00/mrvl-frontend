@@ -495,27 +495,38 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
       
       console.log('✅ BACKEND SAVE SUCCESSFUL');
       
-      // 🔥 MULTIPLE SYNC EVENTS FOR PERFECT REAL-TIME UPDATE
-      console.log('🔥 DISPATCHING MULTIPLE SYNC EVENTS for match:', match.id);
+      // 🔥 MULTIPLE SYNC EVENTS FOR PERFECT WORKFLOW
+      console.log('🔥 DISPATCHING COMPREHENSIVE SYNC EVENTS for match:', match.id);
       
-      // 1. Match update event
+      // 1. Update match state immediately for smooth UI
+      const updatedMatchData = {
+        ...match,
+        team1_score: matchStats.mapWins.team1 || 0,
+        team2_score: matchStats.mapWins.team2 || 0,
+        status: matchStatus,
+        maps: matchStats.maps,
+        lastUpdated: Date.now()
+      };
+      
+      // 2. Primary match update event with FULL data
       window.dispatchEvent(new CustomEvent('mrvl-match-updated', {
         detail: {
           matchId: match.id,
           type: 'COMPREHENSIVE_UPDATE',
           timestamp: Date.now(),
-          matchData: {
-            ...match,
-            team1_score: matchStats.mapWins.team1 || 0,
-            team2_score: matchStats.mapWins.team2 || 0,
-            status: matchStatus,
-            maps: matchStats.maps,
-            lastUpdated: Date.now()
-          }
+          matchData: updatedMatchData,
+          scores: {
+            team1: matchStats.mapWins.team1 || 0,
+            team2: matchStats.mapWins.team2 || 0
+          },
+          heroes: matchStats.maps.map(mapData => ({
+            team1Players: mapData.team1Players,
+            team2Players: mapData.team2Players
+          }))
         }
       }));
       
-      // 2. Hero update event
+      // 3. Hero update event
       window.dispatchEvent(new CustomEvent('mrvl-hero-updated', {
         detail: {
           matchId: match.id,
@@ -525,7 +536,7 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
         }
       }));
       
-      // 3. Stats update event
+      // 4. Stats update event with scores
       window.dispatchEvent(new CustomEvent('mrvl-stats-updated', {
         detail: {
           matchId: match.id,
@@ -539,16 +550,17 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
         }
       }));
       
-      // 4. Force cache refresh
+      // 5. CRITICAL: Force immediate refresh with new data
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('mrvl-data-refresh', {
           detail: { 
             matchId: match.id, 
             timestamp: Date.now(),
-            forceRefresh: true 
+            forceRefresh: true,
+            newData: updatedMatchData
           }
         }));
-      }, 200);
+      }, 100);
       
       alert('✅ Match data saved successfully! All changes synchronized.');
       
