@@ -482,55 +482,6 @@ function MatchDetailPage({ matchId, navigateTo }) {
           </div>
         </div>
 
-        {/* 🎮 MAP NAME DISPLAY */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-6 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            📍 {currentMap?.map_name || currentMap?.name || 'Map Not Set'}
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            🎮 Mode: {currentMap?.mode || 'Convoy'} • Format: {match.format || 'BO1'}
-          </p>
-        </div>
-
-        {/* 🎥 STREAM & BETTING SECTION */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Stream Button */}
-            <button className="flex items-center justify-center space-x-3 px-6 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
-              <span className="text-2xl">🎥</span>
-              <div className="text-left">
-                <div className="font-bold">Watch Live Stream</div>
-                <div className="text-sm opacity-90">Official Marvel Rivals Stream</div>
-              </div>
-            </button>
-
-            {/* Betting Button */}
-            <button className="flex items-center justify-center space-x-3 px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
-              <span className="text-2xl">💰</span>
-              <div className="text-left">
-                <div className="font-bold">Place Bets</div>
-                <div className="text-sm opacity-90">Competitive Odds Available</div>
-              </div>
-            </button>
-          </div>
-          
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-            <button className="flex items-center justify-center space-x-2 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-              <span>📊</span>
-              <span>Match Stats</span>
-            </button>
-            <button className="flex items-center justify-center space-x-2 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-              <span>📈</span>
-              <span>Live Odds</span>
-            </button>
-            <button className="flex items-center justify-center space-x-2 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-              <span>🏆</span>
-              <span>Predictions</span>
-            </button>
-          </div>
-        </div>
-
       {/* Map Tabs */}
       {match.maps && match.maps.length > 1 && (
         <div className="flex justify-center space-x-2">
