@@ -127,7 +127,13 @@ function MatchDetailPage({ matchId, navigateTo }) {
       if (detail.matchId == currentMatchId) {
         console.log('🔥 MatchDetailPage: Received real-time update:', detail.type, detail);
         
-        // Force refresh data from backend for perfect sync
+        // 🚨 CRITICAL: If we have new data in the event, use it immediately
+        if (detail.newData) {
+          console.log('🚀 MatchDetailPage: Using immediate data from event:', detail.newData);
+          setMatch(detail.newData);
+        }
+        
+        // Always fetch fresh data from backend for complete sync
         fetchMatchData(false); // Don't show loading spinner
         
         // Cache busting for browser
@@ -153,6 +159,18 @@ function MatchDetailPage({ matchId, navigateTo }) {
       const currentMatchId = getMatchId();
       if (detail.matchId == currentMatchId) {
         console.log('📊 MatchDetailPage: Stats update received:', detail);
+        
+        // 🚨 CRITICAL: If scores are included, update immediately
+        if (detail.scores) {
+          console.log('🏆 MatchDetailPage: Updating scores immediately:', detail.scores);
+          setMatch(prev => prev ? {
+            ...prev,
+            team1_score: detail.scores.team1,
+            team2_score: detail.scores.team2,
+            lastUpdated: Date.now()
+          } : prev);
+        }
+        
         fetchMatchData(false); // Refresh without loading
       }
     };
