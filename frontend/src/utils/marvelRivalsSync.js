@@ -1,11 +1,11 @@
 /**
- * 🎮 MARVEL RIVALS FRONTEND SYNCHRONIZATION UTILITIES
- * Fixes for backend integration with your complete data structure
+ * 🎮 COMPLETE MARVEL RIVALS SYNC UTILITIES - ALL FORMATS SUPPORTED
+ * Perfect match flow with BO1, BO3, BO5, BO7 support
  */
+import { COMPLETE_MARVEL_RIVALS_CONFIG, getFormatConfig, getMapCountForFormat } from '../data/marvelRivalsComplete.js';
 
 /**
- * 🔥 LOAD COMPLETE MATCH DATA FROM YOUR FIXED BACKEND
- * This prevents the hero reset bug by loading saved data first
+ * 🔥 LOAD COMPLETE MATCH DATA - ALL FORMATS SUPPORTED
  */
 export const loadCompleteMatchData = async (matchId, token) => {
   console.log('🔍 Loading complete match data for match:', matchId);
@@ -23,12 +23,17 @@ export const loadCompleteMatchData = async (matchId, token) => {
       const matchData = await response.json();
       console.log('✅ Complete match data loaded from backend:', matchData);
       
-      // 🔥 Transform your backend's complete data structure
+      // 🔥 Support ALL FORMATS (BO1, BO3, BO5, BO7)
       if (matchData.data?.maps && matchData.data.maps.length > 0) {
+        const format = matchData.data.format || 'BO1';
+        const expectedMapCount = getMapCountForFormat(format);
+        
+        console.log(`🎯 Processing ${format} match with ${matchData.data.maps.length} maps (expected: ${expectedMapCount})`);
+        
         const transformedMaps = matchData.data.maps.map((savedMap, index) => ({
           map_number: index + 1,
-          map_name: savedMap.map_name || 'Asgard: Royal Palace', // ✅ Your correct map
-          mode: savedMap.mode || 'Domination',
+          map_name: savedMap.map_name || COMPLETE_MARVEL_RIVALS_CONFIG.maps[index] || 'Asgard: Royal Palace',
+          mode: savedMap.mode || ['Convoy', 'Domination', 'Convergence', 'Conquest'][index % 4],
           team1Score: savedMap.team1_score || 0,
           team2Score: savedMap.team2_score || 0,
           status: savedMap.status || 'upcoming',
@@ -37,7 +42,7 @@ export const loadCompleteMatchData = async (matchId, token) => {
           team1Players: savedMap.team1_composition?.map(comp => ({
             id: comp.player_id,
             name: comp.player_name,
-            hero: comp.hero, // ✅ PRESERVED from your backend - NO RESET!
+            hero: comp.hero, // ✅ PRESERVED from your backend
             role: comp.role,
             country: comp.country || 'DE', // ✅ Your fixed country data
             eliminations: comp.eliminations || 0,
@@ -50,7 +55,7 @@ export const loadCompleteMatchData = async (matchId, token) => {
           team2Players: savedMap.team2_composition?.map(comp => ({
             id: comp.player_id,
             name: comp.player_name,
-            hero: comp.hero, // ✅ PRESERVED from your backend - NO RESET!
+            hero: comp.hero, // ✅ PRESERVED from your backend
             role: comp.role,
             country: comp.country || 'KR', // ✅ Your fixed country data
             eliminations: comp.eliminations || 0,
@@ -64,6 +69,7 @@ export const loadCompleteMatchData = async (matchId, token) => {
         
         return {
           success: true,
+          format: format,
           maps: transformedMaps,
           team1_score: matchData.data.team1_score || 0,
           team2_score: matchData.data.team2_score || 0,
@@ -82,22 +88,27 @@ export const loadCompleteMatchData = async (matchId, token) => {
 };
 
 /**
- * 🏳️ FIXED COUNTRY RESOLUTION - NO MORE UNDEFINED
- * Uses your backend's DE/KR data structure
+ * 🏳️ FIXED COUNTRY RESOLUTION - ALL TEAMS SUPPORTED
  */
 export const getPlayerCountry = (player, teamName) => {
-  // 🔥 Use your backend's fixed country data structure
+  // 🔥 Enhanced country detection for all teams
   const country = player.country || 
                   player.nationality || 
                   player.team_country ||
-                  (teamName === 'test1' ? 'DE' : teamName === 'test2' ? 'KR' : 'US');
+                  // Team-based defaults (expand as needed)
+                  (teamName === 'test1' ? 'DE' : 
+                   teamName === 'test2' ? 'KR' : 
+                   teamName?.toLowerCase().includes('eu') ? 'EU' :
+                   teamName?.toLowerCase().includes('na') ? 'US' :
+                   teamName?.toLowerCase().includes('asia') ? 'JP' :
+                   'US');
   
-  console.log(`🌍 Player ${player.name} country resolved: ${country} (was: ${player.country})`);
+  console.log(`🌍 Player ${player.name} country resolved: ${country} (team: ${teamName})`);
   return country;
 };
 
 /**
- * 🦸 LOAD FRESH TEAM PLAYERS WITH FIXED COUNTRIES
+ * 🦸 LOAD TEAM PLAYERS WITH COMPLETE HERO SUPPORT
  */
 export const loadTeamPlayers = async (teamId, teamName, token) => {
   try {
@@ -118,10 +129,15 @@ export const loadTeamPlayers = async (teamId, teamName, token) => {
       return teamPlayers.slice(0, 6).map((player, index) => {
         const playerCountry = getPlayerCountry(player, teamName);
         
+        // Ensure hero is from our complete roster
+        const playerHero = player.main_hero || 'Captain America';
+        const allHeroes = Object.values(COMPLETE_MARVEL_RIVALS_CONFIG.herosByRole).flat();
+        const validHero = allHeroes.includes(playerHero) ? playerHero : 'Captain America';
+        
         return {
           id: player.id,
           name: player.name,
-          hero: player.main_hero || 'Captain America',
+          hero: validHero, // ✅ Validated against complete hero roster
           role: player.role || 'Tank',
           country: playerCountry, // ✅ FIXED country resolution
           avatar: player.avatar,
@@ -146,25 +162,29 @@ export const loadTeamPlayers = async (teamId, teamName, token) => {
 };
 
 /**
- * 🔄 OPTIMIZED SAVE FUNCTION - PREVENT RESET BUG
+ * 🔄 OPTIMIZED SAVE FUNCTION - ALL FORMATS SUPPORTED
  */
-export const saveMatchData = async (matchId, matchStats, matchStatus, teamData, api) => {
+export const saveMatchData = async (matchId, matchStats, matchStatus, teamData, api, format = 'BO1') => {
   try {
-    console.log('🔄 SAVING WITH OPTIMIZED STRUCTURE - Current State:', {
+    const formatConfig = getFormatConfig(format);
+    console.log(`🔄 SAVING ${format} MATCH - Current State:`, {
       mapWins: matchStats.mapWins,
       matchStatus: matchStatus,
-      totalMaps: matchStats.maps?.length
+      totalMaps: matchStats.maps?.length,
+      expectedMaps: formatConfig.maps,
+      winCondition: formatConfig.winCondition
     });
     
-    // 🚨 CRITICAL: Build complete save payload matching your backend structure
+    // 🚨 CRITICAL: Build complete save payload for all formats
     const savePayload = {
       team1_score: matchStats.mapWins.team1 || 0,
       team2_score: matchStats.mapWins.team2 || 0,
       status: matchStatus,
+      format: format, // Include format in save
       maps: matchStats.maps.map((mapData, index) => ({
         map_number: index + 1,
-        map_name: mapData.map_name || mapData.name || 'Asgard: Royal Palace', // ✅ Your correct map
-        mode: mapData.mode || 'Domination',
+        map_name: mapData.map_name || mapData.name || COMPLETE_MARVEL_RIVALS_CONFIG.maps[index] || 'Asgard: Royal Palace',
+        mode: mapData.mode || ['Convoy', 'Domination', 'Convergence', 'Conquest'][index % 4],
         team1_score: mapData.team1Score || 0,
         team2_score: mapData.team2Score || 0,
         status: mapData.status || 'upcoming',
@@ -198,17 +218,40 @@ export const saveMatchData = async (matchId, matchStats, matchStatus, teamData, 
       }))
     };
 
-    console.log('💾 SAVING TO YOUR FIXED BACKEND:', savePayload);
+    console.log(`💾 SAVING ${format} MATCH TO BACKEND:`, savePayload);
 
     // Save to your backend
     const response = await api.put(`/admin/matches/${matchId}`, savePayload);
     
-    console.log('✅ BACKEND SAVE SUCCESSFUL');
+    console.log(`✅ ${format} MATCH SAVE SUCCESSFUL`);
     
     return { success: true, data: response };
     
   } catch (error) {
-    console.error('❌ Error saving match data:', error);
+    console.error(`❌ Error saving ${format} match data:`, error);
     return { success: false, error: error.message };
   }
+};
+
+/**
+ * 🎯 FORMAT HELPERS FOR PERFECT MATCH FLOW
+ */
+export const getWinCondition = (format, currentScore) => {
+  const config = getFormatConfig(format);
+  const mapsToWin = Math.ceil(config.maps / 2);
+  
+  return {
+    format: format,
+    mapsToWin: mapsToWin,
+    totalMaps: config.maps,
+    team1Score: currentScore.team1 || 0,
+    team2Score: currentScore.team2 || 0,
+    isComplete: (currentScore.team1 >= mapsToWin) || (currentScore.team2 >= mapsToWin),
+    winner: currentScore.team1 >= mapsToWin ? 'team1' : currentScore.team2 >= mapsToWin ? 'team2' : null
+  };
+};
+
+export const generateMapPool = (format) => {
+  const mapCount = getMapCountForFormat(format);
+  return COMPLETE_MARVEL_RIVALS_CONFIG.maps.slice(0, mapCount);
 };
