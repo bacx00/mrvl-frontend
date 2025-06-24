@@ -248,78 +248,111 @@ function ComprehensiveLiveScoring({ match, isOpen, onClose, onUpdate }) {
     };
   });
 
-  // 🚨 FORCE LOAD REAL TEAM PLAYERS IMMEDIATELY - TRIGGER ON EVERY RENDER
+  // 🔥 CRITICAL: LOAD EXISTING MATCH DATA FROM BACKEND FIRST
   useEffect(() => {
-    console.log('🚨 ADMIN useEffect TRIGGERED!');
-    console.log('- isOpen:', isOpen);
-    console.log('- match exists:', !!match);
-    console.log('- match.team1:', match?.team1);
-    console.log('- match.team2:', match?.team2);
-    console.log('- token exists:', !!token);
-    
-    const loadRealPlayers = async () => {
-      // 🚨 FORCE RUN - Remove token requirement for demo
-      if (match) {
-        console.log('🔍 ADMIN: FORCE Loading real players (no auth required)...');
-        
-        const team1Id = match.team1?.id || match.team1_id;
-        const team2Id = match.team2?.id || match.team2_id;
-        
-        console.log('🔍 ADMIN: Team IDs - Team1:', team1Id, 'Team2:', team2Id);
-        
-        if (team1Id && team2Id) {
-          try {
-            const [team1Players, team2Players] = await Promise.all([
-              fetchTeamPlayers(team1Id, match.team1?.name || 'Team1'),
-              fetchTeamPlayers(team2Id, match.team2?.name || 'Team2')
-            ]);
-            
-            console.log('✅ ADMIN: Real players fetched:');
-            console.log('Team 1 real players:', team1Players);
-            console.log('Team 2 real players:', team2Players);
-            
-            // 🚨 FORCE UPDATE WITH REAL PLAYERS
-            if (team1Players.length > 0 || team2Players.length > 0) {
-              console.log('🔄 ADMIN: FORCING state update with real players...');
-              
-              setMatchStats(prevStats => {
-                if (!prevStats) {
-                  console.log('❌ ADMIN: prevStats is null');
-                  return prevStats;
-                }
-                
-                const updatedStats = {
-                  ...prevStats,
-                  maps: prevStats.maps.map((map, mapIndex) => ({
-                    ...map,
-                    team1Players: team1Players.length > 0 ? team1Players : [],
-                    team2Players: team2Players.length > 0 ? team2Players : []
-                  }))
-                };
-                
-                console.log('✅ ADMIN: Updated with real players:', {
-                  team1Count: updatedStats.maps[0]?.team1Players?.length,
-                  team2Count: updatedStats.maps[0]?.team2Players?.length,
-                  team1First: updatedStats.maps[0]?.team1Players?.[0]?.name,
-                  team2First: updatedStats.maps[0]?.team2Players?.[0]?.name
-                });
-                
-                return updatedStats;
-              });
-            }
-          } catch (error) {
-            console.error('❌ ADMIN: Error loading real players:', error);
+    const loadCompleteMatchData = async () => {
+      if (!match || !isOpen) {
+        console.log('❌ ADMIN: Not loading - no match or not open');
+        return;
+      }
+
+      console.log('🔍 ADMIN: Loading complete match data from backend...');
+      
+      try {
+        // 🚨 CRITICAL: Load EXISTING match data from your fixed backend first
+        const response = await fetch(`https://staging.mrvl.net/api/admin/matches/${match.id}/complete-data`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
-        } else {
-          console.log('❌ ADMIN: Missing team IDs:', { team1Id, team2Id });
+        });
+
+        if (response.ok) {
+          const savedMatchData = await response.json();
+          console.log('✅ ADMIN: Saved match data loaded:', savedMatchData);
+          
+          // 🔥 CRITICAL: If backend has map data with heroes/stats, use it!
+          if (savedMatchData.data?.maps && savedMatchData.data.maps.length > 0) {
+            console.log('🗺️ ADMIN: Using saved map data with heroes and stats!');
+            
+            setMatchStats(prev => ({
+              ...prev,
+              maps: savedMatchData.data.maps.map((savedMap, index) => ({
+                ...prev.maps[index],
+                map_name: savedMap.map_name || 'Asgard: Royal Palace',
+                mode: savedMap.mode || 'Domination',
+                team1Players: savedMap.team1_composition?.map(comp => ({
+                  id: comp.player_id,
+                  name: comp.player_name,
+                  hero: comp.hero, // ✅ KEEP SAVED HERO!
+                  role: comp.role,
+                  country: comp.country || 'DE', // ✅ Use backend's fixed country
+                  eliminations: comp.eliminations || 0,
+                  deaths: comp.deaths || 0,
+                  assists: comp.assists || 0,
+                  damage: comp.damage || 0,
+                  healing: comp.healing || 0,
+                  damageBlocked: comp.damageBlocked || 0
+                })) || [],
+                team2Players: savedMap.team2_composition?.map(comp => ({
+                  id: comp.player_id,
+                  name: comp.player_name,
+                  hero: comp.hero, // ✅ KEEP SAVED HERO!
+                  role: comp.role,
+                  country: comp.country || 'KR', // ✅ Use backend's fixed country
+                  eliminations: comp.eliminations || 0,
+                  deaths: comp.deaths || 0,
+                  assists: comp.assists || 0,
+                  damage: comp.damage || 0,
+                  healing: comp.healing || 0,
+                  damageBlocked: comp.damageBlocked || 0
+                })) || []
+              }))
+            }));
+            
+            console.log('✅ ADMIN: Match data loaded with saved heroes and stats!');
+            return; // Don't load fresh players if we have saved data
+          }
         }
-      } else {
-        console.log('❌ ADMIN: Missing requirements:', { hasMatch: !!match, hasToken: !!token });
+      } catch (error) {
+        console.log('⚠️ ADMIN: No saved match data, loading fresh players:', error.message);
+      }
+
+      // 🔄 FALLBACK: Load fresh players if no saved data  
+      console.log('🔍 ADMIN: Loading fresh player data...');
+      
+      const team1Id = match.team1?.id || match.team1_id;
+      const team2Id = match.team2?.id || match.team2_id;
+      
+      if (team1Id && team2Id) {
+        try {
+          const [team1Players, team2Players] = await Promise.all([
+            fetchTeamPlayers(team1Id, match.team1?.name || 'Team1'),
+            fetchTeamPlayers(team2Id, match.team2?.name || 'Team2')
+          ]);
+          
+          setMatchStats(prevStats => {
+            if (!prevStats) return prevStats;
+            
+            return {
+              ...prevStats,
+              maps: prevStats.maps.map((map, mapIndex) => ({
+                ...map,
+                team1Players: team1Players.length > 0 ? team1Players : [],
+                team2Players: team2Players.length > 0 ? team2Players : []
+              }))
+            };
+          });
+          
+          console.log('✅ ADMIN: Fresh players loaded');
+        } catch (error) {
+          console.error('❌ ADMIN: Error loading fresh players:', error);
+        }
       }
     };
     
-    loadRealPlayers();
-  }, [match, isOpen]); // 🚨 Removed token dependency for demo
+    loadCompleteMatchData();
+  }, [match, isOpen, token]); // Only run when these change
 
   // CRITICAL FIX: Null check for match AFTER hooks
   if (!isOpen || !match || !matchStats) {
