@@ -28,7 +28,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       } : null,
       hasToken: !!token
     });
-  }, []); // Only log once on mount
+  }, [match?.id]); // Only when match ID changes
 
   // 🎮 COMPLETE MARVEL RIVALS MAPS - ALL 8 MAPS
   const marvelRivalsMaps = [
