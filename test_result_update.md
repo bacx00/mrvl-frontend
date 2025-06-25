@@ -88,7 +88,7 @@ ls: cannot access '/app/backend/': No such file or directory
 ```
 $ cat /app/frontend/.env
 WDS_SOCKET_PORT=443
-REACT_APP_BACKEND_URL=https://d4e0083a-6fb1-458d-82c0-237195c36027.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://38191820-65b4-413c-b4f6-47b5f80d3665.preview.emergentagent.com
 ```
 
 ## 🚨 **CRITICAL ISSUES FOUND:**
