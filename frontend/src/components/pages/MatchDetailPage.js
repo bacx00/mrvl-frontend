@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
 import { getHeroImageSync, getHeroRole } from '../../utils/imageUtils';
+import MatchAPI from '../../api/MatchAPI'; // 🎯 CRITICAL: Data transformation layer
 
 function MatchDetailPage({ matchId, navigateTo }) {
   const [match, setMatch] = useState(null);
