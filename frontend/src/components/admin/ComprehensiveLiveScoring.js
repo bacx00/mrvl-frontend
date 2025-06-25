@@ -436,20 +436,30 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     }
   };
 
-  // Timer controls
+  // Timer controls - WITH PERSISTENCE
   const startTimer = () => {
+    const startTime = Date.now();
     setIsTimerRunning(true);
-    setTimerStartTime(Date.now());
+    setTimerStartTime(startTime);
+    // 🚨 PERSIST TO LOCALSTORAGE
+    localStorage.setItem(`match-timer-running-${match.id}`, 'true');
+    localStorage.setItem(`match-timer-start-${match.id}`, startTime.toString());
   };
 
   const pauseTimer = () => {
     setIsTimerRunning(false);
+    // 🚨 PERSIST TO LOCALSTORAGE
+    localStorage.setItem(`match-timer-running-${match.id}`, 'false');
   };
 
   const resetTimer = () => {
     setIsTimerRunning(false);
     setMatchTimer('00:00');
     setTimerStartTime(null);
+    // 🚨 CLEAR FROM LOCALSTORAGE
+    localStorage.removeItem(`match-timer-running-${match.id}`);
+    localStorage.removeItem(`match-timer-start-${match.id}`);
+    localStorage.removeItem(`match-timer-${match.id}`);
   };
 
   // Timer effect
