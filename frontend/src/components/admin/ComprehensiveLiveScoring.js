@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
 import { TeamLogo } from '../../utils/imageUtils';
+import MatchAPI from '../../api/MatchAPI'; // 🎯 CRITICAL: New data transformation layer
 
 /**
- * 🎮 COMPREHENSIVE LIVE SCORING - FIXED VERSION
- * Fixes: Hero persistence, country flags, save reset bug
+ * 🎮 COMPREHENSIVE LIVE SCORING - FIXED VERSION WITH DATA TRANSFORMATION
+ * Uses MatchAPI for proper backend/frontend data conversion
  */
 const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
   const { api } = useAuth();
