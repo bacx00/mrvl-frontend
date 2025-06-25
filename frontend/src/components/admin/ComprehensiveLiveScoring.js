@@ -462,7 +462,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     localStorage.removeItem(`match-timer-${match.id}`);
   };
 
-  // Timer effect
+  // Timer effect - WITH PERSISTENCE
   useEffect(() => {
     let interval;
     if (isTimerRunning && matchStatus === 'live') {
@@ -474,11 +474,14 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         const minutes = Math.floor(elapsed / 60);
         const seconds = elapsed % 60;
         
-        setMatchTimer(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+        const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        setMatchTimer(timeString);
+        // 🚨 PERSIST TIMER VALUE
+        localStorage.setItem(`match-timer-${match.id}`, timeString);
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isTimerRunning, matchStatus, timerStartTime]);
+  }, [isTimerRunning, matchStatus, timerStartTime, match.id]);
 
   if (!isOpen || !match || !matchStats) {
     return null;
