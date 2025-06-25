@@ -306,7 +306,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     });
   };
 
-  // 🔄 OPTIMIZED SAVE FUNCTION - PREVENT RESET BUG
+  // 🔄 OPTIMIZED SAVE FUNCTION WITH MATCHAPI TRANSFORMATION
   const handleSaveStats = async () => {
     if (!matchStats || !match) {
       console.log('❌ Cannot save: Missing matchStats or match');
@@ -323,53 +323,67 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         activeMap: matchStats.currentMap
       });
       
-      // 🚨 CRITICAL: Build complete save payload matching backend structure
-      const savePayload = {
-        team1_score: matchStats.mapWins.team1 || 0,
-        team2_score: matchStats.mapWins.team2 || 0,
+      // 🎯 CRITICAL: Use MatchAPI transformation layer for save
+      const frontendState = {
         status: matchStatus,
+        currentMap: matchStats.currentMap + 1, // Convert from 0-based to 1-based
+        team1: {
+          id: match.team1_id || match.team1?.id,
+          score: matchStats.mapWins.team1 || 0
+        },
+        team2: {
+          id: match.team2_id || match.team2?.id,
+          score: matchStats.mapWins.team2 || 0
+        },
         maps: matchStats.maps.map((mapData, index) => ({
-          map_number: index + 1,
-          map_name: mapData.map_name,
+          mapNumber: index + 1,
+          mapName: mapData.map_name,
           mode: mapData.mode,
-          team1_score: mapData.team1Score || 0,
-          team2_score: mapData.team2Score || 0,
           status: mapData.status || 'upcoming',
-          winner_id: mapData.winner ? (mapData.winner === 'team1' ? match.team1_id : match.team2_id) : null,
-          team1_composition: mapData.team1Players?.map(player => ({
-            player_id: player.id,
-            player_name: player.name,
-            hero: player.hero, // ✅ PRESERVE hero selection
+          team1Score: mapData.team1Score || 0,
+          team2Score: mapData.team2Score || 0,
+          winner: mapData.winner,
+          duration: mapData.duration || 'Not started',
+          team1Composition: mapData.team1Players?.map(player => ({
+            playerId: player.id,
+            playerName: player.name,
+            hero: player.hero,             // ✅ PRESERVE hero selection
             role: player.role,
-            country: player.country, // ✅ PRESERVE country
+            country: player.country,       // ✅ PRESERVE country
             eliminations: player.eliminations || 0,
             deaths: player.deaths || 0,
             assists: player.assists || 0,
             damage: player.damage || 0,
             healing: player.healing || 0,
-            damageBlocked: player.damageBlocked || 0
+            damageBlocked: player.damageBlocked || 0,
+            objectiveTime: player.objectiveTime || 0,
+            ultimatesUsed: player.ultimatesUsed || 0
           })) || [],
-          team2_composition: mapData.team2Players?.map(player => ({
-            player_id: player.id,
-            player_name: player.name,
-            hero: player.hero, // ✅ PRESERVE hero selection
+          team2Composition: mapData.team2Players?.map(player => ({
+            playerId: player.id,
+            playerName: player.name,
+            hero: player.hero,             // ✅ PRESERVE hero selection
             role: player.role,
-            country: player.country, // ✅ PRESERVE country
+            country: player.country,       // ✅ PRESERVE country
             eliminations: player.eliminations || 0,
             deaths: player.deaths || 0,
             assists: player.assists || 0,
             damage: player.damage || 0,
             healing: player.healing || 0,
-            damageBlocked: player.damageBlocked || 0
+            damageBlocked: player.damageBlocked || 0,
+            objectiveTime: player.objectiveTime || 0,
+            ultimatesUsed: player.ultimatesUsed || 0
           })) || []
-        }))
+        })),
+        viewers: match.viewers || 0
       };
 
-      console.log('💾 SAVING TO BACKEND:', savePayload);
+      console.log('💾 SAVING TO BACKEND via MatchAPI:', frontendState);
 
-      const response = await api.put(`/admin/matches/${match.id}`, savePayload);
+      // 🎯 CRITICAL: Use MatchAPI transformation layer
+      await MatchAPI.saveCompleteMatch(match.id, frontendState, api);
       
-      console.log('✅ BACKEND SAVE SUCCESSFUL');
+      console.log('✅ BACKEND SAVE SUCCESSFUL via MatchAPI');
       
       // 🔥 DISPATCH COMPREHENSIVE SYNC EVENTS
       console.log('🔥 DISPATCHING COMPREHENSIVE SYNC EVENTS for match:', match.id);
@@ -385,7 +399,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       window.dispatchEvent(new CustomEvent('mrvl-hero-updated', {
         detail: { 
           matchId: match.id, 
-          type: 'BULK_HERO_UPDATE',
+          type: 'HERO_COMPOSITION_UPDATE',
           timestamp: Date.now()
         }
       }));
@@ -393,16 +407,20 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       window.dispatchEvent(new CustomEvent('mrvl-stats-updated', {
         detail: { 
           matchId: match.id, 
-          type: 'BULK_STATS_UPDATE',
+          type: 'PLAYER_STATS_UPDATE',
+          scores: {
+            team1: matchStats.mapWins.team1,
+            team2: matchStats.mapWins.team2
+          },
           timestamp: Date.now()
         }
       }));
       
-      // 🚨 CRITICAL: DO NOT RESET STATE AFTER SAVE!
-      console.log('✅ Save complete - state preserved');
+      console.log('✅ All sync events dispatched successfully');
       
     } catch (error) {
-      console.error('❌ Error saving match stats:', error);
+      console.error('❌ Error saving match stats via MatchAPI:', error);
+      alert(`❌ Error saving match: ${error.message || 'Unknown error'}`);
     } finally {
       setSaveLoading(false);
     }
