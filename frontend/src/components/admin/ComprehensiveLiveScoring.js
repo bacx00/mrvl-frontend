@@ -10,9 +10,22 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
   const { api } = useAuth();
   const [matchStats, setMatchStats] = useState(null);
   const [matchStatus, setMatchStatus] = useState('upcoming');
-  const [matchTimer, setMatchTimer] = useState('00:00');
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [timerStartTime, setTimerStartTime] = useState(null);
+  // 🚨 PERSISTENT TIMER: Store in localStorage to persist across page changes
+  const [matchTimer, setMatchTimer] = useState(() => {
+    // Try to restore timer from localStorage
+    const saved = localStorage.getItem(`match-timer-${match?.id}`);
+    return saved || '00:00';
+  });
+  const [isTimerRunning, setIsTimerRunning] = useState(() => {
+    // Try to restore running state from localStorage
+    const saved = localStorage.getItem(`match-timer-running-${match?.id}`);
+    return saved === 'true';
+  });
+  const [timerStartTime, setTimerStartTime] = useState(() => {
+    // Try to restore start time from localStorage
+    const saved = localStorage.getItem(`match-timer-start-${match?.id}`);
+    return saved ? parseInt(saved) : null;
+  });
   const [saveLoading, setSaveLoading] = useState(false);
 
   // 🔍 DEBUG: Log what data we receive (ONCE)
