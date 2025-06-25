@@ -152,110 +152,81 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         return;
       }
 
-      console.log('🔍 ADMIN: Loading saved match data from backend...');
+      console.log('🔍 ADMIN: Loading saved match data using MatchAPI transformation...');
       
       try {
-        // 🚨 CRITICAL: Try to load existing match data first
-        const response = await api.get(`/matches/${match.id}`);
+        // 🎯 CRITICAL: Use MatchAPI transformation layer instead of direct API calls
+        const transformedMatch = await MatchAPI.loadCompleteMatch(match.id, api);
         
-        if (response.success !== false && response.data) {
-          const savedMatch = response.data;
-          console.log('✅ ADMIN: Saved match data found:', savedMatch);
-          
-          // 🔥 CRITICAL: If match has saved map data with heroes, use it!
-          if (savedMatch.maps && savedMatch.maps.length > 0) {
-            console.log('🗺️ ADMIN: Using saved map data with heroes preserved!');
-            
-            setMatchStats({
-              totalMaps: savedMatch.maps.length,
-              currentMap: 0,
-              mapWins: { 
-                team1: savedMatch.team1_score || 0, 
-                team2: savedMatch.team2_score || 0 
-              },
-              maps: savedMatch.maps.map((savedMap, index) => ({
-                map_number: index + 1,
-                map_name: savedMap.map_name || marvelRivalsMaps[index % marvelRivalsMaps.length].name,
-                mode: savedMap.mode || marvelRivalsMaps[index % marvelRivalsMaps.length].mode,
-                team1Score: savedMap.team1_score || 0,
-                team2Score: savedMap.team2_score || 0,
-                status: savedMap.status || 'upcoming',
-                winner: savedMap.winner_id ? (savedMap.winner_id === match.team1_id ? 'team1' : 'team2') : null,
-                duration: savedMap.duration || 'Not started',
-                team1Players: savedMap.team1_composition?.map(comp => ({
-                  id: comp.player_id,
-                  name: comp.player_name,
-                  hero: comp.hero || 'Captain America', // ✅ PRESERVE SAVED HERO!
-                  role: comp.role,
-                  country: comp.country || 'DE', // ✅ Use backend's fixed country
-                  eliminations: comp.eliminations || 0,
-                  deaths: comp.deaths || 0,
-                  assists: comp.assists || 0,
-                  damage: comp.damage || 0,
-                  healing: comp.healing || 0,
-                  damageBlocked: comp.damageBlocked || 0
-                })) || [],
-                team2Players: savedMap.team2_composition?.map(comp => ({
-                  id: comp.player_id,
-                  name: comp.player_name,
-                  hero: comp.hero || 'Captain America', // ✅ PRESERVE SAVED HERO!
-                  role: comp.role,
-                  country: comp.country || 'KR', // ✅ Use backend's fixed country
-                  eliminations: comp.eliminations || 0,
-                  deaths: comp.deaths || 0,
-                  assists: comp.assists || 0,
-                  damage: comp.damage || 0,
-                  healing: comp.healing || 0,
-                  damageBlocked: comp.damageBlocked || 0
-                })) || []
-              }))
-            });
-            
-            setMatchStatus(savedMatch.status || 'upcoming');
-            console.log('✅ ADMIN: Match data loaded with saved heroes preserved!');
-            return; // Don't load fresh players if we have saved data
-          }
-        }
-      } catch (error) {
-        console.log('⚠️ ADMIN: No saved match data, loading fresh players:', error.message);
-      }
-
-      // 🔄 FALLBACK: Load fresh players if no saved data
-      console.log('🔍 ADMIN: Loading fresh player data...');
-      
-      const team1Id = match.team1?.id || match.team1_id;
-      const team2Id = match.team2?.id || match.team2_id;
-      
-      if (team1Id && team2Id) {
-        try {
-          const [team1Players, team2Players] = await Promise.all([
-            loadTeamPlayers(team1Id, match.team1?.name || 'Team1'),
-            loadTeamPlayers(team2Id, match.team2?.name || 'Team2')
-          ]);
-          
-          const initialStats = initializeMatchStats(match.format);
+        console.log('✅ ADMIN: Transformed match data received:', transformedMatch);
+        
+        // 🔥 CRITICAL: Use transformed data directly - no additional mapping needed
+        if (transformedMatch.maps && transformedMatch.maps.length > 0) {
+          console.log('🗺️ ADMIN: Using transformed map data with heroes preserved!');
           
           setMatchStats({
-            ...initialStats,
-            maps: initialStats.maps.map((map, mapIndex) => ({
-              ...map,
-              team1Players: team1Players.length > 0 ? team1Players : [],
-              team2Players: team2Players.length > 0 ? team2Players : []
+            totalMaps: transformedMatch.maps.length,
+            currentMap: transformedMatch.currentMap - 1, // Convert to 0-based index
+            mapWins: { 
+              team1: transformedMatch.team1.score, 
+              team2: transformedMatch.team2.score 
+            },
+            maps: transformedMatch.maps.map((transformedMap, index) => ({
+              map_number: index + 1,
+              map_name: transformedMap.mapName,           // ✅ PRESERVED from creation
+              mode: transformedMap.mode,                  // ✅ PRESERVED from creation
+              team1Score: transformedMap.team1Score,
+              team2Score: transformedMap.team2Score,
+              status: transformedMap.status,
+              winner: transformedMap.winner,
+              duration: transformedMap.duration,
+              team1Players: transformedMap.team1Composition.map(player => ({
+                id: player.playerId,
+                name: player.playerName,
+                hero: player.hero,                        // ✅ PRESERVED hero selection!
+                role: player.role,
+                country: player.country,                  // ✅ RESOLVED country!
+                eliminations: player.eliminations,
+                deaths: player.deaths,
+                assists: player.assists,
+                damage: player.damage,
+                healing: player.healing,
+                damageBlocked: player.damageBlocked,
+                objectiveTime: player.objectiveTime || 0,
+                ultimatesUsed: player.ultimatesUsed || 0
+              })),
+              team2Players: transformedMap.team2Composition.map(player => ({
+                id: player.playerId,
+                name: player.playerName,
+                hero: player.hero,                        // ✅ PRESERVED hero selection!
+                role: player.role,
+                country: player.country,                  // ✅ RESOLVED country!
+                eliminations: player.eliminations,
+                deaths: player.deaths,
+                assists: player.assists,
+                damage: player.damage,
+                healing: player.healing,
+                damageBlocked: player.damageBlocked,
+                objectiveTime: player.objectiveTime || 0,
+                ultimatesUsed: player.ultimatesUsed || 0
+              }))
             }))
           });
           
-          console.log('✅ ADMIN: Fresh players loaded with correct countries');
-        } catch (error) {
-          console.error('❌ ADMIN: Error loading fresh players:', error);
-          setMatchStats(initializeMatchStats(match.format));
+          setMatchStatus(transformedMatch.status);
+          console.log('✅ ADMIN: Match data loaded with MatchAPI transformation - heroes and maps preserved!');
+          return; // Don't load fresh players if we have transformed data
         }
-      } else {
-        setMatchStats(initializeMatchStats(match.format));
+      } catch (error) {
+        console.log('⚠️ ADMIN: MatchAPI transformation failed, loading fresh players:', error.message);
       }
+
+      // 🔄 FALLBACK: Load fresh players if transformation fails
+      await loadFreshPlayersForBothTeams();
     };
-    
+
     loadSavedMatchData();
-  }, [match, isOpen, initializeMatchStats, api]);
+  }, [match?.id, isOpen, api]);
 
   // 🦸 Change player hero
   const changePlayerHero = (mapIndex, team, playerIndex, hero, role) => {
