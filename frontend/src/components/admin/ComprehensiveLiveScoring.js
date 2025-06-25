@@ -144,7 +144,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     };
   }, [match]);
 
-  // 🔥 CRITICAL: LOAD SAVED MATCH DATA FIRST TO PREVENT HERO RESET
+  // 🔥 CRITICAL: LOAD SAVED MATCH DATA USING TRANSFORMATION LAYER
   useEffect(() => {
     const loadSavedMatchData = async () => {
       if (!match || !isOpen) {
