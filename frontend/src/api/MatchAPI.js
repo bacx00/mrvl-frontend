@@ -124,12 +124,12 @@ export const MatchAPI = {
         team1Players: data.teams.team1.players.map(p => ({
           ...p,
           country: p.country || 'DE',
-          role: this.convertRoleToFrontend(p.role)
+          role: MatchAPI.convertRoleToFrontend(p.role)
         })),
         team2Players: data.teams.team2.players.map(p => ({
           ...p,
           country: p.country || 'KR', 
-          role: this.convertRoleToFrontend(p.role)
+          role: MatchAPI.convertRoleToFrontend(p.role)
         })),
         
         lastUpdated: Date.now()
