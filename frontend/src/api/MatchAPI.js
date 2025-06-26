@@ -134,7 +134,7 @@ export const MatchAPI = {
               objectiveTime: stats.objective_time || 0
             };
           })
-        }];
+        }]
         })(), // End of maps IIFE
         
         // 🏳️ Full player rosters (6v6 format)
