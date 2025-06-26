@@ -70,9 +70,10 @@ function MatchDetailPage({ matchId, navigateTo }) {
           console.log(`🔍 MatchDetailPage: Fetching REAL match ${realMatchId} from backend...`);
         }
         
-        // 🚨 CRITICAL: Use REAL backend API via API helper - NO DIRECT FETCH
-        const response = await api.get(`/matches/${realMatchId}`);
-        const matchData = response?.data;
+        // 🚨 CRITICAL FIX: Use SCOREBOARD endpoint via MatchAPI for complete data
+        console.log(`🎯 MatchDetailPage: Loading COMPLETE match data using MatchAPI.loadCompleteMatch(${realMatchId})`);
+        const matchData = await MatchAPI.loadCompleteMatch(realMatchId, api);
+        console.log('✅ MatchDetailPage: COMPLETE match data with heroes/logos loaded:', matchData);
 
         if (showLoading) {
           console.log('✅ MatchDetailPage: REAL match data received:', matchData);
