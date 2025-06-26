@@ -555,8 +555,12 @@ function MatchDetailPage({ matchId, navigateTo }) {
                   className="grid grid-cols-9 gap-2 items-center px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                   onClick={() => {
                     const playerId = player.playerId || player.id || `${match.team1?.id}_player_${index + 1}`;
-                    console.log('🔗 FIXED: Navigating to player with ID:', playerId, 'Name:', player.playerName || player.name);
-                    alert(`Player: ${player.playerName || player.name}\nTeam: ${match.team1?.name}\nHero: ${player.hero}\nRole: ${player.role}`);
+                    console.log('🔗 CRITICAL FIX: Navigating to player profile:', playerId, 'Name:', player.playerName || player.name);
+                    if (navigateTo && playerId) {
+                      navigateTo('player-detail', { id: playerId });
+                    } else {
+                      console.log('⚠️ Navigation not available or player ID missing');
+                    }
                   }}
                 >
                   {/* ✅ ENHANCED COUNTRY FLAG SYSTEM - MULTIPLE FALLBACKS */}
