@@ -404,7 +404,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
         {match.status === 'live' && (
           <div className="mt-4 flex justify-center">
             <div className="bg-red-600 text-white px-6 py-2 rounded-lg font-mono text-xl font-bold animate-pulse">
-              🔴 LIVE • {new Date().toLocaleTimeString()}
+              🔴 LIVE • {matchTimer}
             </div>
           </div>
         )}
