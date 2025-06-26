@@ -640,9 +640,9 @@ function MatchDetailPage({ matchId, navigateTo }) {
                   key={player.id}
                   className="grid grid-cols-9 gap-2 items-center px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                   onClick={() => {
-                    const playerId = player.id || `${match.team2?.id}_player_${index + 1}`;
-                    console.log('🔗 FIXED: Navigating to player with ID:', playerId, 'Name:', player.name);
-                    alert(`Player: ${player.name}\nTeam: ${match.team2?.name}\nHero: ${player.hero}\nRole: ${player.role}`);
+                    const playerId = player.playerId || player.id || `${match.team2?.id}_player_${index + 1}`;
+                    console.log('🔗 FIXED: Navigating to player with ID:', playerId, 'Name:', player.playerName || player.name);
+                    alert(`Player: ${player.playerName || player.name}\nTeam: ${match.team2?.name}\nHero: ${player.hero}\nRole: ${player.role}`);
                   }}
                 >
                   {/* ✅ ENHANCED COUNTRY FLAG SYSTEM - MULTIPLE FALLBACKS */}
