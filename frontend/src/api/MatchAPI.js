@@ -133,8 +133,30 @@ export const MatchAPI = {
               ultimateUsage: stats.ultimate_usage || 0,
               objectiveTime: stats.objective_time || 0
             };
+          }),
+          
+          team2Composition: data.teams.team2.players.map((player, index) => {
+            const stats = data.teams.team2.statistics?.find(s => s.player_id === player.id) || {};
+            return {
+              playerId: player.id,
+              playerName: player.name,
+              hero: stats.hero_played || player.main_hero || 'Hulk',
+              role: MatchAPI.convertRoleToFrontend(player.role),
+              country: player.country || 'KR', // test2 fallback
+              avatar: player.avatar,
+              // 📊 PRODUCTION API statistics mapping
+              eliminations: stats.kills || 0,           // E column
+              deaths: stats.deaths || 0,                // D column  
+              assists: stats.assists || 0,              // A column
+              damage: stats.damage || 0,                // DMG column
+              healing: stats.healing || 0,              // HEAL column
+              damageBlocked: stats.damage_blocked || 0, // BLK column
+              ultimateUsage: stats.ultimate_usage || 0,
+              objectiveTime: stats.objective_time || 0
+            };
           })
-        }],
+        }];
+        })(); // End of maps IIFE
         
         // 🏳️ Full player rosters (6v6 format)
         team1Players: data.teams.team1.players.map(p => ({
