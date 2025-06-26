@@ -287,7 +287,7 @@ def main():
         match_data = {
             "team1_id": 83,
             "team2_id": 84,
-            "event_id": 12,
+            "event_id": 22,
             "format": "BO3",
             "scheduled_at": tomorrow,
             "status": "upcoming",
