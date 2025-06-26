@@ -331,60 +331,29 @@ function MatchDetailPage({ matchId, navigateTo }) {
     );
   }
 
-  // 🎮 PROCESS REAL MATCH DATA FOR DISPLAY
-  const currentMap = match.maps?.[currentMapIndex] || match.maps?.[0];
-  
-  // 🚨 CRITICAL: GET REAL PLAYERS FROM BACKEND STRUCTURE - NO MOCK DATA
-  const team1Players = match.team1?.players || currentMap?.team1_composition || [];
-  const team2Players = match.team2?.players || currentMap?.team2_composition || [];
-
-  console.log('🎯 MatchDetailPage: Real players data:', {
-    team1Count: team1Players.length,
-    team2Count: team2Players.length,
-    team1Names: team1Players.map(p => p.name),
-    team2Names: team2Players.map(p => p.name)
-  });
-
-  // Assign diverse heroes to players if they don't have any
-  const diverseHeroes = [
-    'Captain America', 'Iron Man', 'Black Widow', 'Doctor Strange', 'Mantis', 'Hulk',
-    'Storm', 'Spider-Man', 'Hawkeye', 'Venom', 'Luna Snow', 'Groot'
-  ];
-
-  const currentMapData = {
-    team1Players: team1Players.map((player, index) => ({
-      ...player,
-      hero: player.hero || player.main_hero || diverseHeroes[index] || 'Captain America',
-      // 🏳️ ENHANCED COUNTRY DETECTION - Multiple sources
-      country: player.country || 
-               player.nationality || 
-               player.team_country ||
-               (match.team1?.country) ||
-               'US',
-      eliminations: player.eliminations || 0,
-      deaths: player.deaths || 0,
-      assists: player.assists || 0,
-      damage: player.damage || 0,
-      healing: player.healing || 0,
-      damageBlocked: player.damageBlocked || 0
-    })),
-    team2Players: team2Players.map((player, index) => ({
-      ...player,
-      hero: player.hero || player.main_hero || diverseHeroes[index + 6] || 'Storm',
-      // 🏳️ ENHANCED COUNTRY DETECTION - Multiple sources
-      country: player.country || 
-               player.nationality || 
-               player.team_country ||
-               (match.team2?.country) ||
-               'US',
-      eliminations: player.eliminations || 0,
-      deaths: player.deaths || 0,
-      assists: player.assists || 0,
-      damage: player.damage || 0,
-      healing: player.healing || 0,
-      damageBlocked: player.damageBlocked || 0
-    }))
+  // 🎯 CRITICAL FIX: Use ACTUAL match data from MatchAPI.loadCompleteMatch() 
+  // This includes complete player compositions with heroes, stats, and countries
+  const currentMap = match?.maps?.[currentMapIndex] || match?.maps?.[0] || null;
+  const currentMapData = currentMap ? {
+    map_name: currentMap.mapName || 'Tokyo 2099: Shibuya Sky',
+    mode: currentMap.mode || 'Domination',
+    team1Players: currentMap.team1Composition || [],
+    team2Players: currentMap.team2Composition || []
+  } : {
+    map_name: 'Tokyo 2099: Shibuya Sky',
+    mode: 'Domination',
+    team1Players: [],
+    team2Players: []
   };
+
+  console.log('🎯 MatchDetailPage: Using currentMapData:', {
+    mapName: currentMapData.map_name,
+    mode: currentMapData.mode,
+    team1PlayersCount: currentMapData.team1Players.length,
+    team2PlayersCount: currentMapData.team2Players.length,
+    team1Players: currentMapData.team1Players.map(p => ({ name: p.playerName, hero: p.hero })),
+    team2Players: currentMapData.team2Players.map(p => ({ name: p.playerName, hero: p.hero }))
+  });
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
