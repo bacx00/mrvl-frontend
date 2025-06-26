@@ -1,0 +1,60 @@
+<analysis>
+The previous AI engineer was tasked with fixing the live match input functionality of a Marvel Rivals esports platform. Initially, a comprehensive frontend analysis highlighted critical state management and data synchronization issues within the React application. The user explicitly clarified a frontend-only focus, indicating the backend was a Laravel PHP application that should not be modified by the AI engineer, but its API specifications would be provided.
+
+Following this, extensive backend API documentation was shared, detailing a production-ready Laravel system with new endpoints for 6v6 matches and granular player statistics. The AI engineer focused on implementing a Data Transformation Layer in  to correctly map the backend's data structures to the frontend's state. Despite numerous attempts to resolve synchronization, data persistence, and UI display issues across , , and , and consistently reporting build successful, the user repeatedly indicated that the same issues persisted. The latest debugging session revealed precise problems:  failing to save full hero/map data to the backend,  using an outdated API endpoint, and  failing to load team logos. The AI engineer is currently in the process of systematically addressing these core, verified discrepancies.
+</analysis>
+<product_requirements>
+The primary objective is to finalize a functional Marvel Rivals esports platform with accurate live match input and display. The application currently has a React frontend and a Laravel PHP backend (read-only for the engineer). The core problem is the live match input being a mess, requiring fixes to data flow and synchronization.
+
+Specific requirements include:
+-   **Match Creation & Persistence:** Users (admins) must create matches in , selecting teams, game modes, maps, and assigning specific Marvel Rivals heroes (Vanguard, Duelist, Strategist roles) to 6v6 player rosters. All these selections must persist correctly in the backend and be retrieved accurately by other frontend components.
+-   **Live Match Administration:**  must allow real-time updates of player statistics (kills, deaths, assists, damage, healing, blocked damage) and hero changes without losing state or resetting on save. It needs a Mark as Completed feature.
+-   **Public Match Display:**  must accurately display all match details, including the selected map name, game mode, heroes, and player country flags. It must synchronize in real-time with changes made in the admin interface, and feature Stream Watch and VOD buttons.
+-   **Image Display:** Team logos and player avatars must be fetched and displayed correctly across all relevant components.
+-   **Data Consistency:** Ensure a seamless, fully synchronized data flow from  (creation) → Backend (storage) →  (admin management) →  (public view), with no data mismatches or resets.
+</product_requirements>
+<key_technical_concepts>
+-   **Full-stack Development:** React (Frontend), Laravel 11 (Backend), MySQL (Database).
+-   **API Integration:** RESTful API calls ( prefix), Bearer token authentication, specific endpoints for match data (, ).
+-   **Frontend State Management:** React , , proposed  for shared state.
+-   **Data Transformation:** Custom mapping logic between backend JSON and frontend state.
+-   **Real-time UI Updates:** Custom DOM events () for inter-component communication.
+-   **Component-Based Design:** Modular React components for various features.
+</key_technical_concepts>
+<code_architecture>
+countryResolver.js/scoreboard/complete-data/stats
+</code_architecture>
+<pending_tasks>
+-   **MatchForm Data Ingestion:** Selected heroes, maps, and methods are not persistently saved to the backend from MatchForm ( is received by backend).
+-   **MatchDetailPage Data Loading:** Uses incorrect API endpoint () instead of , leading to missing heroes, maps, and method data display. Requires stream/VOD buttons and map name.
+-   **ComprehensiveLiveScoring Visuals & Sync:** Team/player images, maps, and methods are mismatched. Score updates don't reflect on , saving causes component reset, and timer persistence is needed. Mark as Completed button required.
+-   **Player Country Flags:** Flags are not correctly fetched and displayed from player profiles.
+</pending_tasks>
+<current_work>
+Immediately before this summary, the AI engineer was deep into debugging critical data flow and synchronization problems, following the user's report that same issues persisted after previous fixes.
+
+The latest console logs (Chat Message 229-230) revealed three precise and current core problems:
+1.  **MatchForm Save Issue ():** When a match is created in , even though heroes and maps are selected in the UI, the data sent to the backend via  is missing the detailed hero compositions and map information (). This is a critical failure in persisting initial match configuration.
+2.  **MatchDetailPage Endpoint Mismatch:**  is still fetching match data from the generic  endpoint, which returns incomplete information (specifically, ). It needs to be updated to use the comprehensive  endpoint, which is confirmed by the backend documentation to provide the necessary 6v6 player, hero, and map details.
+3.  **ComprehensiveLiveScoring Image Loading Failure:** In , the logs show Team: undefined Logo path: undefined, indicating that team logos and potentially player avatars are not being correctly resolved or passed to the component for display, leading to broken image placeholders.
+
+The AI engineer's immediate plan is to systematically fix these identified issues, starting with the  payload correction, which directly impacts downstream components' ability to retrieve accurate match data.
+</current_work>
+<optional_next_step>
+
+🔥 **I CAN SEE EXACTLY WHAT'S WRONG FROM YOUR LOGS!**
+
+## 🚨 **CRITICAL ISSUES IDENTIFIED:**
+
+### **❌ 1. MatchForm Hero Data NOT SAVED**
+
+
+
+### **❌ 2. MatchDetailPage Using WRONG ENDPOINT**
+
+
+
+### **❌ 3. Team Logos Broken in LiveScoring**
+
+
+</optional_next_step>
