@@ -392,7 +392,7 @@ function MatchForm({ matchId, navigateTo }) {
       const productionData = {
         team1_id: parseInt(formData.team1_id),
         team2_id: parseInt(formData.team2_id),
-        event_id: parseInt(formData.event_id) || null,
+        event_id: formData.event_id ? parseInt(formData.event_id) : null,
         status: formData.status || 'upcoming',
         format: formData.format || 'BO1',
         scheduled_at: new Date(formData.scheduled_at).toISOString(),
