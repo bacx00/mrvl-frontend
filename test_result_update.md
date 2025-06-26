@@ -128,7 +128,36 @@ WDS_SOCKET_PORT=443
 REACT_APP_BACKEND_URL=https://0071a29e-8d8e-40eb-b89d-eb1a0f7cf244.preview.emergentagent.com
 ```
 
-## 🚨 **CRITICAL ISSUES FOUND:**
+## 🧪 **MATCH CREATION AND SCOREBOARD TESTING (JUNE 26, 2025 - UPDATE 2):**
+
+### 1. **MATCH CREATION WITH HERO COMPOSITIONS**
+- ✅ Successfully created matches with hero compositions in the maps_data field
+- ✅ API accepts the data correctly and returns 201 Created
+- ✅ Match is created with the correct format (BO3)
+- ❓ Maps_data with hero compositions is not visible in the response
+- ✅ Default map names are used instead of the custom ones provided in maps_data
+
+### 2. **MATCH DETAIL ENDPOINT TESTING**
+- ✅ Successfully retrieved match details via GET /api/matches/{id}
+- ✅ Endpoint returns complete team data including logos
+- ✅ Endpoint returns complete player data including roles and ratings
+- ✅ Team logos are correctly included with paths like "/storage/teams/team_27_logo_1750190799.png"
+- ❓ Hero compositions from maps_data are not visible in the response
+
+### 3. **MATCH SCOREBOARD ENDPOINT TESTING**
+- ✅ Successfully retrieved match scoreboard via GET /api/matches/{id}/scoreboard
+- ✅ Endpoint returns complete team data including logos
+- ✅ Endpoint returns complete player data including roles
+- ✅ Player data includes main_hero information not present in the match detail endpoint
+- ✅ Team logos are correctly included with paths like "/storage/teams/team_27_logo_1750190799.png"
+- ❓ Hero compositions from maps_data are not visible in the response
+
+### 4. **DATA SYNCHRONIZATION TESTING**
+- ✅ Data is consistent between match detail and scoreboard endpoints
+- ✅ Team information matches between both endpoints
+- ✅ Player information is consistent between both endpoints
+- ✅ Scoreboard endpoint provides additional player hero information
+- ✅ Both endpoints correctly display team logos
 
 1. **Backend Service Failure:**
    - Backend service is configured but fails to start properly
