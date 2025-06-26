@@ -193,11 +193,23 @@ function MatchDetailPage({ matchId, navigateTo }) {
     window.addEventListener('mrvl-stats-updated', handleStatsUpdate);
     window.addEventListener('mrvl-data-refresh', handleMatchUpdate);
     
+    // 🔴 CRITICAL: Listen for timer updates from ComprehensiveLiveScoring
+    const handleTimerUpdate = (event) => {
+      const { detail } = event;
+      const currentMatchId = getMatchId();
+      if (detail.matchId == currentMatchId && detail.timer) {
+        console.log('⏰ MatchDetailPage: Timer sync received:', detail.timer);
+        setMatchTimer(detail.timer);
+      }
+    };
+    window.addEventListener('mrvl-timer-updated', handleTimerUpdate);
+
     return () => {
       window.removeEventListener('mrvl-match-updated', handleMatchUpdate);
       window.removeEventListener('mrvl-hero-updated', handleHeroUpdate);
       window.removeEventListener('mrvl-stats-updated', handleStatsUpdate);
       window.removeEventListener('mrvl-data-refresh', handleMatchUpdate);
+      window.removeEventListener('mrvl-timer-updated', handleTimerUpdate);
     };
   }, [matchId, api]);
 
