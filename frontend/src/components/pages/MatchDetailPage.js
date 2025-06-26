@@ -384,8 +384,17 @@ function MatchDetailPage({ matchId, navigateTo }) {
           {/* 🔥 FIXED: CORRECT BO FORMAT DISPLAY */}
           {match.format === 'BO1' ? 'Best of 1' : 
            match.format === 'BO3' ? 'Best of 3' :
-           match.format === 'BO5' ? 'Best of 5' : 'Best of 1'} • {currentMap?.map_name || 'Tokyo 2099: Shibuya Sky'}
+           match.format === 'BO5' ? 'Best of 5' : 'Best of 1'} • {currentMapData?.map_name || 'Tokyo 2099: Shibuya Sky'}
         </div>
+        
+        {/* 🔴 LIVE MATCH TIMER - SYNCED WITH LIVE SCORING */}
+        {match.status === 'live' && (
+          <div className="mt-4 flex justify-center">
+            <div className="bg-red-600 text-white px-6 py-2 rounded-lg font-mono text-xl font-bold animate-pulse">
+              🔴 LIVE • {new Date().toLocaleTimeString()}
+            </div>
+          </div>
+        )}
         
         {/* 🔗 STREAM, VOD & BETTING BUTTONS */}
         <div className="flex justify-center space-x-4 mt-4">
