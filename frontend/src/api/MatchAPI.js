@@ -67,14 +67,30 @@ export const MatchAPI = {
           shortName: data.teams.team2.short_name
         },
         
-        // 🗺️ PRODUCTION: Create map structure for display
-        maps: [{
-          mapNumber: 1,
-          mapName: data.match_info.current_map || 'Asgard: Royal Palace',
-          mode: 'Domination', // Default Marvel Rivals mode
-          status: data.match_info.status,
-          team1Score: data.match_info.team1_score || 0,
-          team2Score: data.match_info.team2_score || 0,
+        // 🗺️ CRITICAL FIX: Use actual backend maps data or create smart defaults
+        maps: (() => {
+          // If backend returns actual maps data, use it
+          if (data.maps && data.maps.length > 0) {
+            return data.maps.map((map, index) => ({
+              mapNumber: index + 1,
+              mapName: map.map_name || map.name || 'Tokyo 2099: Shibuya Sky',
+              mode: map.mode || 'Conquest',
+              status: map.status || data.match_info.status,
+              team1Score: map.team1_score || 0,
+              team2Score: map.team2_score || 0,
+              team1Composition: map.team1_composition || [],
+              team2Composition: map.team2_composition || []
+            }));
+          }
+          
+          // Otherwise create default map with player data
+          return [{
+            mapNumber: 1,
+            mapName: data.match_info.current_map || 'Tokyo 2099: Shibuya Sky',
+            mode: 'Conquest', // Marvel Rivals default mode
+            status: data.match_info.status,
+            team1Score: data.match_info.team1_score || 0,
+            team2Score: data.match_info.team2_score || 0,
           
           // 🎮 PRODUCTION: Map 6v6 player statistics correctly
           team1Composition: data.teams.team1.players.map((player, index) => {
