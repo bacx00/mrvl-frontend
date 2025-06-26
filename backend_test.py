@@ -612,22 +612,141 @@ def main():
     # 3. TEST MATCH CREATION WITH HERO COMPOSITIONS
     if login_success:
         print("\n===== TESTING MATCH CREATION WITH HERO COMPOSITIONS =====")
-        success, match_id, maps_data_saved, hero_compositions_visible, scoreboard_hero_compositions_visible, player_hero_data_present = test_create_match_with_hero_compositions(tester, test_team_ids)
+        success, match_data = tester.test_create_match({
+            "team1_id": test_team_ids[0],
+            "team2_id": test_team_ids[1],
+            "event_id": 22,  # Using event ID 22 from the matches response
+            "format": "BO3",
+            "scheduled_at": (datetime.now() + timedelta(days=1)).isoformat(),
+            "status": "upcoming",
+            "maps_data": [
+                {
+                    "name": "Tokyo 2099",
+                    "team1_heroes": ["Captain America", "Black Widow", "Hulk", "Storm", "Iron Man"],
+                    "team2_heroes": ["Spider-Man", "Venom", "Thor", "Rocket Raccoon", "Magneto"]
+                },
+                {
+                    "name": "Asgard",
+                    "team1_heroes": ["Hulk", "Iron Man", "Captain America", "Black Widow", "Storm"],
+                    "team2_heroes": ["Thor", "Rocket Raccoon", "Spider-Man", "Venom", "Magneto"]
+                },
+                {
+                    "name": "Klyntar",
+                    "team1_heroes": ["Storm", "Black Widow", "Captain America", "Hulk", "Iron Man"],
+                    "team2_heroes": ["Magneto", "Thor", "Rocket Raccoon", "Spider-Man", "Venom"]
+                }
+            ]
+        })
         
-        if success and match_id:
-            # Test match detail vs scoreboard
-            print("\n===== TESTING MATCH DETAIL VS SCOREBOARD =====")
-            success_comparison, team_data_consistent, scoreboard_has_extra_data = test_match_detail_vs_scoreboard(tester, match_id)
+        if success and 'data' in match_data and 'id' in match_data['data']:
+            match_id = match_data['data']['id']
+            print(f"✅ Match created successfully with ID: {match_id}")
+            
+            # Check if maps_data was saved
+            maps_data_saved = False
+            if 'maps' in match_data['data'] and len(match_data['data'].get('maps', [])) == 3:
+                print(f"✅ Match has correct number of maps: 3")
+                maps_data_saved = True
+            else:
+                print(f"❌ Match has incorrect number of maps: {len(match_data['data'].get('maps', []))}")
+                maps_data_saved = False
+            
+            # Test match detail
+            print("\n----- TESTING MATCH DETAIL -----")
+            success_detail, match_detail = tester.test_get_match_detail(match_id)
+            
+            # Test match scoreboard
+            print("\n----- TESTING MATCH SCOREBOARD -----")
+            success_scoreboard, scoreboard_data = tester.test_get_match_scoreboard(match_id)
+            
+            # Check for team logos in match detail
+            team_logos_present_detail = False
+            if success_detail:
+                if 'team1' in match_detail and 'logo' in match_detail['team1'] and match_detail['team1']['logo']:
+                    team_logos_present_detail = True
+                    print(f"✅ Team 1 logo present in match detail: {match_detail['team1']['logo']}")
+                else:
+                    print("❌ Team 1 logo missing in match detail")
+                
+                if 'team2' in match_detail and 'logo' in match_detail['team2'] and match_detail['team2']['logo']:
+                    team_logos_present_detail = team_logos_present_detail and True
+                    print(f"✅ Team 2 logo present in match detail: {match_detail['team2']['logo']}")
+                else:
+                    print("❌ Team 2 logo missing in match detail")
+                    team_logos_present_detail = False
+            
+            # Check for team logos in scoreboard
+            team_logos_present_scoreboard = False
+            if success_scoreboard:
+                if 'team1' in scoreboard_data and 'logo' in scoreboard_data['team1'] and scoreboard_data['team1']['logo']:
+                    team_logos_present_scoreboard = True
+                    print(f"✅ Team 1 logo present in scoreboard: {scoreboard_data['team1']['logo']}")
+                else:
+                    print("❌ Team 1 logo missing in scoreboard")
+                
+                if 'team2' in scoreboard_data and 'logo' in scoreboard_data['team2'] and scoreboard_data['team2']['logo']:
+                    team_logos_present_scoreboard = team_logos_present_scoreboard and True
+                    print(f"✅ Team 2 logo present in scoreboard: {scoreboard_data['team2']['logo']}")
+                else:
+                    print("❌ Team 2 logo missing in scoreboard")
+                    team_logos_present_scoreboard = False
+            
+            # Check for player data with heroes in scoreboard
+            player_heroes_present = False
+            if success_scoreboard:
+                if 'team1_players' in scoreboard_data and scoreboard_data['team1_players']:
+                    for i, player in enumerate(scoreboard_data['team1_players']):
+                        if 'main_hero' in player and player['main_hero']:
+                            print(f"✅ Team 1 Player {i+1} hero present: {player['main_hero']}")
+                            player_heroes_present = True
+                        else:
+                            print(f"❓ Team 1 Player {i+1} hero missing")
+                else:
+                    print("❓ Team 1 players missing in scoreboard")
+                
+                if 'team2_players' in scoreboard_data and scoreboard_data['team2_players']:
+                    for i, player in enumerate(scoreboard_data['team2_players']):
+                        if 'main_hero' in player and player['main_hero']:
+                            print(f"✅ Team 2 Player {i+1} hero present: {player['main_hero']}")
+                            player_heroes_present = True
+                        else:
+                            print(f"❓ Team 2 Player {i+1} hero missing")
+                else:
+                    print("❓ Team 2 players missing in scoreboard")
+            
+            # Check for hero compositions in maps_data
+            hero_compositions_visible = False
+            if success_detail and 'maps' in match_detail:
+                for i, map_data in enumerate(match_detail.get('maps', [])):
+                    if 'team1_heroes' in map_data or 'team2_heroes' in map_data:
+                        print(f"✅ Map {i+1} has hero compositions in match detail")
+                        hero_compositions_visible = True
+                        break
+                
+                if not hero_compositions_visible:
+                    print("❓ Hero compositions not visible in match detail response")
+            
+            # Check for hero compositions in scoreboard maps_data
+            scoreboard_hero_compositions_visible = False
+            if success_scoreboard and 'maps' in scoreboard_data:
+                for i, map_data in enumerate(scoreboard_data.get('maps', [])):
+                    if 'team1_heroes' in map_data or 'team2_heroes' in map_data:
+                        print(f"✅ Map {i+1} has hero compositions in scoreboard")
+                        scoreboard_hero_compositions_visible = True
+                        break
+                
+                if not scoreboard_hero_compositions_visible:
+                    print("❓ Hero compositions not visible in scoreboard response")
             
             # Summary of findings
             print("\n===== SUMMARY OF FINDINGS =====")
             print(f"✅ Match creation with maps_data: {'Successful' if success else 'Failed'}")
             print(f"✅ Maps data saved correctly: {'Yes' if maps_data_saved else 'No'}")
+            print(f"✅ Team logos present in match detail: {'Yes' if team_logos_present_detail else 'No'}")
+            print(f"✅ Team logos present in scoreboard: {'Yes' if team_logos_present_scoreboard else 'No'}")
+            print(f"ℹ️ Player hero data present in scoreboard: {'Yes' if player_heroes_present else 'No'}")
             print(f"ℹ️ Hero compositions visible in match detail: {'Yes' if hero_compositions_visible else 'No'}")
             print(f"ℹ️ Hero compositions visible in scoreboard: {'Yes' if scoreboard_hero_compositions_visible else 'No'}")
-            print(f"✅ Player hero data present in scoreboard: {'Yes' if player_hero_data_present else 'No'}")
-            print(f"✅ Team data consistent between endpoints: {'Yes' if team_data_consistent else 'No'}")
-            print(f"✅ Scoreboard has extra player data: {'Yes' if scoreboard_has_extra_data else 'No'}")
             
             # Clean up by deleting the match
             tester.test_delete_match(match_id)
@@ -636,7 +755,7 @@ def main():
     
     # 4. TEST EXISTING MATCHES
     if success and matches_data:
-        matches = matches_data if isinstance(matches_data, list) else matches_data.get('data', [])
+        matches = matches_data.get('data', []) if isinstance(matches_data, dict) else matches_data
         if matches and len(matches) > 0:
             print("\n===== TESTING EXISTING MATCHES =====")
             
@@ -648,19 +767,70 @@ def main():
             success_detail, match_detail = tester.test_get_match_detail(match_id)
             
             # Test match scoreboard
-            success_scoreboard, team_logos_present, player_heroes_present, _ = test_match_scoreboard(tester, match_id)
+            success_scoreboard, scoreboard_data = tester.test_get_match_scoreboard(match_id)
             
-            # Compare match detail and scoreboard
-            if success_detail and success_scoreboard:
-                success_comparison, team_data_consistent, scoreboard_has_extra_data = test_match_detail_vs_scoreboard(tester, match_id)
+            # Check for team logos in match detail
+            team_logos_present_detail = False
+            if success_detail:
+                if 'team1' in match_detail and 'logo' in match_detail['team1'] and match_detail['team1']['logo']:
+                    team_logos_present_detail = True
+                    print(f"✅ Team 1 logo present in match detail: {match_detail['team1']['logo']}")
+                else:
+                    print("❌ Team 1 logo missing in match detail")
                 
-                print("\n----- EXISTING MATCH SUMMARY -----")
-                print(f"✅ Match detail endpoint: {'Working' if success_detail else 'Not working'}")
-                print(f"✅ Match scoreboard endpoint: {'Working' if success_scoreboard else 'Not working'}")
-                print(f"✅ Team logos present: {'Yes' if team_logos_present else 'No'}")
-                print(f"✅ Player heroes present: {'Yes' if player_heroes_present else 'No'}")
-                print(f"✅ Team data consistent between endpoints: {'Yes' if team_data_consistent else 'No'}")
-                print(f"✅ Scoreboard has extra player data: {'Yes' if scoreboard_has_extra_data else 'No'}")
+                if 'team2' in match_detail and 'logo' in match_detail['team2'] and match_detail['team2']['logo']:
+                    team_logos_present_detail = team_logos_present_detail and True
+                    print(f"✅ Team 2 logo present in match detail: {match_detail['team2']['logo']}")
+                else:
+                    print("❌ Team 2 logo missing in match detail")
+                    team_logos_present_detail = False
+            
+            # Check for team logos in scoreboard
+            team_logos_present_scoreboard = False
+            if success_scoreboard:
+                if 'team1' in scoreboard_data and 'logo' in scoreboard_data['team1'] and scoreboard_data['team1']['logo']:
+                    team_logos_present_scoreboard = True
+                    print(f"✅ Team 1 logo present in scoreboard: {scoreboard_data['team1']['logo']}")
+                else:
+                    print("❌ Team 1 logo missing in scoreboard")
+                
+                if 'team2' in scoreboard_data and 'logo' in scoreboard_data['team2'] and scoreboard_data['team2']['logo']:
+                    team_logos_present_scoreboard = team_logos_present_scoreboard and True
+                    print(f"✅ Team 2 logo present in scoreboard: {scoreboard_data['team2']['logo']}")
+                else:
+                    print("❌ Team 2 logo missing in scoreboard")
+                    team_logos_present_scoreboard = False
+            
+            # Check for player data with heroes in scoreboard
+            player_heroes_present = False
+            if success_scoreboard:
+                if 'team1_players' in scoreboard_data and scoreboard_data['team1_players']:
+                    for i, player in enumerate(scoreboard_data['team1_players']):
+                        if 'main_hero' in player and player['main_hero']:
+                            print(f"✅ Team 1 Player {i+1} hero present: {player['main_hero']}")
+                            player_heroes_present = True
+                        else:
+                            print(f"❓ Team 1 Player {i+1} hero missing")
+                else:
+                    print("❓ Team 1 players missing in scoreboard")
+                
+                if 'team2_players' in scoreboard_data and scoreboard_data['team2_players']:
+                    for i, player in enumerate(scoreboard_data['team2_players']):
+                        if 'main_hero' in player and player['main_hero']:
+                            print(f"✅ Team 2 Player {i+1} hero present: {player['main_hero']}")
+                            player_heroes_present = True
+                        else:
+                            print(f"❓ Team 2 Player {i+1} hero missing")
+                else:
+                    print("❓ Team 2 players missing in scoreboard")
+            
+            # Summary of findings for existing match
+            print("\n----- EXISTING MATCH SUMMARY -----")
+            print(f"✅ Match detail endpoint: {'Working' if success_detail else 'Not working'}")
+            print(f"✅ Match scoreboard endpoint: {'Working' if success_scoreboard else 'Not working'}")
+            print(f"✅ Team logos present in match detail: {'Yes' if team_logos_present_detail else 'No'}")
+            print(f"✅ Team logos present in scoreboard: {'Yes' if team_logos_present_scoreboard else 'No'}")
+            print(f"ℹ️ Player hero data present in scoreboard: {'Yes' if player_heroes_present else 'No'}")
     
     # Print summary
     tester.print_summary()
