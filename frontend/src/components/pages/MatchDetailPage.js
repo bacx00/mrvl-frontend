@@ -14,6 +14,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [userVotes, setUserVotes] = useState({});
+  const [matchTimer, setMatchTimer] = useState('00:00');
   
   const { user, isAuthenticated, api } = useAuth();
   
