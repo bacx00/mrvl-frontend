@@ -386,42 +386,81 @@ function MatchForm({ matchId, navigateTo }) {
     
     setSaving(true);
     try {
-      console.log('💾 Saving match to REAL backend using API helper...', formData);
+      console.log('💾 Saving match to PRODUCTION backend...', formData);
       
-      // Prepare data for backend
-      const saveData = {
-        ...formData,
+      // 🎯 PRODUCTION: Prepare data for EXACT backend structure
+      const productionData = {
         team1_id: parseInt(formData.team1_id),
         team2_id: parseInt(formData.team2_id),
-        event_id: parseInt(formData.event_id),
+        event_id: parseInt(formData.event_id) || null,
+        status: formData.status || 'upcoming',
+        format: formData.format || 'BO1',
         scheduled_at: new Date(formData.scheduled_at).toISOString(),
-        // Ensure maps are properly structured
+        description: formData.description || '',
+        
+        // 🚨 CRITICAL: Save complete map compositions for production
         maps: formData.maps.map((map, index) => ({
-          ...map,
           map_number: index + 1,
+          map_name: map.map_name,           // ✅ PRESERVE selected map
+          mode: map.mode,                   // ✅ PRESERVE selected mode
           team1_score: parseInt(map.team1_score) || 0,
-          team2_score: parseInt(map.team2_score) || 0
+          team2_score: parseInt(map.team2_score) || 0,
+          status: 'upcoming',
+          
+          // 🦸 PRESERVE HERO COMPOSITIONS for production
+          team1_composition: (map.team1_composition || []).map(player => ({
+            player_id: player.player_id || player.id,
+            player_name: player.player_name || player.name,
+            hero: player.hero,              // ✅ PRESERVE hero selection
+            role: player.role,
+            country: player.country || 'DE',
+            // Initialize stats
+            eliminations: 0,
+            deaths: 0,
+            assists: 0,
+            damage: 0,
+            healing: 0,
+            damage_blocked: 0
+          })),
+          
+          team2_composition: (map.team2_composition || []).map(player => ({
+            player_id: player.player_id || player.id,
+            player_name: player.player_name || player.name,
+            hero: player.hero,              // ✅ PRESERVE hero selection
+            role: player.role,
+            country: player.country || 'KR',
+            // Initialize stats
+            eliminations: 0,
+            deaths: 0,
+            assists: 0,
+            damage: 0,
+            healing: 0,
+            damage_blocked: 0
+          }))
         }))
       };
       
+      console.log('📤 PRODUCTION payload with preserved heroes/maps:', productionData);
+      
       let response;
       if (isEdit) {
-        console.log('🔄 Updating existing match via API...');
-        response = await api.put(`/admin/matches/${matchId}`, saveData);
+        console.log('🔄 Updating existing match via PRODUCTION API...');
+        // 🎯 PRODUCTION: Use complete update endpoint
+        response = await api.put(`/admin/matches/${matchId}/complete-update`, productionData);
       } else {
-        console.log('🚀 Creating new match via API...');
-        response = await api.post('/admin/matches', saveData);
+        console.log('🚀 Creating new match via PRODUCTION API...');
+        response = await api.post('/admin/matches', productionData);
       }
       
-      console.log('✅ Match saved successfully to REAL backend:', response);
-      alert(`✅ Match ${isEdit ? 'updated' : 'created'} successfully!`);
+      console.log('✅ Match saved to PRODUCTION backend successfully:', response);
+      alert(`✅ Match ${isEdit ? 'updated' : 'created'} successfully with preserved heroes and maps!`);
       
       // Navigate back to matches list
       if (navigateTo) {
         navigateTo('admin-matches');
       }
     } catch (error) {
-      console.error('❌ Error saving match to backend via API:', error);
+      console.error('❌ Error saving match to PRODUCTION backend:', error);
       alert(`❌ Error saving match: ${error.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
