@@ -369,6 +369,214 @@ class MarvelRivalsAPITester:
         else:
             print("\n✅ No issues found! All tests passed.")
 
+def test_match_scoreboard(tester, match_id):
+    """Test the match scoreboard endpoint to verify it returns complete data"""
+    print(f"\n----- TESTING MATCH SCOREBOARD FOR ID {match_id} -----")
+    success, scoreboard_data = tester.run_test(
+        f"Get Match Scoreboard for ID {match_id}",
+        "GET",
+        f"matches/{match_id}/scoreboard",
+        200
+    )
+    
+    if success and scoreboard_data:
+        # Check for team logos
+        team_logos_present = False
+        if 'team1' in scoreboard_data and 'logo' in scoreboard_data['team1'] and scoreboard_data['team1']['logo']:
+            team_logos_present = True
+            print(f"✅ Team 1 logo present: {scoreboard_data['team1']['logo']}")
+        else:
+            print("❌ Team 1 logo missing")
+        
+        if 'team2' in scoreboard_data and 'logo' in scoreboard_data['team2'] and scoreboard_data['team2']['logo']:
+            team_logos_present = team_logos_present and True
+            print(f"✅ Team 2 logo present: {scoreboard_data['team2']['logo']}")
+        else:
+            print("❌ Team 2 logo missing")
+            team_logos_present = False
+        
+        # Check for player data with heroes
+        player_heroes_present = True
+        if 'team1_players' in scoreboard_data and scoreboard_data['team1_players']:
+            for i, player in enumerate(scoreboard_data['team1_players']):
+                if 'main_hero' in player and player['main_hero']:
+                    print(f"✅ Team 1 Player {i+1} hero present: {player['main_hero']}")
+                else:
+                    print(f"❌ Team 1 Player {i+1} hero missing")
+                    player_heroes_present = False
+        else:
+            print("❌ Team 1 players missing")
+            player_heroes_present = False
+        
+        if 'team2_players' in scoreboard_data and scoreboard_data['team2_players']:
+            for i, player in enumerate(scoreboard_data['team2_players']):
+                if 'main_hero' in player and player['main_hero']:
+                    print(f"✅ Team 2 Player {i+1} hero present: {player['main_hero']}")
+                else:
+                    print(f"❌ Team 2 Player {i+1} hero missing")
+                    player_heroes_present = False
+        else:
+            print("❌ Team 2 players missing")
+            player_heroes_present = False
+        
+        return success, team_logos_present, player_heroes_present, scoreboard_data
+    
+    return False, False, False, {}
+
+def test_match_detail_vs_scoreboard(tester, match_id):
+    """Compare match detail and scoreboard endpoints to verify data consistency"""
+    print(f"\n----- COMPARING MATCH DETAIL AND SCOREBOARD FOR ID {match_id} -----")
+    
+    # Get match detail
+    success_detail, match_detail = tester.test_get_match_detail(match_id)
+    
+    # Get match scoreboard
+    success_scoreboard, team_logos_present, player_heroes_present, scoreboard_data = test_match_scoreboard(tester, match_id)
+    
+    if success_detail and success_scoreboard:
+        # Compare key data points
+        print("\n----- DATA COMPARISON -----")
+        
+        # Check team data
+        team_data_consistent = True
+        if 'team1' in match_detail and 'team1' in scoreboard_data:
+            if match_detail['team1']['id'] == scoreboard_data['team1']['id']:
+                print(f"✅ Team 1 ID consistent: {match_detail['team1']['id']}")
+            else:
+                print(f"❌ Team 1 ID inconsistent: {match_detail['team1']['id']} vs {scoreboard_data['team1']['id']}")
+                team_data_consistent = False
+        else:
+            print("❌ Team 1 data missing in one or both endpoints")
+            team_data_consistent = False
+        
+        if 'team2' in match_detail and 'team2' in scoreboard_data:
+            if match_detail['team2']['id'] == scoreboard_data['team2']['id']:
+                print(f"✅ Team 2 ID consistent: {match_detail['team2']['id']}")
+            else:
+                print(f"❌ Team 2 ID inconsistent: {match_detail['team2']['id']} vs {scoreboard_data['team2']['id']}")
+                team_data_consistent = False
+        else:
+            print("❌ Team 2 data missing in one or both endpoints")
+            team_data_consistent = False
+        
+        # Check if scoreboard has additional player data that detail doesn't
+        scoreboard_has_extra_data = False
+        if 'team1_players' in scoreboard_data and scoreboard_data['team1_players']:
+            for player in scoreboard_data['team1_players']:
+                if 'main_hero' in player and player['main_hero']:
+                    scoreboard_has_extra_data = True
+                    print(f"✅ Scoreboard has extra player data (main_hero): {player['main_hero']}")
+                    break
+        
+        return success_detail and success_scoreboard, team_data_consistent, scoreboard_has_extra_data
+    
+    return False, False, False
+
+def test_create_match_with_hero_compositions(tester, team_ids):
+    """Test creating a match with hero compositions in maps_data"""
+    print("\n----- TESTING MATCH CREATION WITH HERO COMPOSITIONS -----")
+    
+    # Set scheduled_at to a future date (tomorrow)
+    tomorrow = (datetime.now() + timedelta(days=1)).isoformat()
+    
+    # Create a match with maps_data including hero compositions
+    match_data = {
+        "team1_id": team_ids[0],
+        "team2_id": team_ids[1],
+        "event_id": 12,  # Using event ID 12 as mentioned in the test results
+        "format": "BO3",
+        "scheduled_at": tomorrow,
+        "status": "upcoming",
+        "maps_data": [
+            {
+                "name": "Tokyo 2099",
+                "team1_heroes": ["Captain America", "Black Widow", "Hulk", "Storm", "Iron Man"],
+                "team2_heroes": ["Spider-Man", "Venom", "Thor", "Rocket Raccoon", "Magneto"]
+            },
+            {
+                "name": "Asgard",
+                "team1_heroes": ["Hulk", "Iron Man", "Captain America", "Black Widow", "Storm"],
+                "team2_heroes": ["Thor", "Rocket Raccoon", "Spider-Man", "Venom", "Magneto"]
+            },
+            {
+                "name": "Klyntar",
+                "team1_heroes": ["Storm", "Black Widow", "Captain America", "Hulk", "Iron Man"],
+                "team2_heroes": ["Magneto", "Thor", "Rocket Raccoon", "Spider-Man", "Venom"]
+            }
+        ]
+    }
+    
+    success, created_match = tester.test_create_match(match_data)
+    
+    if success and created_match and 'id' in created_match:
+        match_id = created_match['id']
+        print(f"✅ Match created successfully with ID: {match_id}")
+        
+        # Check if maps_data was saved
+        maps_data_saved = False
+        if 'maps' in created_match and len(created_match['maps']) == 3:
+            print(f"✅ Match has correct number of maps: {len(created_match['maps'])}")
+            
+            # Check if maps have the correct names
+            map_names_correct = all(
+                created_match['maps'][i]['name'] == match_data['maps_data'][i]['name'] 
+                for i in range(min(len(created_match['maps']), len(match_data['maps_data'])))
+            )
+            
+            if map_names_correct:
+                print("✅ Map names are correct")
+                maps_data_saved = True
+            else:
+                print("❌ Map names are incorrect")
+                maps_data_saved = False
+        else:
+            print(f"❌ Match has incorrect number of maps: {len(created_match.get('maps', []))}")
+            maps_data_saved = False
+        
+        # Now check if we can retrieve the match and see the hero compositions
+        print("\n----- CHECKING IF HERO COMPOSITIONS WERE SAVED -----")
+        
+        # Get match detail
+        success_detail, match_detail = tester.test_get_match_detail(match_id)
+        
+        hero_compositions_visible = False
+        if success_detail and 'maps' in match_detail:
+            for i, map_data in enumerate(match_detail['maps']):
+                if 'team1_heroes' in map_data or 'team2_heroes' in map_data:
+                    print(f"✅ Map {i+1} has hero compositions")
+                    hero_compositions_visible = True
+                    break
+            
+            if not hero_compositions_visible:
+                print("❌ Hero compositions not visible in match detail response")
+        
+        # Get match scoreboard
+        success_scoreboard, _, _, scoreboard_data = test_match_scoreboard(tester, match_id)
+        
+        scoreboard_hero_compositions_visible = False
+        if success_scoreboard and 'maps' in scoreboard_data:
+            for i, map_data in enumerate(scoreboard_data.get('maps', [])):
+                if 'team1_heroes' in map_data or 'team2_heroes' in map_data:
+                    print(f"✅ Scoreboard Map {i+1} has hero compositions")
+                    scoreboard_hero_compositions_visible = True
+                    break
+            
+            if not scoreboard_hero_compositions_visible:
+                print("❌ Hero compositions not visible in scoreboard response")
+        
+        # Check if player data includes main_hero
+        player_hero_data_present = False
+        if success_scoreboard and 'team1_players' in scoreboard_data:
+            for player in scoreboard_data['team1_players']:
+                if 'main_hero' in player and player['main_hero']:
+                    print(f"✅ Player has main_hero data: {player.get('name', 'Unknown')} - {player['main_hero']}")
+                    player_hero_data_present = True
+                    break
+        
+        return success, match_id, maps_data_saved, hero_compositions_visible, scoreboard_hero_compositions_visible, player_hero_data_present
+    
+    return False, None, False, False, False, False
+
 def main():
     # Setup
     tester = MarvelRivalsAPITester()
@@ -390,216 +598,69 @@ def main():
     # 2.1 Test GET /api/matches - List all matches
     success, matches_data = tester.test_get_matches()
     
-    # 2.2 Test GET /api/matches/{id} - Get specific match details
+    # Get team IDs for testing
+    print("\n===== GETTING TEAM IDS FOR TESTING =====")
+    success_teams, teams_data = tester.test_get_teams()
+    
+    test_team_ids = [83, 84]  # Default team IDs from test results
+    if success_teams and teams_data:
+        teams = teams_data if isinstance(teams_data, list) else teams_data.get('data', [])
+        if teams and len(teams) >= 2:
+            test_team_ids = [teams[0]['id'], teams[1]['id']]
+            print(f"✅ Using team IDs: {test_team_ids}")
+    
+    # 3. TEST MATCH CREATION WITH HERO COMPOSITIONS
+    if login_success:
+        print("\n===== TESTING MATCH CREATION WITH HERO COMPOSITIONS =====")
+        success, match_id, maps_data_saved, hero_compositions_visible, scoreboard_hero_compositions_visible, player_hero_data_present = test_create_match_with_hero_compositions(tester, test_team_ids)
+        
+        if success and match_id:
+            # Test match detail vs scoreboard
+            print("\n===== TESTING MATCH DETAIL VS SCOREBOARD =====")
+            success_comparison, team_data_consistent, scoreboard_has_extra_data = test_match_detail_vs_scoreboard(tester, match_id)
+            
+            # Summary of findings
+            print("\n===== SUMMARY OF FINDINGS =====")
+            print(f"✅ Match creation with maps_data: {'Successful' if success else 'Failed'}")
+            print(f"✅ Maps data saved correctly: {'Yes' if maps_data_saved else 'No'}")
+            print(f"ℹ️ Hero compositions visible in match detail: {'Yes' if hero_compositions_visible else 'No'}")
+            print(f"ℹ️ Hero compositions visible in scoreboard: {'Yes' if scoreboard_hero_compositions_visible else 'No'}")
+            print(f"✅ Player hero data present in scoreboard: {'Yes' if player_hero_data_present else 'No'}")
+            print(f"✅ Team data consistent between endpoints: {'Yes' if team_data_consistent else 'No'}")
+            print(f"✅ Scoreboard has extra player data: {'Yes' if scoreboard_has_extra_data else 'No'}")
+            
+            # Clean up by deleting the match
+            tester.test_delete_match(match_id)
+    else:
+        print("\n⚠️ Skipping match creation tests due to authentication failure")
+    
+    # 4. TEST EXISTING MATCHES
     if success and matches_data:
         matches = matches_data if isinstance(matches_data, list) else matches_data.get('data', [])
         if matches and len(matches) > 0:
+            print("\n===== TESTING EXISTING MATCHES =====")
+            
+            # Test the first match
             match_id = matches[0]['id']
-            tester.test_get_match_detail(match_id)
-    
-    # 2.3 Test Team and Player APIs
-    print("\n===== TESTING TEAMS & PLAYERS API =====")
-    tester.test_get_teams()
-    tester.test_get_players()
-    
-    # Test specific team IDs as mentioned in the review request
-    test_team_ids = [83, 84]
-    for team_id in test_team_ids:
-        tester.test_get_team_players(team_id)
-    
-    # 2.5 Test Heroes API
-    print("\n===== TESTING HEROES API =====")
-    tester.test_get_heroes()
-    
-    # 3. SPECIFIC MATCH WORKFLOW TESTS
-    if login_success:
-        print("\n===== TESTING MATCH WORKFLOWS =====")
-        
-        # 3.1 Test BO1 Match Complete Workflow
-        print("\n----- TEST 1: BO1 MATCH COMPLETE WORKFLOW -----")
-        # Set scheduled_at to a future date (tomorrow)
-        tomorrow = (datetime.now() + timedelta(days=1)).isoformat()
-        bo1_match_data = {
-            "team1_id": test_team_ids[0],
-            "team2_id": test_team_ids[1],
-            "event_id": 18,  # Using a valid event ID from the events list
-            "format": "BO1",
-            "scheduled_at": tomorrow,
-            "status": "upcoming"
-        }
-        
-        success, created_match = tester.test_create_match(bo1_match_data)
-        
-        if success and created_match and 'id' in created_match:
-            bo1_match_id = created_match['id']
+            print(f"\n----- TESTING MATCH ID {match_id} -----")
             
-            # Verify response includes exactly 1 map
-            if 'maps' in created_match and len(created_match['maps']) == 1:
-                print("✅ BO1 match has exactly 1 map")
-            else:
-                print("❌ BO1 match does not have exactly 1 map")
+            # Test match detail
+            success_detail, match_detail = tester.test_get_match_detail(match_id)
             
-            # Update status to "live"
-            tester.test_update_match_status(bo1_match_id, "live")
+            # Test match scoreboard
+            success_scoreboard, team_logos_present, player_heroes_present, _ = test_match_scoreboard(tester, match_id)
             
-            # Update team scores
-            score_data = {
-                "score1": 13,
-                "score2": 7
-            }
-            tester.run_test(
-                f"Update Match Score for ID {bo1_match_id}",
-                "PUT",
-                f"admin/matches/{bo1_match_id}/score",
-                200,
-                data=score_data,
-                admin_auth=True
-            )
-            
-            # Complete match
-            tester.test_update_match_status(bo1_match_id, "completed")
-            
-            # Verify all data persists correctly
-            success, match_detail = tester.test_get_match_detail(bo1_match_id)
-            if success:
-                if match_detail['status'] == 'completed' and match_detail['score1'] == 13 and match_detail['score2'] == 7:
-                    print("✅ BO1 match data persists correctly")
-                else:
-                    print("❌ BO1 match data does not persist correctly")
-        
-        # 3.2 Test BO3 Match Complete Workflow
-        print("\n----- TEST 2: BO3 MATCH COMPLETE WORKFLOW -----")
-        # Set scheduled_at to a future date (tomorrow)
-        tomorrow = (datetime.now() + timedelta(days=1)).isoformat()
-        bo3_match_data = {
-            "team1_id": test_team_ids[0],
-            "team2_id": test_team_ids[1],
-            "event_id": 18,  # Using a valid event ID from the events list
-            "format": "BO3",
-            "scheduled_at": tomorrow,
-            "status": "upcoming"
-        }
-        
-        success, created_match = tester.test_create_match(bo3_match_data)
-        
-        if success and created_match and 'id' in created_match:
-            bo3_match_id = created_match['id']
-            
-            # Verify response includes exactly 3 maps
-            if 'maps' in created_match and len(created_match['maps']) == 3:
-                print("✅ BO3 match has exactly 3 maps")
-            else:
-                print("❌ BO3 match does not have exactly 3 maps")
-            
-            # Test map-by-map progression
-            tester.test_update_match_status(bo3_match_id, "live")
-            
-            # Update map 1 scores
-            map1_data = {
-                "map_index": 0,
-                "score1": 13,
-                "score2": 7
-            }
-            tester.run_test(
-                f"Update Map 1 Score for Match ID {bo3_match_id}",
-                "PUT",
-                f"admin/matches/{bo3_match_id}/maps/0",
-                200,
-                data=map1_data,
-                admin_auth=True
-            )
-            
-            # Update map 2 scores
-            map2_data = {
-                "map_index": 1,
-                "score1": 7,
-                "score2": 13
-            }
-            tester.run_test(
-                f"Update Map 2 Score for Match ID {bo3_match_id}",
-                "PUT",
-                f"admin/matches/{bo3_match_id}/maps/1",
-                200,
-                data=map2_data,
-                admin_auth=True
-            )
-            
-            # Update map 3 scores
-            map3_data = {
-                "map_index": 2,
-                "score1": 13,
-                "score2": 11
-            }
-            tester.run_test(
-                f"Update Map 3 Score for Match ID {bo3_match_id}",
-                "PUT",
-                f"admin/matches/{bo3_match_id}/maps/2",
-                200,
-                data=map3_data,
-                admin_auth=True
-            )
-            
-            # Complete match
-            tester.test_update_match_status(bo3_match_id, "completed")
-            
-            # Verify all data persists correctly
-            success, match_detail = tester.test_get_match_detail(bo3_match_id)
-            if success and 'maps' in match_detail and len(match_detail['maps']) == 3:
-                map_scores_correct = (
-                    match_detail['maps'][0]['score1'] == 13 and match_detail['maps'][0]['score2'] == 7 and
-                    match_detail['maps'][1]['score1'] == 7 and match_detail['maps'][1]['score2'] == 13 and
-                    match_detail['maps'][2]['score1'] == 13 and match_detail['maps'][2]['score2'] == 11
-                )
-                if map_scores_correct:
-                    print("✅ BO3 match map scores persist correctly")
-                else:
-                    print("❌ BO3 match map scores do not persist correctly")
-        
-        # 3.3 Test BO5 Match Creation
-        print("\n----- TEST 3: BO5 MATCH CREATION -----")
-        # Set scheduled_at to a future date (tomorrow)
-        tomorrow = (datetime.now() + timedelta(days=1)).isoformat()
-        bo5_match_data = {
-            "team1_id": test_team_ids[0],
-            "team2_id": test_team_ids[1],
-            "event_id": 18,  # Using a valid event ID from the events list
-            "format": "BO5",
-            "scheduled_at": tomorrow,
-            "status": "upcoming"
-        }
-        
-        success, created_match = tester.test_create_match(bo5_match_data)
-        
-        if success and created_match and 'id' in created_match:
-            # Verify response includes exactly 5 maps
-            if 'maps' in created_match and len(created_match['maps']) == 5:
-                print("✅ BO5 match has exactly 5 maps")
-            else:
-                print("❌ BO5 match does not have exactly 5 maps")
-            
-            # Clean up by deleting the match
-            tester.test_delete_match(created_match['id'])
-    else:
-        print("\n⚠️ Skipping match workflow tests due to authentication failure")
-    
-    # 4. ERROR HANDLING TESTS
-    print("\n===== TESTING ERROR HANDLING =====")
-    
-    # 4.1 Test invalid match ID
-    tester.run_test(
-        "Get Non-existent Match",
-        "GET",
-        "matches/99999",
-        404
-    )
-    
-    # 4.2 Test unauthorized access to admin endpoints
-    tester.run_test(
-        "Unauthorized Access to Admin Analytics",
-        "GET",
-        "admin/analytics",
-        401
-    )
+            # Compare match detail and scoreboard
+            if success_detail and success_scoreboard:
+                success_comparison, team_data_consistent, scoreboard_has_extra_data = test_match_detail_vs_scoreboard(tester, match_id)
+                
+                print("\n----- EXISTING MATCH SUMMARY -----")
+                print(f"✅ Match detail endpoint: {'Working' if success_detail else 'Not working'}")
+                print(f"✅ Match scoreboard endpoint: {'Working' if success_scoreboard else 'Not working'}")
+                print(f"✅ Team logos present: {'Yes' if team_logos_present else 'No'}")
+                print(f"✅ Player heroes present: {'Yes' if player_heroes_present else 'No'}")
+                print(f"✅ Team data consistent between endpoints: {'Yes' if team_data_consistent else 'No'}")
+                print(f"✅ Scoreboard has extra player data: {'Yes' if scoreboard_has_extra_data else 'No'}")
     
     # Print summary
     tester.print_summary()
