@@ -399,7 +399,7 @@ function MatchForm({ matchId, navigateTo }) {
         description: formData.description || '',
         
         // 🚨 CRITICAL: Save complete map compositions for production
-        maps: formData.maps.map((map, index) => ({
+        maps_data: formData.maps.map((map, index) => ({
           map_number: index + 1,
           map_name: map.map_name,           // ✅ PRESERVE selected map
           mode: map.mode,                   // ✅ PRESERVE selected mode
