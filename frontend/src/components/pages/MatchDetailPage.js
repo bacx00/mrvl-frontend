@@ -74,37 +74,25 @@ function MatchDetailPage({ matchId, navigateTo }) {
         console.log(`🎯 MatchDetailPage: Loading COMPLETE match data using MatchAPI.loadCompleteMatch(${realMatchId})`);
         const matchData = await MatchAPI.loadCompleteMatch(realMatchId, api);
         console.log('✅ MatchDetailPage: COMPLETE match data with heroes/logos loaded:', matchData);
-
+        
         if (showLoading) {
           console.log('✅ MatchDetailPage: REAL match data received:', matchData);
         }
         
-        // 🚨 CRITICAL FIX: Use the match data AS-IS from backend with updated scores
+        // 🚨 CRITICAL FIX: Use the complete match data from MatchAPI with all player compositions
         if (matchData) {
-          // 🔥 CRITICAL: Map the backend data structure correctly
-          const processedMatch = {
-            ...matchData,
-            // 🏆 ENSURE SCORES ARE PROPERLY MAPPED
-            team1_score: matchData.team1_score || 0,
-            team2_score: matchData.team2_score || 0,
-            status: matchData.status || 'upcoming',
-            // 🗺️ ENSURE MAPS DATA IS PRESERVED
-            maps: matchData.maps || [],
-            // 🦸 ENSURE TEAM DATA WITH PLAYERS IS PRESERVED
-            team1: matchData.team1 || {},
-            team2: matchData.team2 || {}
-          };
-          
-          console.log('🔥 MatchDetailPage: Processed match with scores:', {
-            team1_score: processedMatch.team1_score,
-            team2_score: processedMatch.team2_score,
-            status: processedMatch.status,
-            mapCount: processedMatch.maps?.length
+          console.log('🔥 MatchDetailPage: Setting complete match with player compositions:', {
+            team1_score: matchData.team1?.score || 0,
+            team2_score: matchData.team2?.score || 0,
+            status: matchData.status,
+            mapCount: matchData.maps?.length,
+            team1PlayersCount: matchData.maps?.[0]?.team1Composition?.length,
+            team2PlayersCount: matchData.maps?.[0]?.team2Composition?.length
           });
           
-          setMatch(processedMatch);
+          setMatch(matchData);
         } else {
-          console.error('❌ No match data received from backend');
+          console.error('❌ No match data received from MatchAPI');
           setMatch(null);
         }
         
