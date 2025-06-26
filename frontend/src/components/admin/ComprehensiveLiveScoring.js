@@ -144,88 +144,95 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     };
   }, [match]);
 
-  // 🔥 CRITICAL: LOAD SAVED MATCH DATA USING TRANSFORMATION LAYER
+  // 🔥 CRITICAL: LOAD PRODUCTION SCOREBOARD DATA - 6v6 FORMAT  
   useEffect(() => {
-    const loadSavedMatchData = async () => {
+    const loadProductionScoreboard = async () => {
       if (!match || !isOpen) {
         console.log('❌ ADMIN: Not loading - no match or not open');
         return;
       }
 
-      console.log('🔍 ADMIN: Loading saved match data using MatchAPI transformation...');
+      console.log('🔍 ADMIN: Loading PRODUCTION 6v6 scoreboard using MatchAPI...');
       
       try {
-        // 🎯 CRITICAL: Use MatchAPI transformation layer instead of direct API calls
-        const transformedMatch = await MatchAPI.loadCompleteMatch(match.id, api);
+        // 🎯 CRITICAL: Use PRODUCTION MatchAPI for 6v6 data
+        const productionMatch = await MatchAPI.loadCompleteMatch(match.id, api);
         
-        console.log('✅ ADMIN: Transformed match data received:', transformedMatch);
+        console.log('✅ ADMIN: PRODUCTION 6v6 data received:', productionMatch);
         
-        // 🔥 CRITICAL: Use transformed data directly - no additional mapping needed
-        if (transformedMatch.maps && transformedMatch.maps.length > 0) {
-          console.log('🗺️ ADMIN: Using transformed map data with heroes preserved!');
+        // 🔥 CRITICAL: Use PRODUCTION data directly - 12 players (6v6)
+        if (productionMatch.maps && productionMatch.maps.length > 0) {
+          console.log('🗺️ ADMIN: Using PRODUCTION 6v6 scoreboard data!');
           
           setMatchStats({
-            totalMaps: transformedMatch.maps.length,
-            currentMap: transformedMatch.currentMap - 1, // Convert to 0-based index
+            totalMaps: productionMatch.maps.length,
+            currentMap: productionMatch.currentMap - 1, // Convert to 0-based index
             mapWins: { 
-              team1: transformedMatch.team1.score, 
-              team2: transformedMatch.team2.score 
+              team1: productionMatch.team1.score, 
+              team2: productionMatch.team2.score 
             },
-            maps: transformedMatch.maps.map((transformedMap, index) => ({
+            maps: productionMatch.maps.map((productionMap, index) => ({
               map_number: index + 1,
-              map_name: transformedMap.mapName,           // ✅ PRESERVED from creation
-              mode: transformedMap.mode,                  // ✅ PRESERVED from creation
-              team1Score: transformedMap.team1Score,
-              team2Score: transformedMap.team2Score,
-              status: transformedMap.status,
-              winner: transformedMap.winner,
-              duration: transformedMap.duration,
-              team1Players: transformedMap.team1Composition.map(player => ({
+              map_name: productionMap.mapName,           // ✅ PRODUCTION map name
+              mode: productionMap.mode,                  // ✅ PRODUCTION game mode
+              team1Score: productionMap.team1Score,
+              team2Score: productionMap.team2Score,
+              status: productionMap.status,
+              winner: productionMap.winner,
+              duration: productionMap.duration,
+              // 🎮 PRODUCTION: 6v6 team compositions (6 players each)
+              team1Players: productionMap.team1Composition.map(player => ({
                 id: player.playerId,
                 name: player.playerName,
-                hero: player.hero,                        // ✅ PRESERVED hero selection!
-                role: player.role,
-                country: player.country,                  // ✅ RESOLVED country!
-                eliminations: player.eliminations,
-                deaths: player.deaths,
-                assists: player.assists,
-                damage: player.damage,
-                healing: player.healing,
-                damageBlocked: player.damageBlocked,
-                objectiveTime: player.objectiveTime || 0,
-                ultimatesUsed: player.ultimatesUsed || 0
+                hero: player.hero,                        // ✅ PRODUCTION hero data
+                role: player.role,                        // Tank/DPS/Support from conversion
+                country: player.country,                  // ✅ PRODUCTION country data
+                avatar: player.avatar,
+                eliminations: player.eliminations,        // E column
+                deaths: player.deaths,                    // D column
+                assists: player.assists,                  // A column
+                damage: player.damage,                    // DMG column
+                healing: player.healing,                  // HEAL column
+                damageBlocked: player.damageBlocked,      // BLK column
+                ultimateUsage: player.ultimateUsage || 0,
+                objectiveTime: player.objectiveTime || 0
               })),
-              team2Players: transformedMap.team2Composition.map(player => ({
+              team2Players: productionMap.team2Composition.map(player => ({
                 id: player.playerId,
                 name: player.playerName,
-                hero: player.hero,                        // ✅ PRESERVED hero selection!
-                role: player.role,
-                country: player.country,                  // ✅ RESOLVED country!
-                eliminations: player.eliminations,
-                deaths: player.deaths,
-                assists: player.assists,
-                damage: player.damage,
-                healing: player.healing,
-                damageBlocked: player.damageBlocked,
-                objectiveTime: player.objectiveTime || 0,
-                ultimatesUsed: player.ultimatesUsed || 0
+                hero: player.hero,                        // ✅ PRODUCTION hero data
+                role: player.role,                        // Tank/DPS/Support from conversion
+                country: player.country,                  // ✅ PRODUCTION country data
+                avatar: player.avatar,
+                eliminations: player.eliminations,        // E column
+                deaths: player.deaths,                    // D column
+                assists: player.assists,                  // A column
+                damage: player.damage,                    // DMG column
+                healing: player.healing,                  // HEAL column
+                damageBlocked: player.damageBlocked,      // BLK column
+                ultimateUsage: player.ultimateUsage || 0,
+                objectiveTime: player.objectiveTime || 0
               }))
             }))
           });
           
-          setMatchStatus(transformedMatch.status);
-          console.log('✅ ADMIN: Match data loaded with MatchAPI transformation - heroes and maps preserved!');
-          return; // Don't load fresh players if we have transformed data
+          setMatchStatus(productionMatch.status);
+          console.log('✅ ADMIN: PRODUCTION 6v6 data loaded - 12 players total!');
+          console.log('👥 Team 1 players:', productionMatch.maps[0].team1Composition.length);
+          console.log('👥 Team 2 players:', productionMatch.maps[0].team2Composition.length);
+          return; // Success with PRODUCTION data
         }
       } catch (error) {
-        console.log('⚠️ ADMIN: MatchAPI transformation failed, loading fresh players:', error.message);
+        console.log('⚠️ ADMIN: PRODUCTION MatchAPI failed, falling back:', error.message);
       }
 
-      // 🔄 FALLBACK: Load fresh players if transformation fails
-      await loadFreshPlayersForBothTeams();
+      // 🔄 FALLBACK: Initialize empty if PRODUCTION fails
+      console.log('🔧 ADMIN: Initializing fallback data structure...');
+      const fallbackStats = initializeMatchStats(match.format);
+      setMatchStats(fallbackStats);
     };
 
-    loadSavedMatchData();
+    loadProductionScoreboard();
   }, [match?.id, isOpen, api]);
 
   // 🦸 Change player hero
