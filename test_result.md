@@ -289,4 +289,16 @@
 - **Testing Limitations**: Cannot fully test the hero image integration in the UI due to the backend service failure, but the code changes look correct.
 - **Recommendation**: Fix the backend directory structure and module path to enable full testing of the hero image system.
 
+### **Testing Agent (June 26, 2025):**
+- **Marvel Rivals API Testing**: Successfully tested the Marvel Rivals platform backend APIs using the staging.mrvl.net domain.
+- **Match Creation API**: Successfully tested POST /api/admin/matches with the maps_data payload structure. The API accepts and processes the request correctly.
+- **Match Scoreboard API**: Successfully tested GET /api/matches/{id}/scoreboard. The endpoint returns match data with team and player information.
+- **Match Detail API**: Successfully tested GET /api/matches/{id} and compared it with GET /api/matches/{id}/scoreboard. Both endpoints return similar data.
+- **Maps Data**: The maps_data field is accepted in the match creation API, but it's not visible in the match detail or scoreboard responses. The maps are shown in a simplified format.
+- **Team Logos**: Team logos are correctly returned in both endpoints with paths like "/storage/teams/team_83_logo_1750194818.png".
+- **Player Information**: Player information is correctly returned in both endpoints, including roles and avatars.
+- **Hero Compositions**: The hero compositions submitted in maps_data are not visible in the responses, suggesting they might be stored but not returned in these endpoints.
+- **Scoreboard Endpoint**: The scoreboard endpoint returns similar data to the match detail endpoint, with a slightly different structure. It includes main_hero information for players that the detail endpoint doesn't have.
+- **Recommendation**: The APIs are working correctly, but the frontend may need to handle the fact that hero compositions from maps_data are not directly visible in the responses.
+
 **See detailed testing results in /app/test_result_update.md**
