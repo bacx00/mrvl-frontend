@@ -301,12 +301,12 @@ class MarvelRivalsAPITester:
             200
         )
     
-    def test_get_forum_threads(self):
-        """Test getting forum threads"""
+    def test_get_match_scoreboard(self, match_id):
+        """Test getting match scoreboard with team and player information"""
         return self.run_test(
-            "Get Forum Threads",
+            f"Get Match Scoreboard for ID {match_id}",
             "GET",
-            "forums/threads",
+            f"matches/{match_id}/scoreboard",
             200
         )
     
