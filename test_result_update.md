@@ -210,6 +210,7 @@ REACT_APP_BACKEND_URL=https://0071a29e-8d8e-40eb-b89d-eb1a0f7cf244.preview.emerg
    - The frontend should be updated to handle the fact that hero compositions from maps_data are not directly visible in the API responses
    - Consider adding a specific endpoint to retrieve hero compositions for matches if needed
    - Ensure the frontend can work with the current API response structure
+   - Use the main_hero data from the scoreboard endpoint for displaying player heroes
 
 ## 🎯 **CONCLUSION:**
 
