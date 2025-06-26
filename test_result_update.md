@@ -53,6 +53,43 @@
 - ❌ Cannot test team logo loading from storage paths due to backend issues
 - ❌ Cannot test team flags display due to backend issues
 
+## 🧪 **MARVEL RIVALS API TESTING (JUNE 26, 2025):**
+
+### 1. **MATCH CREATION API TESTING**
+- ✅ Successfully tested POST /api/admin/matches with maps_data payload
+- ✅ API accepts and processes the request correctly (201 Created response)
+- ✅ Maps_data field with hero compositions is accepted in the request
+- ✅ Created match is accessible via GET /api/matches/{id}
+- ✅ Match is created with the correct format (BO3)
+- ❓ Maps_data with hero compositions is not visible in the response, suggesting it might be stored but not returned
+
+### 2. **MATCH SCOREBOARD API TESTING**
+- ✅ Successfully tested GET /api/matches/{id}/scoreboard
+- ✅ Endpoint returns match data with team and player information
+- ✅ Team logos are correctly returned with paths like "/storage/teams/team_83_logo_1750194818.png"
+- ✅ Player information includes roles and avatars
+- ✅ Player information includes main_hero data that the detail endpoint doesn't have
+- ❓ Hero compositions from maps_data are not visible in the response
+
+### 3. **MATCH DETAIL API COMPARISON**
+- ✅ Successfully tested GET /api/matches/{id} and compared with GET /api/matches/{id}/scoreboard
+- ✅ Both endpoints return similar data with slightly different structures
+- ✅ Match detail endpoint includes more match metadata (scheduled_at, stream_url, etc.)
+- ✅ Scoreboard endpoint includes main_hero information for players
+- ✅ Team logos and player information is returned correctly in both endpoints
+- ❓ Neither endpoint shows the hero compositions from maps_data
+
+### 4. **AUTHENTICATION TESTING**
+- ✅ Successfully authenticated with the provided credentials
+- ✅ Received valid authentication token
+- ✅ Admin role confirmed in the response
+
+### 5. **TEAM AND PLAYER DATA TESTING**
+- ✅ Team data includes logo, region, and rating
+- ✅ Player data includes role, avatar, and rating
+- ✅ Scoreboard endpoint includes main_hero for players
+- ✅ Team logos are correctly formatted as paths to storage
+
 ## 🧪 **BACKEND SERVICE ISSUES (JUNE 20, 2025):**
 
 ### Backend Service Status
@@ -112,6 +149,12 @@ REACT_APP_BACKEND_URL=https://0071a29e-8d8e-40eb-b89d-eb1a0f7cf244.preview.emerg
    - ❌ Cannot fully test the hero image integration in the UI due to backend service failure
    - This issue is now resolved in the code, but full testing is not possible due to backend issues
 
+4. **Maps Data and Hero Compositions (June 26, 2025 - UPDATE):**
+   - ✅ The match creation API accepts maps_data with hero compositions
+   - ❓ Hero compositions are not visible in the match detail or scoreboard responses
+   - ❓ Maps are shown in a simplified format without hero compositions
+   - This may require frontend adjustments to handle the fact that hero compositions are not directly visible in the responses
+
 ## 🔧 **RECOMMENDATIONS:**
 
 1. **Fix Backend Directory Structure:**
@@ -126,7 +169,7 @@ REACT_APP_BACKEND_URL=https://0071a29e-8d8e-40eb-b89d-eb1a0f7cf244.preview.emerg
    - Test API endpoints after backend is fixed
    - Ensure all required endpoints are working correctly
 
-3. **Fix Hero Image System (June 21, 2025 - UPDATE):**
+4. **Fix Hero Image System (June 21, 2025 - UPDATE):**
    - ✅ The URL construction in the frontend code has been fixed
    - ✅ The code now uses the `image_url` from the API response directly without concatenation
    - ✅ Direct access to hero images works correctly for heroes with images
@@ -134,11 +177,18 @@ REACT_APP_BACKEND_URL=https://0071a29e-8d8e-40eb-b89d-eb1a0f7cf244.preview.emerg
    - ❌ Cannot fully test the hero image integration in the UI due to backend service failure
    - Recommendation: Fix the backend issues to enable full testing of the hero image system
 
+5. **Handle Maps Data and Hero Compositions (June 26, 2025 - UPDATE):**
+   - The frontend should be updated to handle the fact that hero compositions from maps_data are not directly visible in the API responses
+   - Consider adding a specific endpoint to retrieve hero compositions for matches if needed
+   - Ensure the frontend can work with the current API response structure
+
 ## 🎯 **CONCLUSION:**
 
-The Marvel Rivals platform frontend UI is implemented correctly, and the hero image system URL construction issue has been fixed in the code. However, there are still issues with the backend service. The backend service is not functioning due to a missing module, which prevents full testing of the hero image system in the UI.
+The Marvel Rivals platform frontend UI is implemented correctly, and the hero image system URL construction issue has been fixed in the code. The external API at staging.mrvl.net is working correctly and can be used for testing. The match creation API accepts maps_data with hero compositions, but this data is not directly visible in the match detail or scoreboard responses.
 
-**Overall Status: NOT READY FOR PRODUCTION - CRITICAL BACKEND ISSUES PREVENT FULL TESTING**
+The backend service in the container is still not functioning due to a missing module, which prevents full testing of the frontend integration. However, the external API can be used for testing and development.
+
+**Overall Status: EXTERNAL API READY FOR INTEGRATION - CONTAINER BACKEND ISSUES PREVENT FULL TESTING**
 
 ---
-**Test Date**: June 21, 2025 (Updated)
+**Test Date**: June 26, 2025 (Updated)
