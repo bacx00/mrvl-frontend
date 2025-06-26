@@ -135,7 +135,7 @@ export const MatchAPI = {
             };
           })
         }];
-        })(); // End of maps IIFE
+        })(), // End of maps IIFE
         
         // 🏳️ Full player rosters (6v6 format)
         team1Players: data.teams.team1.players.map(p => ({
