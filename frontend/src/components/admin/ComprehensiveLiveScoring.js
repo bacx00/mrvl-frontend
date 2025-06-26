@@ -502,23 +502,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
             timestamp: Date.now()
           }
         }));
-        // 🔥 DISPATCH TIMER SYNC EVENT FOR MATCH DETAIL PAGE
-        window.dispatchEvent(new CustomEvent('mrvl-timer-updated', {
-          detail: {
-            matchId: match.id,
-            timer: timeString,
-            timestamp: Date.now()
-          }
-        }));
-        
-        // 🔥 DISPATCH TIMER SYNC EVENT FOR MATCH DETAIL PAGE
-        window.dispatchEvent(new CustomEvent('mrvl-timer-updated', {
-          detail: {
-            matchId: match.id,
-            timer: timeString,
-            timestamp: Date.now()
-          }
-        }));
       }, 1000);
     }
     return () => clearInterval(interval);
