@@ -793,6 +793,17 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                 </>
               )}
             </button>
+            
+            {/* 🏆 MARK AS COMPLETED BUTTON */}
+            {matchStatus === 'live' && (
+              <button
+                onClick={() => setMatchStatus('completed')}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg flex items-center space-x-2"
+              >
+                <span>🏆</span>
+                <span>Mark as Completed</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
