@@ -533,11 +533,11 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                 🎮 Live Match Control
               </h2>
               <div className="flex items-center space-x-2">
-                <TeamLogo team={match.team1?.name || 'Team1'} logoUrl={match.team1?.logo} size="sm" />
+                <TeamLogo team={match.team1} size="sm" />
                 <span className="text-blue-400 font-semibold">{match.team1?.name || 'Team1'}</span>
                 <span className="text-gray-400">vs</span>
                 <span className="text-red-400 font-semibold">{match.team2?.name || 'Team2'}</span>
-                <TeamLogo team={match.team2?.name || 'Team2'} logoUrl={match.team2?.logo} size="sm" />
+                <TeamLogo team={match.team2} size="sm" />
               </div>
             </div>
             <button
