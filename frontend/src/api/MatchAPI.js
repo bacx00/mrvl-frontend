@@ -83,7 +83,7 @@ export const MatchAPI = {
               playerId: player.id,
               playerName: player.name,
               hero: stats.hero_played || player.main_hero || 'Captain America',
-              role: this.convertRoleToFrontend(player.role), // Convert Vanguard/Duelist/Strategist
+              role: MatchAPI.convertRoleToFrontend(player.role), // Convert Vanguard/Duelist/Strategist
               country: player.country || 'DE', // test1 fallback
               avatar: player.avatar,
               // 📊 PRODUCTION API statistics mapping
@@ -104,7 +104,7 @@ export const MatchAPI = {
               playerId: player.id,
               playerName: player.name,
               hero: stats.hero_played || player.main_hero || 'Hulk',
-              role: this.convertRoleToFrontend(player.role),
+              role: MatchAPI.convertRoleToFrontend(player.role),
               country: player.country || 'KR', // test2 fallback
               avatar: player.avatar,
               // 📊 PRODUCTION API statistics mapping
