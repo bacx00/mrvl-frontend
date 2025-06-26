@@ -483,7 +483,7 @@ def test_create_match_with_hero_compositions(tester, team_ids):
     match_data = {
         "team1_id": team_ids[0],
         "team2_id": team_ids[1],
-        "event_id": 12,  # Using event ID 12 as mentioned in the test results
+        "event_id": 22,  # Using event ID 22 from the matches response
         "format": "BO3",
         "scheduled_at": tomorrow,
         "status": "upcoming",
