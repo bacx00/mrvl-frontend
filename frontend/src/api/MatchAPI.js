@@ -136,8 +136,39 @@ export const MatchAPI = {
               status: map.status || data.match_info.status,
               team1Score: map.team1_score || 0,
               team2Score: map.team2_score || 0,
-              team1Composition: map.team1_composition || [],
-              team2Composition: map.team2_composition || []
+              // 🚨 FIX: Properly transform team compositions from backend maps data
+              team1Composition: (map.team1_composition || []).map(comp => ({
+                playerId: comp.player_id || comp.id,
+                playerName: comp.player_name || comp.name,
+                hero: comp.hero || comp.hero_played || 'Captain America',
+                role: MatchAPI.convertRoleToFrontend(comp.role),
+                country: comp.country || 'US',
+                avatar: comp.avatar,
+                eliminations: comp.kills || 0,
+                deaths: comp.deaths || 0,
+                assists: comp.assists || 0,
+                damage: comp.damage || 0,
+                healing: comp.healing || 0,
+                damageBlocked: comp.damage_blocked || 0,
+                ultimateUsage: comp.ultimate_usage || 0,
+                objectiveTime: comp.objective_time || 0
+              })),
+              team2Composition: (map.team2_composition || []).map(comp => ({
+                playerId: comp.player_id || comp.id,
+                playerName: comp.player_name || comp.name,
+                hero: comp.hero || comp.hero_played || 'Captain America',
+                role: MatchAPI.convertRoleToFrontend(comp.role),
+                country: comp.country || 'US',
+                avatar: comp.avatar,
+                eliminations: comp.kills || 0,
+                deaths: comp.deaths || 0,
+                assists: comp.assists || 0,
+                damage: comp.damage || 0,
+                healing: comp.healing || 0,
+                damageBlocked: comp.damage_blocked || 0,
+                ultimateUsage: comp.ultimate_usage || 0,
+                objectiveTime: comp.objective_time || 0
+              }))
             }));
           }
           
