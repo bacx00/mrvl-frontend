@@ -112,6 +112,24 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     return fallbackHero;
   };
 
+  // 🔧 HELPER: Validate hero name and provide fallback
+  const getValidHero = (heroName, playerRole = 'Tank') => {
+    if (allHeroes.includes(heroName)) {
+      return heroName;
+    }
+    
+    // If hero is invalid, return a default hero for the player's role
+    const roleDefaults = {
+      Tank: 'Captain America',
+      Duelist: 'Iron Man', 
+      Support: 'Mantis'
+    };
+    
+    const fallbackHero = roleDefaults[playerRole] || 'Captain America';
+    console.log(`⚠️ Unknown hero "${heroName}" for ${playerRole}, using fallback: ${fallbackHero}`);
+    return fallbackHero;
+  };
+
   // 🔄 LOAD TEAM PLAYERS UTILITY
   const loadTeamPlayers = async (teamId, teamName) => {
     try {
