@@ -350,8 +350,16 @@ function MatchDetailPage({ matchId, navigateTo }) {
   const currentMapData = currentMap ? {
     map_name: currentMap.mapName || 'Tokyo 2099: Shibuya Sky',
     mode: currentMap.mode || 'Domination',
-    team1Players: currentMap.team1Composition || [],
-    team2Players: currentMap.team2Composition || []
+    team1Players: (currentMap.team1Composition || []).map(p => ({
+      ...p,
+      name: p.playerName || p.name,
+      id: p.playerId || p.id
+    })),
+    team2Players: (currentMap.team2Composition || []).map(p => ({
+      ...p,
+      name: p.playerName || p.name, 
+      id: p.playerId || p.id
+    }))
   } : {
     map_name: 'Tokyo 2099: Shibuya Sky',
     mode: 'Domination',
