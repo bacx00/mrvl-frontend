@@ -163,6 +163,9 @@ function MatchForm({ matchId, navigateTo }) {
             if (realMatchData) {
               console.log('✅ REAL Match data loaded:', realMatchData);
               
+              // 🚨 CRITICAL FIX: Ensure correct map count for the format
+              const baseData = getInitialMatchData(realMatchData.format || 'BO1');
+              
               // 🚨 CRITICAL FIX: Preserve existing hero compositions from maps_data
               const preservedMaps = realMatchData.maps_data && realMatchData.maps_data.length > 0 
                 ? realMatchData.maps_data.map((mapData, index) => ({
