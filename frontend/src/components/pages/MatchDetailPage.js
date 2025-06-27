@@ -206,6 +206,13 @@ function MatchDetailPage({ matchId, navigateTo }) {
     const handleTimerUpdate = (event) => {
       const { detail } = event;
       const currentMatchId = getMatchId();
+      console.log('🔍 Timer event received:', {
+        eventMatchId: detail.matchId,
+        currentMatchId: currentMatchId,
+        timer: detail.timer,
+        matches: detail.matchId == currentMatchId
+      });
+      
       if (detail.matchId == currentMatchId && detail.timer) {
         console.log('⏰ MatchDetailPage: Timer sync received:', detail.timer);
         setMatchTimer(detail.timer);
@@ -217,7 +224,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
     return () => {
       window.removeEventListener('mrvl-timer-updated', handleTimerUpdate);
     };
-  }, [getMatchId]); // Separate useEffect for timer listener
+  }, []); // Remove getMatchId dependency to prevent re-setup
 
   // Load comments using API helper
   useEffect(() => {
