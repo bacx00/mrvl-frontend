@@ -193,7 +193,8 @@ function MatchDetailPage({ matchId, navigateTo }) {
     window.addEventListener('mrvl-stats-updated', handleStatsUpdate);
     window.addEventListener('mrvl-data-refresh', handleMatchUpdate);
     
-    // 🔴 CRITICAL: Listen for timer updates from ComprehensiveLiveScoring
+  // 🔴 CRITICAL: Listen for timer updates from ComprehensiveLiveScoring
+  useEffect(() => {
     const handleTimerUpdate = (event) => {
       const { detail } = event;
       const currentMatchId = getMatchId();
@@ -202,15 +203,13 @@ function MatchDetailPage({ matchId, navigateTo }) {
         setMatchTimer(detail.timer);
       }
     };
+    
     window.addEventListener('mrvl-timer-updated', handleTimerUpdate);
 
     return () => {
-      window.removeEventListener('mrvl-match-updated', handleMatchUpdate);
-      window.removeEventListener('mrvl-hero-updated', handleHeroUpdate);
-      window.removeEventListener('mrvl-stats-updated', handleStatsUpdate);
-      window.removeEventListener('mrvl-data-refresh', handleMatchUpdate);
       window.removeEventListener('mrvl-timer-updated', handleTimerUpdate);
     };
+  }, [getMatchId]); // Separate useEffect for timer listener
   }, [matchId, api]);
 
   // Load comments using API helper
