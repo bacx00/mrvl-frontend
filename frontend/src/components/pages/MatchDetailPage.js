@@ -15,6 +15,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
   const [replyText, setReplyText] = useState('');
   const [userVotes, setUserVotes] = useState({});
   const [matchTimer, setMatchTimer] = useState('00:00');
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // Add refresh trigger
   
   const { user, isAuthenticated, api } = useAuth();
   
