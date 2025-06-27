@@ -375,7 +375,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
             hero: player.hero
           });
           
-          const savePromise = MatchAPI.savePlayerStats(match.id, player.id, {
+          const savePromise = MatchAPI.savePlayerStats(match.id, player.playerId || player.id, {
             eliminations: player.eliminations || 0,
             deaths: player.deaths || 0,
             assists: player.assists || 0,
