@@ -100,14 +100,11 @@ function MatchForm({ matchId, navigateTo }) {
         
         console.log('✅ Heroes loaded from API:', heroData);
         
-        if (heroData && typeof heroData === 'object') {
-          // 🚨 CRITICAL FIX: Transform API response to extract hero names only
+        if (heroData && heroData.by_role) {
+          // 🚨 CRITICAL FIX: Handle correct API structure - data.by_role
           const transformedHeroes = {};
           
-          for (const [role, heroes] of Object.entries(heroData)) {
-            // Skip "all" category - we want role-specific grouping
-            if (role === 'all') continue;
-            
+          for (const [role, heroes] of Object.entries(heroData.by_role)) {
             if (Array.isArray(heroes)) {
               // Extract just the name from hero objects
               transformedHeroes[role] = heroes.map(hero => {
@@ -123,7 +120,7 @@ function MatchForm({ matchId, navigateTo }) {
           
           // 🔥 FIX: Update React state instead of global object
           setHerosByRole(transformedHeroes);
-          console.log('🎮 Heroes state updated (names only):', transformedHeroes);
+          console.log('🎮 Heroes state updated from API:', transformedHeroes);
         }
       } catch (error) {
         console.error('❌ Error loading heroes from API:', error);
