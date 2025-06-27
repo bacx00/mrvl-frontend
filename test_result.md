@@ -311,4 +311,14 @@
 - **Data Synchronization**: The data between match detail and scoreboard endpoints is consistent, with the scoreboard providing additional player hero information.
 - **Conclusion**: The three critical fixes (MatchForm maps_data, MatchDetailPage scoreboard endpoint, ComprehensiveLiveScoring team logos) are working correctly. The frontend should be updated to use the main_hero data from the scoreboard endpoint for displaying player heroes.
 
-**See detailed testing results in /app/test_result_update.md**
+### **Testing Agent (June 26, 2025 - Update 3):**
+- **Live Scoring API Testing**: Successfully tested the live scoring functionality APIs for Match ID 114.
+- **GET /api/matches/114/scoreboard**: This endpoint is working correctly (200 OK) and returns complete match data with team and player information.
+- **Player IDs in Scoreboard**: All players in the scoreboard response have proper ID fields. Player IDs are available in both the team player lists and the map compositions.
+- **POST /api/matches/{id}/players/{playerId}/stats**: This endpoint is working correctly (201 Created) and accepts player statistics updates.
+- **Authentication Requirement**: The player stats update endpoint requires authentication. Requests without authentication receive a 401 Unauthorized response.
+- **Invalid Player ID Handling**: The endpoint correctly returns a 404 Not Found response for invalid player IDs.
+- **Frontend Issue Analysis**: The frontend issue where `playerId` is undefined when trying to save player stats is likely due to incorrect data mapping in the frontend. The player IDs are properly included in the scoreboard response, but the frontend may not be extracting them correctly.
+- **Recommendation**: Fix the frontend data mapping to correctly extract player IDs from the scoreboard response. The player IDs are available in the `teams.team1.players[].id`, `teams.team2.players[].id`, `maps[].team1_composition[].player_id`, and `maps[].team2_composition[].player_id` fields.
+
+**See detailed testing results in /app/marvel_rivals_live_scoring_test_results.md**
