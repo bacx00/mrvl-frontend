@@ -490,7 +490,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       }));
 
       // 🚀 CROSS-TAB SYNC: Add localStorage sync for all events
-      localStorage.setItem('mrvl-match-sync', JSON.stringify({
+      const syncData = {
         matchId: match.id,
         type: 'PRODUCTION_UPDATE',
         scores: {
@@ -500,8 +500,11 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         playersUpdated: savePromises.length,
         timestamp: Date.now(),
         action: 'update'
-      }));
-
+      };
+      
+      localStorage.setItem('mrvl-match-sync', JSON.stringify(syncData));
+      console.log('🚀 ADMIN: Cross-tab sync data written to localStorage:', syncData);
+      
       // 🚀 CROSS-TAB SYNC: Add localStorage sync for all events
       const syncData = {
         matchId: match.id,
