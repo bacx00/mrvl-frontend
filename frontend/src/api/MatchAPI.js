@@ -25,6 +25,64 @@ function findPlayerCountry(playerId, playerList = []) {
  */
 export const MatchAPI = {
   /**
+   * 🚀 NEW: Load COMPLETE live state for admin dashboard
+   * Uses NEW /admin/matches/{id}/live-state endpoint
+   */
+  async loadLiveState(matchId, apiHelper) {
+    try {
+      console.log('🚀 MatchAPI: Loading COMPLETE live state for admin:', matchId);
+      
+      const response = await apiHelper.get(`/admin/matches/${matchId}/live-state`);
+      const data = response?.data;
+      
+      if (!data) {
+        throw new Error('No live state data received from backend');
+      }
+      
+      console.log('📥 LIVE STATE data received:', data);
+      
+      // Transform for frontend consumption
+      return {
+        id: data.match.id,
+        status: data.match.status,
+        currentMap: data.match.current_map,
+        format: data.match.format,
+        viewers: data.match.viewers,
+        streamUrl: data.match.stream_url,
+        timerData: data.match.timer_data,
+        
+        // Team data with complete player rosters
+        team1: {
+          id: data.teams.team1.id,
+          name: data.teams.team1.name,
+          logo: data.teams.team1.logo,
+          score: data.match.team1_score,
+          players: data.teams.team1.players
+        },
+        team2: {
+          id: data.teams.team2.id,
+          name: data.teams.team2.name, 
+          logo: data.teams.team2.logo,
+          score: data.match.team2_score,
+          players: data.teams.team2.players
+        },
+        
+        // Maps data from your new system
+        maps: data.maps || [],
+        playerStats: data.player_stats || {},
+        
+        // Event info
+        event: data.event,
+        lastUpdated: data.last_updated
+      };
+      
+    } catch (error) {
+      console.error('❌ MatchAPI: Error loading live state:', error);
+      throw error;
+    }
+  },
+
+  /**
    * 🔍 Load complete match scoreboard (PRODUCTION ENDPOINT)
    * Uses /matches/{id}/scoreboard - 6v6 format with 12 players
    */
