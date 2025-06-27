@@ -447,21 +447,6 @@ function MatchDetailPage({ matchId, navigateTo }) {
               <span className="font-semibold">Watch Stream</span>
             </a>
           )}
-        </div>
-        
-        {/* 🔗 STREAM, VOD & BETTING BUTTONS - MOVED BELOW SCORES */}
-        <div className="flex justify-center space-x-4 mt-8">
-          {match.streamUrl && (
-            <a
-              href={match.streamUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-lg hover:shadow-xl transform hover:scale-105"
-            >
-              <span className="text-lg mr-2">📺</span>
-              <span className="font-semibold">Watch Stream</span>
-            </a>
-          )}
           <button className="inline-flex items-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-lg hover:shadow-xl transform hover:scale-105">
             <span className="text-lg mr-2">🎬</span>
             <span className="font-semibold">Watch VOD</span>
