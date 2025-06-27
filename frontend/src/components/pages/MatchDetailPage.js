@@ -433,6 +433,11 @@ function MatchDetailPage({ matchId, navigateTo }) {
               {match.format === 'BO1' ? 'Best of 1' : 
                match.format === 'BO3' ? 'Best of 3' :
                match.format === 'BO5' ? 'Best of 5' : 'Best of 1'}
+              {/* 🎮 GAME MODE DISPLAY */}
+              <br />
+              <span className="text-blue-600 dark:text-blue-400 font-semibold">
+                {currentMapData?.mode || 'Domination'}
+              </span>
             </div>
           </div>
           
