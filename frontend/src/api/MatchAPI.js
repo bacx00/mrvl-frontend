@@ -304,6 +304,138 @@ export const MatchAPI = {
   },
 
   /**
+   * 🚀 NEW: Update match status using your new endpoint
+   */
+  async updateMatchStatus(matchId, status, apiHelper) {
+    try {
+      console.log('🚀 MatchAPI: Updating match status:', { matchId, status });
+      
+      const response = await apiHelper.put(`/admin/matches/${matchId}/status`, {
+        status: status
+      });
+      
+      console.log('✅ Match status updated:', response);
+      return response;
+      
+    } catch (error) {
+      console.error('❌ MatchAPI: Error updating match status:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 🚀 NEW: Update team composition using your new endpoint
+   */
+  async updateTeamComposition(matchId, mapIndex, team1Composition, team2Composition, apiHelper) {
+    try {
+      console.log('🚀 MatchAPI: Updating team composition:', { matchId, mapIndex });
+      
+      const payload = { map_index: mapIndex };
+      if (team1Composition) payload.team1_composition = team1Composition;
+      if (team2Composition) payload.team2_composition = team2Composition;
+      
+      const response = await apiHelper.put(`/admin/matches/${matchId}/team-composition`, payload);
+      
+      console.log('✅ Team composition updated:', response);
+      return response;
+      
+    } catch (error) {
+      console.error('❌ MatchAPI: Error updating team composition:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 🚀 NEW: Update current map using your new endpoint
+   */
+  async updateCurrentMap(matchId, mapName, mode, mapIndex, apiHelper) {
+    try {
+      console.log('🚀 MatchAPI: Updating current map:', { matchId, mapName, mode });
+      
+      const response = await apiHelper.put(`/admin/matches/${matchId}/current-map`, {
+        current_map: mapName,
+        current_mode: mode,
+        map_index: mapIndex
+      });
+      
+      console.log('✅ Current map updated:', response);
+      return response;
+      
+    } catch (error) {
+      console.error('❌ MatchAPI: Error updating current map:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 🚀 NEW: Update timer using your new endpoint
+   */
+  async updateTimer(matchId, action, elapsedTime, roundTime, phase, apiHelper) {
+    try {
+      console.log('🚀 MatchAPI: Updating timer:', { matchId, action, elapsedTime });
+      
+      const payload = { action };
+      if (elapsedTime !== undefined) payload.elapsed_time = elapsedTime;
+      if (roundTime !== undefined) payload.round_time = roundTime;
+      if (phase) payload.phase = phase;
+      
+      const response = await apiHelper.put(`/admin/matches/${matchId}/timer`, payload);
+      
+      console.log('✅ Timer updated:', response);
+      return response;
+      
+    } catch (error) {
+      console.error('❌ MatchAPI: Error updating timer:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 🚀 NEW: Update match and map scores using your new endpoint
+   */
+  async updateScores(matchId, team1Score, team2Score, mapScores, apiHelper) {
+    try {
+      console.log('🚀 MatchAPI: Updating scores:', { matchId, team1Score, team2Score });
+      
+      const payload = {
+        team1_score: team1Score,
+        team2_score: team2Score
+      };
+      
+      if (mapScores && mapScores.length > 0) {
+        payload.map_scores = mapScores;
+      }
+      
+      const response = await apiHelper.put(`/admin/matches/${matchId}/scores`, payload);
+      
+      console.log('✅ Scores updated:', response);
+      return response;
+      
+    } catch (error) {
+      console.error('❌ MatchAPI: Error updating scores:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 🚀 NEW: Update individual player stats using your enhanced endpoint
+   */
+  async updatePlayerStats(matchId, playerId, stats, apiHelper) {
+    try {
+      console.log('🚀 MatchAPI: Updating player stats:', { matchId, playerId, stats });
+      
+      const response = await apiHelper.put(`/admin/matches/${matchId}/player-stats/${playerId}`, stats);
+      
+      console.log('✅ Player stats updated:', response);
+      return response;
+      
+    } catch (error) {
+      console.error('❌ MatchAPI: Error updating player stats:', error);
+      throw error;
+    }
+  },
+
+  /**
    * 🌍 Load public match data (uses same scoreboard endpoint)
    */
   async loadPublicMatch(matchId, apiHelper) {
