@@ -185,7 +185,7 @@ function EventsPage({ navigateTo }) {
             onClick={() => navigateTo && navigateTo('admin-event-create')}
             className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
           >
-            📅 Create Event
+            Create Event
           </button>
         )}
       </div>
