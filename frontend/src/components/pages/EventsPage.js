@@ -320,6 +320,7 @@ function EventsPage({ navigateTo }) {
                           </div>
                         </div>
                       </div>
+                      </div> {/* Close content layer */}
                     </div>
                   ))}
                 </div>
