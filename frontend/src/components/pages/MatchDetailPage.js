@@ -264,6 +264,29 @@ function MatchDetailPage({ matchId, navigateTo }) {
           console.error('❌ Error parsing match sync data:', error);
         }
       }
+      
+      // 🚀 CROSS-TAB SYNC: Listen for match/score/hero updates
+      if (event.key === 'mrvl-match-sync' && event.newValue) {
+        try {
+          const matchData = JSON.parse(event.newValue);
+          const currentMatchId = getMatchId();
+          console.log('🔄 Cross-tab match sync received:', {
+            eventMatchId: matchData.matchId,
+            currentMatchId: currentMatchId,
+            type: matchData.type,
+            action: matchData.action,
+            matches: matchData.matchId == currentMatchId
+          });
+          
+          if (matchData.matchId == currentMatchId) {
+            console.log('⚽ MatchDetailPage: Cross-tab match sync - refreshing data');
+            // Refresh match data to get latest scores/heroes
+            fetchMatchData(false); // false = don't show loading spinner
+          }
+        } catch (error) {
+          console.error('❌ Error parsing match sync data:', error);
+        }
+      }
     };
     
     window.addEventListener('mrvl-timer-updated', handleTimerUpdate);
