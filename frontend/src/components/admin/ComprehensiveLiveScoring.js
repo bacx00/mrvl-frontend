@@ -546,6 +546,17 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     setIsTimerRunning(false);
     // 🚨 PERSIST TO LOCALSTORAGE
     localStorage.setItem(`match-timer-running-${match.id}`, 'false');
+    
+    // 🔥 IMMEDIATELY DISPATCH TIMER PAUSE EVENT
+    window.dispatchEvent(new CustomEvent('mrvl-timer-updated', {
+      detail: {
+        matchId: match.id,
+        timer: matchTimer,
+        isRunning: false,
+        timestamp: Date.now()
+      }
+    }));
+    console.log('⏸️ Timer paused - immediate sync dispatched');
   };
 
   const resetTimer = () => {
@@ -556,6 +567,17 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     localStorage.removeItem(`match-timer-running-${match.id}`);
     localStorage.removeItem(`match-timer-start-${match.id}`);
     localStorage.removeItem(`match-timer-${match.id}`);
+    
+    // 🔥 IMMEDIATELY DISPATCH TIMER RESET EVENT
+    window.dispatchEvent(new CustomEvent('mrvl-timer-updated', {
+      detail: {
+        matchId: match.id,
+        timer: '00:00',
+        isRunning: false,
+        timestamp: Date.now()
+      }
+    }));
+    console.log('🔄 Timer reset - immediate sync dispatched');
   };
 
   // Timer effect - WITH PERSISTENCE
