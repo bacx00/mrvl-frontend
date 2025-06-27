@@ -218,11 +218,37 @@ function MatchDetailPage({ matchId, navigateTo }) {
         setMatchTimer(detail.timer);
       }
     };
+
+    // 🚀 CROSS-TAB SYNC: Listen for localStorage changes 
+    const handleStorageChange = (event) => {
+      if (event.key === 'mrvl-timer-sync' && event.newValue) {
+        try {
+          const timerData = JSON.parse(event.newValue);
+          const currentMatchId = getMatchId();
+          console.log('🔄 Cross-tab timer sync received:', {
+            eventMatchId: timerData.matchId,
+            currentMatchId: currentMatchId,
+            timer: timerData.timer,
+            action: timerData.action,
+            matches: timerData.matchId == currentMatchId
+          });
+          
+          if (timerData.matchId == currentMatchId && timerData.timer) {
+            console.log('⏰ MatchDetailPage: Cross-tab timer sync received:', timerData.timer);
+            setMatchTimer(timerData.timer);
+          }
+        } catch (error) {
+          console.error('❌ Error parsing timer sync data:', error);
+        }
+      }
+    };
     
     window.addEventListener('mrvl-timer-updated', handleTimerUpdate);
+    window.addEventListener('storage', handleStorageChange);
 
     return () => {
       window.removeEventListener('mrvl-timer-updated', handleTimerUpdate);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, []); // Remove getMatchId dependency to prevent re-setup
 
