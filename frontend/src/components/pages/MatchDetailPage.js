@@ -280,9 +280,9 @@ function MatchDetailPage({ matchId, navigateTo }) {
           });
           
           if (matchData.matchId == currentMatchId) {
-            console.log('⚽ MatchDetailPage: Cross-tab match sync - refreshing data');
-            // Refresh match data to get latest scores/heroes
-            fetchMatchData(false); // false = don't show loading spinner
+            console.log('⚽ MatchDetailPage: Cross-tab match sync - triggering refresh');
+            // Trigger a refresh by updating the refresh trigger
+            setRefreshTrigger(prev => prev + 1);
           }
         } catch (error) {
           console.error('❌ Error parsing match sync data:', error);
