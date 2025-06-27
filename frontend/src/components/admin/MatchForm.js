@@ -99,6 +99,9 @@ function MatchForm({ matchId, navigateTo }) {
           const transformedHeroes = {};
           
           for (const [role, heroes] of Object.entries(heroData)) {
+            // Skip "all" category - we want role-specific grouping
+            if (role === 'all') continue;
+            
             if (Array.isArray(heroes)) {
               // Extract just the name from hero objects
               transformedHeroes[role] = heroes.map(hero => {
