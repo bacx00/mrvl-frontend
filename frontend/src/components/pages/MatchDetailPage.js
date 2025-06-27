@@ -200,7 +200,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
       window.removeEventListener('mrvl-stats-updated', handleStatsUpdate);
       window.removeEventListener('mrvl-data-refresh', handleMatchUpdate);
     };
-  }, [matchId, api]);
+  }, [matchId, api, refreshTrigger]);
 
   // 🔴 CRITICAL: Listen for timer updates from ComprehensiveLiveScoring
   useEffect(() => {
