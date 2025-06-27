@@ -253,11 +253,17 @@ function MatchDetailPage({ matchId, navigateTo }) {
             currentMatchId: currentMatchId,
             type: matchData.type,
             action: matchData.action,
+            playersUpdated: matchData.playersUpdated,
             matches: matchData.matchId == currentMatchId
           });
           
           if (matchData.matchId == currentMatchId) {
-            console.log('⚽ MatchDetailPage: Cross-tab match sync - triggering refresh');
+            console.log('⚽ MatchDetailPage: Cross-tab scoreboard sync - triggering refresh');
+            console.log('📊 Scoreboard update details:', {
+              scores: matchData.scores,
+              playersUpdated: matchData.playersUpdated,
+              refreshTriggered: true
+            });
             // Trigger a refresh by updating the refresh trigger
             setRefreshTrigger(prev => prev + 1);
           }
