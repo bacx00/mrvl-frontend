@@ -339,13 +339,20 @@ def main():
     
     # Try both with and without authentication
     if tester.token:
-        success_invalid, invalid_response = tester.test_update_player_stats(114, invalid_player_id, stats_data)
+        success_invalid, invalid_response = tester.run_test(
+            f"Update Player Stats for Match ID 114, Player ID {invalid_player_id}",
+            "POST",
+            f"matches/114/players/{invalid_player_id}/stats",
+            404,  # Expecting 404 for invalid player ID
+            data=stats_data,
+            auth=True
+        )
     else:
         success_invalid, invalid_response = tester.run_test(
             f"Update Player Stats for Match ID 114, Player ID {invalid_player_id} (No Auth)",
             "POST",
             f"matches/114/players/{invalid_player_id}/stats",
-            404,  # Expecting 404 for invalid player ID
+            401,  # Expecting 401 Unauthorized if not authenticated
             data=stats_data
         )
     
