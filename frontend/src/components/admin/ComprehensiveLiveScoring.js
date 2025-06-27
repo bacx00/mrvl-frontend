@@ -508,6 +508,25 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     localStorage.setItem(`match-timer-running-${match.id}`, 'true');
     localStorage.setItem(`match-timer-start-${match.id}`, startTime.toString());
     
+    // 🔥 IMMEDIATELY DISPATCH TIMER START EVENT
+    window.dispatchEvent(new CustomEvent('mrvl-timer-updated', {
+      detail: {
+        matchId: match.id,
+        timer: '00:00',
+        isRunning: true,
+        timestamp: Date.now()
+      }
+    }));
+    
+    // 🚀 CROSS-TAB SYNC: Use localStorage for tab-to-tab communication
+    localStorage.setItem('mrvl-timer-sync', JSON.stringify({
+      matchId: match.id,
+      timer: '00:00',
+      isRunning: true,
+      timestamp: Date.now(),
+      action: 'start'
+    }));
+    
     console.log('🎮 Timer started - immediate sync dispatched');
   };
 
