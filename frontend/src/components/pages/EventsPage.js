@@ -207,7 +207,6 @@ function EventsPage({ navigateTo }) {
                   : 'text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
               }`}
             >
-              <span>{tab.icon}</span>
               <span>{tab.label}</span>
               <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded-full text-xs">
                 {events.filter(e => e.status === tab.id).length}
