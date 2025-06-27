@@ -163,8 +163,16 @@ function MatchForm({ matchId, navigateTo }) {
             if (realMatchData) {
               console.log('✅ REAL Match data loaded:', realMatchData);
               
-              // 🚨 CRITICAL FIX: Ensure correct map count for the format
-              const baseData = getInitialMatchData(realMatchData.format || 'BO1');
+              // 🚨 CRITICAL FIX: Preserve existing hero compositions from maps_data
+              const preservedMaps = realMatchData.maps_data && realMatchData.maps_data.length > 0 
+                ? realMatchData.maps_data.map((mapData, index) => ({
+                    map_name: mapData.map_name || baseData.maps[index]?.map_name || 'Tokyo 2099: Shibuya Sky',
+                    mode: mapData.mode || baseData.maps[index]?.mode || 'Conquest',
+                    team1_composition: mapData.team1_composition || baseData.maps[index]?.team1_composition || [],
+                    team2_composition: mapData.team2_composition || baseData.maps[index]?.team2_composition || []
+                  }))
+                : baseData.maps;
+              
               const transformedData = {
                 ...baseData, // Start with correct map structure
                 ...realMatchData, // Then add real match data
@@ -174,8 +182,8 @@ function MatchForm({ matchId, navigateTo }) {
                 scheduled_at: realMatchData.scheduled_at ? 
                   new Date(realMatchData.scheduled_at).toISOString().slice(0, 16) : 
                   new Date(Date.now() + 3600000).toISOString().slice(0, 16),
-                // 🚨 FORCE correct map structure based on format
-                maps: baseData.maps,
+                // 🚨 PRESERVE existing hero compositions
+                maps: preservedMaps,
                 map_pool: baseData.map_pool
               };
               
