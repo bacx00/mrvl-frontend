@@ -57,11 +57,39 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
   ];
 
   // ✅ COMPLETE MARVEL RIVALS HEROES BY ROLE
-  const marvelRivalsHeroes = {
-    Tank: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Peni Parker', 'The Thing', 'Thor', 'Venom'],
-    Duelist: ['Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Human Torch', 'Iron Fist', 'Iron Man', 'Magik', 'Moon Knight', 'Namor', 'Psylocke', 'Punisher', 'Scarlet Witch', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine'],
-    Support: ['Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon']
-  };
+  // ✅ MARVEL RIVALS HEROES - SYNC WITH API
+  const [marvelRivalsHeroes, setMarvelRivalsHeroes] = useState({
+    Tank: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Thor', 'Venom'],
+    Duelist: ['Black Widow', 'Hawkeye', 'Iron Man', 'Punisher', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Winter Soldier'],
+    Support: ['Adam Warlock', 'Cloak & Dagger', 'Jeff the Land Shark', 'Luna Snow', 'Mantis', 'Rocket Raccoon', 'Storm']
+  });
+
+  // 🔄 LOAD HEROES FROM API TO SYNC WITH BACKEND
+  useEffect(() => {
+    const loadHeroes = async () => {
+      try {
+        const response = await api.get('/heroes');
+        const heroData = response?.data;
+        
+        if (heroData && heroData.by_role) {
+          const transformedHeroes = {};
+          for (const [role, heroes] of Object.entries(heroData.by_role)) {
+            if (Array.isArray(heroes)) {
+              transformedHeroes[role] = heroes.map(hero => 
+                typeof hero === 'object' && hero.name ? hero.name : hero
+              );
+            }
+          }
+          setMarvelRivalsHeroes(transformedHeroes);
+          console.log('🎮 ComprehensiveLiveScoring: Heroes synced with API:', transformedHeroes);
+        }
+      } catch (error) {
+        console.error('❌ Error loading heroes in ComprehensiveLiveScoring:', error);
+      }
+    };
+    
+    loadHeroes();
+  }, [api]);
 
   // Get all heroes in a flat array
   const allHeroes = Object.values(marvelRivalsHeroes).flat();
