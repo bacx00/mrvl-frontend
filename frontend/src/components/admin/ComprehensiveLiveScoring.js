@@ -518,28 +518,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       }
     }));
     console.log('🎮 Timer started - immediate sync dispatched');
-    
-    // 🔥 IMMEDIATELY DISPATCH TIMER START EVENT
-    window.dispatchEvent(new CustomEvent('mrvl-timer-updated', {
-      detail: {
-        matchId: match.id,
-        timer: '00:00',
-        isRunning: true,
-        timestamp: Date.now()
-      }
-    }));
-    console.log('🎮 Timer started - immediate sync dispatched');
-    
-    // 🔥 IMMEDIATELY DISPATCH TIMER START EVENT
-    window.dispatchEvent(new CustomEvent('mrvl-timer-updated', {
-      detail: {
-        matchId: match.id,
-        timer: '00:00',
-        isRunning: true,
-        timestamp: Date.now()
-      }
-    }));
-    console.log('🎮 Timer started - immediate sync dispatched');
   };
 
   const pauseTimer = () => {
