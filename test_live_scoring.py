@@ -130,7 +130,7 @@ class MarvelRivalsAPITester:
             f"Update Player Stats for Match ID {match_id}, Player ID {player_id}",
             "POST",
             f"matches/{match_id}/players/{player_id}/stats",
-            200,
+            201,  # Updated to expect 201 Created status
             data=stats_data,
             auth=True  # Try with authentication
         )
