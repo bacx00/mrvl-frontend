@@ -183,6 +183,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
               // 🎮 PRODUCTION: 6v6 team compositions (6 players each)
               team1Players: productionMap.team1Composition.map(player => ({
                 id: player.playerId,
+                playerId: player.playerId,                // ✅ FIX: Ensure playerId is available for API calls
                 name: player.playerName,
                 hero: player.hero,                        // ✅ PRODUCTION hero data
                 role: player.role,                        // Tank/DPS/Support from conversion
@@ -199,6 +200,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
               })),
               team2Players: productionMap.team2Composition.map(player => ({
                 id: player.playerId,
+                playerId: player.playerId,                // ✅ FIX: Ensure playerId is available for API calls
                 name: player.playerName,
                 hero: player.hero,                        // ✅ PRODUCTION hero data
                 role: player.role,                        // Tank/DPS/Support from conversion
