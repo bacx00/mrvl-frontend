@@ -593,6 +593,15 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
             timestamp: Date.now()
           }
         }));
+        
+        // 🚀 CROSS-TAB SYNC: Update localStorage every second
+        localStorage.setItem('mrvl-timer-sync', JSON.stringify({
+          matchId: match.id,
+          timer: timeString,
+          isRunning: true,
+          timestamp: Date.now(),
+          action: 'update'
+        }));
       }, 1000);
     }
     return () => clearInterval(interval);
