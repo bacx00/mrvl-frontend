@@ -121,19 +121,14 @@ function MatchForm({ matchId, navigateTo }) {
             }
           }
           
-          // Update the configuration with transformed data
-          MARVEL_RIVALS_CONFIG.herosByRole = transformedHeroes;
-          console.log('🎮 Heroes configuration updated (names only):', MARVEL_RIVALS_CONFIG.herosByRole);
+          // 🔥 FIX: Update React state instead of global object
+          setHerosByRole(transformedHeroes);
+          console.log('🎮 Heroes state updated (names only):', transformedHeroes);
         }
       } catch (error) {
         console.error('❌ Error loading heroes from API:', error);
-        // Fallback to hardcoded heroes if API fails
-        MARVEL_RIVALS_CONFIG.herosByRole = {
-          Tank: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Peni Parker', 'The Thing', 'Thor', 'Venom'],
-          Duelist: ['Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Human Torch', 'Iron Fist', 'Iron Man', 'Magik', 'Moon Knight', 'Namor', 'Psylocke', 'The Punisher', 'Scarlet Witch', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine'],
-          Support: ['Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon']
-        };
-        console.log('🎮 Using fallback heroes configuration');
+        // Fallback heroes are already set in the initial state
+        console.log('🎮 Using fallback heroes from initial state');
       }
     };
     
