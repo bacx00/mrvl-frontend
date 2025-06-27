@@ -818,23 +818,15 @@ function MatchForm({ matchId, navigateTo }) {
                               value={player.hero}
                               onChange={(e) => {
                                 const selectedHero = e.target.value;
-                                const heroRole = Object.keys(MARVEL_RIVALS_CONFIG.herosByRole || {
-                                  Tank: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Peni Parker', 'The Thing', 'Thor', 'Venom'],
-                                  Duelist: ['Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Human Torch', 'Iron Fist', 'Iron Man', 'Magik', 'Moon Knight', 'Namor', 'Psylocke', 'The Punisher', 'Scarlet Witch', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine'],
-                                  Support: ['Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon']
-                                }).find(role => 
-                                  (MARVEL_RIVALS_CONFIG.herosByRole?.[role] || []).includes(selectedHero)
+                                const heroRole = Object.keys(herosByRole).find(role => 
+                                  (herosByRole[role] || []).includes(selectedHero)
                                 ) || 'Tank';
                                 
                                 handlePlayerHeroChange(mapIndex, 'team2', playerIndex, selectedHero, heroRole);
                               }}
                               className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             >
-                              {Object.entries(MARVEL_RIVALS_CONFIG.herosByRole || {
-                                Tank: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Peni Parker', 'The Thing', 'Thor', 'Venom'],
-                                Duelist: ['Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Human Torch', 'Iron Fist', 'Iron Man', 'Magik', 'Moon Knight', 'Namor', 'Psylocke', 'The Punisher', 'Scarlet Witch', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Storm', 'Wolverine'],
-                                Support: ['Adam Warlock', 'Cloak & Dagger', 'Invisible Woman', 'Jeff the Land Shark', 'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon']
-                              }).map(([role, heroes]) => (
+                              {Object.entries(herosByRole).map(([role, heroes]) => (
                                 <optgroup key={role} label={role}>
                                   {Array.isArray(heroes) ? heroes.map(hero => (
                                     <option key={hero} value={hero}>{hero}</option>
