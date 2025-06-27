@@ -312,14 +312,14 @@ def main():
                 f"Update Player Stats for Match ID 114, Player ID {test_player_id} (No Auth)",
                 "POST",
                 f"matches/114/players/{test_player_id}/stats",
-                200,
+                401,  # Expecting 401 Unauthorized
                 data=stats_data
             )
             
             if success_no_auth:
-                print(f"✅ Successfully updated stats for player ID {test_player_id} without authentication")
+                print(f"✅ Authentication is required for player stats updates (expected behavior)")
             else:
-                print(f"❌ Failed to update stats for player ID {test_player_id} without authentication")
+                print(f"❌ Unexpected response when trying without authentication")
     else:
         print("❌ No player IDs found to test stats update")
     
