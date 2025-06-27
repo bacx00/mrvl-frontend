@@ -153,7 +153,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           return {
             id: player.id,
             name: player.name,
-            hero: player.main_hero || 'Captain America',
+            hero: getValidHero(player.main_hero, player.role),
             role: player.role || 'Tank',
             country: playerCountry, // ✅ FIXED country resolution
             avatar: player.avatar,
