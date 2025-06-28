@@ -5,7 +5,19 @@ import json
 from datetime import datetime, timedelta
 
 class MarvelRivalsAPITester:
-    def __init__(self, base_url="https://staging.mrvl.net"):
+    def __init__(self, base_url=None):
+        # Use the REACT_APP_BACKEND_URL from frontend/.env if available
+        if base_url is None:
+            try:
+                with open('/app/frontend/.env', 'r') as f:
+                    for line in f:
+                        if line.startswith('REACT_APP_BACKEND_URL='):
+                            base_url = line.strip().split('=')[1].strip('"\'')
+                            break
+            except Exception as e:
+                print(f"Warning: Could not read REACT_APP_BACKEND_URL from frontend/.env: {e}")
+                base_url = "https://cfcfe94e-c75a-401f-9e7b-4d116d785c2b.preview.emergentagent.com"
+        
         self.base_url = base_url
         self.api_url = f"{base_url}/api"  # API URL with /api prefix
         self.token = None
@@ -13,7 +25,8 @@ class MarvelRivalsAPITester:
         self.tests_passed = 0
         self.issues = []
         self.debug = True
-        self.admin_token = None
+        # Use the admin token from MatchAPI.js
+        self.admin_token = "415|ySK4yrjyULCTlprffD0KeT5zxd6J2mMMHOHkX6pv1d5fc012"
 
     def log(self, message):
         """Print debug messages if debug is enabled"""
