@@ -390,7 +390,7 @@ export const MatchAPI = {
               // 🚨 FIX: Properly transform team compositions from backend maps data
               team1Composition: (map.team1_composition || []).map(comp => ({
                 playerId: comp.player_id || comp.id,
-                playerName: comp.player_name || comp.name,
+                name: comp.player_name || comp.name,
                 hero: comp.hero || comp.hero_played || 'Captain America',
                 role: MatchAPI.convertRoleToFrontend(comp.role),
                 country: comp.country || 'US',
