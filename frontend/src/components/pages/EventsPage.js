@@ -194,9 +194,9 @@ function EventsPage({ navigateTo }) {
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 mb-6">
         <div className="flex border-b border-gray-200 dark:border-gray-700">
           {[
-            { id: 'upcoming', label: 'Upcoming', icon: '📅' },
-            { id: 'live', label: 'Live', icon: '🔴' },
-            { id: 'completed', label: 'Completed', icon: '✅' }
+            { id: 'upcoming', label: 'Upcoming' },
+            { id: 'live', label: 'Live' },
+            { id: 'completed', label: 'Completed' }
           ].map(tab => (
             <button
               key={tab.id}
