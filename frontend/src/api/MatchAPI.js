@@ -42,6 +42,24 @@ export const MatchAPI = {
       'Cache-Control': 'no-cache, no-store, must-revalidate'
     };
   },
+  // 🔐 ADMIN CONFIGURATION
+  ADMIN_TOKEN: '415|ySK4yrjyULCTlprffD0KeT5zxd6J2mMMHOHkX6pv1d5fc012',
+  
+  // 🔧 ADMIN HEADERS
+  getAdminHeaders() {
+    return {
+      'Authorization': `Bearer ${this.ADMIN_TOKEN}`,
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate'
+    };
+  },
+
+  // 🔧 PUBLIC HEADERS  
+  getPublicHeaders() {
+    return {
+      'Cache-Control': 'no-cache, no-store, must-revalidate'
+    };
+  },
   /**
    * 🚀 NEW: Load COMPLETE live state for admin dashboard
    * Uses NEW /admin/matches/{id}/live-state endpoint
