@@ -44,8 +44,8 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     });
   }, [match?.id]); // Only when match ID changes
 
-  // 🎮 COMPLETE MARVEL RIVALS MAPS - ALL 8 MAPS
-  const marvelRivalsMaps = [
+  // 🎮 MARVEL RIVALS MAPS - Load from API
+  const [marvelRivalsMaps, setMarvelRivalsMaps] = useState([
     { name: 'Tokyo 2099: Shibuya Sky', mode: 'Convoy', icon: '🏙️' },
     { name: 'Klyntar: Symbiote Planet', mode: 'Domination', icon: '🖤' },
     { name: 'Asgard: Royal Palace', mode: 'Convergence', icon: '⚡' },
@@ -54,15 +54,42 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     { name: 'Sanctum Sanctorum: Astral Plane', mode: 'Convoy', icon: '🔮' },
     { name: 'Yggsgard: Yggdrasil', mode: 'Convergence', icon: '🌳' },
     { name: 'Midtown Manhattan: Oscorp Tower', mode: 'Convoy', icon: '🏢' }
-  ];
+  ]);
 
-  // ✅ COMPLETE MARVEL RIVALS HEROES BY ROLE
-  // ✅ MARVEL RIVALS HEROES - SYNC WITH API
+  // ✅ COMPLETE MARVEL RIVALS HEROES BY ROLE - Load from API
   const [marvelRivalsHeroes, setMarvelRivalsHeroes] = useState({
     Tank: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Thor', 'Venom'],
     Duelist: ['Black Widow', 'Hawkeye', 'Iron Man', 'Punisher', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Winter Soldier'],
     Support: ['Adam Warlock', 'Cloak & Dagger', 'Jeff the Land Shark', 'Luna Snow', 'Mantis', 'Rocket Raccoon', 'Storm']
   });
+
+  // 🚀 Load maps and heroes from API when component mounts
+  useEffect(() => {
+    const loadGameData = async () => {
+      try {
+        // Load maps
+        const mapsResponse = await MatchAPI.getAllMaps(api);
+        if (mapsResponse?.data) {
+          setMarvelRivalsMaps(mapsResponse.data);
+          console.log('✅ Maps loaded from API:', mapsResponse.data);
+        }
+
+        // Load heroes
+        const heroesResponse = await MatchAPI.getAllHeroes(api);
+        if (heroesResponse?.data) {
+          setMarvelRivalsHeroes(heroesResponse.data);
+          console.log('✅ Heroes loaded from API:', heroesResponse.data);
+        }
+      } catch (error) {
+        console.error('❌ Error loading game data from API:', error);
+        console.log('📝 Using fallback hardcoded data');
+      }
+    };
+
+    if (api) {
+      loadGameData();
+    }
+  }, [api]);
 
   // 🔄 LOAD HEROES FROM API TO SYNC WITH BACKEND
   useEffect(() => {
