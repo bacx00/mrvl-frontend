@@ -312,7 +312,7 @@ function HomePage({ navigateTo }) {
                       <div className="flex items-center space-x-3">
                         <div className="flex items-center space-x-2">
                           <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-                          <span className="font-bold text-sm">🔴 LIVE NOW</span>
+                          <span className="font-bold text-sm">LIVE NOW</span>
                         </div>
                         <div>
                           <h3 className="font-bold text-lg">{liveEventsBanner[0].name}</h3>
