@@ -341,62 +341,73 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     loadProductionScoreboard();
   }, [match?.id, isOpen, api]);
 
-  // 🏆 REAL-TIME SCORE UPDATE FUNCTIONS
+  // 🏆 REAL-TIME SCORE UPDATE FUNCTIONS - PRODUCTION READY
   const updateMapScore = async (teamNumber, increment = true) => {
     try {
       const currentMap = matchStats.currentMap;
       const scoreKey = teamNumber === 1 ? 'team1Score' : 'team2Score';
-      const mapWinsKey = teamNumber === 1 ? 'team1' : 'team2';
       
       setMatchStats(prev => {
         const newStats = { ...prev };
         const currentMapData = { ...newStats.maps[currentMap] };
         
-        // Update map score
+        // Update map score (rounds won on this map)
         const currentScore = currentMapData[scoreKey] || 0;
         const newMapScore = Math.max(0, currentScore + (increment ? 1 : -1));
         currentMapData[scoreKey] = newMapScore;
         
-        // Update overall match wins if map completed (first to 3 wins)
-        if (newMapScore >= 3 && currentMapData.status !== 'completed') {
-          newStats.mapWins[mapWinsKey] += 1;
-          currentMapData.status = 'completed';
+        // ✅ CHECK MAP COMPLETION: First to 3 rounds wins the map
+        const team1Rounds = currentMapData.team1Score || 0;
+        const team2Rounds = currentMapData.team2Score || 0;
+        
+        // Mark map as completed if either team reaches 3 rounds
+        if (team1Rounds >= 3 || team2Rounds >= 3) {
+          if (currentMapData.status !== 'completed') {
+            currentMapData.status = 'completed';
+            console.log(`🏆 MAP ${currentMap + 1} COMPLETED: ${team1Rounds}-${team2Rounds}`);
+          }
+        } else {
+          currentMapData.status = 'live'; // Map is ongoing
         }
         
         newStats.maps[currentMap] = currentMapData;
         
-        // 🚀 INSTANT UPDATE: Call new MatchAPI for real-time sync with UPDATED values
-        const currentMapScores = newStats.maps[currentMap];
+        // ✅ BACKEND AUTO-AGGREGATION: Send map completion data
         const scoreData = {
-          // Set overall match score to reflect current map leader
-          team1_score: (currentMapScores.team1Score || 0) > (currentMapScores.team2Score || 0) ? 1 : 0,
-          team2_score: (currentMapScores.team2Score || 0) > (currentMapScores.team1Score || 0) ? 1 : 0,
           map_scores: newStats.maps.map((map, index) => ({
             map_index: index,
-            team1_score: map.team1Score || 0,
-            team2_score: map.team2Score || 0,
-            status: map.status || 'upcoming'
+            team1_score: map.team1Score || 0,  // Rounds won on this map
+            team2_score: map.team2Score || 0,  // Rounds won on this map
+            status: map.status || 'upcoming'   // ✅ KEY: completion status
           }))
         };
         
-        // Call API asynchronously with correct values
+        console.log(`🎯 MAP SCORE UPDATE: Team ${teamNumber} ${increment ? '+1' : '-1'} (${newMapScore} rounds)`);
+        console.log(`🏆 Sending to backend for auto-aggregation:`, scoreData);
+        
+        // ✅ Call backend API for auto-aggregation (async)
         MatchAPI.updateScores(match.id, scoreData, api)
-          .then(() => {
-            console.log(`✅ Score updated: Team ${teamNumber} ${increment ? '+1' : '-1'}`);
-            console.log(`🔄 Updated matchStats:`, newStats);
+          .then((response) => {
+            console.log(`✅ Backend response:`, {
+              team1_overall: response.data?.team1_score,
+              team2_overall: response.data?.team2_score,
+              status: response.data?.status,
+              calculation: response.data?.calculation_method
+            });
             
-            // Trigger cross-tab sync AFTER successful API call
+            // ✅ Trigger cross-tab sync with backend-calculated data
             MatchAPI.triggerCrossTabSync('score-update', match.id, { 
               mapIndex: currentMap, 
               teamNumber, 
               increment,
-              scores: scoreData
+              backendResponse: response.data
             });
           })
-          .catch(error => console.error('❌ Error updating score:', error));
+          .catch(error => console.error('❌ Error updating live score:', error));
         
         return newStats;
       });
+      
       
     } catch (error) {
       console.error('❌ Error updating score:', error);
