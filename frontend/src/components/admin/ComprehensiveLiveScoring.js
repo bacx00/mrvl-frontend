@@ -354,41 +354,45 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         
         // Update map score
         const currentScore = currentMapData[scoreKey] || 0;
-        currentMapData[scoreKey] = Math.max(0, currentScore + (increment ? 1 : -1));
+        const newMapScore = Math.max(0, currentScore + (increment ? 1 : -1));
+        currentMapData[scoreKey] = newMapScore;
         
         // Update overall match wins if map completed
-        if (currentMapData[scoreKey] >= 3) { // Assuming first to 3 wins the map
+        if (newMapScore >= 3) { // Assuming first to 3 wins the map
           newStats.mapWins[mapWinsKey] += 1;
           currentMapData.status = 'completed';
         }
         
         newStats.maps[currentMap] = currentMapData;
+        
+        // 🚀 INSTANT UPDATE: Call new MatchAPI for real-time sync with UPDATED values
+        const scoreData = {
+          team1_score: newStats.mapWins.team1,
+          team2_score: newStats.mapWins.team2,
+          map_scores: newStats.maps.map((map, index) => ({
+            map_index: index,
+            team1_score: map.team1Score || 0,
+            team2_score: map.team2Score || 0,
+            status: map.status || 'upcoming'
+          }))
+        };
+        
+        // Call API asynchronously with correct values
+        MatchAPI.updateScores(match.id, scoreData, api)
+          .then(() => {
+            console.log(`✅ Score updated: Team ${teamNumber} ${increment ? '+1' : '-1'}`);
+            // Trigger cross-tab sync AFTER successful API call
+            MatchAPI.triggerCrossTabSync('score-update', match.id, { 
+              mapIndex: currentMap, 
+              teamNumber, 
+              increment,
+              scores: scoreData
+            });
+          })
+          .catch(error => console.error('❌ Error updating score:', error));
+        
         return newStats;
       });
-      
-      // 🚀 INSTANT UPDATE: Call new MatchAPI for real-time sync
-      const scoreData = {
-        team1_score: matchStats.mapWins.team1,
-        team2_score: matchStats.mapWins.team2,
-        map_scores: matchStats.maps.map((map, index) => ({
-          map_index: index,
-          team1_score: map.team1Score || 0,
-          team2_score: map.team2Score || 0,
-          status: map.status || 'upcoming'
-        }))
-      };
-      
-      await MatchAPI.updateScores(match.id, scoreData, api);
-      
-      // Trigger cross-tab sync
-      MatchAPI.triggerCrossTabSync('score-update', match.id, { 
-        mapIndex: currentMap, 
-        teamNumber, 
-        increment,
-        scores: scoreData
-      });
-      
-      console.log(`✅ Score updated: Team ${teamNumber} ${increment ? '+1' : '-1'}`);
       
     } catch (error) {
       console.error('❌ Error updating score:', error);
