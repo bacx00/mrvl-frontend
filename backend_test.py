@@ -33,7 +33,7 @@ class MarvelRivalsAPITester:
         if self.debug:
             print(f"DEBUG: {message}")
 
-    def run_test(self, name, method, endpoint, expected_status, data=None, auth=False, admin_auth=False, with_api_prefix=True):
+    def run_test(self, name, method, endpoint, expected_status, data=None, auth=False, admin_auth=False, with_api_prefix=True, check_headers=False):
         """Run a single API test"""
         url = f"{self.api_url}/{endpoint}" if with_api_prefix else f"{self.base_url}/{endpoint}"
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
@@ -43,10 +43,16 @@ class MarvelRivalsAPITester:
         elif admin_auth and self.admin_token:
             headers['Authorization'] = f'Bearer {self.admin_token}'
         
+        # Add cache-busting headers for GET requests
+        if method == 'GET' and check_headers:
+            headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            headers['Pragma'] = 'no-cache'
+        
         self.tests_run += 1
         print(f"\n🔍 Testing {name}...")
         self.log(f"URL: {url}")
         self.log(f"Method: {method}")
+        self.log(f"Headers: {headers}")
         if data:
             self.log(f"Data: {json.dumps(data)}")
         
@@ -61,6 +67,7 @@ class MarvelRivalsAPITester:
                 response = requests.delete(url, headers=headers)
             
             self.log(f"Status Code: {response.status_code}")
+            self.log(f"Response Headers: {response.headers}")
             
             # Check if response is JSON
             is_json = False
@@ -93,7 +100,7 @@ class MarvelRivalsAPITester:
                     "response": response_data if is_json else response.text[:200]
                 })
             
-            return success, response_data if is_json else {}
+            return success, response_data if is_json else {}, response.headers
         
         except Exception as e:
             print(f"❌ Failed - Error: {str(e)}")
@@ -102,7 +109,7 @@ class MarvelRivalsAPITester:
                 "url": url,
                 "error": str(e)
             })
-            return False, {}
+            return False, {}, {}
 
     def login(self, email="jhonny@ar-mediia.com", password="password123"):
         """Login to get authentication token"""
