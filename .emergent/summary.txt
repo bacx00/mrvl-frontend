@@ -1,68 +1,65 @@
 <analysis>
-The trajectory outlines the transition of a Marvel Rivals esports platform from an AI engineer to a human expert. The initial AI engineer successfully built the app from 0 to 1, and the current task is to summarize that work for future development.
+The AI engineer's trajectory chronicles the development of a Marvel Rivals esports platform, transitioning from initial MVP build to feature enhancements and critical bug fixes. Initially, the focus was on resolving frontend data display and input issues, particularly with player statistics ( in ) and match data persistence ( in ). A significant turning point involved the user providing comprehensive backend API updates, which clarified that many frontend data synchronization problems stemmed from stale or incorrectly structured data returned by the *old* backend.
 
-The previous AI engineer initially focused on frontend fixes for live match input and display, addressing state management and data synchronization in React components like , , and . A critical early finding was the  using the wrong API endpoint and  failing to send . After several iterations where the AI engineer reported build successful but the user reported same issues, a major breakthrough occurred: the AI engineer provided comprehensive backend fixes to the user, including new endpoints for status, team composition, current map, timer, scores, and player statistics, and database schema updates. This backend transformation was crucial as it addressed the root cause of data persistence issues, particularly  and player hero compositions.
-
-Post-backend updates, the current AI engineer integrated these new backend capabilities into the frontend, focusing on . While initial tests showed success with BO1 matches and basic data flow, subsequent user feedback revealed persistent or new issues across all major components, particularly  still failing to save player stats due to  player IDs, and  having UI/data synchronization issues. The trajectory ends with the current AI engineer acknowledging the  issue is still critical, indicating the need for further debugging despite previous attempts to fix it.
+Following the backend update, the AI engineer integrated new concepts like  for cross-tab synchronization and rigorously debugged frontend components (, , ) to align with the new data expectations. Key fixes included hero loading,  edit errors, timer synchronization across tabs, and addressing React Hooks issues. The trajectory concludes with the AI engineer acknowledging a  declaration build error, poised to integrate the *new, consistent backend APIs* which the user explicitly stated resolve data consistency issues.
 </analysis>
 
 <product_requirements>
-The goal is to deliver a fully functional Marvel Rivals esports platform with accurate live match input and display. The frontend (React) must integrate seamlessly with the existing Laravel PHP backend (read-only for frontend engineer, but backend API can be updated by user/previous AI).
-
-**Key Features Required:**
-*   **Match Creation & Persistence ():** Admins must create 6v6 matches, selecting teams, game modes, maps, and specific Marvel Rivals heroes (Vanguard, Duelist, Strategist). All selections (especially hero compositions and map details via ) must persist to the backend and be retrieved accurately. The 'event' field should be optional, and the status UI (, ) must update correctly.
-*   **Live Match Administration ():** Real-time updates of player statistics (kills, deaths, assists, damage, healing, blocked damage) and hero changes without state loss or resets. Player images and country flags must display correctly. The interface needs to be compact.
-*   **Public Match Display ():** Accurate display of all match details: map name, game mode, heroes, player names, player country flags. Real-time synchronization with admin updates, including timer, match status (, ), and scores. Must include Stream Watch and VOD buttons, and player rows should link to player profiles.
-*   **Image Display:** Team logos, player avatars, event banners, live banners, and article images must be fetched and displayed correctly with proper fallbacks and fading effects for banners.
-*   **Data Consistency:** Ensure seamless, fully synchronized data flow across  → Backend →  → .
-*   **UI Polish:** Remove unnecessary icons from various pages (Events, Home).
+The overarching goal is a fully functional Marvel Rivals esports platform enabling accurate live match input and display. Key features include:
+*   **Match Creation & Persistence ():** Admins create 6v6 matches, specifying teams, game modes, maps, and categorized Marvel Rivals heroes. All  (hero compositions, map details) must persist and be accurately retrieved. The 'event' field is optional, and match status (, ) must update.
+*   **Live Match Administration ():** Real-time updates for player statistics (kills, deaths, assists, damage, healing, blocked damage) and hero changes without state loss. Player images and country flags must display correctly with a compact interface.
+*   **Public Match Display ():** Accurate display of match details: map name, game mode, heroes, player names, country flags. Real-time synchronization for timer, match status (, ), and scores. Includes Stream Watch and VOD buttons, with player rows linking to profiles.
+*   **Image Display:** Correct display of team logos, player avatars, event/live banners, and news article images, with proper fallbacks and fading effects for banners.
+*   **Data Consistency:** Seamless, fully synchronized data flow from  to Backend, then to  and . This was explicitly confirmed by the user via a new backend API that guarantees instant data consistency.
+*   **UI Polish:** Removal of unnecessary icons from Events and Home pages.
 </product_requirements>
 
 <key_technical_concepts>
--   **Full-stack Development:** React (Frontend), Laravel 11 (Backend), MySQL.
--   **API Integration:** RESTful APIs, Bearer token authentication, Data Transformation Layer (MatchAPI.js).
--   **Frontend State Management:** React , , Custom DOM Events for real-time sync.
+-   **Full-stack Development:** React (Frontend) and Laravel 11 (Backend).
+-   **API Integration:** RESTful APIs, Bearer token authentication, Data Transformation Layer ().
+-   **Frontend State Management:** React Hooks (, ) and Custom DOM Events.
+-   **Cross-Tab Communication:**  API for synchronization.
 -   **Component-Based Design:** Modular React components.
--   **UI/UX:** Tailwind CSS for styling, responsive design.
+-   **UI/UX:** Tailwind CSS for styling.
 </key_technical_concepts>
 
 <code_architecture>
 
 
-**Key Files and Their Importance:**
+-   ****: Stores , crucial for frontend API calls. Was previously fixed to point to the correct staging domain.
+-   ****: Centralizes all match-related frontend-backend communication. It was extensively modified for new backend live scoring endpoints and data transformations. It requires further updates to utilize the *new* backend admin endpoints for guaranteed data consistency (Chat 294).
+-   ****: Handles match creation and editing. It was updated to correctly send  (hero compositions), ensure heroes are categorized by role, and pre-fill selected heroes. A fix was implemented to prevent  errors when editing match status ().
+-   ****: The admin interface for live match updates. Manages real-time stats, hero changes, and timer events. Extensive modifications were made to resolve player ID mapping issues (initially believed fixed, then backend confirmed as source), remove duplicate UI elements, and implement cross-tab synchronization using  for timer, scores, and hero updates. Currently has a  variable declaration build error.
+-   ****: Public-facing match detail view. Displays scores, players, heroes, map, mode, and match status. Updated to use the correct  endpoint, fix player name display, ensure timer sync (now via ), correct button visibility (e.g., Watch Stream), and resolve React Hooks nesting issues.
+-   ****: Provides utility functions for image URLs, like , which was verified to be working.
+-   **Backend files (Laravel)**: While not directly modified by the AI engineer, the trajectory describes critical updates to  (Model), , and  to support new live-scoring endpoints with guaranteed instant data consistency. These backend changes are pivotal for the frontend's correct functioning.
 
-*   ****: Crucial for configuring the . Was fixed to point to the correct staging domain.
-*   ****: This file is central to all frontend-backend communication for match-related data. It was heavily modified to include new methods for interacting with the 7 new backend live scoring endpoints (e.g., , , , , , , ). It also contains critical data transformation logic to map backend responses to frontend state, and was subject to numerous syntax fixes and duplicate method removals. Its  method currently exhibits a critical  issue.
-*   ****: Handles the creation and editing of matches. Important for correctly sending  (hero compositions, map details) to the backend. Was updated to ensure heroes are categorized by role and to pre-fill previously selected heroes when editing.
-*   ****: The admin interface for live match updates. Critical for real-time stats and hero changes. It fetches scoreboard data, dispatches timer events, and saves player stats. It has been a constant source of issues related to player ID mapping, excessive re-rendering, and duplicate UI elements. Its core functionality is still broken due to  errors.
-*   ****: The public-facing match detail view. It consumes data from the backend to display scores, players, heroes, map, mode, and match status. It was updated to use the correct  endpoint, fix player name display, ensure timer sync, and correct button placement/visibility.
-*   ****: Contains utility functions for handling image URLs, specifically . Verified to be correctly processing team logos.
-*   **Backend files (Laravel)**: Though not directly modifiable by the AI engineer, the descriptions in the trajectory indicate extensive updates to  (Model),  (for  method logic), and new routes for live-scoring endpoints ( equivalent). These changes are critical for the frontend to function correctly.
 </code_architecture>
 
 <pending_tasks>
--   **ComprehensiveLiveScoring Player Stat Updates:** Fix  causing 404 errors when updating player stats and hero changes. Resolve excessive re-rendering and component resets. Fix player image display.
--   **MatchDetailPage Display Issues:** Fix player names not showing, wrong player click navigation, and ensure full timer/status sync.
--   **Forums Data Display:** Resolve new categories not updating and backend API error loading forum data.
+-   **Forums Data Display:** New categories not updating and backend API error loading forum data.
 -   **Image Display across pages:** Fix article images not displaying. Ensure faded background images for event/live banners if not already working.
 -   **UI Cleanup:** Remove unnecessary icons from Events and Home pages.
 -   **Events Page Data:** Fix incorrect team/event data displayed.
+-   **Backend API Integration (Main Task):** Update  to utilize the *new* backend admin endpoints for player stats, team composition, and timer, as provided in Chat Message 294, to fully leverage instant data consistency and resolve persistent scoreboard/hero synchronization issues.
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer was deep in the process of debugging and fixing a series of critical frontend issues identified by the user after a significant backend transformation (performed by the user/previous AI engineer).
+Immediately prior to this summary, the AI engineer was focused on resolving cross-tab synchronization issues for the live match updates.
 
-The previous phase focused on making the core match functionality work. This involved:
-1.  **Fixing Player ID Mapping:** The AI engineer attempted to fix an issue where  was using  instead of , leading to  player IDs being sent to the backend and resulting in 404 errors for player stat updates.
-2.  **UI/UX Enhancements for MatchDetailPage:** Correcting the display of player names, removing duplicate Watch VOD and Place Bet buttons, and adding the missing Watch Stream button. The game mode display was also added.
-3.  **Timer Synchronization:** Ensuring the live timer from  correctly appeared and synced on .
-4.  **MatchForm Hero Categorization & Pre-filling:** Ensuring heroes were displayed by their roles (Vanguard, Duelist, Strategist) instead of all and that previously selected heroes were pre-filled when editing a match.
-5.  **API Cleanup:** Removing duplicate methods within  to streamline the codebase.
-6.  **Image Backgrounds & Icon Cleanup:** Attempting to implement faded background images for event/live banners and remove unnecessary icons from Events and Home pages.
+The previous work involved:
+1.  **Debugging  errors:** Initially thought to be a frontend mapping issue in  and , which was partially addressed.
+2.  **Fixing Hero Loading and Display:** Resolved issues in  and  where heroes were not populating in dropdowns or were displaying outdated names like Phoenix. This involved using React state for heroes and implementing a  fallback function.
+3.  **Resolving MatchForm Edit Errors:** Fixed  when editing matches by adding null checks.
+4.  **Implementing Cross-Tab Timer Sync:** Initially attempted with , which failed across tabs. It was then successfully re-implemented using  events to ensure the timer in  synced instantly with actions in .
+5.  **Fixing React Hooks Errors:** Resolved a  nesting issue in  that caused build failures.
+6.  **Implementing Cross-Tab Score/Hero Sync:** Extended the  approach to synchronize scoreboard and hero changes between  (admin) and  (public). This was confirmed to be working at the  event level.
 
-The AI engineer performed several builds, fixed various syntax errors (  and IIFE issues), and believed many issues were resolved. However, the last received message from the user (Chat Message 393-394) clearly indicates that the **critical  issue in  is *still unresolved***, causing player stat updates to fail with 404 errors (). This directly contradicts the AI engineer's previous assessment of the player ID mapping being fixed. This is the immediate, unresolved problem.
+The immediate problem identified by the user after the cross-tab sync implementation was that despite the  events triggering, the  was still showing stale scoreboard and hero data. This led to the crucial realization (confirmed by the user providing new backend API documentation) that the backend itself was responsible for the data consistency, and the frontend was likely still calling outdated endpoints.
+
+The last action in the trajectory (Chat Message 301) indicates a new build error: . This is the very immediate task being addressed.
 </current_work>
 
 <optional_next_step>
-Re-investigate and definitively fix the  issue in  that's causing 404 errors for player stat updates.
+Fix the  in .
 </optional_next_step>
