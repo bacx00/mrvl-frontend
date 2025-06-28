@@ -56,6 +56,7 @@ export const MatchAPI = {
     localStorage.setItem('mrvl-match-sync', JSON.stringify(syncData));
     console.log('🔄 Cross-tab sync triggered:', syncData);
   },
+
   /**
    * 🚀 NEW: Load COMPLETE live state for admin dashboard
    * Uses NEW /admin/matches/{id}/live-state endpoint
@@ -110,6 +111,224 @@ export const MatchAPI = {
       
     } catch (error) {
       console.error('❌ MatchAPI: Error loading live state:', error);
+      throw error;
+    }
+  },
+
+  // 🚀 NEW ADMIN ENDPOINTS - INSTANT DATA CONSISTENCY
+
+  /**
+   * 🎮 Update match status in real-time
+   * Uses PUT /api/admin/matches/{id}/status
+   */
+  async updateMatchStatus(matchId, status, apiHelper) {
+    try {
+      console.log('🎮 MatchAPI: Updating match status:', { matchId, status });
+      
+      const response = await apiHelper.put(`/admin/matches/${matchId}/status`, {
+        status: status // 'upcoming', 'live', 'paused', 'completed', 'cancelled'
+      });
+      
+      // Trigger cross-tab sync
+      this.triggerCrossTabSync('status-update', matchId, { status });
+      
+      console.log('✅ Match status updated:', response);
+      return response;
+      
+    } catch (error) {
+      console.error('❌ MatchAPI: Error updating match status:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 🦸 Update team composition (hero changes) in real-time
+   * Uses PUT /api/admin/matches/{id}/team-composition
+   */
+  async updateTeamComposition(matchId, mapIndex, compositions, apiHelper) {
+    try {
+      console.log('🦸 MatchAPI: Updating team composition:', { matchId, mapIndex, compositions });
+      
+      const response = await apiHelper.put(`/admin/matches/${matchId}/team-composition`, {
+        map_index: mapIndex,
+        team1_composition: compositions.team1_composition,
+        team2_composition: compositions.team2_composition
+      });
+      
+      // Trigger cross-tab sync
+      this.triggerCrossTabSync('composition-update', matchId, { mapIndex, compositions });
+      
+      console.log('✅ Team composition updated:', response);
+      return response;
+      
+    } catch (error) {
+      console.error('❌ MatchAPI: Error updating team composition:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 🗺️ Update current map and mode
+   * Uses PUT /api/admin/matches/{id}/current-map
+   */
+  async updateCurrentMap(matchId, mapData, apiHelper) {
+    try {
+      console.log('🗺️ MatchAPI: Updating current map:', { matchId, mapData });
+      
+      const response = await apiHelper.put(`/admin/matches/${matchId}/current-map`, {
+        current_map: mapData.mapName,
+        current_mode: mapData.mode,
+        map_index: mapData.mapIndex
+      });
+      
+      // Trigger cross-tab sync
+      this.triggerCrossTabSync('map-update', matchId, mapData);
+      
+      console.log('✅ Current map updated:', response);
+      return response;
+      
+    } catch (error) {
+      console.error('❌ MatchAPI: Error updating current map:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * ⏱️ Control timer (start, pause, resume, stop, sync)
+   * Uses PUT /api/admin/matches/{id}/timer
+   */
+  async controlTimer(matchId, action, elapsed = 0, apiHelper) {
+    try {
+      console.log('⏱️ MatchAPI: Controlling timer:', { matchId, action, elapsed });
+      
+      const response = await apiHelper.put(`/admin/matches/${matchId}/timer`, {
+        action: action, // 'start', 'pause', 'resume', 'stop', 'sync'
+        elapsed_time: elapsed, // seconds
+        round_time: 0,
+        phase: 'round' // 'warmup', 'round', 'overtime', 'break'
+      });
+      
+      // Trigger cross-tab sync
+      this.triggerCrossTabSync('timer-update', matchId, { action, elapsed });
+      
+      console.log('✅ Timer controlled:', response);
+      return response;
+      
+    } catch (error) {
+      console.error('❌ MatchAPI: Error controlling timer:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 🏆 Update match and map scores
+   * Uses PUT /api/admin/matches/{id}/scores
+   */
+  async updateScores(matchId, scoreData, apiHelper) {
+    try {
+      console.log('🏆 MatchAPI: Updating scores:', { matchId, scoreData });
+      
+      const response = await apiHelper.put(`/admin/matches/${matchId}/scores`, scoreData);
+      
+      // Trigger cross-tab sync
+      this.triggerCrossTabSync('score-update', matchId, scoreData);
+      
+      console.log('✅ Scores updated:', response);
+      return response;
+      
+    } catch (error) {
+      console.error('❌ MatchAPI: Error updating scores:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 📊 Update player statistics
+   * Uses PUT /api/admin/matches/{id}/player-stats/{playerId}
+   */
+  async updatePlayerStats(matchId, playerId, stats, apiHelper) {
+    try {
+      console.log('📊 MatchAPI: Updating player stats:', { matchId, playerId, stats });
+      
+      const statsPayload = {
+        eliminations: stats.eliminations || 0,
+        deaths: stats.deaths || 0,
+        assists: stats.assists || 0,
+        damage: stats.damage || 0,
+        healing: stats.healing || 0,
+        damage_blocked: stats.damageBlocked || 0,
+        ultimate_usage: stats.ultimateUsage || 0,
+        objective_time: stats.objectiveTime || 0,
+        hero_played: stats.hero
+      };
+
+      const response = await apiHelper.put(`/admin/matches/${matchId}/player-stats/${playerId}`, statsPayload);
+      
+      // Trigger cross-tab sync
+      this.triggerCrossTabSync('stats-update', matchId, { playerId, stats });
+      
+      console.log('✅ Player stats updated:', response);
+      return response;
+      
+    } catch (error) {
+      console.error('❌ MatchAPI: Error updating player stats:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 🎮 Get all Marvel Rivals heroes (29 total)
+   * Uses GET /api/game-data/all-heroes
+   */
+  async getAllHeroes(apiHelper) {
+    try {
+      console.log('🦸 MatchAPI: Loading all Marvel Rivals heroes');
+      
+      const response = await apiHelper.get('/game-data/all-heroes');
+      
+      console.log('✅ Heroes loaded:', response);
+      return response;
+      
+    } catch (error) {
+      console.error('❌ MatchAPI: Error loading heroes:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 🗺️ Get all Marvel Rivals maps (10 total)
+   * Uses GET /api/game-data/maps
+   */
+  async getAllMaps(apiHelper) {
+    try {
+      console.log('🗺️ MatchAPI: Loading all Marvel Rivals maps');
+      
+      const response = await apiHelper.get('/game-data/maps');
+      
+      console.log('✅ Maps loaded:', response);
+      return response;
+      
+    } catch (error) {
+      console.error('❌ MatchAPI: Error loading maps:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 🎯 Get all game modes (4 total)
+   * Uses GET /api/game-data/modes
+   */
+  async getAllModes(apiHelper) {
+    try {
+      console.log('🎯 MatchAPI: Loading all game modes');
+      
+      const response = await apiHelper.get('/game-data/modes');
+      
+      console.log('✅ Modes loaded:', response);
+      return response;
+      
+    } catch (error) {
+      console.error('❌ MatchAPI: Error loading modes:', error);
       throw error;
     }
   },
