@@ -357,8 +357,8 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         const newMapScore = Math.max(0, currentScore + (increment ? 1 : -1));
         currentMapData[scoreKey] = newMapScore;
         
-        // Update overall match wins if map completed
-        if (newMapScore >= 3) { // Assuming first to 3 wins the map
+        // Update overall match wins if map completed (first to 3 wins)
+        if (newMapScore >= 3 && currentMapData.status !== 'completed') {
           newStats.mapWins[mapWinsKey] += 1;
           currentMapData.status = 'completed';
         }
@@ -367,8 +367,8 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         
         // 🚀 INSTANT UPDATE: Call new MatchAPI for real-time sync with UPDATED values
         const scoreData = {
-          team1_score: newStats.mapWins.team1,
-          team2_score: newStats.mapWins.team2,
+          team1_score: newStats.mapWins.team1, // Overall match score
+          team2_score: newStats.mapWins.team2, // Overall match score
           map_scores: newStats.maps.map((map, index) => ({
             map_index: index,
             team1_score: map.team1Score || 0,
