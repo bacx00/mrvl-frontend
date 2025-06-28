@@ -301,7 +301,7 @@ function EventsPage({ navigateTo }) {
                       {/* Additional Info Row */}
                       <div className="mt-3 flex items-center justify-between text-xs">
                         <div className="text-gray-500 dark:text-gray-500">
-                          <span>🏆 Format: {event.format}</span>
+                          <span>Format: {event.format}</span>
                         </div>
                         <div className="text-gray-500 dark:text-gray-500">
                           <span>📊 Stage: {event.stage || 'Main Event'}</span>
