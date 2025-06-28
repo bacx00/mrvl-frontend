@@ -91,34 +91,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     }
   }, [api]);
 
-  // 🚀 Load maps and heroes from API when component mounts
-  useEffect(() => {
-    const loadGameData = async () => {
-      try {
-        // Load maps
-        const mapsResponse = await MatchAPI.getAllMaps(api);
-        if (mapsResponse?.data) {
-          setMarvelRivalsMaps(mapsResponse.data);
-          console.log('✅ Maps loaded from API:', mapsResponse.data);
-        }
-
-        // Load heroes
-        const heroesResponse = await MatchAPI.getAllHeroes(api);
-        if (heroesResponse?.data) {
-          setMarvelRivalsHeroes(heroesResponse.data);
-          console.log('✅ Heroes loaded from API:', heroesResponse.data);
-        }
-      } catch (error) {
-        console.error('❌ Error loading game data from API:', error);
-        console.log('📝 Using fallback hardcoded data');
-      }
-    };
-
-    if (api) {
-      loadGameData();
-    }
-  }, [api]);
-
   // 🔄 LOAD HEROES FROM API TO SYNC WITH BACKEND
   useEffect(() => {
     const loadHeroes = async () => {
