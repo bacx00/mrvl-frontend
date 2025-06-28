@@ -307,6 +307,27 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         
         console.log(`✅ Hero changed: Player ${players[playerIndex].name} is now ${hero}`);
         
+        // 🚀 UPDATE TEAM COMPOSITION via new MatchAPI for instant consistency
+        const updatedCompositions = {
+          team1_composition: updatedMaps[mapIndex].team1Players?.map(player => ({
+            player_id: player.playerId || player.id,
+            player_name: player.name,
+            hero: player.hero,
+            role: player.role
+          })) || [],
+          team2_composition: updatedMaps[mapIndex].team2Players?.map(player => ({
+            player_id: player.playerId || player.id,
+            player_name: player.name,
+            hero: player.hero,
+            role: player.role
+          })) || []
+        };
+        
+        // Call the new MatchAPI method asynchronously (don't block UI)
+        MatchAPI.updateTeamComposition(match.id, mapIndex, updatedCompositions, api)
+          .then(() => console.log('✅ Team composition updated via MatchAPI'))
+          .catch(error => console.error('❌ Error updating team composition:', error));
+        
         // 🔥 Dispatch real-time sync event
         window.dispatchEvent(new CustomEvent('mrvl-hero-updated', {
           detail: {
