@@ -242,64 +242,6 @@ function MatchDetailPage({ matchId, navigateTo }) {
           console.error('❌ Error parsing timer sync data:', error);
         }
       }
-      
-      // 🚀 CROSS-TAB SYNC: Listen for match/score/hero updates
-      if (event.key === 'mrvl-match-sync' && event.newValue) {
-        try {
-          const matchData = JSON.parse(event.newValue);
-          const currentMatchId = getMatchId();
-          console.log('🔄 Cross-tab match sync received:', {
-            eventMatchId: matchData.matchId,
-            currentMatchId: currentMatchId,
-            type: matchData.type,
-            action: matchData.action,
-            playersUpdated: matchData.playersUpdated,
-            matches: matchData.matchId == currentMatchId
-          });
-          
-          if (matchData.matchId == currentMatchId) {
-            console.log('⚽ MatchDetailPage: Cross-tab scoreboard sync - triggering refresh');
-            console.log('📊 Scoreboard update details:', {
-              scores: matchData.scores,
-              playersUpdated: matchData.playersUpdated,
-              refreshTriggered: true
-            });
-            // Trigger a refresh by updating the refresh trigger
-            setRefreshTrigger(prev => prev + 1);
-          }
-        } catch (error) {
-          console.error('❌ Error parsing match sync data:', error);
-        }
-      }
-      
-      // 🚀 CROSS-TAB SYNC: Listen for match/score/hero updates
-      if (event.key === 'mrvl-match-sync' && event.newValue) {
-        try {
-          const matchData = JSON.parse(event.newValue);
-          const currentMatchId = getMatchId();
-          console.log('🔄 Cross-tab match sync received:', {
-            eventMatchId: matchData.matchId,
-            currentMatchId: currentMatchId,
-            type: matchData.type,
-            action: matchData.action,
-            playersUpdated: matchData.playersUpdated,
-            matches: matchData.matchId == currentMatchId
-          });
-          
-          if (matchData.matchId == currentMatchId) {
-            console.log('⚽ MatchDetailPage: Cross-tab scoreboard sync - triggering refresh');
-            console.log('📊 Scoreboard update details:', {
-              scores: matchData.scores,
-              playersUpdated: matchData.playersUpdated,
-              refreshTriggered: true
-            });
-            // Trigger a refresh by updating the refresh trigger
-            setRefreshTrigger(prev => prev + 1);
-          }
-        } catch (error) {
-          console.error('❌ Error parsing match sync data:', error);
-        }
-      }
     };
     
     window.addEventListener('mrvl-timer-updated', handleTimerUpdate);
