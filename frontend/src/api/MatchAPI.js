@@ -54,7 +54,12 @@ export const MatchAPI = {
       ...additionalData
     };
     localStorage.setItem('mrvl-match-sync', JSON.stringify(syncData));
-    console.log('🔄 Cross-tab sync triggered:', syncData);
+    console.log('🔄 ADMIN: Cross-tab sync triggered for:', { type, matchId, syncData });
+    
+    // Also dispatch a custom event as fallback
+    window.dispatchEvent(new CustomEvent('mrvl-match-updated', {
+      detail: syncData
+    }));
   },
 
   /**
