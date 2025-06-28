@@ -509,7 +509,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
         <div className="flex items-center justify-center space-x-8">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">{match.team1?.name}</h2>
-            <div className="text-6xl font-bold text-blue-600 dark:text-blue-400">{getOverallScores(match).team1}</div>
+            <div className="text-6xl font-bold text-blue-600 dark:text-blue-400">{match.team1_score || 0}</div>
           </div>
           
           <div className="text-center">
