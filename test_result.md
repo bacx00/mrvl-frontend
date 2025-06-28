@@ -321,4 +321,24 @@
 - **Frontend Issue Analysis**: The frontend issue where `playerId` is undefined when trying to save player stats is likely due to incorrect data mapping in the frontend. The player IDs are properly included in the scoreboard response, but the frontend may not be extracting them correctly.
 - **Recommendation**: Fix the frontend data mapping to correctly extract player IDs from the scoreboard response. The player IDs are available in the `teams.team1.players[].id`, `teams.team2.players[].id`, `maps[].team1_composition[].player_id`, and `maps[].team2_composition[].player_id` fields.
 
+### **Testing Agent (June 28, 2025):**
+- **Marvel Rivals MatchAPI.js Integration Testing**: Attempted to test the new MatchAPI.js endpoints for instant data consistency.
+- **Backend Service Issue**: All API endpoints are returning 502 Bad Gateway errors. The backend service is failing to start due to a missing module: `ModuleNotFoundError: No module named 'backend'`.
+- **Configuration Issue**: The supervisor configuration is looking for a non-existent module path: `backend.server:app`. The expected `/app/backend/` directory does not exist.
+- **Frontend Status**: The frontend is running correctly but cannot connect to the backend API endpoints.
+- **Testing Limitations**: Cannot test any of the new MatchAPI.js endpoints due to the backend service failure.
+- **Endpoints Attempted to Test**:
+  - PUT /api/admin/matches/{id}/status - for match status updates
+  - PUT /api/admin/matches/{id}/team-composition - for hero changes
+  - PUT /api/admin/matches/{id}/current-map - for map/mode updates
+  - PUT /api/admin/matches/{id}/timer - for timer control
+  - PUT /api/admin/matches/{id}/scores - for score updates
+  - PUT /api/admin/matches/{id}/player-stats/{playerId} - for player statistics
+  - GET /api/admin/matches/{id}/live-state - for complete live state
+  - GET /api/game-data/all-heroes - for Marvel Rivals heroes
+  - GET /api/game-data/maps - for maps
+  - GET /api/game-data/modes - for game modes
+  - GET /api/matches/{id}/scoreboard - public endpoint with cache-busting headers
+- **Recommendation**: Fix the backend directory structure and module path before proceeding with further testing. The backend directory should be created at `/app/backend/` with a `server.py` file that contains the FastAPI application.
+
 **See detailed testing results in /app/marvel_rivals_live_scoring_test_results.md**
