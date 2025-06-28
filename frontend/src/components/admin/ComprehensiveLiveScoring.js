@@ -445,6 +445,26 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       
       console.log('✅ ALL PLAYER STATS SAVED TO PRODUCTION API');
       
+      // 🏆 UPDATE SCORES using new MatchAPI method for instant consistency
+      try {
+        console.log('🏆 Updating match scores via new MatchAPI...');
+        const scoreData = {
+          team1_score: matchStats.mapWins.team1,
+          team2_score: matchStats.mapWins.team2,
+          map_scores: matchStats.maps.map((map, index) => ({
+            map_index: index,
+            team1_score: map.team1Score || 0,
+            team2_score: map.team2Score || 0,
+            status: map.status || 'upcoming'
+          }))
+        };
+        
+        await MatchAPI.updateScores(match.id, scoreData, api);
+        console.log('✅ SCORES UPDATED via new MatchAPI method');
+      } catch (scoreError) {
+        console.error('❌ Error updating scores:', scoreError);
+      }
+      
       // 📺 Update viewer count if available
       if (match.viewers) {
         try {
