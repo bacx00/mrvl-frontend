@@ -2,6 +2,7 @@
  * 🎯 MARVEL RIVALS - PRODUCTION BACKEND INTEGRATION
  * ALIGNED WITH COMPLETE API DOCUMENTATION
  * 6v6 FORMAT - 12 PLAYERS TOTAL
+ * 🚀 NEW: Instant Data Consistency with Admin Live Scoring APIs
  */
 
 /**
@@ -21,7 +22,7 @@ function findPlayerCountry(playerId, playerList = []) {
 
 /**
  * 🎮 PRODUCTION MATCH API - BACKEND ALIGNED
- * Uses EXACT endpoints from API documentation
+ * Uses EXACT endpoints from API documentation with instant data consistency
  */
 export const MatchAPI = {
   // 🔐 ADMIN CONFIGURATION
@@ -39,8 +40,21 @@ export const MatchAPI = {
   // 🔧 PUBLIC HEADERS  
   getPublicHeaders() {
     return {
-      'Cache-Control': 'no-cache, no-store, must-revalidate'
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache'
     };
+  },
+
+  // 🚀 CROSS-TAB SYNC HELPER
+  triggerCrossTabSync(type, matchId, additionalData = {}) {
+    const syncData = {
+      matchId: matchId,
+      timestamp: Date.now(),
+      type: type,
+      ...additionalData
+    };
+    localStorage.setItem('mrvl-match-sync', JSON.stringify(syncData));
+    console.log('🔄 Cross-tab sync triggered:', syncData);
   },
   /**
    * 🚀 NEW: Load COMPLETE live state for admin dashboard
