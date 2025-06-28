@@ -936,6 +936,70 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                 </div>
               </div>
 
+              {/* SCOREBOARD CONTROLS */}
+              <div className="bg-gray-700 rounded-lg p-4 mb-6">
+                <h3 className="text-lg font-bold text-white text-center mb-4">🏆 LIVE SCOREBOARD</h3>
+                
+                {/* Overall Match Score */}
+                <div className="flex items-center justify-center space-x-8 mb-6">
+                  <div className="text-center">
+                    <div className="text-blue-400 font-bold text-lg">{match.team1?.name || 'Team1'}</div>
+                    <div className="text-3xl font-bold text-white">{matchStats.mapWins.team1}</div>
+                  </div>
+                  <div className="text-gray-400 text-xl">vs</div>
+                  <div className="text-center">
+                    <div className="text-red-400 font-bold text-lg">{match.team2?.name || 'Team2'}</div>
+                    <div className="text-3xl font-bold text-white">{matchStats.mapWins.team2}</div>
+                  </div>
+                </div>
+                
+                {/* Current Map Score with Controls */}
+                <div className="border-t border-gray-600 pt-4">
+                  <div className="text-center text-gray-300 text-sm mb-2">Map {matchStats.currentMap + 1} Score</div>
+                  <div className="flex items-center justify-center space-x-6">
+                    {/* Team 1 Score Controls */}
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => updateMapScore(1, false)}
+                        className="w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded-full text-lg font-bold"
+                      >
+                        -
+                      </button>
+                      <div className="text-2xl font-bold text-blue-400 w-12 text-center">
+                        {currentMapData.team1Score || 0}
+                      </div>
+                      <button
+                        onClick={() => updateMapScore(1, true)}
+                        className="w-8 h-8 bg-green-600 hover:bg-green-700 text-white rounded-full text-lg font-bold"
+                      >
+                        +
+                      </button>
+                    </div>
+                    
+                    <div className="text-gray-400">-</div>
+                    
+                    {/* Team 2 Score Controls */}
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => updateMapScore(2, false)}
+                        className="w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded-full text-lg font-bold"
+                      >
+                        -
+                      </button>
+                      <div className="text-2xl font-bold text-red-400 w-12 text-center">
+                        {currentMapData.team2Score || 0}
+                      </div>
+                      <button
+                        onClick={() => updateMapScore(2, true)}
+                        className="w-8 h-8 bg-green-600 hover:bg-green-700 text-white rounded-full text-lg font-bold"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Team 1 Players */}
                 <div>
