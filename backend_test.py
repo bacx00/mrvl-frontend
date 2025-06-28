@@ -1063,32 +1063,394 @@ def test_marvel_rivals_api_endpoints(tester, match_id=126):
     
     return results
 
-def main():
-    # Setup
-    tester = MarvelRivalsAPITester()
+def test_marvel_rivals_live_scoring_integration(tester, match_id=135):
+    """
+    Test the Marvel Rivals live scoring backend integration with focus on:
+    1. Match Scoreboard API
+    2. Live Score Updates with auto-aggregation
+    3. Player Statistics
+    4. Complete Live State
+    """
+    print("\n===== TESTING MARVEL RIVALS LIVE SCORING INTEGRATION =====")
+    print(f"🔍 Testing Match ID: {match_id}")
     
-    print("\n🚀 Starting Marvel Rivals API Tests - Focused on MatchAPI.js Integration\n")
-    print(f"🌐 Base URL: {tester.base_url}")
-    print(f"🌐 API URL: {tester.api_url}")
+    results = {}
     
-    # Test all Marvel Rivals MatchAPI.js endpoints
-    match_id = 126  # Use Match ID 126 as mentioned in the review request
-    results = test_marvel_rivals_api_endpoints(tester, match_id)
+    # 1. First, get the current state of the match scoreboard
+    print("\n----- STEP 1: CHECKING INITIAL MATCH SCOREBOARD -----")
+    success_initial_scoreboard, initial_scoreboard_data, _ = tester.run_test(
+        f"Get Initial Match Scoreboard for ID {match_id}",
+        "GET",
+        f"matches/{match_id}/scoreboard",
+        200
+    )
+    results["initial_scoreboard"] = success_initial_scoreboard
+    
+    if success_initial_scoreboard:
+        print("✅ Initial match scoreboard retrieved successfully")
+        
+        # Check initial overall scores
+        team1_score = initial_scoreboard_data.get('team1_score', 0)
+        team2_score = initial_scoreboard_data.get('team2_score', 0)
+        print(f"Initial Overall Scores: Team 1 = {team1_score}, Team 2 = {team2_score}")
+        
+        # Check map scores
+        maps = initial_scoreboard_data.get('maps', [])
+        print(f"Match has {len(maps)} maps")
+        for i, map_data in enumerate(maps):
+            print(f"Map {i+1}: {map_data.get('name', 'Unknown')}")
+            print(f"  Team 1 Score: {map_data.get('team1_score', 0)}")
+            print(f"  Team 2 Score: {map_data.get('team2_score', 0)}")
+            print(f"  Completed: {map_data.get('completed', False)}")
+    else:
+        print("❌ Failed to retrieve initial match scoreboard")
+    
+    # 2. Update map scores with completion status to trigger auto-aggregation
+    print("\n----- STEP 2: UPDATING MAP SCORES WITH COMPLETION STATUS -----")
+    
+    # Prepare map scores data with completion status
+    map_scores_data = {
+        "maps": []
+    }
+    
+    # If we have initial scoreboard data, use it to construct our update
+    if success_initial_scoreboard and 'maps' in initial_scoreboard_data:
+        maps = initial_scoreboard_data.get('maps', [])
+        for i, map_data in enumerate(maps):
+            # For the first map, set team1 as winner
+            if i == 0:
+                map_scores_data["maps"].append({
+                    "map_index": i,
+                    "team1_score": 100,
+                    "team2_score": 85,
+                    "completed": True,
+                    "winner": "team1"
+                })
+            # For the second map, set team2 as winner
+            elif i == 1:
+                map_scores_data["maps"].append({
+                    "map_index": i,
+                    "team1_score": 75,
+                    "team2_score": 100,
+                    "completed": True,
+                    "winner": "team2"
+                })
+            # For remaining maps, keep as is
+            else:
+                map_scores_data["maps"].append({
+                    "map_index": i,
+                    "team1_score": map_data.get('team1_score', 0),
+                    "team2_score": map_data.get('team2_score', 0),
+                    "completed": False
+                })
+    else:
+        # If we don't have initial data, create some test data
+        map_scores_data["maps"] = [
+            {
+                "map_index": 0,
+                "team1_score": 100,
+                "team2_score": 85,
+                "completed": True,
+                "winner": "team1"
+            },
+            {
+                "map_index": 1,
+                "team1_score": 75,
+                "team2_score": 100,
+                "completed": True,
+                "winner": "team2"
+            },
+            {
+                "map_index": 2,
+                "team1_score": 0,
+                "team2_score": 0,
+                "completed": False
+            }
+        ]
+    
+    # Send the update
+    success_scores_update, scores_update_data, _ = tester.run_test(
+        f"Update Map Scores with Completion Status for Match ID {match_id}",
+        "PUT",
+        f"admin/matches/{match_id}/scores",
+        200,
+        data=map_scores_data,
+        admin_auth=True
+    )
+    results["scores_update"] = success_scores_update
+    
+    if success_scores_update:
+        print("✅ Map scores updated successfully with completion status")
+        
+        # Check if the response includes updated overall scores
+        if 'team1_score' in scores_update_data and 'team2_score' in scores_update_data:
+            print(f"Updated Overall Scores: Team 1 = {scores_update_data['team1_score']}, Team 2 = {scores_update_data['team2_score']}")
+            
+            # Verify auto-aggregation
+            expected_team1_score = sum(1 for map_data in map_scores_data["maps"] if map_data.get('winner') == 'team1' and map_data.get('completed'))
+            expected_team2_score = sum(1 for map_data in map_scores_data["maps"] if map_data.get('winner') == 'team2' and map_data.get('completed'))
+            
+            auto_aggregation_correct = (scores_update_data['team1_score'] == expected_team1_score and 
+                                        scores_update_data['team2_score'] == expected_team2_score)
+            
+            if auto_aggregation_correct:
+                print("✅ Auto-aggregation working correctly! Overall scores match completed map wins.")
+            else:
+                print("❌ Auto-aggregation not working correctly!")
+                print(f"Expected: Team 1 = {expected_team1_score}, Team 2 = {expected_team2_score}")
+                print(f"Actual: Team 1 = {scores_update_data['team1_score']}, Team 2 = {scores_update_data['team2_score']}")
+            
+            results["auto_aggregation"] = auto_aggregation_correct
+        else:
+            print("❌ Response does not include updated overall scores")
+            results["auto_aggregation"] = False
+        
+        # Check if match status is updated to "completed" when all maps are completed
+        if 'status' in scores_update_data:
+            print(f"Match Status: {scores_update_data['status']}")
+            
+            # Check if all maps are completed
+            all_maps_completed = all(map_data.get('completed', False) for map_data in map_scores_data["maps"])
+            
+            if all_maps_completed and scores_update_data['status'] == 'completed':
+                print("✅ Match status correctly updated to 'completed' when all maps are completed")
+                results["status_update"] = True
+            elif not all_maps_completed:
+                print("ℹ️ Not all maps are completed, so match status should not be 'completed'")
+                results["status_update"] = True
+            else:
+                print(f"❌ Match status not updated correctly. Expected 'completed', got '{scores_update_data['status']}'")
+                results["status_update"] = False
+        else:
+            print("ℹ️ Response does not include match status")
+            results["status_update"] = None
+    else:
+        print("❌ Failed to update map scores")
+        results["auto_aggregation"] = False
+        results["status_update"] = False
+    
+    # 3. Get the updated scoreboard to verify changes
+    print("\n----- STEP 3: CHECKING UPDATED MATCH SCOREBOARD -----")
+    success_updated_scoreboard, updated_scoreboard_data, _ = tester.run_test(
+        f"Get Updated Match Scoreboard for ID {match_id}",
+        "GET",
+        f"matches/{match_id}/scoreboard",
+        200
+    )
+    results["updated_scoreboard"] = success_updated_scoreboard
+    
+    if success_updated_scoreboard:
+        print("✅ Updated match scoreboard retrieved successfully")
+        
+        # Check updated overall scores
+        team1_score = updated_scoreboard_data.get('team1_score', 0)
+        team2_score = updated_scoreboard_data.get('team2_score', 0)
+        print(f"Updated Overall Scores: Team 1 = {team1_score}, Team 2 = {team2_score}")
+        
+        # Verify auto-aggregation in the scoreboard
+        expected_team1_score = sum(1 for map_data in map_scores_data["maps"] if map_data.get('winner') == 'team1' and map_data.get('completed'))
+        expected_team2_score = sum(1 for map_data in map_scores_data["maps"] if map_data.get('winner') == 'team2' and map_data.get('completed'))
+        
+        scoreboard_aggregation_correct = (team1_score == expected_team1_score and team2_score == expected_team2_score)
+        
+        if scoreboard_aggregation_correct:
+            print("✅ Scoreboard shows correct auto-aggregated overall scores!")
+        else:
+            print("❌ Scoreboard does not show correct auto-aggregated overall scores!")
+            print(f"Expected: Team 1 = {expected_team1_score}, Team 2 = {expected_team2_score}")
+            print(f"Actual: Team 1 = {team1_score}, Team 2 = {team2_score}")
+        
+        results["scoreboard_aggregation"] = scoreboard_aggregation_correct
+        
+        # Check map scores
+        maps = updated_scoreboard_data.get('maps', [])
+        print(f"Match has {len(maps)} maps")
+        for i, map_data in enumerate(maps):
+            print(f"Map {i+1}: {map_data.get('name', 'Unknown')}")
+            print(f"  Team 1 Score: {map_data.get('team1_score', 0)}")
+            print(f"  Team 2 Score: {map_data.get('team2_score', 0)}")
+            print(f"  Completed: {map_data.get('completed', False)}")
+            if map_data.get('completed'):
+                print(f"  Winner: {map_data.get('winner', 'None')}")
+    else:
+        print("❌ Failed to retrieve updated match scoreboard")
+        results["scoreboard_aggregation"] = False
+    
+    # 4. Get player IDs from the scoreboard
+    player_ids = []
+    if success_updated_scoreboard:
+        # Extract player IDs from team1_players and team2_players
+        if 'team1_players' in updated_scoreboard_data:
+            for player in updated_scoreboard_data['team1_players']:
+                if 'id' in player:
+                    player_ids.append(player['id'])
+        
+        if 'team2_players' in updated_scoreboard_data:
+            for player in updated_scoreboard_data['team2_players']:
+                if 'id' in player:
+                    player_ids.append(player['id'])
+        
+        print(f"Found {len(player_ids)} player IDs: {player_ids}")
+    
+    # 5. Update player statistics
+    print("\n----- STEP 4: UPDATING PLAYER STATISTICS -----")
+    if player_ids:
+        test_player_id = player_ids[0]
+        player_stats = {
+            "eliminations": 25,
+            "deaths": 10,
+            "assists": 15,
+            "damage": 18500,
+            "healing": 0,
+            "damage_blocked": 5000,
+            "ultimate_usage": 4,
+            "objective_time": 180,
+            "hero_played": "Captain America"
+        }
+        
+        success_player_stats, player_stats_data, _ = tester.run_test(
+            f"Update Player Statistics for Match ID {match_id}, Player ID {test_player_id}",
+            "PUT",
+            f"admin/matches/{match_id}/player-stats/{test_player_id}",
+            200,
+            data=player_stats,
+            admin_auth=True
+        )
+        results["player_stats"] = success_player_stats
+        
+        if success_player_stats:
+            print(f"✅ Player statistics updated successfully for player ID {test_player_id}")
+        else:
+            print(f"❌ Failed to update player statistics for player ID {test_player_id}")
+    else:
+        print("❌ No player IDs found to test player statistics update")
+        results["player_stats"] = False
+    
+    # 6. Get the complete live state
+    print("\n----- STEP 5: CHECKING COMPLETE LIVE STATE -----")
+    success_live_state, live_state_data, _ = tester.run_test(
+        f"Get Complete Live State for Match ID {match_id}",
+        "GET",
+        f"admin/matches/{match_id}/live-state",
+        200,
+        admin_auth=True
+    )
+    results["live_state"] = success_live_state
+    
+    if success_live_state:
+        print("✅ Complete live state retrieved successfully")
+        
+        # Check if live state includes overall scores
+        if 'match' in live_state_data and 'team1_score' in live_state_data['match'] and 'team2_score' in live_state_data['match']:
+            team1_score = live_state_data['match']['team1_score']
+            team2_score = live_state_data['match']['team2_score']
+            print(f"Live State Overall Scores: Team 1 = {team1_score}, Team 2 = {team2_score}")
+            
+            # Verify consistency with scoreboard
+            if success_updated_scoreboard:
+                scoreboard_team1_score = updated_scoreboard_data.get('team1_score', 0)
+                scoreboard_team2_score = updated_scoreboard_data.get('team2_score', 0)
+                
+                scores_consistent = (team1_score == scoreboard_team1_score and team2_score == scoreboard_team2_score)
+                
+                if scores_consistent:
+                    print("✅ Overall scores are consistent between live state and scoreboard!")
+                else:
+                    print("❌ Overall scores are not consistent between live state and scoreboard!")
+                    print(f"Live State: Team 1 = {team1_score}, Team 2 = {team2_score}")
+                    print(f"Scoreboard: Team 1 = {scoreboard_team1_score}, Team 2 = {scoreboard_team2_score}")
+                
+                results["scores_consistent"] = scores_consistent
+            else:
+                results["scores_consistent"] = False
+        else:
+            print("❌ Live state does not include overall scores")
+            results["scores_consistent"] = False
+        
+        # Check if live state includes player statistics
+        if player_ids and 'teams' in live_state_data:
+            player_stats_present = False
+            test_player_id = player_ids[0]
+            
+            # Check team1 players
+            if 'team1' in live_state_data['teams'] and 'players' in live_state_data['teams']['team1']:
+                for player in live_state_data['teams']['team1']['players']:
+                    if 'id' in player and player['id'] == test_player_id and 'stats' in player:
+                        player_stats_present = True
+                        print(f"✅ Player statistics present in live state for player ID {test_player_id}")
+                        print(f"Stats: {player['stats']}")
+                        break
+            
+            # Check team2 players if not found in team1
+            if not player_stats_present and 'team2' in live_state_data['teams'] and 'players' in live_state_data['teams']['team2']:
+                for player in live_state_data['teams']['team2']['players']:
+                    if 'id' in player and player['id'] == test_player_id and 'stats' in player:
+                        player_stats_present = True
+                        print(f"✅ Player statistics present in live state for player ID {test_player_id}")
+                        print(f"Stats: {player['stats']}")
+                        break
+            
+            if not player_stats_present:
+                print(f"❌ Player statistics not found in live state for player ID {test_player_id}")
+            
+            results["player_stats_in_live_state"] = player_stats_present
+        else:
+            print("❌ Cannot check player statistics in live state (no player IDs or teams data)")
+            results["player_stats_in_live_state"] = False
+    else:
+        print("❌ Failed to retrieve complete live state")
+        results["scores_consistent"] = False
+        results["player_stats_in_live_state"] = False
     
     # Print summary of results
-    print("\n===== SUMMARY OF RESULTS =====")
-    for endpoint, success in results.items():
-        print(f"{'✅' if success else '❌'} {endpoint.replace('_', ' ').title()}: {'Working' if success else 'Not working'}")
+    print("\n===== SUMMARY OF MARVEL RIVALS LIVE SCORING INTEGRATION TESTS =====")
+    for test, success in results.items():
+        if success is None:
+            continue
+        print(f"{'✅' if success else '❌'} {test.replace('_', ' ').title()}: {'Working' if success else 'Not working'}")
     
-    # Print overall summary
-    working_endpoints = sum(1 for success in results.values() if success)
-    total_endpoints = len(results)
-    print(f"\n✅ {working_endpoints}/{total_endpoints} endpoints working ({working_endpoints/total_endpoints*100:.1f}%)")
+    # Check if all critical tests passed
+    critical_tests = ['auto_aggregation', 'scoreboard_aggregation', 'scores_consistent', 'player_stats', 'player_stats_in_live_state']
+    critical_tests_passed = all(results.get(test, False) for test in critical_tests if test in results)
+    
+    if critical_tests_passed:
+        print("\n✅ MARVEL RIVALS LIVE SCORING INTEGRATION IS WORKING CORRECTLY!")
+        print("✅ Overall scores auto-calculate from completed maps")
+        print("✅ Map completion triggers overall score updates")
+        print("✅ Player stats persist and appear in scoreboard")
+        print("✅ All data is instantly consistent")
+    else:
+        print("\n❌ MARVEL RIVALS LIVE SCORING INTEGRATION HAS ISSUES:")
+        if not results.get('auto_aggregation', False):
+            print("❌ Overall scores do not auto-calculate from completed maps")
+        if not results.get('scoreboard_aggregation', False):
+            print("❌ Map completion does not trigger overall score updates in scoreboard")
+        if not results.get('player_stats', False):
+            print("❌ Player stats do not persist")
+        if not results.get('player_stats_in_live_state', False):
+            print("❌ Player stats do not appear in live state")
+        if not results.get('scores_consistent', False):
+            print("❌ Data is not instantly consistent between endpoints")
+    
+    return results, critical_tests_passed
+
+def main():
+    # Setup
+    tester = MarvelRivalsAPITester(base_url="https://staging.mrvl.net")
+    
+    print("\n🚀 Starting Marvel Rivals API Tests - Focused on Live Scoring Integration\n")
+    print(f"🌐 Base URL: {tester.base_url}")
+    print(f"🌐 API URL: {tester.api_url}")
+    print(f"🔑 Admin Token: {tester.admin_token[:10]}...")
+    
+    # Test the Marvel Rivals live scoring integration
+    match_id = 135  # Use Match ID 135 as specified in the review request
+    results, critical_tests_passed = test_marvel_rivals_live_scoring_integration(tester, match_id)
     
     # Print summary
     tester.print_summary()
     
-    return 0 if all(results.values()) else 1
+    return 0 if critical_tests_passed else 1
 
 if __name__ == "__main__":
     sys.exit(main())
