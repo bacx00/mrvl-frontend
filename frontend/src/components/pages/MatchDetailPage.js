@@ -529,7 +529,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
           
           <div className="text-center">
             <h2 className="text-3xl font-bold text-red-600 dark:text-red-400 mb-2">{match.team2?.name}</h2>
-            <div className="text-6xl font-bold text-red-600 dark:text-red-400">{getOverallScores(match).team2}</div>
+            <div className="text-6xl font-bold text-red-600 dark:text-red-400">{match.team2_score || 0}</div>
           </div>
         </div>
         
