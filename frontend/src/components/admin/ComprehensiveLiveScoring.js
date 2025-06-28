@@ -366,9 +366,11 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         newStats.maps[currentMap] = currentMapData;
         
         // 🚀 INSTANT UPDATE: Call new MatchAPI for real-time sync with UPDATED values
+        const currentMapScores = newStats.maps[currentMap];
         const scoreData = {
-          team1_score: teamNumber === 1 ? 1 : 0, // Force overall score to reflect current map leader
-          team2_score: teamNumber === 2 ? 1 : 0, // Force overall score to reflect current map leader
+          // Set overall match score to reflect current map leader
+          team1_score: (currentMapScores.team1Score || 0) > (currentMapScores.team2Score || 0) ? 1 : 0,
+          team2_score: (currentMapScores.team2Score || 0) > (currentMapScores.team1Score || 0) ? 1 : 0,
           map_scores: newStats.maps.map((map, index) => ({
             map_index: index,
             team1_score: map.team1Score || 0,
