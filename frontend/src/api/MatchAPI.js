@@ -226,23 +226,46 @@ export const MatchAPI = {
   },
 
   /**
-   * 🏆 Update match and map scores
+   * 🏆 LIVE SCORING: Update match scores with auto-aggregation
+   * Backend auto-calculates overall scores from map wins
    * Uses PUT /api/admin/matches/{id}/scores
    */
   async updateScores(matchId, scoreData, apiHelper) {
     try {
-      console.log('🏆 MatchAPI: Updating scores:', { matchId, scoreData });
+      console.log('🏆 MatchAPI: Updating scores with auto-aggregation:', { matchId, scoreData });
       
-      const response = await apiHelper.put(`/admin/matches/${matchId}/scores`, scoreData);
+      // ✅ PROPER FORMAT: Backend expects map completion data for auto-aggregation
+      const formattedData = {
+        map_scores: scoreData.map_scores || []
+      };
       
-      // Trigger cross-tab sync
-      this.triggerCrossTabSync('score-update', matchId, scoreData);
+      console.log('🎯 Sending to backend for auto-aggregation:', formattedData);
       
-      console.log('✅ Scores updated:', response);
+      const response = await apiHelper.put(`/admin/matches/${matchId}/scores`, formattedData);
+      
+      // ✅ Backend now returns auto-calculated overall scores
+      console.log('🏆 Backend auto-aggregated scores:', {
+        team1_overall: response.data?.team1_score,
+        team2_overall: response.data?.team2_score,
+        status: response.data?.status,
+        calculation: response.data?.calculation_method
+      });
+      
+      // Trigger cross-tab sync with backend-calculated scores
+      this.triggerCrossTabSync('score-update', matchId, {
+        overallScores: {
+          team1: response.data?.team1_score,
+          team2: response.data?.team2_score
+        },
+        mapScores: response.data?.map_scores,
+        status: response.data?.status
+      });
+      
+      console.log('✅ Live scores updated with auto-aggregation:', response);
       return response;
       
     } catch (error) {
-      console.error('❌ MatchAPI: Error updating scores:', error);
+      console.error('❌ MatchAPI: Error updating live scores:', error);
       throw error;
     }
   },
