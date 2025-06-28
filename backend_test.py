@@ -556,14 +556,15 @@ class MarvelRivalsAPITester:
         else:
             print("\n✅ No issues found! All tests passed.")
 
-def test_match_scoreboard(tester, match_id):
+def test_match_scoreboard(tester, match_id, check_cache_headers=False):
     """Test the match scoreboard endpoint to verify it returns complete data"""
     print(f"\n----- TESTING MATCH SCOREBOARD FOR ID {match_id} -----")
-    success, scoreboard_data = tester.run_test(
+    success, scoreboard_data, headers = tester.run_test(
         f"Get Match Scoreboard for ID {match_id}",
         "GET",
         f"matches/{match_id}/scoreboard",
-        200
+        200,
+        check_headers=check_cache_headers
     )
     
     if success and scoreboard_data:
@@ -606,9 +607,27 @@ def test_match_scoreboard(tester, match_id):
             print("❌ Team 2 players missing")
             player_heroes_present = False
         
-        return success, team_logos_present, player_heroes_present, scoreboard_data
+        # Check cache-busting headers if requested
+        cache_headers_present = False
+        if check_cache_headers:
+            print("\n----- CHECKING CACHE-BUSTING HEADERS -----")
+            if 'Cache-Control' in headers and 'no-cache' in headers['Cache-Control']:
+                print(f"✅ Cache-Control header present: {headers['Cache-Control']}")
+                cache_headers_present = True
+            else:
+                print("❌ Cache-Control header missing or incorrect")
+                cache_headers_present = False
+            
+            if 'Pragma' in headers and headers['Pragma'] == 'no-cache':
+                print(f"✅ Pragma header present: {headers['Pragma']}")
+                cache_headers_present = cache_headers_present and True
+            else:
+                print("❌ Pragma header missing or incorrect")
+                cache_headers_present = False
+        
+        return success, team_logos_present, player_heroes_present, cache_headers_present, scoreboard_data
     
-    return False, False, False, {}
+    return False, False, False, False, {}
 
 def test_match_detail_vs_scoreboard(tester, match_id):
     """Compare match detail and scoreboard endpoints to verify data consistency"""
