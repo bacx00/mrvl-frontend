@@ -437,7 +437,7 @@ export const MatchAPI = {
             const stats = data.teams.team1.statistics?.find(s => s.player_id === player.id) || {};
             return {
               playerId: player.id,
-              playerName: player.name,
+              name: player.name,
               hero: stats.hero_played || player.main_hero || 'Captain America',
               role: MatchAPI.convertRoleToFrontend(player.role), // Convert Vanguard/Duelist/Strategist
               country: player.country || 'DE', // test1 fallback
