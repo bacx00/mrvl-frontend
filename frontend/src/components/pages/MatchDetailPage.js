@@ -21,6 +21,33 @@ function MatchDetailPage({ matchId, navigateTo }) {
   
   // 🔥 CRITICAL: REAL BACKEND API BASE URL FROM ENV ONLY
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+  
+  // 🏆 SMART SCORE CALCULATION: Calculate overall scores from individual map scores
+  const getOverallScores = (match) => {
+    if (!match || !match.map_scores || !Array.isArray(match.map_scores)) {
+      return { team1: match?.team1_score || 0, team2: match?.team2_score || 0 };
+    }
+    
+    let team1Total = 0;
+    let team2Total = 0;
+    
+    // Sum up scores from all completed maps
+    match.map_scores.forEach(map => {
+      if (map.status === 'completed' || map.status === 'live') {
+        team1Total += map.team1_score || 0;
+        team2Total += map.team2_score || 0;
+      }
+    });
+    
+    console.log('🏆 SMART SCORES: Calculated from map_scores:', { 
+      team1Total, 
+      team2Total, 
+      mapScores: match.map_scores,
+      backendScores: { team1: match.team1_score, team2: match.team2_score }
+    });
+    
+    return { team1: team1Total, team2: team2Total };
+  };
 
   console.log('🔍 MatchDetailPage: Using backend URL:', BACKEND_URL);
 
