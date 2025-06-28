@@ -341,6 +341,60 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     loadProductionScoreboard();
   }, [match?.id, isOpen, api]);
 
+  // 🏆 REAL-TIME SCORE UPDATE FUNCTIONS
+  const updateMapScore = async (teamNumber, increment = true) => {
+    try {
+      const currentMap = matchStats.currentMap;
+      const scoreKey = teamNumber === 1 ? 'team1Score' : 'team2Score';
+      const mapWinsKey = teamNumber === 1 ? 'team1' : 'team2';
+      
+      setMatchStats(prev => {
+        const newStats = { ...prev };
+        const currentMapData = { ...newStats.maps[currentMap] };
+        
+        // Update map score
+        const currentScore = currentMapData[scoreKey] || 0;
+        currentMapData[scoreKey] = Math.max(0, currentScore + (increment ? 1 : -1));
+        
+        // Update overall match wins if map completed
+        if (currentMapData[scoreKey] >= 3) { // Assuming first to 3 wins the map
+          newStats.mapWins[mapWinsKey] += 1;
+          currentMapData.status = 'completed';
+        }
+        
+        newStats.maps[currentMap] = currentMapData;
+        return newStats;
+      });
+      
+      // 🚀 INSTANT UPDATE: Call new MatchAPI for real-time sync
+      const scoreData = {
+        team1_score: matchStats.mapWins.team1,
+        team2_score: matchStats.mapWins.team2,
+        map_scores: matchStats.maps.map((map, index) => ({
+          map_index: index,
+          team1_score: map.team1Score || 0,
+          team2_score: map.team2Score || 0,
+          status: map.status || 'upcoming'
+        }))
+      };
+      
+      await MatchAPI.updateScores(match.id, scoreData, api);
+      
+      // Trigger cross-tab sync
+      MatchAPI.triggerCrossTabSync('score-update', match.id, { 
+        mapIndex: currentMap, 
+        teamNumber, 
+        increment,
+        scores: scoreData
+      });
+      
+      console.log(`✅ Score updated: Team ${teamNumber} ${increment ? '+1' : '-1'}`);
+      
+    } catch (error) {
+      console.error('❌ Error updating score:', error);
+    }
+  };
+
   // 🦸 Change player hero
   const changePlayerHero = (mapIndex, team, playerIndex, hero, role) => {
     console.log(`🦸 Changing ${team} player ${playerIndex} to hero ${hero} (${role})`);
