@@ -77,8 +77,39 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         // Load heroes
         const heroesResponse = await MatchAPI.getAllHeroes(api);
         if (heroesResponse?.data) {
-          setMarvelRivalsHeroes(heroesResponse.data);
-          console.log('✅ Heroes loaded from API:', heroesResponse.data);
+          // Transform heroes from API format to role-based format
+          if (Array.isArray(heroesResponse.data)) {
+            // If heroes come as array, organize by role
+            const herosByRole = {
+              Tank: [],
+              Duelist: [],
+              Support: []
+            };
+            
+            heroesResponse.data.forEach(hero => {
+              const role = hero.role || 'Tank';
+              const heroName = hero.name || hero.hero_name || hero;
+              
+              // Map backend roles to frontend roles
+              const frontendRole = role === 'Vanguard' ? 'Tank' : 
+                                 role === 'Duelist' ? 'Duelist' : 
+                                 role === 'Strategist' ? 'Support' : 
+                                 role;
+              
+              if (herosByRole[frontendRole]) {
+                herosByRole[frontendRole].push(heroName);
+              } else {
+                herosByRole.Tank.push(heroName);
+              }
+            });
+            
+            setMarvelRivalsHeroes(herosByRole);
+            console.log('✅ Heroes loaded and organized by role:', herosByRole);
+          } else {
+            // If heroes are already organized by role
+            setMarvelRivalsHeroes(heroesResponse.data);
+            console.log('✅ Heroes loaded from API:', heroesResponse.data);
+          }
         }
       } catch (error) {
         console.error('❌ Error loading game data from API:', error);
