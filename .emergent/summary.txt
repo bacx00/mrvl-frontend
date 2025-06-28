@@ -1,65 +1,122 @@
 <analysis>
-The AI engineer's trajectory chronicles the development of a Marvel Rivals esports platform, transitioning from initial MVP build to feature enhancements and critical bug fixes. Initially, the focus was on resolving frontend data display and input issues, particularly with player statistics ( in ) and match data persistence ( in ). A significant turning point involved the user providing comprehensive backend API updates, which clarified that many frontend data synchronization problems stemmed from stale or incorrectly structured data returned by the *old* backend.
+The AI engineer's trajectory details the development and iterative debugging of a Marvel Rivals esports platform. Initially, the focus was on critical frontend bugs like  and match data persistence. A pivotal moment was the user providing new backend API documentation, which promised instant data consistency, fundamentally shifting the approach from client-side synchronization fixes to correct backend integration.
 
-Following the backend update, the AI engineer integrated new concepts like  for cross-tab synchronization and rigorously debugged frontend components (, , ) to align with the new data expectations. Key fixes included hero loading,  edit errors, timer synchronization across tabs, and addressing React Hooks issues. The trajectory concludes with the AI engineer acknowledging a  declaration build error, poised to integrate the *new, consistent backend APIs* which the user explicitly stated resolve data consistency issues.
+Key successes include fixing a  build error, integrating the new backend API endpoints into , and addressing several UI issues (image handling, icon removal, hero dropdown categorization). However, the core challenge of real-time scoreboard synchronization across tabs persisted. The engineer initially misdiagnosed this, believing the  sync mechanism was at fault, then that the user wasn't interacting with the correct UI elements (score buttons), and finally identified the backend's inconsistent handling of overall vs. map scores as the root cause. The trajectory concludes with the scoreboard synchronization still being an active problem, specifically the mismatch between map-level score updates and the overall match score displayed on the public page.
 </analysis>
-
 <product_requirements>
-The overarching goal is a fully functional Marvel Rivals esports platform enabling accurate live match input and display. Key features include:
-*   **Match Creation & Persistence ():** Admins create 6v6 matches, specifying teams, game modes, maps, and categorized Marvel Rivals heroes. All  (hero compositions, map details) must persist and be accurately retrieved. The 'event' field is optional, and match status (, ) must update.
-*   **Live Match Administration ():** Real-time updates for player statistics (kills, deaths, assists, damage, healing, blocked damage) and hero changes without state loss. Player images and country flags must display correctly with a compact interface.
-*   **Public Match Display ():** Accurate display of match details: map name, game mode, heroes, player names, country flags. Real-time synchronization for timer, match status (, ), and scores. Includes Stream Watch and VOD buttons, with player rows linking to profiles.
-*   **Image Display:** Correct display of team logos, player avatars, event/live banners, and news article images, with proper fallbacks and fading effects for banners.
-*   **Data Consistency:** Seamless, fully synchronized data flow from  to Backend, then to  and . This was explicitly confirmed by the user via a new backend API that guarantees instant data consistency.
-*   **UI Polish:** Removal of unnecessary icons from Events and Home pages.
-</product_requirements>
+The goal is a fully functional Marvel Rivals esports platform with real-time live match capabilities. Key features and their current status include:
 
+*   **Match Creation & Persistence ():** Admins create 6v6 matches with teams, modes, maps, and categorized Marvel Rivals heroes.  (hero compositions) must persist. The 'event' field is optional, and match status (, ) must update. (Addressed with initial  fixes, not primary focus in this trajectory).
+*   **Live Match Administration ():** Real-time updates for player statistics (kills, deaths, assists, damage, healing, blocked damage) and hero changes without state loss. Player images and country flags must display correctly with a compact interface. Score increment/decrement buttons were added, and player stats input fields exist. (Hero changes and player stats updates are functional from admin side, but scoreboard sync from admin to public is pending).
+*   **Public Match Display ():** Accurate display of match details: map name, game mode, heroes, player names, country flags. Real-time synchronization for timer, match status (, ), and scores. Includes Stream Watch and VOD buttons, with player rows linking to profiles. (Timer sync and hero changes are working. Player names display fixed. Scoreboard sync is still problematic).
+*   **Image Display:** Correct display of team logos, player avatars, event/live banners, and news article images, with proper fallbacks and fading effects for banners. (News article image error handling fixed).
+*   **Data Consistency:** Seamless, fully synchronized data flow from  to Backend, then to  and . This relies heavily on a new backend API that guarantees instant data consistency. (Backend API integration in  is complete, but frontend UI updates for scores are failing).
+*   **UI Polish:** Removal of unnecessary icons from Events and Home pages. (Completed).
+</product_requirements>
 <key_technical_concepts>
 -   **Full-stack Development:** React (Frontend) and Laravel 11 (Backend).
 -   **API Integration:** RESTful APIs, Bearer token authentication, Data Transformation Layer ().
--   **Frontend State Management:** React Hooks (, ) and Custom DOM Events.
--   **Cross-Tab Communication:**  API for synchronization.
--   **Component-Based Design:** Modular React components.
+-   **Frontend State Management:** React Hooks (, ).
+-   **Cross-Tab Communication:**  API for synchronization via custom events (, ).
+-   **Component-Based Design:** Modular React components (e.g., admin, pages).
 -   **UI/UX:** Tailwind CSS for styling.
 </key_technical_concepts>
-
 <code_architecture>
 
 
--   ****: Stores , crucial for frontend API calls. Was previously fixed to point to the correct staging domain.
--   ****: Centralizes all match-related frontend-backend communication. It was extensively modified for new backend live scoring endpoints and data transformations. It requires further updates to utilize the *new* backend admin endpoints for guaranteed data consistency (Chat 294).
--   ****: Handles match creation and editing. It was updated to correctly send  (hero compositions), ensure heroes are categorized by role, and pre-fill selected heroes. A fix was implemented to prevent  errors when editing match status ().
--   ****: The admin interface for live match updates. Manages real-time stats, hero changes, and timer events. Extensive modifications were made to resolve player ID mapping issues (initially believed fixed, then backend confirmed as source), remove duplicate UI elements, and implement cross-tab synchronization using  for timer, scores, and hero updates. Currently has a  variable declaration build error.
--   ****: Public-facing match detail view. Displays scores, players, heroes, map, mode, and match status. Updated to use the correct  endpoint, fix player name display, ensure timer sync (now via ), correct button visibility (e.g., Watch Stream), and resolve React Hooks nesting issues.
--   ****: Provides utility functions for image URLs, like , which was verified to be working.
--   **Backend files (Laravel)**: While not directly modified by the AI engineer, the trajectory describes critical updates to  (Model), , and  to support new live-scoring endpoints with guaranteed instant data consistency. These backend changes are pivotal for the frontend's correct functioning.
-
+-   ****: Stores  for frontend API calls.
+-   ****: Centralizes all match-related frontend-backend communication.
+    -   **Summary**: This file handles all API requests to the backend. It's crucial for interacting with the live scoring system.
+    -   **Changes Made**: Extensively modified to integrate the new comprehensive backend admin endpoints for live scoring (status, team composition, current map, timer, scores, player stats, live state) and public scoreboard. Logic for  was added/verified to use .
+-   ****: Handles match creation and editing.
+    -   **Summary**: Manages input fields for creating and updating match details.
+    -   **Changes Made**: Previously updated for  and hero categorization. No direct modifications in this trajectory, but its output data structure () is consumed by .
+-   ****: The admin interface for live match updates.
+    -   **Summary**: Manages real-time stats, hero changes, and timer events. Sends updates to the backend and dispatches  events for cross-tab sync.
+    -   **Changes Made**: Fixed . Updated  and  to use the new  methods. Replaced hardcoded maps and heroes with data fetched from  and . Added logic to transform API heroes (array) into a role-categorized object. Score increment/decrement buttons and associated  logic were added, which sends score updates to the backend and triggers cross-tab sync. Debugging logs were added to trace sync events.
+-   ****: Public-facing match detail view.
+    -   **Summary**: Displays scores, players, heroes, map, mode, and match status to the public. Listens for cross-tab sync events.
+    -   **Changes Made**: Logic for handling  events (, ) was re-added/corrected after accidental removal, ensuring  state updates to fetch fresh data. Player name display fixed by aligning data structure ( vs ). Debugging logs added.
+-   ****: Provides utility functions for image URLs.
+    -   **Summary**: Helps construct image URLs for various assets like team logos.
+    -   **Changes Made**: No direct modifications in this trajectory, but it was implicitly verified to be working.
+-   ****: Displays news articles.
+    -   **Summary**: Shows news articles, potentially with images.
+    -   **Changes Made**: Added  handling for images to gracefully hide broken images.
+-   ****: Displays events.
+    -   **Summary**: Shows event information.
+    -   **Changes Made**: Removed unnecessary icons to clean up UI.
+-   ****: The application's main landing page.
+    -   **Summary**: Displays high-level information or featured content.
+    -   **Changes Made**: Removed unnecessary 🔴 LIVE NOW icon.
 </code_architecture>
-
 <pending_tasks>
 -   **Forums Data Display:** New categories not updating and backend API error loading forum data.
--   **Image Display across pages:** Fix article images not displaying. Ensure faded background images for event/live banners if not already working.
--   **UI Cleanup:** Remove unnecessary icons from Events and Home pages.
+-   **Image Display across pages:** Ensure faded background images for event/live banners if not already working. (News article images were fixed, but banners might still be an issue).
 -   **Events Page Data:** Fix incorrect team/event data displayed.
--   **Backend API Integration (Main Task):** Update  to utilize the *new* backend admin endpoints for player stats, team composition, and timer, as provided in Chat Message 294, to fully leverage instant data consistency and resolve persistent scoreboard/hero synchronization issues.
+-   **Scoreboard Live Updates (Primary Focus):** Resolve the persistent issue where overall match scores are not synchronizing live on the , despite the backend updating map scores and  events being triggered.
 </pending_tasks>
-
 <current_work>
-Immediately prior to this summary, the AI engineer was focused on resolving cross-tab synchronization issues for the live match updates.
+Immediately prior to this summary, the AI engineer was focused on resolving the persistent issue of scoreboard synchronization between the admin  and the public .
 
-The previous work involved:
-1.  **Debugging  errors:** Initially thought to be a frontend mapping issue in  and , which was partially addressed.
-2.  **Fixing Hero Loading and Display:** Resolved issues in  and  where heroes were not populating in dropdowns or were displaying outdated names like Phoenix. This involved using React state for heroes and implementing a  fallback function.
-3.  **Resolving MatchForm Edit Errors:** Fixed  when editing matches by adding null checks.
-4.  **Implementing Cross-Tab Timer Sync:** Initially attempted with , which failed across tabs. It was then successfully re-implemented using  events to ensure the timer in  synced instantly with actions in .
-5.  **Fixing React Hooks Errors:** Resolved a  nesting issue in  that caused build failures.
-6.  **Implementing Cross-Tab Score/Hero Sync:** Extended the  approach to synchronize scoreboard and hero changes between  (admin) and  (public). This was confirmed to be working at the  event level.
+The current state is as follows:
+*   **Admin-side actions are working:** The  component successfully makes API calls to  when the score increment/decrement buttons are clicked.
+*   **Backend is receiving and processing updates:** Console logs confirm the backend is receiving the score updates (specifically for ) and responds with success ().
+*   **Cross-tab synchronization events are triggered:**  events ( with ) are correctly dispatched from the admin page and received by the public .
+*   ** refreshes:** Upon receiving the  event,  correctly triggers a refresh by calling , which fetches data from .
 
-The immediate problem identified by the user after the cross-tab sync implementation was that despite the  events triggering, the  was still showing stale scoreboard and hero data. This led to the crucial realization (confirmed by the user providing new backend API documentation) that the backend itself was responsible for the data consistency, and the frontend was likely still calling outdated endpoints.
+**The core problem identified:** The backend response from the scoreboard API () consistently shows  for the *overall match score*, even when the  array within the same response correctly reflects the updated map score (e.g., ). Since the  is configured to display the *overall match scores*, it never updates, creating a discrepancy.
 
-The last action in the trajectory (Chat Message 301) indicates a new build error: . This is the very immediate task being addressed.
+The AI engineer's last action was to attempt to force the overall match score to reflect the map leader, but this change was found to be already present in the code, suggesting the issue lies either in the backend's data aggregation for the  endpoint or a deeper misinterpretation of the frontend's display logic for overall vs. map scores. The user's latest feedback confirms the issue persists: nope! data.
+-   **Image Display across pages:** Ensure faded background images for event/live banners if not already working. (News article images were fixed, but banners might still be an issue).
+-   **Events Page Data:** Fix incorrect team/event data displayed.
+-   **Scoreboard Live Updates (Primary Focus):** Resolve the persistent issue where overall match scores are not synchronizing live on the , despite the backend updating map scores and  events being triggered.
+</pending_tasks>
+<current_work>
+Immediately prior to this summary, the AI engineer was focused on resolving the persistent issue of scoreboard synchronization between the admin  and the public .
+
+The current state is as follows:
+*   **Admin-side actions are working:** The  component successfully makes API calls to  when the score increment/decrement buttons are clicked.
+*   **Backend is receiving and processing updates:** Console logs confirm the backend is receiving the score updates (specifically for ) and responds with success ().
+*   **Cross-tab synchronization events are triggered:**  events ( with ) are correctly dispatched from the admin page and received by the public .
+*   ** refreshes:** Upon receiving the  event,  correctly triggers a refresh by calling , which fetches data from .
+
+**The core problem identified:** The backend response from the scoreboard API () consistently shows  for the *overall match score*, even when the  array within the same response correctly reflects the updated map score (e.g., ). Since the  is configured to display the *overall match scores*, it never updates, creating a discrepancy.
+
+The AI engineer's last action was to attempt to force the overall match score to reflect the map leader, but this change was found to be already present in the code, suggesting the issue lies either in the backend's data aggregation for the  endpoint or a deeper misinterpretation of the frontend's display logic for overall vs. map scores. The user's latest feedback confirms the issue persists: nope! data.
+-   **Image Display across pages:** Ensure faded background images for event/live banners if not already working. (News article images were fixed, but banners might still be an issue).
+-   **Events Page Data:** Fix incorrect team/event data displayed.
+-   **Scoreboard Live Updates (Primary Focus):** Resolve the persistent issue where overall match scores are not synchronizing live on the , despite the backend updating map scores and  events being triggered.
+</pending_tasks>
+<current_work>
+Immediately prior to this summary, the AI engineer was focused on resolving the persistent issue of scoreboard synchronization between the admin  and the public .
+
+The current state is as follows:
+*   **Admin-side actions are working:** The  component successfully makes API calls to  when the score increment/decrement buttons are clicked.
+*   **Backend is receiving and processing updates:** Console logs confirm the backend is receiving the score updates (specifically for ) and responds with success ().
+*   **Cross-tab synchronization events are triggered:**  events ( with ) are correctly dispatched from the admin page and received by the public .
+*   ** refreshes:** Upon receiving the  event,  correctly triggers a refresh by calling , which fetches data from .
+
+**The core problem identified:** The backend response from the scoreboard API () consistently shows  for the *overall match score*, even when the  array within the same response correctly reflects the updated map score (e.g., ). Since the  is configured to display the *overall match scores*, it never updates, creating a discrepancy.
+
+The AI engineer's last action was to attempt to force the overall match score to reflect the map leader, but this change was found to be already present in the code, suggesting the issue lies either in the backend's data aggregation for the  endpoint or a deeper misinterpretation of the frontend's display logic for overall vs. map scores. The user's latest feedback confirms the issue persists: nope! data.
+-   **Image Display across pages:** Ensure faded background images for event/live banners if not already working. (News article images were fixed, but banners might still be an issue).
+-   **Events Page Data:** Fix incorrect team/event data displayed.
+-   **Scoreboard Live Updates (Primary Focus):** Resolve the persistent issue where overall match scores are not synchronizing live on the , despite the backend updating map scores and  events being triggered.
+</pending_tasks>
+<current_work>
+Immediately prior to this summary, the AI engineer was focused on resolving the persistent issue of scoreboard synchronization between the admin  and the public .
+
+The current state is as follows:
+*   **Admin-side actions are working:** The  component successfully makes API calls to  when the score increment/decrement buttons are clicked.
+*   **Backend is receiving and processing updates:** Console logs confirm the backend is receiving the score updates (specifically for ) and responds with success ().
+*   **Cross-tab synchronization events are triggered:**  events ( with ) are correctly dispatched from the admin page and received by the public .
+*   ** refreshes:** Upon receiving the  event,  correctly triggers a refresh by calling , which fetches data from .
+
+**The core problem identified:** The backend response from the scoreboard API () consistently shows  for the *overall match score*, even when the  array within the same response correctly reflects the updated map score (e.g., ). Since the  is configured to display the *overall match scores*, it never updates, creating a discrepancy.
+
+The AI engineer's last action was to attempt to force the overall match score to reflect the map leader, but this change was found to be already present in the code, suggesting the issue lies either in the backend's data aggregation for the  endpoint or a deeper misinterpretation of the frontend's display logic for overall vs. map scores. The user's latest feedback confirms the issue persists: nope! neither of them are updating. should i check backend? PLAYER SCOREBOARDS AND SCORES. The immediate next step is to test the build after the last attempted fix.
 </current_work>
-
 <optional_next_step>
-Fix the  in .
+Test the current build to verify if the latest changes for overall match score synchronization have resolved the issue.
 </optional_next_step>
