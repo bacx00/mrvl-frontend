@@ -321,13 +321,180 @@ class MarvelRivalsAPITester:
             200
         )
     
-    def test_get_match_scoreboard(self, match_id):
+    def test_get_match_scoreboard(self, match_id, check_cache_headers=False):
         """Test getting match scoreboard with team and player information"""
         return self.run_test(
             f"Get Match Scoreboard for ID {match_id}",
             "GET",
             f"matches/{match_id}/scoreboard",
+            200,
+            check_headers=check_cache_headers
+        )
+    
+    # New Marvel Rivals MatchAPI.js endpoints
+    
+    def test_update_match_status_new(self, match_id, status):
+        """Test updating match status with the new endpoint"""
+        return self.run_test(
+            f"Update Match Status for ID {match_id}",
+            "PUT",
+            f"admin/matches/{match_id}/status",
+            200,
+            data={"status": status},
+            admin_auth=True
+        )
+    
+    def test_update_team_composition(self, match_id, map_index, compositions):
+        """Test updating team composition (hero changes)"""
+        return self.run_test(
+            f"Update Team Composition for Match ID {match_id}, Map Index {map_index}",
+            "PUT",
+            f"admin/matches/{match_id}/team-composition",
+            200,
+            data={
+                "map_index": map_index,
+                "team1_composition": compositions["team1_composition"],
+                "team2_composition": compositions["team2_composition"]
+            },
+            admin_auth=True
+        )
+    
+    def test_update_current_map(self, match_id, map_data):
+        """Test updating current map and mode"""
+        return self.run_test(
+            f"Update Current Map for Match ID {match_id}",
+            "PUT",
+            f"admin/matches/{match_id}/current-map",
+            200,
+            data={
+                "current_map": map_data["mapName"],
+                "current_mode": map_data["mode"],
+                "map_index": map_data["mapIndex"]
+            },
+            admin_auth=True
+        )
+    
+    def test_control_timer(self, match_id, action, elapsed=0):
+        """Test controlling timer (start, pause, resume, stop, sync)"""
+        return self.run_test(
+            f"Control Timer for Match ID {match_id}, Action: {action}",
+            "PUT",
+            f"admin/matches/{match_id}/timer",
+            200,
+            data={
+                "action": action,
+                "elapsed_time": elapsed,
+                "round_time": 0,
+                "phase": "round"
+            },
+            admin_auth=True
+        )
+    
+    def test_update_scores(self, match_id, score_data):
+        """Test updating match and map scores"""
+        return self.run_test(
+            f"Update Scores for Match ID {match_id}",
+            "PUT",
+            f"admin/matches/{match_id}/scores",
+            200,
+            data=score_data,
+            admin_auth=True
+        )
+    
+    def test_update_player_stats_new(self, match_id, player_id, stats):
+        """Test updating player statistics with the new endpoint"""
+        stats_payload = {
+            "eliminations": stats.get("eliminations", 0),
+            "deaths": stats.get("deaths", 0),
+            "assists": stats.get("assists", 0),
+            "damage": stats.get("damage", 0),
+            "healing": stats.get("healing", 0),
+            "damage_blocked": stats.get("damageBlocked", 0),
+            "ultimate_usage": stats.get("ultimateUsage", 0),
+            "objective_time": stats.get("objectiveTime", 0),
+            "hero_played": stats.get("hero", "Captain America")
+        }
+        
+        return self.run_test(
+            f"Update Player Stats for Match ID {match_id}, Player ID {player_id}",
+            "PUT",
+            f"admin/matches/{match_id}/player-stats/{player_id}",
+            200,
+            data=stats_payload,
+            admin_auth=True
+        )
+    
+    def test_get_live_state(self, match_id):
+        """Test getting complete live state for admin dashboard"""
+        return self.run_test(
+            f"Get Live State for Match ID {match_id}",
+            "GET",
+            f"admin/matches/{match_id}/live-state",
+            200,
+            admin_auth=True
+        )
+    
+    def test_get_all_heroes(self):
+        """Test getting all Marvel Rivals heroes"""
+        return self.run_test(
+            "Get All Marvel Rivals Heroes",
+            "GET",
+            "game-data/all-heroes",
             200
+        )
+    
+    def test_get_all_maps(self):
+        """Test getting all Marvel Rivals maps"""
+        return self.run_test(
+            "Get All Marvel Rivals Maps",
+            "GET",
+            "game-data/maps",
+            200
+        )
+    
+    def test_get_all_modes(self):
+        """Test getting all game modes"""
+        return self.run_test(
+            "Get All Game Modes",
+            "GET",
+            "game-data/modes",
+            200
+        )
+    
+    def test_save_player_stats(self, match_id, player_id, stats):
+        """Test saving player statistics using the public endpoint"""
+        stats_payload = {
+            "kills": stats.get("eliminations", 0),
+            "deaths": stats.get("deaths", 0),
+            "assists": stats.get("assists", 0),
+            "damage": stats.get("damage", 0),
+            "healing": stats.get("healing", 0),
+            "damage_blocked": stats.get("damageBlocked", 0),
+            "hero_played": stats.get("hero", "Captain America"),
+            "ultimate_usage": stats.get("ultimateUsage", 0),
+            "objective_time": stats.get("objectiveTime", 0)
+        }
+        
+        return self.run_test(
+            f"Save Player Stats for Match ID {match_id}, Player ID {player_id}",
+            "POST",
+            f"matches/{match_id}/players/{player_id}/stats",
+            200,
+            data=stats_payload
+        )
+    
+    def test_update_viewer_count(self, match_id, viewers):
+        """Test updating viewer count"""
+        return self.run_test(
+            f"Update Viewer Count for Match ID {match_id}",
+            "POST",
+            f"matches/{match_id}/viewers",
+            200,
+            data={
+                "viewers": viewers,
+                "platform": "Twitch",
+                "stream_url": "https://twitch.tv/marvelrivals"
+            }
         )
     
     def test_create_forum_thread(self, title, content):
