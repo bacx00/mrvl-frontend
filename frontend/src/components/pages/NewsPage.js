@@ -138,6 +138,10 @@ function NewsPage({ navigateTo }) {
                       src={article.featured_image_url || article.image} 
                       alt={article.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.parentElement.style.display = 'none';
+                      }}
                     />
                   </div>
                 )}
