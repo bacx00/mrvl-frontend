@@ -281,8 +281,8 @@ function MatchDetailPage({ matchId, navigateTo }) {
           
           if (matchData.matchId == currentMatchId) {
             console.log('⚽ MatchDetailPage: Cross-tab scoreboard sync - triggering refresh');
-            // Refresh match data immediately
-            fetchMatchData(false);
+            // Trigger refresh by updating refreshTrigger
+            setRefreshTrigger(prev => prev + 1);
           }
         } catch (error) {
           console.error('❌ Error parsing match sync data:', error);
