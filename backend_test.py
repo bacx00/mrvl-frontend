@@ -837,139 +837,258 @@ def check_player_ids(scoreboard_data):
     
     return all_players_have_ids, player_ids
 
-def main():
-    # Setup
-    tester = MarvelRivalsAPITester()
+def test_marvel_rivals_api_endpoints(tester, match_id=126):
+    """Test all Marvel Rivals MatchAPI.js endpoints"""
+    print("\n===== TESTING MARVEL RIVALS MATCHAPI.JS ENDPOINTS =====")
     
-    print("\n🚀 Starting Marvel Rivals API Tests - Focused on Live Scoring Functionality\n")
-    print(f"🌐 Base URL: {tester.base_url}")
-    print(f"🌐 API URL: {tester.api_url}")
+    results = {}
     
-    # 1. TEST MATCH SCOREBOARD FOR MATCH ID 114
-    print("\n===== TESTING MATCH SCOREBOARD FOR MATCH ID 114 =====")
-    success_scoreboard, scoreboard_data = tester.test_get_match_scoreboard(114)
+    # 1. Test GET /api/admin/matches/{id}/live-state
+    print("\n----- TESTING LIVE STATE ENDPOINT -----")
+    success_live_state, live_state_data, _ = tester.test_get_live_state(match_id)
+    results["live_state"] = success_live_state
     
-    if not success_scoreboard:
-        print("❌ Failed to get scoreboard data for match ID 114")
-        tester.print_summary()
-        return 1
-    
-    # 2. CHECK PLAYER IDs IN SCOREBOARD DATA
-    all_players_have_ids, player_ids = check_player_ids(scoreboard_data)
-    
-    if not all_players_have_ids:
-        print("❌ Not all players have proper ID fields")
+    if success_live_state:
+        print("✅ Live state endpoint working correctly")
+        print(f"Match status: {live_state_data.get('match', {}).get('status', 'unknown')}")
+        
+        # Extract player IDs for later tests
+        player_ids = []
+        if 'teams' in live_state_data:
+            if 'team1' in live_state_data['teams'] and 'players' in live_state_data['teams']['team1']:
+                for player in live_state_data['teams']['team1']['players']:
+                    if 'id' in player:
+                        player_ids.append(player['id'])
+            
+            if 'team2' in live_state_data['teams'] and 'players' in live_state_data['teams']['team2']:
+                for player in live_state_data['teams']['team2']['players']:
+                    if 'id' in player:
+                        player_ids.append(player['id'])
     else:
-        print("✅ All players have proper ID fields")
+        print("❌ Live state endpoint not working")
+        # Try to get player IDs from scoreboard instead
+        _, scoreboard_data, _ = tester.test_get_match_scoreboard(match_id)
+        _, player_ids = check_player_ids(scoreboard_data)
     
-    # 3. TEST PLAYER STATS UPDATE
+    # 2. Test PUT /api/admin/matches/{id}/status
+    print("\n----- TESTING MATCH STATUS UPDATE ENDPOINT -----")
+    current_status = live_state_data.get('match', {}).get('status', 'upcoming') if success_live_state else 'upcoming'
+    new_status = 'live' if current_status != 'live' else 'paused'
+    success_status_update, status_update_data, _ = tester.test_update_match_status_new(match_id, new_status)
+    results["status_update"] = success_status_update
+    
+    if success_status_update:
+        print(f"✅ Match status update endpoint working correctly")
+        print(f"Updated status: {status_update_data.get('status', 'unknown')}")
+    else:
+        print("❌ Match status update endpoint not working")
+    
+    # 3. Test PUT /api/admin/matches/{id}/team-composition
+    print("\n----- TESTING TEAM COMPOSITION UPDATE ENDPOINT -----")
+    compositions = {
+        "team1_composition": [
+            {"player_id": player_ids[0] if len(player_ids) > 0 else "1", "hero": "Captain America"},
+            {"player_id": player_ids[1] if len(player_ids) > 1 else "2", "hero": "Black Widow"},
+            {"player_id": player_ids[2] if len(player_ids) > 2 else "3", "hero": "Hulk"},
+            {"player_id": player_ids[3] if len(player_ids) > 3 else "4", "hero": "Iron Man"},
+            {"player_id": player_ids[4] if len(player_ids) > 4 else "5", "hero": "Storm"}
+        ],
+        "team2_composition": [
+            {"player_id": player_ids[5] if len(player_ids) > 5 else "6", "hero": "Spider-Man"},
+            {"player_id": player_ids[6] if len(player_ids) > 6 else "7", "hero": "Venom"},
+            {"player_id": player_ids[7] if len(player_ids) > 7 else "8", "hero": "Thor"},
+            {"player_id": player_ids[8] if len(player_ids) > 8 else "9", "hero": "Rocket Raccoon"},
+            {"player_id": player_ids[9] if len(player_ids) > 9 else "10", "hero": "Magneto"}
+        ]
+    }
+    success_composition_update, composition_update_data, _ = tester.test_update_team_composition(match_id, 0, compositions)
+    results["composition_update"] = success_composition_update
+    
+    if success_composition_update:
+        print(f"✅ Team composition update endpoint working correctly")
+    else:
+        print("❌ Team composition update endpoint not working")
+    
+    # 4. Test PUT /api/admin/matches/{id}/current-map
+    print("\n----- TESTING CURRENT MAP UPDATE ENDPOINT -----")
+    map_data = {
+        "mapName": "Tokyo 2099",
+        "mode": "Conquest",
+        "mapIndex": 0
+    }
+    success_map_update, map_update_data, _ = tester.test_update_current_map(match_id, map_data)
+    results["map_update"] = success_map_update
+    
+    if success_map_update:
+        print(f"✅ Current map update endpoint working correctly")
+    else:
+        print("❌ Current map update endpoint not working")
+    
+    # 5. Test PUT /api/admin/matches/{id}/timer
+    print("\n----- TESTING TIMER CONTROL ENDPOINT -----")
+    success_timer_control, timer_control_data, _ = tester.test_control_timer(match_id, "start", 0)
+    results["timer_control"] = success_timer_control
+    
+    if success_timer_control:
+        print(f"✅ Timer control endpoint working correctly")
+    else:
+        print("❌ Timer control endpoint not working")
+    
+    # 6. Test PUT /api/admin/matches/{id}/scores
+    print("\n----- TESTING SCORES UPDATE ENDPOINT -----")
+    score_data = {
+        "team1_score": 1,
+        "team2_score": 0,
+        "maps": [
+            {
+                "map_index": 0,
+                "team1_score": 100,
+                "team2_score": 85
+            }
+        ]
+    }
+    success_scores_update, scores_update_data, _ = tester.test_update_scores(match_id, score_data)
+    results["scores_update"] = success_scores_update
+    
+    if success_scores_update:
+        print(f"✅ Scores update endpoint working correctly")
+    else:
+        print("❌ Scores update endpoint not working")
+    
+    # 7. Test PUT /api/admin/matches/{id}/player-stats/{playerId}
+    print("\n----- TESTING PLAYER STATS UPDATE ENDPOINT -----")
     if player_ids:
-        print("\n===== TESTING PLAYER STATS UPDATE =====")
-        
-        # Use the first player ID from the list
         test_player_id = player_ids[0]
-        
-        # Sample stats data
-        stats_data = {
-            "kills": 15,
+        stats = {
+            "eliminations": 15,
             "deaths": 8,
             "assists": 10,
             "damage": 12500,
             "healing": 0,
-            "ultimate_count": 3,
+            "damageBlocked": 2000,
+            "ultimateUsage": 3,
+            "objectiveTime": 120,
             "hero": "Captain America"
         }
+        success_player_stats_update, player_stats_update_data, _ = tester.test_update_player_stats_new(match_id, test_player_id, stats)
+        results["player_stats_update"] = success_player_stats_update
         
-        success_update, update_response = test_player_stats_update(tester, 114, test_player_id, stats_data)
-        
-        if success_update:
-            print(f"✅ Successfully updated stats for player ID {test_player_id}")
-            
-            # Verify the update by getting the scoreboard again
-            print("\n----- VERIFYING STATS UPDATE -----")
-            success_verify, updated_scoreboard = tester.test_get_match_scoreboard(114)
-            
-            if success_verify:
-                # Find the player in the updated scoreboard
-                player_found = False
-                updated_stats = None
-                
-                # Check team1 players
-                if 'team1_players' in updated_scoreboard:
-                    for player in updated_scoreboard['team1_players']:
-                        if player.get('id') == test_player_id:
-                            player_found = True
-                            updated_stats = player
-                            break
-                
-                # Check team2 players if not found in team1
-                if not player_found and 'team2_players' in updated_scoreboard:
-                    for player in updated_scoreboard['team2_players']:
-                        if player.get('id') == test_player_id:
-                            player_found = True
-                            updated_stats = player
-                            break
-                
-                if player_found and updated_stats:
-                    print(f"✅ Found player ID {test_player_id} in updated scoreboard")
-                    
-                    # Check if stats were updated
-                    stats_updated = False
-                    if 'stats' in updated_stats:
-                        stats = updated_stats['stats']
-                        if (stats.get('kills') == stats_data['kills'] or 
-                            stats.get('deaths') == stats_data['deaths'] or 
-                            stats.get('assists') == stats_data['assists']):
-                            stats_updated = True
-                            print("✅ Player stats were successfully updated")
-                        else:
-                            print("❌ Player stats were not updated correctly")
-                    else:
-                        print("❌ Player stats field missing in updated scoreboard")
-                else:
-                    print(f"❌ Could not find player ID {test_player_id} in updated scoreboard")
-            else:
-                print("❌ Failed to verify stats update")
+        if success_player_stats_update:
+            print(f"✅ Player stats update endpoint working correctly for player ID {test_player_id}")
         else:
-            print(f"❌ Failed to update stats for player ID {test_player_id}")
+            print(f"❌ Player stats update endpoint not working for player ID {test_player_id}")
     else:
-        print("❌ No player IDs found to test stats update")
+        print("❌ No player IDs found to test player stats update endpoint")
+        results["player_stats_update"] = False
     
-    # 4. TEST WITH INVALID PLAYER ID
-    print("\n===== TESTING WITH INVALID PLAYER ID =====")
-    invalid_player_id = "invalid_id_12345"
+    # 8. Test GET /api/game-data/all-heroes
+    print("\n----- TESTING ALL HEROES ENDPOINT -----")
+    success_heroes, heroes_data, _ = tester.test_get_all_heroes()
+    results["all_heroes"] = success_heroes
     
-    stats_data = {
-        "kills": 10,
-        "deaths": 5,
-        "assists": 7,
-        "damage": 8000,
-        "healing": 0,
-        "ultimate_count": 2,
-        "hero": "Iron Man"
-    }
-    
-    success_invalid, invalid_response = test_player_stats_update(tester, 114, invalid_player_id, stats_data)
-    
-    if not success_invalid:
-        print("✅ Correctly rejected update with invalid player ID")
+    if success_heroes:
+        print(f"✅ All heroes endpoint working correctly")
+        if isinstance(heroes_data, list):
+            print(f"Found {len(heroes_data)} heroes")
+        else:
+            print(f"Heroes data structure: {type(heroes_data)}")
     else:
-        print("❌ Unexpectedly accepted update with invalid player ID")
+        print("❌ All heroes endpoint not working")
     
-    # 5. SUMMARY OF FINDINGS
-    print("\n===== SUMMARY OF FINDINGS =====")
-    print(f"✅ Match scoreboard endpoint: {'Working' if success_scoreboard else 'Not working'}")
-    print(f"✅ Player IDs in scoreboard: {'All present' if all_players_have_ids else 'Some missing'}")
+    # 9. Test GET /api/game-data/maps
+    print("\n----- TESTING ALL MAPS ENDPOINT -----")
+    success_maps, maps_data, _ = tester.test_get_all_maps()
+    results["all_maps"] = success_maps
     
-    if player_ids:
-        print(f"✅ Player stats update endpoint: {'Working' if success_update else 'Not working'}")
+    if success_maps:
+        print(f"✅ All maps endpoint working correctly")
+        if isinstance(maps_data, list):
+            print(f"Found {len(maps_data)} maps")
+        else:
+            print(f"Maps data structure: {type(maps_data)}")
     else:
-        print("❌ Could not test player stats update due to missing player IDs")
+        print("❌ All maps endpoint not working")
+    
+    # 10. Test GET /api/game-data/modes
+    print("\n----- TESTING ALL MODES ENDPOINT -----")
+    success_modes, modes_data, _ = tester.test_get_all_modes()
+    results["all_modes"] = success_modes
+    
+    if success_modes:
+        print(f"✅ All modes endpoint working correctly")
+        if isinstance(modes_data, list):
+            print(f"Found {len(modes_data)} modes")
+        else:
+            print(f"Modes data structure: {type(modes_data)}")
+    else:
+        print("❌ All modes endpoint not working")
+    
+    # 11. Test GET /api/matches/{id}/scoreboard with cache-busting headers
+    print("\n----- TESTING PUBLIC SCOREBOARD ENDPOINT WITH CACHE-BUSTING HEADERS -----")
+    success_scoreboard, team_logos_present, player_heroes_present, cache_headers_present, scoreboard_data = test_match_scoreboard(tester, match_id, check_cache_headers=True)
+    results["public_scoreboard"] = success_scoreboard
+    results["cache_headers"] = cache_headers_present
+    
+    if success_scoreboard:
+        print(f"✅ Public scoreboard endpoint working correctly")
+        if cache_headers_present:
+            print(f"✅ Cache-busting headers present")
+        else:
+            print(f"❌ Cache-busting headers missing")
+    else:
+        print("❌ Public scoreboard endpoint not working")
+    
+    # 12. Test data consistency between endpoints
+    print("\n----- TESTING DATA CONSISTENCY BETWEEN ENDPOINTS -----")
+    if success_live_state and success_scoreboard:
+        # Compare team IDs
+        live_team1_id = live_state_data.get('teams', {}).get('team1', {}).get('id')
+        live_team2_id = live_state_data.get('teams', {}).get('team2', {}).get('id')
+        scoreboard_team1_id = scoreboard_data.get('team1', {}).get('id')
+        scoreboard_team2_id = scoreboard_data.get('team2', {}).get('id')
+        
+        team_ids_consistent = (live_team1_id == scoreboard_team1_id and live_team2_id == scoreboard_team2_id)
+        
+        if team_ids_consistent:
+            print(f"✅ Team IDs consistent between live state and scoreboard endpoints")
+        else:
+            print(f"❌ Team IDs inconsistent between live state and scoreboard endpoints")
+            print(f"Live state: Team 1 ID = {live_team1_id}, Team 2 ID = {live_team2_id}")
+            print(f"Scoreboard: Team 1 ID = {scoreboard_team1_id}, Team 2 ID = {scoreboard_team2_id}")
+        
+        results["data_consistency"] = team_ids_consistent
+    else:
+        print("❌ Cannot test data consistency because one or both endpoints failed")
+        results["data_consistency"] = False
+    
+    return results
+
+def main():
+    # Setup
+    tester = MarvelRivalsAPITester()
+    
+    print("\n🚀 Starting Marvel Rivals API Tests - Focused on MatchAPI.js Integration\n")
+    print(f"🌐 Base URL: {tester.base_url}")
+    print(f"🌐 API URL: {tester.api_url}")
+    
+    # Test all Marvel Rivals MatchAPI.js endpoints
+    match_id = 126  # Use Match ID 126 as mentioned in the review request
+    results = test_marvel_rivals_api_endpoints(tester, match_id)
+    
+    # Print summary of results
+    print("\n===== SUMMARY OF RESULTS =====")
+    for endpoint, success in results.items():
+        print(f"{'✅' if success else '❌'} {endpoint.replace('_', ' ').title()}: {'Working' if success else 'Not working'}")
+    
+    # Print overall summary
+    working_endpoints = sum(1 for success in results.values() if success)
+    total_endpoints = len(results)
+    print(f"\n✅ {working_endpoints}/{total_endpoints} endpoints working ({working_endpoints/total_endpoints*100:.1f}%)")
     
     # Print summary
     tester.print_summary()
     
-    return 0 if tester.tests_passed == tester.tests_run else 1
+    return 0 if all(results.values()) else 1
 
 if __name__ == "__main__":
     sys.exit(main())
