@@ -381,6 +381,8 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         MatchAPI.updateScores(match.id, scoreData, api)
           .then(() => {
             console.log(`✅ Score updated: Team ${teamNumber} ${increment ? '+1' : '-1'}`);
+            console.log(`🔄 Updated matchStats:`, newStats);
+            
             // Trigger cross-tab sync AFTER successful API call
             MatchAPI.triggerCrossTabSync('score-update', match.id, { 
               mapIndex: currentMap, 
