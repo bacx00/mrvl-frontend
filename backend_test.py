@@ -634,10 +634,10 @@ def test_match_detail_vs_scoreboard(tester, match_id):
     print(f"\n----- COMPARING MATCH DETAIL AND SCOREBOARD FOR ID {match_id} -----")
     
     # Get match detail
-    success_detail, match_detail = tester.test_get_match_detail(match_id)
+    success_detail, match_detail, _ = tester.test_get_match_detail(match_id)
     
     # Get match scoreboard
-    success_scoreboard, team_logos_present, player_heroes_present, scoreboard_data = test_match_scoreboard(tester, match_id)
+    success_scoreboard, team_logos_present, player_heroes_present, cache_headers_present, scoreboard_data = test_match_scoreboard(tester, match_id, check_cache_headers=True)
     
     if success_detail and success_scoreboard:
         # Compare key data points
@@ -674,9 +674,9 @@ def test_match_detail_vs_scoreboard(tester, match_id):
                     print(f"✅ Scoreboard has extra player data (main_hero): {player['main_hero']}")
                     break
         
-        return success_detail and success_scoreboard, team_data_consistent, scoreboard_has_extra_data
+        return success_detail and success_scoreboard, team_data_consistent, scoreboard_has_extra_data, cache_headers_present
     
-    return False, False, False
+    return False, False, False, False
 
 def test_create_match_with_hero_compositions(tester, team_ids):
     """Test creating a match with hero compositions in maps_data"""
