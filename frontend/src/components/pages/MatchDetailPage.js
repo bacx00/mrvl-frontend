@@ -608,10 +608,10 @@ function MatchDetailPage({ matchId, navigateTo }) {
         {/* GAME MODE & TIMER INFO */}
         <div className="mt-2 flex justify-center items-center space-x-4">
           <div className={`px-3 py-1 rounded-full text-sm font-medium bg-${currentMapData.timer.color}-100 text-${currentMapData.timer.color}-800 dark:bg-${currentMapData.timer.color}-900/20 dark:text-${currentMapData.timer.color}-400`}>
-            {currentMapData.timer.icon} {currentMapData.timer.displayName}
+            {currentMapData.timer.displayName}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            ⏱️ Match Duration: {Math.floor(currentMapData.timer.duration / 60)}m
+            Match Duration: {Math.floor(currentMapData.timer.duration / 60)}m
           </div>
         </div>
         
