@@ -469,14 +469,44 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           }
         }
         
-        // 🔥 IMMEDIATE REAL-TIME SYNC
+        // 🔥 CREATE COMPLETE MATCH DATA FOR SCORE SYNC
+        const completeMatchData = {
+          id: match.id,
+          status: matchStatus,
+          team1_score: newStats.mapWins?.team1 || 0,
+          team2_score: newStats.mapWins?.team2 || 0,
+          format: match.format || 'BO1',
+          currentMap: newStats.maps[currentMap]?.map_name || 'Tokyo 2099: Shibuya Sky',
+          gameMode: newStats.maps[currentMap]?.mode || 'Domination',
+          viewers: match.viewers || 0,
+          totalMaps: newStats.totalMaps,
+          
+          // Include team info for complete sync
+          team1: {
+            id: match.team1?.id,
+            name: match.team1?.name || 'Team1',
+            logo: match.team1?.logo || '',
+            players: newStats.maps[currentMap]?.team1Players || []
+          },
+          team2: {
+            id: match.team2?.id, 
+            name: match.team2?.name || 'Team2',
+            logo: match.team2?.logo || '',
+            players: newStats.maps[currentMap]?.team2Players || []
+          },
+          
+          maps: newStats.maps,
+          lastUpdated: Date.now()
+        };
+        
+        // 🔥 IMMEDIATE REAL-TIME SYNC WITH COMPLETE DATA
         triggerRealTimeSync('SCORE_UPDATE', {
           mapIndex: currentMap,
           teamNumber,
           increment,
           mapScore: newMapScore,
           overallScores: newStats.mapWins,
-          matchData: newStats
+          matchData: completeMatchData
         });
         
         return newStats;
