@@ -485,6 +485,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
     // 🧪 TEST: Dispatch a test event to verify listener setup
     setTimeout(() => {
       console.log('🧪 MatchDetailPage: Dispatching test event to verify listeners...');
+      console.log('🧪 Current match ID for testing:', getMatchId());
       window.dispatchEvent(new CustomEvent('mrvl-match-updated', {
         detail: {
           matchId: getMatchId(),
@@ -494,6 +495,20 @@ function MatchDetailPage({ matchId, navigateTo }) {
         }
       }));
     }, 2000);
+    
+    // 🔍 DIAGNOSTIC: Log when ANY event is received (even non-matching match IDs)
+    const diagnosticHandler = (event) => {
+      console.log('🔍 DIAGNOSTIC: Raw event received:', {
+        eventType: event.type,
+        detail: event.detail,
+        currentMatchId: getMatchId(),
+        timestamp: new Date().toISOString()
+      });
+    };
+    
+    eventTypes.forEach(eventType => {
+      window.addEventListener(eventType, diagnosticHandler);
+    });
 
     // Also listen for localStorage changes (additional sync method)
     const handleStorageChange = (event) => {
