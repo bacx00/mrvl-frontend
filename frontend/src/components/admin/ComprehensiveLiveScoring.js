@@ -314,23 +314,25 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           // Get timer info for current game mode
           const currentModeTimer = getGameModeTimer(currentGameMode);
             
-            setMatchStats({
-              totalMaps: matchData.format === 'BO3' ? 3 : matchData.format === 'BO5' ? 5 : 1,
-              currentMap: 0,
-              mapWins: { 
-                team1: matchData.team1_score || 0, 
-                team2: matchData.team2_score || 0 
-              },
-              maps: [{
-                map_number: 1,
-                map_name: matchData.current_map || 'Tokyo 2099: Shibuya Sky',
-                mode: data.live_data?.current_mode || 'Domination',
-                timer: currentModeTimer,
-                team1Score: matchData.team1_score || 0,
-                team2Score: matchData.team2_score || 0,
-                status: matchData.status,
-                winner: null,
-                duration: 'Live',
+            // If we have player data from API, use it; otherwise use fallback
+            if (team1Players.length > 0 && team2Players.length > 0) {
+              setMatchStats({
+                totalMaps: matchData.format === 'BO3' ? 3 : matchData.format === 'BO5' ? 5 : 1,
+                currentMap: 0,
+                mapWins: { 
+                  team1: matchData.team1_score || 0, 
+                  team2: matchData.team2_score || 0 
+                },
+                maps: [{
+                  map_number: 1,
+                  map_name: matchData.current_map || 'Tokyo 2099: Shibuya Sky',
+                  mode: currentGameMode,
+                  timer: currentModeTimer,
+                  team1Score: matchData.team1_score || 0,
+                  team2Score: matchData.team2_score || 0,
+                  status: matchData.status,
+                  winner: null,
+                  duration: 'Live',
                 team1Players: team1Players.map(player => ({
                   id: player.player_id,
                   playerId: player.player_id,
