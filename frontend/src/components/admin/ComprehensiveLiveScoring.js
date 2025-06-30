@@ -410,18 +410,33 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       ...data
     };
     
+    console.log('🚀 ADMIN: Preparing sync data:', {
+      matchId: match.id,
+      type: type,
+      dataKeys: Object.keys(data),
+      hasMatchData: !!data.matchData
+    });
+    
     // Multiple sync methods for reliability
     localStorage.setItem('mrvl-match-sync', JSON.stringify(syncData));
     localStorage.setItem(`mrvl-match-${match.id}`, JSON.stringify(syncData));
     
-    // Dispatch multiple event types
-    window.dispatchEvent(new CustomEvent('mrvl-match-updated', { detail: syncData }));
-    window.dispatchEvent(new CustomEvent('mrvl-hero-updated', { detail: syncData }));
-    window.dispatchEvent(new CustomEvent('mrvl-stats-updated', { detail: syncData }));
-    window.dispatchEvent(new CustomEvent('mrvl-score-updated', { detail: syncData }));
-    window.dispatchEvent(new CustomEvent('mrvl-data-refresh', { detail: syncData }));
+    // Force a storage event for same-page sync
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'mrvl-match-sync',
+      newValue: JSON.stringify(syncData),
+      oldValue: null,
+      storageArea: localStorage
+    }));
     
-    console.log('🔥 ADMIN: Multi-channel sync triggered:', { type, data });
+    // Dispatch multiple event types with debug logging
+    const eventTypes = ['mrvl-match-updated', 'mrvl-hero-updated', 'mrvl-stats-updated', 'mrvl-score-updated', 'mrvl-data-refresh'];
+    eventTypes.forEach(eventType => {
+      console.log(`🎯 ADMIN: Dispatching ${eventType} for match ${match.id}`);
+      window.dispatchEvent(new CustomEvent(eventType, { detail: syncData }));
+    });
+    
+    console.log('🔥 ADMIN: Multi-channel sync completed:', { type, matchId: match.id, timestamp: syncData.timestamp });
   };
 
   // 🏆 ENHANCED SCORE UPDATE WITH REAL-TIME SYNC
