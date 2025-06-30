@@ -520,19 +520,37 @@ function MatchDetailPage({ matchId, navigateTo }) {
         timestamp: new Date().toISOString()
       });
       
-      if (event.key === 'mrvl-match-sync' || event.key === `mrvl-match-${getMatchId()}`) {
+      // Listen for both standard keys AND unique event keys
+      const isRelevantKey = event.key === 'mrvl-match-sync' || 
+                           event.key === `mrvl-match-${getMatchId()}` ||
+                           (event.key && event.key.startsWith('mrvl-match-sync-'));
+      
+      if (isRelevantKey) {
         try {
           const syncData = JSON.parse(event.newValue || '{}');
           console.log('🔄 PARSED STORAGE SYNC DATA:', {
             syncMatchId: syncData.matchId,
             currentMatchId: getMatchId(),
             syncType: syncData.type,
-            willProcess: syncData.matchId == getMatchId()
+            willProcess: syncData.matchId == getMatchId(),
+            eventKey: event.key
           });
           
           if (syncData.matchId == getMatchId()) {
             console.log('🔄 Storage sync detected and processing:', syncData);
             handleMatchUpdate({ detail: syncData });
+            
+            // Clean up unique keys after processing to prevent localStorage bloat
+            if (event.key.startsWith('mrvl-match-sync-') && event.key !== 'mrvl-match-sync') {
+              setTimeout(() => {
+                try {
+                  localStorage.removeItem(event.key);
+                  console.log('🧹 Cleaned up unique key:', event.key);
+                } catch (error) {
+                  console.warn('⚠️ Could not clean up key:', event.key, error);
+                }
+              }, 5000); // Clean up after 5 seconds
+            }
           } else {
             console.log('🚫 Storage sync ignored - match ID mismatch:', {
               syncMatchId: syncData.matchId,
