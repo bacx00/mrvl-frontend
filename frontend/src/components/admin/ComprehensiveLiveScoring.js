@@ -886,7 +886,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                 </div>
                 {currentMapData?.timer && (
                   <div className={`text-xs px-2 py-1 rounded mt-1 bg-${currentMapData.timer.color}-100 text-${currentMapData.timer.color}-800`}>
-                    ⏱️ {Math.floor(currentMapData.timer.duration / 60)}m - {currentMapData.timer.description}
+                    {Math.floor(currentMapData.timer.duration / 60)}m - {currentMapData.timer.description}
                   </div>
                 )}
               </div>
