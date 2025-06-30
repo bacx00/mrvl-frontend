@@ -426,20 +426,20 @@ export const MatchAPI = {
         viewers: matchInfo.viewers || data.viewers || 0,
         streamUrl: matchInfo.stream_url || data.stream_url,
         
-        // 🏆 Team data from PRODUCTION API
+        // 🏆 Team data from PRODUCTION API with safe access
         team1: {
-          id: data.teams.team1.id,
-          name: data.teams.team1.name,
-          logo: data.teams.team1.logo,
-          score: data.teams.team1.score || data.match_info.team1_score || 0,
-          shortName: data.teams.team1.short_name
+          id: teams.team1?.id || 'unknown',
+          name: teams.team1?.name || 'Team 1',
+          logo: teams.team1?.logo || '',
+          score: teams.team1?.score || matchInfo.team1_score || 0,
+          shortName: teams.team1?.short_name || 'T1'
         },
         team2: {
-          id: data.teams.team2.id,
-          name: data.teams.team2.name,
-          logo: data.teams.team2.logo,
-          score: data.teams.team2.score || data.match_info.team2_score || 0,
-          shortName: data.teams.team2.short_name
+          id: teams.team2?.id || 'unknown',
+          name: teams.team2?.name || 'Team 2',
+          logo: teams.team2?.logo || '',
+          score: teams.team2?.score || matchInfo.team2_score || 0,
+          shortName: teams.team2?.short_name || 'T2'
         },
         
         // 🗺️ CRITICAL FIX: Use actual backend maps data or create smart defaults
