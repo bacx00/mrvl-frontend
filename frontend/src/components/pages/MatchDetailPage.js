@@ -342,7 +342,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
       if (detail.matchId == currentMatchId) {
         console.log('🔥 MatchDetailPage: Processing real-time update:', detail);
         
-        // Handle different types of updates
+        // Handle different types of updates with IMMEDIATE RESPONSE
         switch (detail.type) {
           case 'SCORE_UPDATE':
             console.log('🏆 Score update received');
