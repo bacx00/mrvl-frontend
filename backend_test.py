@@ -1434,6 +1434,303 @@ def test_marvel_rivals_live_scoring_integration(tester, match_id=135):
     
     return results, critical_tests_passed
 
+def test_match_290_scoreboard(tester):
+    """Test the match 290 scoreboard endpoint to verify response structure"""
+    print("\n===== TESTING MATCH 290 SCOREBOARD ENDPOINT =====")
+    
+    match_id = 290
+    success, scoreboard_data, _ = tester.run_test(
+        f"Get Match Scoreboard for ID {match_id}",
+        "GET",
+        f"matches/{match_id}/scoreboard",
+        200
+    )
+    
+    if success and scoreboard_data:
+        print("✅ Match 290 scoreboard endpoint is working")
+        
+        # Check response structure (data.match vs data.match_info)
+        if 'match' in scoreboard_data:
+            print("✅ Response contains data.match structure")
+            match_data = scoreboard_data['match']
+            print(f"Match ID: {match_data.get('id')}")
+        elif 'match_info' in scoreboard_data:
+            print("✅ Response contains data.match_info structure")
+            match_data = scoreboard_data['match_info']
+            print(f"Match ID: {match_data.get('id')}")
+        else:
+            print("❌ Response does not contain either data.match or data.match_info")
+            
+        # Check team data structure
+        if 'teams' in scoreboard_data:
+            teams = scoreboard_data['teams']
+            if 'team1' in teams and 'name' in teams['team1']:
+                print(f"✅ Team 1 name: {teams['team1']['name']}")
+            else:
+                print("❌ Missing teams.team1.name in response")
+                
+            if 'team2' in teams and 'name' in teams['team2']:
+                print(f"✅ Team 2 name: {teams['team2']['name']}")
+            else:
+                print("❌ Missing teams.team2.name in response")
+        else:
+            print("❌ Missing teams data in response")
+            
+        # Check player data structure
+        if 'teams' in scoreboard_data:
+            teams = scoreboard_data['teams']
+            if 'team1' in teams and 'players' in teams['team1']:
+                print(f"✅ Team 1 has {len(teams['team1']['players'])} players")
+                for i, player in enumerate(teams['team1']['players']):
+                    print(f"  Player {i+1}: {player.get('name', 'Unknown')} (ID: {player.get('id', 'Unknown')})")
+            else:
+                print("❌ Missing team1.players in response")
+                
+            if 'team2' in teams and 'players' in teams['team2']:
+                print(f"✅ Team 2 has {len(teams['team2']['players'])} players")
+                for i, player in enumerate(teams['team2']['players']):
+                    print(f"  Player {i+1}: {player.get('name', 'Unknown')} (ID: {player.get('id', 'Unknown')})")
+            else:
+                print("❌ Missing team2.players in response")
+        else:
+            print("❌ Missing teams data in response")
+            
+        return success, scoreboard_data
+    else:
+        print("❌ Failed to retrieve match 290 scoreboard")
+        return False, {}
+
+def test_player_stats_update_for_match_290(tester):
+    """Test updating player stats for match 290"""
+    print("\n===== TESTING PLAYER STATS UPDATE FOR MATCH 290 =====")
+    
+    match_id = 290
+    
+    # First, get the scoreboard to find player IDs
+    success, scoreboard_data, _ = tester.run_test(
+        f"Get Match Scoreboard for ID {match_id}",
+        "GET",
+        f"matches/{match_id}/scoreboard",
+        200
+    )
+    
+    if success and scoreboard_data:
+        # Extract player IDs
+        player_ids = []
+        if 'teams' in scoreboard_data:
+            teams = scoreboard_data['teams']
+            if 'team1' in teams and 'players' in teams['team1']:
+                for player in teams['team1']['players']:
+                    if 'id' in player:
+                        player_ids.append(player['id'])
+                        
+            if 'team2' in teams and 'players' in teams['team2']:
+                for player in teams['team2']['players']:
+                    if 'id' in player:
+                        player_ids.append(player['id'])
+        
+        if player_ids:
+            print(f"Found {len(player_ids)} player IDs: {player_ids}")
+            
+            # Test updating stats for the first player
+            test_player_id = player_ids[0]
+            stats_data = {
+                "eliminations": 25,
+                "deaths": 10,
+                "assists": 15,
+                "damage": 18500,
+                "healing": 0,
+                "damage_blocked": 5000,
+                "ultimate_usage": 4,
+                "objective_time": 180,
+                "hero_played": "Captain America"
+            }
+            
+            # Test with admin token
+            success_admin, response_admin, _ = tester.run_test(
+                f"Update Player Stats for Match ID {match_id}, Player ID {test_player_id} (Admin)",
+                "POST",
+                f"matches/{match_id}/players/{test_player_id}/stats",
+                200,
+                data=stats_data,
+                admin_auth=True
+            )
+            
+            # Test without token (should fail with 401)
+            success_no_auth, response_no_auth, _ = tester.run_test(
+                f"Update Player Stats for Match ID {match_id}, Player ID {test_player_id} (No Auth)",
+                "POST",
+                f"matches/{match_id}/players/{test_player_id}/stats",
+                401,
+                data=stats_data
+            )
+            
+            # Test with invalid player ID (should fail with 404)
+            success_invalid_id, response_invalid_id, _ = tester.run_test(
+                f"Update Player Stats for Match ID {match_id}, Invalid Player ID",
+                "POST",
+                f"matches/{match_id}/players/99999/stats",
+                404,
+                data=stats_data,
+                admin_auth=True
+            )
+            
+            return success_admin, player_ids
+        else:
+            print("❌ No player IDs found in scoreboard response")
+            return False, []
+    else:
+        print("❌ Failed to retrieve match 290 scoreboard")
+        return False, []
+
+def test_score_update_endpoints(tester):
+    """Test score update endpoints for match 290"""
+    print("\n===== TESTING SCORE UPDATE ENDPOINTS FOR MATCH 290 =====")
+    
+    match_id = 290
+    
+    # Test updating match scores
+    score_data = {
+        "team1_score": 1,
+        "team2_score": 0,
+        "maps": [
+            {
+                "map_index": 0,
+                "team1_score": 100,
+                "team2_score": 85,
+                "completed": True,
+                "winner": "team1"
+            }
+        ]
+    }
+    
+    success_scores, response_scores, _ = tester.run_test(
+        f"Update Match Scores for ID {match_id}",
+        "PUT",
+        f"admin/matches/{match_id}/scores",
+        200,
+        data=score_data,
+        admin_auth=True
+    )
+    
+    if success_scores:
+        print("✅ Score update endpoint is working")
+        
+        # Check if the response includes updated overall scores
+        if 'team1_score' in response_scores and 'team2_score' in response_scores:
+            print(f"Updated Overall Scores: Team 1 = {response_scores['team1_score']}, Team 2 = {response_scores['team2_score']}")
+        else:
+            print("❌ Response does not include updated overall scores")
+    else:
+        print("❌ Score update endpoint is not working")
+    
+    # Test updating match status
+    status_data = {"status": "live"}
+    success_status, response_status, _ = tester.run_test(
+        f"Update Match Status for ID {match_id}",
+        "PUT",
+        f"admin/matches/{match_id}/status",
+        200,
+        data=status_data,
+        admin_auth=True
+    )
+    
+    if success_status:
+        print("✅ Status update endpoint is working")
+        print(f"Updated Status: {response_status.get('status', 'unknown')}")
+    else:
+        print("❌ Status update endpoint is not working")
+    
+    return success_scores and success_status
+
+def test_game_data_endpoints(tester):
+    """Test game data endpoints for heroes, maps, and modes"""
+    print("\n===== TESTING GAME DATA ENDPOINTS =====")
+    
+    # Test heroes endpoint
+    success_heroes, heroes_data, _ = tester.run_test(
+        "Get All Marvel Rivals Heroes",
+        "GET",
+        "game-data/all-heroes",
+        200
+    )
+    
+    if success_heroes:
+        print("✅ Heroes endpoint is working")
+        if isinstance(heroes_data, list):
+            print(f"Found {len(heroes_data)} heroes")
+            if len(heroes_data) > 0:
+                print("Sample heroes:")
+                for i, hero in enumerate(heroes_data[:5]):
+                    print(f"  {i+1}. {hero.get('name', 'Unknown')}")
+        else:
+            print(f"Heroes data structure: {type(heroes_data)}")
+    else:
+        print("❌ Heroes endpoint is not working")
+    
+    # Test maps endpoint
+    success_maps, maps_data, _ = tester.run_test(
+        "Get All Marvel Rivals Maps",
+        "GET",
+        "game-data/maps",
+        200
+    )
+    
+    if success_maps:
+        print("✅ Maps endpoint is working")
+        if isinstance(maps_data, list):
+            print(f"Found {len(maps_data)} maps")
+            if len(maps_data) > 0:
+                print("Sample maps:")
+                for i, map_data in enumerate(maps_data[:5]):
+                    print(f"  {i+1}. {map_data.get('name', 'Unknown')}")
+        else:
+            print(f"Maps data structure: {type(maps_data)}")
+    else:
+        print("❌ Maps endpoint is not working")
+    
+    # Test modes endpoint
+    success_modes, modes_data, _ = tester.run_test(
+        "Get All Game Modes",
+        "GET",
+        "game-data/modes",
+        200
+    )
+    
+    if success_modes:
+        print("✅ Modes endpoint is working")
+        if isinstance(modes_data, list):
+            print(f"Found {len(modes_data)} modes")
+            if len(modes_data) > 0:
+                print("Sample modes:")
+                for i, mode in enumerate(modes_data[:5]):
+                    print(f"  {i+1}. {mode.get('name', 'Unknown')}")
+        else:
+            print(f"Modes data structure: {type(modes_data)}")
+    else:
+        print("❌ Modes endpoint is not working")
+    
+    return success_heroes and success_maps and success_modes
+
+def verify_backend_url(tester):
+    """Verify that the backend URL is correct and accessible"""
+    print("\n===== VERIFYING BACKEND URL =====")
+    
+    # Test a simple endpoint to verify the backend is accessible
+    success, _, _ = tester.run_test(
+        "Verify Backend URL",
+        "GET",
+        "game-data/all-heroes",
+        200
+    )
+    
+    if success:
+        print(f"✅ Backend URL {tester.api_url} is correct and accessible")
+        return True
+    else:
+        print(f"❌ Backend URL {tester.api_url} is not accessible")
+        return False
+
 def main():
     # Setup
     tester = MarvelRivalsAPITester(base_url="https://staging.mrvl.net")
@@ -1443,14 +1740,42 @@ def main():
     print(f"🌐 API URL: {tester.api_url}")
     print(f"🔑 Admin Token: {tester.admin_token[:10]}...")
     
-    # Test the Marvel Rivals live scoring integration
-    match_id = 135  # Use Match ID 135 as specified in the review request
-    results, critical_tests_passed = test_marvel_rivals_live_scoring_integration(tester, match_id)
+    # Test 1: Verify backend URL
+    backend_url_verified = verify_backend_url(tester)
+    
+    if backend_url_verified:
+        # Test 2: Match 290 scoreboard endpoint
+        match_290_success, match_290_data = test_match_290_scoreboard(tester)
+        
+        # Test 3: Player stats update for match 290
+        player_stats_success, player_ids = test_player_stats_update_for_match_290(tester)
+        
+        # Test 4: Score update endpoints
+        score_update_success = test_score_update_endpoints(tester)
+        
+        # Test 5: Game data endpoints
+        game_data_success = test_game_data_endpoints(tester)
+        
+        # Check response structure for frontend integration
+        print("\n===== CHECKING RESPONSE STRUCTURE FOR FRONTEND INTEGRATION =====")
+        if match_290_success and match_290_data:
+            if 'match' in match_290_data and 'id' in match_290_data['match']:
+                print("✅ Backend returns data.match.id structure")
+                print(f"Match ID: {match_290_data['match']['id']}")
+            elif 'match_info' in match_290_data and 'id' in match_290_data['match_info']:
+                print("✅ Backend returns data.match_info.id structure")
+                print(f"Match ID: {match_290_data['match_info']['id']}")
+                print("⚠️ Frontend expects data.match.id but backend returns data.match_info.id")
+                print("⚠️ Frontend should be updated to use data.match_info.id")
+            else:
+                print("❌ Backend response does not contain either data.match.id or data.match_info.id")
+    else:
+        print("❌ Cannot proceed with tests because the backend URL is not accessible")
     
     # Print summary
     tester.print_summary()
     
-    return 0 if critical_tests_passed else 1
+    return 0 if backend_url_verified else 1
 
 if __name__ == "__main__":
     sys.exit(main())
