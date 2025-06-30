@@ -512,16 +512,38 @@ function MatchDetailPage({ matchId, navigateTo }) {
 
     // Also listen for localStorage changes (additional sync method)
     const handleStorageChange = (event) => {
+      console.log('🔄 STORAGE EVENT DETECTED:', {
+        key: event.key,
+        newValue: event.newValue ? event.newValue.substring(0, 100) + '...' : null,
+        oldValue: event.oldValue ? event.oldValue.substring(0, 100) + '...' : null,
+        currentMatchId: getMatchId(),
+        timestamp: new Date().toISOString()
+      });
+      
       if (event.key === 'mrvl-match-sync' || event.key === `mrvl-match-${getMatchId()}`) {
         try {
           const syncData = JSON.parse(event.newValue || '{}');
+          console.log('🔄 PARSED STORAGE SYNC DATA:', {
+            syncMatchId: syncData.matchId,
+            currentMatchId: getMatchId(),
+            syncType: syncData.type,
+            willProcess: syncData.matchId == getMatchId()
+          });
+          
           if (syncData.matchId == getMatchId()) {
-            console.log('🔄 Storage sync detected:', syncData);
+            console.log('🔄 Storage sync detected and processing:', syncData);
             handleMatchUpdate({ detail: syncData });
+          } else {
+            console.log('🚫 Storage sync ignored - match ID mismatch:', {
+              syncMatchId: syncData.matchId,
+              currentMatchId: getMatchId()
+            });
           }
         } catch (error) {
-          console.error('❌ Error parsing storage sync data:', error);
+          console.error('❌ Error parsing storage sync data:', error, event.newValue);
         }
+      } else {
+        console.log('🔍 Storage event for different key:', event.key);
       }
     };
     
