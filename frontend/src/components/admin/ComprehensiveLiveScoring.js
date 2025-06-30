@@ -281,9 +281,38 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
             }
           }
           
-          // If we have player data from API, use it; otherwise use fallback
-          if (team1Players.length > 0 && team2Players.length > 0) {
-            const currentModeTimer = getGameModeTimer(data.live_data?.current_mode || 'Domination');
+          // 🎮 IMPROVED GAME MODE DETECTION FOR ADMIN
+          let currentGameMode = 'Domination'; // Default fallback
+          if (data.live_data?.current_mode) {
+            currentGameMode = data.live_data.current_mode;
+          } else if (matchData.current_mode) {
+            currentGameMode = matchData.current_mode;
+          } else if (matchData.game_mode) {
+            currentGameMode = matchData.game_mode;
+          } else if (matchData.maps_data) {
+            // Try to get mode from first map in maps_data
+            try {
+              const mapsData = JSON.parse(matchData.maps_data);
+              if (mapsData && mapsData[0] && mapsData[0].mode) {
+                currentGameMode = mapsData[0].mode;
+              }
+            } catch (error) {
+              console.log('ADMIN: Could not parse game mode from maps_data:', error);
+            }
+          }
+          
+          console.log('🎮 ADMIN: Game mode detected:', currentGameMode);
+          
+          console.log('✅ ADMIN: Using PRODUCTION data structure:', {
+            matchData: !!matchData,
+            team1PlayersCount: team1Players.length,
+            team2PlayersCount: team2Players.length,
+            currentMap: matchData.current_map,
+            gameMode: currentGameMode
+          });
+          
+          // Get timer info for current game mode
+          const currentModeTimer = getGameModeTimer(currentGameMode);
             
             setMatchStats({
               totalMaps: matchData.format === 'BO3' ? 3 : matchData.format === 'BO5' ? 5 : 1,
