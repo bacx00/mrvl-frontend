@@ -345,7 +345,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
         // Handle different types of updates with IMMEDIATE RESPONSE
         switch (detail.type) {
           case 'SCORE_UPDATE':
-            console.log('🏆 Score update received');
+            console.log('🏆 Score update received - IMMEDIATE UPDATE');
             if (detail.matchData) {
               setMatch(detail.matchData);
             }
@@ -360,14 +360,14 @@ function MatchDetailPage({ matchId, navigateTo }) {
             break;
             
           case 'HERO_CHANGE':
-            console.log('🦸 Hero change received:', detail);
+            console.log('🦸 Hero change received - IMMEDIATE UPDATE:', detail);
             if (detail.matchData) {
               setMatch(detail.matchData);
             }
             break;
             
           case 'STAT_UPDATE':
-            console.log('📊 Stat update received');
+            console.log('📊 Stat update received - IMMEDIATE UPDATE');
             if (detail.matchData) {
               setMatch(detail.matchData);
             }
@@ -377,41 +377,49 @@ function MatchDetailPage({ matchId, navigateTo }) {
           case 'TIMER_PAUSE':
           case 'TIMER_RESET':
           case 'TIMER_UPDATE':
-            console.log('⏱️ Timer update received:', detail);
+            console.log('⏱️ Timer update received - IMMEDIATE UPDATE:', detail);
             if (detail.timer !== undefined) {
               setMatchTimer(detail.timer);
             }
-            break;
+            if (detail.isRunning !== undefined) {
+              // Update visual timer state immediately
+              console.log('⏱️ Timer running state:', detail.isRunning);
+            }
+            // NO BACKEND FETCH for timer updates - use event data only
+            return; // Don't fetch backend data for timer updates
             
           case 'MAP_ADVANCE':
-            console.log('🗺️ Map advance received');
+            console.log('🗺️ Map advance received - IMMEDIATE UPDATE');
             if (detail.newMapIndex !== undefined) {
               setCurrentMapIndex(detail.newMapIndex);
             }
             break;
             
           case 'PREPARATION_PHASE':
-            console.log('⏳ Preparation phase update');
+            console.log('⏳ Preparation phase update - IMMEDIATE UPDATE');
             setIsPreparationPhase(detail.isPreparation || false);
             setPreparationTimer(detail.preparationTimer || 0);
             break;
             
           case 'PRODUCTION_SAVE':
-            console.log('💾 Production save completed');
+            console.log('💾 Production save completed - FULL REFRESH');
             if (detail.matchData) {
               setMatch(detail.matchData);
             }
             break;
             
           default:
-            console.log('🔄 General update received');
+            console.log('🔄 General update received - IMMEDIATE UPDATE');
             if (detail.matchData) {
               setMatch(detail.matchData);
             }
         }
         
-        // Always fetch fresh data for complete consistency (but silently)
-        fetchMatchData(false);
+        // For non-timer updates, also fetch fresh data for consistency (silently)
+        if (detail.type !== 'TIMER_START' && detail.type !== 'TIMER_PAUSE' && 
+            detail.type !== 'TIMER_RESET' && detail.type !== 'TIMER_UPDATE') {
+          fetchMatchData(false);
+        }
       }
     };
 
