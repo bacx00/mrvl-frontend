@@ -366,8 +366,8 @@ export const MatchAPI = {
     try {
       console.log('🔍 MatchAPI: Loading PRODUCTION scoreboard for match:', matchId);
       
-      // ✅ CORRECT: Use live-scoreboard endpoint from documentation
-      const response = await apiHelper.get(`/matches/${matchId}/live-scoreboard`);
+      // ✅ CORRECT: Use scoreboard endpoint from production backend
+      const response = await apiHelper.get(`/matches/${matchId}/scoreboard`);
       const data = response?.data;
       
       if (!data) {
