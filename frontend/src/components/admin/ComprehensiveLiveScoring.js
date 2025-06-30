@@ -898,9 +898,11 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
             <div className="bg-gray-800 rounded-lg p-6 mb-6">
               <div className="text-center mb-6">
                 <div className="bg-red-600 text-white px-4 py-2 rounded-lg inline-block">
-                  {currentMapData.timer?.icon} {currentMapData.map_name}
+                  {currentMapData.map_name}
                   <div className="text-sm opacity-90">{currentMapData.mode}</div>
-                  <div className="text-xs opacity-75">Duration: {Math.floor(currentMapData.timer?.duration / 60)} minutes</div>
+                  {currentMapData.timer && (
+                    <div className="text-xs opacity-75">Duration: {Math.floor(currentMapData.timer.duration / 60)} minutes</div>
+                  )}
                 </div>
               </div>
 
