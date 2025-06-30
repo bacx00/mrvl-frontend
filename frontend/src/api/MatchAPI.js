@@ -395,29 +395,29 @@ export const MatchAPI = {
       
       console.log('✅ Found match data:', match);
       
-      // 🚨 CRITICAL: Transform PRODUCTION API response to frontend format
+      // 🚨 CRITICAL: Transform PRODUCTION API response to frontend format  
       const transformedMatch = {
-        id: matchInfo.id || data.id,
-        status: matchInfo.status || data.status || 'unknown',
+        id: match.id,
+        status: match.status || 'unknown',
         currentMap: 1, // Default to map 1
-        format: matchInfo.format || data.format || 'BO1',
-        viewers: matchInfo.viewers || data.viewers || 0,
-        streamUrl: matchInfo.stream_url || data.stream_url,
+        format: match.format || match.match_format || 'BO1',
+        viewers: match.viewers || 0,
+        streamUrl: match.stream_url,
         
-        // 🏆 Team data from PRODUCTION API with safe access
+        // 🏆 Team data - extract from match object
         team1: {
-          id: teams.team1?.id || 'unknown',
-          name: teams.team1?.name || 'Team 1',
-          logo: teams.team1?.logo || '',
-          score: teams.team1?.score || matchInfo.team1_score || 0,
-          shortName: teams.team1?.short_name || 'T1'
+          id: match.team1_id || 'unknown',
+          name: 'Team 1', // Will be populated from separate teams API call
+          logo: '',
+          score: match.team1_score || 0,
+          shortName: 'T1'
         },
         team2: {
-          id: teams.team2?.id || 'unknown',
-          name: teams.team2?.name || 'Team 2',
-          logo: teams.team2?.logo || '',
-          score: teams.team2?.score || matchInfo.team2_score || 0,
-          shortName: teams.team2?.short_name || 'T2'
+          id: match.team2_id || 'unknown',
+          name: 'Team 2', // Will be populated from separate teams API call
+          logo: '',
+          score: match.team2_score || 0,
+          shortName: 'T2'
         },
         
         // 🗺️ CRITICAL FIX: Use actual backend maps data or create smart defaults
