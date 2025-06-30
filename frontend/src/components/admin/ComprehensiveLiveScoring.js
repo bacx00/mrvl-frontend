@@ -1222,7 +1222,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
             </div>
           )}
 
-          {/* Save Button */}
+          {/* Save Button & Debug */}
           <div className="flex justify-center space-x-4">
             <button
               onClick={handleSaveStats}
@@ -1240,6 +1240,26 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                   <span>Save All Data</span>
                 </>
               )}
+            </button>
+            
+            {/* DEBUG: Test Sync Button */}
+            <button
+              onClick={() => {
+                console.log('🧪 TESTING SYNC: Manually triggering test sync');
+                triggerRealTimeSync('TEST_SYNC', {
+                  testMessage: 'Hello from admin!',
+                  timestamp: Date.now(),
+                  matchData: {
+                    id: match.id,
+                    team1: { name: 'Test Team 1' },
+                    team2: { name: 'Test Team 2' },
+                    status: 'testing'
+                  }
+                });
+              }}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm"
+            >
+              🧪 Test Sync
             </button>
             
             {matchStats.totalMaps > 1 && currentMapIndex + 1 < matchStats.totalMaps && (
