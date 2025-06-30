@@ -336,11 +336,23 @@ function MatchDetailPage({ matchId, navigateTo }) {
         eventType: detail.type,
         eventMatchId: detail.matchId,
         currentMatchId: currentMatchId,
-        willProcess: detail.matchId == currentMatchId
+        currentMatchIdType: typeof currentMatchId,
+        eventMatchIdType: typeof detail.matchId,
+        willProcess: detail.matchId == currentMatchId,
+        strictEquality: detail.matchId === currentMatchId
       });
       
-      if (detail.matchId == currentMatchId) {
-        console.log('🔥 MatchDetailPage: Processing real-time update:', detail);
+      // ✅ IMPROVED MATCH ID COMPARISON - HANDLE STRING/NUMBER MISMATCH
+      const matchesId = detail.matchId == currentMatchId || 
+                       detail.matchId === currentMatchId ||
+                       String(detail.matchId) === String(currentMatchId);
+      
+      if (matchesId) {
+        console.log('🔥 MatchDetailPage: Processing real-time update:', {
+          type: detail.type,
+          hasMatchData: !!detail.matchData,
+          timestamp: detail.timestamp
+        });
         
         // Handle different types of updates with IMMEDIATE RESPONSE
         switch (detail.type) {
