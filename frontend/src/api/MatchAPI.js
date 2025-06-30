@@ -408,10 +408,6 @@ export const MatchAPI = {
       const teams = data.teams || {};
       const maps = data.maps || [];
       
-      // ✅ SAFE ACCESS: Check if match_info exists before accessing
-      const matchInfo = data.match_info || {};
-      const teams = data.teams || {};
-      
       if (!matchInfo.id && !data.id) {
         console.error('❌ No match ID found in response:', data);
         throw new Error('No match ID found in scoreboard response');
