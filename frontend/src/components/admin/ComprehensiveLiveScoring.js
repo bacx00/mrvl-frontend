@@ -1,35 +1,32 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
 import { TeamLogo } from '../../utils/imageUtils';
-import MatchAPI from '../../api/MatchAPI'; // 🎯 CRITICAL: New data transformation layer
+import MatchAPI from '../../api/MatchAPI';
 
 /**
- * 🎮 COMPREHENSIVE LIVE SCORING - FIXED VERSION WITH DATA TRANSFORMATION
- * Uses MatchAPI for proper backend/frontend data conversion
+ * 🎮 COMPREHENSIVE LIVE SCORING - ALIGNED WITH BACKEND DOCUMENTATION
+ * Backend URL: https://staging.mrvl.net/api
+ * Uses data.match_info structure and team1_roster/team2_roster
  */
 const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
   const { api } = useAuth();
   const [matchStats, setMatchStats] = useState(null);
   const [matchStatus, setMatchStatus] = useState('upcoming');
-  // 🚨 PERSISTENT TIMER: Store in localStorage to persist across page changes
   const [matchTimer, setMatchTimer] = useState(() => {
-    // Try to restore timer from localStorage
     const saved = localStorage.getItem(`match-timer-${match?.id}`);
     return saved || '00:00';
   });
   const [isTimerRunning, setIsTimerRunning] = useState(() => {
-    // Try to restore running state from localStorage
     const saved = localStorage.getItem(`match-timer-running-${match?.id}`);
     return saved === 'true';
   });
   const [timerStartTime, setTimerStartTime] = useState(() => {
-    // Try to restore start time from localStorage
     const saved = localStorage.getItem(`match-timer-start-${match?.id}`);
     return saved ? parseInt(saved) : null;
   });
   const [saveLoading, setSaveLoading] = useState(false);
 
-  // 🔍 DEBUG: Log what data we receive (ONCE)
+  // 🔍 DEBUG: Log what data we receive
   useEffect(() => {
     console.log('🎯 ComprehensiveLiveScoring MOUNTED with:', {
       isOpen,
@@ -42,9 +39,9 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       } : null,
       hasToken: !!token
     });
-  }, [match?.id]); // Only when match ID changes
+  }, [match?.id]);
 
-  // 🎮 MARVEL RIVALS MAPS - Load from API
+  // 🎮 MARVEL RIVALS MAPS
   const [marvelRivalsMaps, setMarvelRivalsMaps] = useState([
     { name: 'Tokyo 2099: Shibuya Sky', mode: 'Convoy', icon: '🏙️' },
     { name: 'Klyntar: Symbiote Planet', mode: 'Domination', icon: '🖤' },
@@ -56,7 +53,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     { name: 'Midtown Manhattan: Oscorp Tower', mode: 'Convoy', icon: '🏢' }
   ]);
 
-  // ✅ COMPLETE MARVEL RIVALS HEROES BY ROLE - Load from API
+  // ✅ COMPLETE MARVEL RIVALS HEROES BY ROLE
   const [marvelRivalsHeroes, setMarvelRivalsHeroes] = useState({
     Tank: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Thor', 'Venom'],
     Duelist: ['Black Widow', 'Hawkeye', 'Iron Man', 'Punisher', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Winter Soldier'],
@@ -79,7 +76,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         if (heroesResponse?.data) {
           // Transform heroes from API format to role-based format
           if (Array.isArray(heroesResponse.data)) {
-            // If heroes come as array, organize by role
             const herosByRole = {
               Tank: [],
               Duelist: [],
@@ -106,7 +102,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
             setMarvelRivalsHeroes(herosByRole);
             console.log('✅ Heroes loaded and organized by role:', herosByRole);
           } else {
-            // If heroes are already organized by role
             setMarvelRivalsHeroes(heroesResponse.data);
             console.log('✅ Heroes loaded from API:', heroesResponse.data);
           }
@@ -122,33 +117,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     }
   }, [api]);
 
-  // 🔄 LOAD HEROES FROM API TO SYNC WITH BACKEND
-  useEffect(() => {
-    const loadHeroes = async () => {
-      try {
-        const response = await api.get('/heroes');
-        const heroData = response?.data;
-        
-        if (heroData && heroData.by_role) {
-          const transformedHeroes = {};
-          for (const [role, heroes] of Object.entries(heroData.by_role)) {
-            if (Array.isArray(heroes)) {
-              transformedHeroes[role] = heroes.map(hero => 
-                typeof hero === 'object' && hero.name ? hero.name : hero
-              );
-            }
-          }
-          setMarvelRivalsHeroes(transformedHeroes);
-          console.log('🎮 ComprehensiveLiveScoring: Heroes synced with API:', transformedHeroes);
-        }
-      } catch (error) {
-        console.error('❌ Error loading heroes in ComprehensiveLiveScoring:', error);
-      }
-    };
-    
-    loadHeroes();
-  }, [api]);
-
   // Get all heroes in a flat array
   const allHeroes = Object.values(marvelRivalsHeroes).flat();
 
@@ -158,7 +126,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       return heroName;
     }
     
-    // If hero is invalid, return a default hero for the player's role
     const roleDefaults = {
       Tank: 'Captain America',
       Duelist: 'Iron Man', 
@@ -168,53 +135,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     const fallbackHero = roleDefaults[playerRole] || 'Captain America';
     console.log(`⚠️ Unknown hero "${heroName}" for ${playerRole}, using fallback: ${fallbackHero}`);
     return fallbackHero;
-  };
-
-  // 🔄 LOAD TEAM PLAYERS UTILITY
-  const loadTeamPlayers = async (teamId, teamName) => {
-    try {
-      console.log(`🔍 Fetching real players for team: ${teamName} (ID: ${teamId})`);
-      
-      const response = await api.get(`/teams/${teamId}`);
-      
-      if (response && response.data?.players) {
-        const teamPlayers = response.data.players;
-        console.log(`✅ Found ${teamPlayers.length} real players for ${teamName}:`, teamPlayers);
-        
-        return teamPlayers.slice(0, 6).map((player, index) => {
-          // 🏳️ FIXED COUNTRY RESOLUTION
-          const playerCountry = player.country || 
-                               player.nationality || 
-                               player.team_country ||
-                               (teamName === 'test1' ? 'DE' : teamName === 'test2' ? 'KR' : 'US');
-          
-          console.log(`🌍 Player ${player.name} country resolved to:`, playerCountry);
-          
-          return {
-            id: player.id,
-            name: player.name,
-            hero: getValidHero(player.main_hero, player.role),
-            role: player.role || 'Tank',
-            country: playerCountry, // ✅ FIXED country resolution
-            avatar: player.avatar,
-            eliminations: 0,
-            deaths: 0,
-            assists: 0,
-            damage: 0,
-            healing: 0,
-            damageBlocked: 0,
-            objectiveTime: 0,
-            ultimatesUsed: 0
-          };
-        });
-      } else {
-        console.log(`⚠️ Failed to fetch players for ${teamName}, using defaults`);
-        return [];
-      }
-    } catch (error) {
-      console.error(`❌ Error fetching team players for ${teamName}:`, error);
-      return [];
-    }
   };
 
   // 🚨 INITIALIZATION WITH PROPER MAP COUNT
@@ -248,7 +168,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     };
   }, [match]);
 
-  // 🔥 CRITICAL: LOAD PRODUCTION SCOREBOARD DATA - 6v6 FORMAT  
+  // 🔥 CRITICAL: LOAD PRODUCTION SCOREBOARD DATA FROM BACKEND DOCUMENTATION
   useEffect(() => {
     const loadProductionScoreboard = async () => {
       if (!match || !isOpen) {
@@ -256,80 +176,97 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         return;
       }
 
-      console.log('🔍 ADMIN: Loading PRODUCTION 6v6 scoreboard using MatchAPI...');
+      console.log('🔍 ADMIN: Loading PRODUCTION scoreboard using live-scoreboard endpoint...');
       
       try {
-        // 🎯 CRITICAL: Use PRODUCTION MatchAPI for 6v6 data
-        const productionMatch = await MatchAPI.loadCompleteMatch(match.id, api);
+        // ✅ CORRECT: Use live-scoreboard endpoint from backend documentation
+        const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+        const response = await fetch(`${BACKEND_URL}/matches/${match.id}/live-scoreboard`, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            ...(api.token && { 'Authorization': `Bearer ${api.token}` })
+          }
+        });
         
-        console.log('✅ ADMIN: PRODUCTION 6v6 data received:', productionMatch);
+        const apiResponse = await response.json();
+        console.log('📥 ADMIN: Live scoreboard response:', apiResponse);
         
-        // 🔥 CRITICAL: Use PRODUCTION data directly - 12 players (6v6)
-        if (productionMatch.maps && productionMatch.maps.length > 0) {
-          console.log('🗺️ ADMIN: Using PRODUCTION 6v6 scoreboard data!');
+        if (apiResponse.success && apiResponse.data) {
+          const data = apiResponse.data;
           
-          setMatchStats({
-            totalMaps: productionMatch.maps.length,
-            currentMap: productionMatch.currentMap - 1, // Convert to 0-based index
-            mapWins: { 
-              team1: productionMatch.team1.score, 
-              team2: productionMatch.team2.score 
-            },
-            maps: productionMatch.maps.map((productionMap, index) => ({
-              map_number: index + 1,
-              map_name: productionMap.mapName,           // ✅ PRODUCTION map name
-              mode: productionMap.mode,                  // ✅ PRODUCTION game mode
-              team1Score: productionMap.team1Score,
-              team2Score: productionMap.team2Score,
-              status: productionMap.status,
-              winner: productionMap.winner,
-              duration: productionMap.duration,
-              // 🎮 PRODUCTION: 6v6 team compositions (6 players each)
-              team1Players: productionMap.team1Composition.map(player => ({
-                id: player.playerId,
-                playerId: player.playerId,                // ✅ FIX: Ensure playerId is available for API calls
-                name: player.playerName,
-                hero: player.hero,                        // ✅ PRODUCTION hero data
-                role: player.role,                        // Tank/DPS/Support from conversion
-                country: player.country,                  // ✅ PRODUCTION country data
-                avatar: player.avatar,
-                eliminations: player.eliminations,        // E column
-                deaths: player.deaths,                    // D column
-                assists: player.assists,                  // A column
-                damage: player.damage,                    // DMG column
-                healing: player.healing,                  // HEAL column
-                damageBlocked: player.damageBlocked,      // BLK column
-                ultimateUsage: player.ultimateUsage || 0,
-                objectiveTime: player.objectiveTime || 0
-              })),
-              team2Players: productionMap.team2Composition.map(player => ({
-                id: player.playerId,
-                playerId: player.playerId,                // ✅ FIX: Ensure playerId is available for API calls
-                name: player.playerName,
-                hero: player.hero,                        // ✅ PRODUCTION hero data
-                role: player.role,                        // Tank/DPS/Support from conversion
-                country: player.country,                  // ✅ PRODUCTION country data
-                avatar: player.avatar,
-                eliminations: player.eliminations,        // E column
-                deaths: player.deaths,                    // D column
-                assists: player.assists,                  // A column
-                damage: player.damage,                    // DMG column
-                healing: player.healing,                  // HEAL column
-                damageBlocked: player.damageBlocked,      // BLK column
-                ultimateUsage: player.ultimateUsage || 0,
-                objectiveTime: player.objectiveTime || 0
-              }))
-            }))
+          // ✅ CORRECT STRUCTURE: Backend returns data.match_info (from documentation)
+          const matchInfo = data.match_info || {};
+          const team1Roster = data.team1_roster || [];
+          const team2Roster = data.team2_roster || [];
+          
+          console.log('✅ ADMIN: Using PRODUCTION data structure:', {
+            matchInfo: !!matchInfo,
+            team1RosterCount: team1Roster.length,
+            team2RosterCount: team2Roster.length
           });
           
-          setMatchStatus(productionMatch.status);
-          console.log('✅ ADMIN: PRODUCTION 6v6 data loaded - 12 players total!');
-          console.log('👥 Team 1 players:', productionMatch.maps[0].team1Composition.length);
-          console.log('👥 Team 2 players:', productionMatch.maps[0].team2Composition.length);
-          return; // Success with PRODUCTION data
+          setMatchStats({
+            totalMaps: 1, // Start with BO1, can be expanded
+            currentMap: 0,
+            mapWins: { 
+              team1: matchInfo.team1_score || 0, 
+              team2: matchInfo.team2_score || 0 
+            },
+            maps: [{
+              map_number: 1,
+              map_name: matchInfo.current_map || 'Tokyo 2099: Shibuya Sky',
+              mode: matchInfo.game_mode || 'Domination',
+              team1Score: matchInfo.team1_score || 0,
+              team2Score: matchInfo.team2_score || 0,
+              status: matchInfo.status,
+              winner: null,
+              duration: 'Live',
+              // 🎮 PRODUCTION: 6v6 team compositions from rosters
+              team1Players: team1Roster.map(player => ({
+                id: player.player_id,
+                playerId: player.player_id,
+                name: player.name,
+                hero: player.hero || player.stats?.hero_played || 'Captain America',
+                role: convertRoleToFrontend(player.role),
+                country: player.country || 'US',
+                avatar: player.avatar,
+                eliminations: player.stats?.eliminations || 0,
+                deaths: player.stats?.deaths || 0,
+                assists: player.stats?.assists || 0,
+                damage: player.stats?.damage || 0,
+                healing: player.stats?.healing || 0,
+                damageBlocked: player.stats?.damage_blocked || 0,
+                ultimateUsage: player.stats?.ultimate_usage || 0,
+                objectiveTime: player.stats?.objective_time || 0
+              })),
+              team2Players: team2Roster.map(player => ({
+                id: player.player_id,
+                playerId: player.player_id,
+                name: player.name,
+                hero: player.hero || player.stats?.hero_played || 'Hulk',
+                role: convertRoleToFrontend(player.role),
+                country: player.country || 'US',
+                avatar: player.avatar,
+                eliminations: player.stats?.eliminations || 0,
+                deaths: player.stats?.deaths || 0,
+                assists: player.stats?.assists || 0,
+                damage: player.stats?.damage || 0,
+                healing: player.stats?.healing || 0,
+                damageBlocked: player.stats?.damage_blocked || 0,
+                ultimateUsage: player.stats?.ultimate_usage || 0,
+                objectiveTime: player.stats?.objective_time || 0
+              }))
+            }]
+          });
+          
+          setMatchStatus(matchInfo.status);
+          console.log('✅ ADMIN: PRODUCTION data loaded successfully!');
+          console.log('👥 Team 1 players:', team1Roster.length);
+          console.log('👥 Team 2 players:', team2Roster.length);
+          return;
         }
       } catch (error) {
-        console.log('⚠️ ADMIN: PRODUCTION MatchAPI failed, falling back:', error.message);
+        console.log('⚠️ ADMIN: PRODUCTION API failed, falling back:', error.message);
       }
 
       // 🔄 FALLBACK: Initialize empty if PRODUCTION fails
@@ -340,6 +277,19 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
 
     loadProductionScoreboard();
   }, [match?.id, isOpen, api]);
+
+  // Helper function to convert roles
+  const convertRoleToFrontend = (backendRole) => {
+    const roleMapping = {
+      'Vanguard': 'Tank',
+      'Duelist': 'DPS', 
+      'Strategist': 'Support',
+      'Tank': 'Tank',
+      'Support': 'Support',
+      'DPS': 'DPS'
+    };
+    return roleMapping[backendRole] || 'Tank';
+  };
 
   // 🏆 LIVE SCORE UPDATE - PRODUCTION READY
   const updateMapScore = async (teamNumber, increment = true) => {
@@ -369,7 +319,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         const liveControlData = {
           team1_score: team1OverallScore,
           team2_score: team2OverallScore,
-          current_map: newStats.maps[currentMap].mapName || "Unknown Map"
+          current_map: newStats.maps[currentMap].map_name || "Unknown Map"
         };
         
         console.log(`🎯 LIVE CONTROL UPDATE: Team ${teamNumber} ${increment ? '+1' : '-1'} (${newMapScore} rounds)`);
@@ -396,8 +346,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         
         return newStats;
       });
-      
-      
       
     } catch (error) {
       console.error('❌ Error updating score:', error);
@@ -427,27 +375,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         updatedMaps[mapIndex] = currentMap;
         
         console.log(`✅ Hero changed: Player ${players[playerIndex].name} is now ${hero}`);
-        
-        // 🚀 UPDATE TEAM COMPOSITION via new MatchAPI for instant consistency
-        const updatedCompositions = {
-          team1_composition: updatedMaps[mapIndex].team1Players?.map(player => ({
-            player_id: player.playerId || player.id,
-            player_name: player.name,
-            hero: player.hero,
-            role: player.role
-          })) || [],
-          team2_composition: updatedMaps[mapIndex].team2Players?.map(player => ({
-            player_id: player.playerId || player.id,
-            player_name: player.name,
-            hero: player.hero,
-            role: player.role
-          })) || []
-        };
-        
-        // Call the new MatchAPI method asynchronously (don't block UI)
-        MatchAPI.updateTeamComposition(match.id, mapIndex, updatedCompositions, api)
-          .then(() => console.log('✅ Team composition updated via MatchAPI'))
-          .catch(error => console.error('❌ Error updating team composition:', error));
         
         // 🔥 Dispatch real-time sync event
         window.dispatchEvent(new CustomEvent('mrvl-hero-updated', {
@@ -528,10 +455,10 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         throw new Error('No map data available for save');
       }
 
-      // 🎯 PRODUCTION: Save each player's stats individually using /players/{id}/stats
+      // 🎯 PRODUCTION: Save each player's stats individually
       const savePromises = [];
       
-      // Save Team 1 players (6 players)
+      // Save Team 1 players
       if (currentMapData.team1Players) {
         currentMapData.team1Players.forEach(player => {
           console.log(`💾 Saving Team 1 player ${player.name} stats:`, {
@@ -540,7 +467,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
             hero: player.hero
           });
           
-          const savePromise = MatchAPI.savePlayerStats(match.id, player.playerId || player.id, {
+          const savePromise = MatchAPI.updatePlayerStats(match.id, player.playerId || player.id, {
             eliminations: player.eliminations || 0,
             deaths: player.deaths || 0,
             assists: player.assists || 0,
@@ -556,7 +483,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         });
       }
       
-      // Save Team 2 players (6 players)
+      // Save Team 2 players
       if (currentMapData.team2Players) {
         currentMapData.team2Players.forEach(player => {
           console.log(`💾 Saving Team 2 player ${player.name} stats:`, {
@@ -565,7 +492,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
             hero: player.hero
           });
           
-          const savePromise = MatchAPI.savePlayerStats(match.id, player.playerId || player.id, {
+          const savePromise = MatchAPI.updatePlayerStats(match.id, player.playerId || player.id, {
             eliminations: player.eliminations || 0,
             deaths: player.deaths || 0,
             assists: player.assists || 0,
@@ -581,21 +508,11 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         });
       }
 
-      // 🚀 Execute all saves in parallel (12 players total for 6v6)
-      console.log(`🚀 Executing ${savePromises.length} player stat saves for 6v6 match...`);
+      // 🚀 Execute all saves in parallel
+      console.log(`🚀 Executing ${savePromises.length} player stat saves...`);
       await Promise.all(savePromises);
       
       console.log('✅ ALL PLAYER STATS SAVED TO PRODUCTION API');
-      
-      // 📺 Update viewer count if available
-      if (match.viewers) {
-        try {
-          await MatchAPI.updateViewerCount(match.id, match.viewers, api);
-          console.log('✅ Viewer count updated');
-        } catch (viewerError) {
-          console.log('⚠️ Viewer count update failed:', viewerError.message);
-        }
-      }
       
       // 🔥 DISPATCH PRODUCTION SYNC EVENTS
       console.log('🔥 DISPATCHING PRODUCTION SYNC EVENTS for match:', match.id);
@@ -606,14 +523,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           type: 'PRODUCTION_SCOREBOARD_UPDATE',
           playersUpdated: savePromises.length,
           format: '6v6',
-          timestamp: Date.now()
-        }
-      }));
-      
-      window.dispatchEvent(new CustomEvent('mrvl-hero-updated', {
-        detail: { 
-          matchId: match.id, 
-          type: 'PRODUCTION_HERO_UPDATE',
           timestamp: Date.now()
         }
       }));
@@ -661,7 +570,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     const startTime = Date.now();
     setIsTimerRunning(true);
     setTimerStartTime(startTime);
-    // 🚨 PERSIST TO LOCALSTORAGE
     localStorage.setItem(`match-timer-running-${match.id}`, 'true');
     localStorage.setItem(`match-timer-start-${match.id}`, startTime.toString());
     
@@ -675,21 +583,11 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       }
     }));
     
-    // 🚀 CROSS-TAB SYNC: Use localStorage for tab-to-tab communication
-    localStorage.setItem('mrvl-timer-sync', JSON.stringify({
-      matchId: match.id,
-      timer: '00:00',
-      isRunning: true,
-      timestamp: Date.now(),
-      action: 'start'
-    }));
-    
     console.log('🎮 Timer started - immediate sync dispatched');
   };
 
   const pauseTimer = () => {
     setIsTimerRunning(false);
-    // 🚨 PERSIST TO LOCALSTORAGE
     localStorage.setItem(`match-timer-running-${match.id}`, 'false');
     
     // 🔥 IMMEDIATELY DISPATCH TIMER PAUSE EVENT
@@ -708,7 +606,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     setIsTimerRunning(false);
     setMatchTimer('00:00');
     setTimerStartTime(null);
-    // 🚨 CLEAR FROM LOCALSTORAGE
     localStorage.removeItem(`match-timer-running-${match.id}`);
     localStorage.removeItem(`match-timer-start-${match.id}`);
     localStorage.removeItem(`match-timer-${match.id}`);
@@ -739,7 +636,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         
         const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         setMatchTimer(timeString);
-        // 🚨 PERSIST TIMER VALUE
         localStorage.setItem(`match-timer-${match.id}`, timeString);
         
         // 🔥 DISPATCH TIMER SYNC EVENT FOR MATCH DETAIL PAGE
@@ -749,24 +645,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
             timer: timeString,
             timestamp: Date.now()
           }
-        }));
-        
-        // 🚀 CROSS-TAB SYNC: Update localStorage every second
-        localStorage.setItem('mrvl-timer-sync', JSON.stringify({
-          matchId: match.id,
-          timer: timeString,
-          isRunning: true,
-          timestamp: Date.now(),
-          action: 'update'
-        }));
-        
-        // 🚀 CROSS-TAB SYNC: Update localStorage every second
-        localStorage.setItem('mrvl-timer-sync', JSON.stringify({
-          matchId: match.id,
-          timer: timeString,
-          isRunning: true,
-          timestamp: Date.now(),
-          action: 'update'
         }));
       }, 1000);
     }
@@ -787,16 +665,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
   });
 
   const currentMapData = matchStats.maps[matchStats.currentMap] || matchStats.maps[0];
-  
-  console.log('🎯 ADMIN: currentMapData analysis:', {
-    activeMap: matchStats.currentMap,
-    totalMaps: matchStats.maps?.length,
-    currentMapExists: !!currentMapData,
-    team1PlayersCount: currentMapData?.team1Players?.length,
-    team2PlayersCount: currentMapData?.team2Players?.length,
-    mapName: currentMapData?.map_name,
-    mode: currentMapData?.mode
-  });
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
@@ -876,23 +744,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Map Navigation */}
-          <div className="flex justify-center space-x-2 mb-6">
-            {matchStats.maps.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setMatchStats(prev => ({ ...prev, currentMap: index }))}
-                className={`px-4 py-2 rounded font-semibold ${
-                  matchStats.currentMap === index
-                    ? 'bg-red-600 text-white'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
-              >
-                Map {index + 1}
-              </button>
-            ))}
           </div>
 
           {/* Current Map */}
@@ -988,12 +839,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                             alt={`${player.country || 'US'} flag`}
                             className="absolute -bottom-1 -right-1 w-3 h-2 rounded-sm border border-white shadow-sm"
                             onError={(e) => {
-                              console.log(`❌ Flag failed for country: ${player.country || 'undefined'}, using fallback`);
                               e.target.style.display = 'none';
-                              const textNode = document.createElement('div');
-                              textNode.className = 'absolute -bottom-1 -right-1 w-4 h-3 text-xs bg-gray-500 text-white rounded-sm flex items-center justify-center';
-                              textNode.textContent = (player.country || 'US').slice(0, 2).toUpperCase();
-                              e.target.parentNode.appendChild(textNode);
                             }}
                           />
                         </div>
@@ -1058,12 +904,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                             alt={`${player.country || 'US'} flag`}
                             className="absolute -bottom-1 -right-1 w-3 h-2 rounded-sm border border-white shadow-sm"
                             onError={(e) => {
-                              console.log(`❌ Flag failed for country: ${player.country || 'undefined'}, using fallback`);
                               e.target.style.display = 'none';
-                              const textNode = document.createElement('div');
-                              textNode.className = 'absolute -bottom-1 -right-1 w-4 h-3 text-xs bg-gray-500 text-white rounded-sm flex items-center justify-center';
-                              textNode.textContent = (player.country || 'US').slice(0, 2).toUpperCase();
-                              e.target.parentNode.appendChild(textNode);
                             }}
                           />
                         </div>
@@ -1132,17 +973,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                 </>
               )}
             </button>
-            
-            {/* 🏆 MARK AS COMPLETED BUTTON */}
-            {matchStatus === 'live' && (
-              <button
-                onClick={() => setMatchStatus('completed')}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg flex items-center space-x-2"
-              >
-                <span>🏆</span>
-                <span>Mark as Completed</span>
-              </button>
-            )}
           </div>
         </div>
       </div>

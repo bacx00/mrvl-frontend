@@ -1,8 +1,8 @@
 /**
  * 🎯 MARVEL RIVALS - PRODUCTION BACKEND INTEGRATION
  * ALIGNED WITH COMPLETE API DOCUMENTATION
- * 6v6 FORMAT - 12 PLAYERS TOTAL
- * 🚀 NEW: Instant Data Consistency with Admin Live Scoring APIs
+ * Backend URL: https://staging.mrvl.net/api
+ * Response Structure: data.match_info (not data.match)
  */
 
 /**
@@ -63,164 +63,135 @@ export const MatchAPI = {
   },
 
   /**
-   * 🚀 NEW: Load COMPLETE live state for admin dashboard
-   * Uses NEW /admin/matches/{id}/live-state endpoint
+   * 🔍 Load complete match scoreboard (PRODUCTION ENDPOINT)
+   * Uses /matches/{id}/live-scoreboard - NEW CORRECT STRUCTURE
    */
-  async loadLiveState(matchId, apiHelper) {
+  async loadCompleteMatch(matchId, apiHelper) {
     try {
-      console.log('🚀 MatchAPI: Loading COMPLETE live state for admin:', matchId);
+      console.log('🔍 MatchAPI: Loading PRODUCTION scoreboard for match:', matchId);
       
-      const response = await apiHelper.get(`/admin/matches/${matchId}/live-state`);
+      // ✅ CORRECT: Use live-scoreboard endpoint from documentation
+      const response = await apiHelper.get(`/matches/${matchId}/live-scoreboard`);
       const data = response?.data;
       
       if (!data) {
-        throw new Error('No live state data received from backend');
+        throw new Error('No scoreboard data received from production backend');
       }
       
-      console.log('📥 LIVE STATE data received:', data);
+      console.log('📥 PRODUCTION scoreboard data received:', data);
+      console.log('🔍 Data structure debug:', {
+        type: typeof data,
+        keys: Object.keys(data || {}),
+        hasMatchInfo: !!data.match_info,
+        hasTeam1Roster: !!data.team1_roster,
+        hasTeam2Roster: !!data.team2_roster,
+        matchInfoKeys: data.match_info ? Object.keys(data.match_info) : 'NO MATCH_INFO'
+      });
       
-      // Transform for frontend consumption
-      return {
-        id: data.match.id,
-        status: data.match.status,
-        currentMap: data.match.current_map,
-        format: data.match.format,
-        viewers: data.match.viewers,
-        streamUrl: data.match.stream_url,
-        timerData: data.match.timer_data,
+      // ✅ CORRECT STRUCTURE: The API returns data.match_info (from documentation)
+      const matchInfo = data.match_info || {};
+      const team1Roster = data.team1_roster || [];
+      const team2Roster = data.team2_roster || [];
+      
+      if (!matchInfo.id) {
+        console.error('❌ No match ID found in response:', data);
+        throw new Error('No match ID found in scoreboard response');
+      }
+      
+      console.log('✅ Found match data:', matchInfo);
+      
+      // 🚨 CRITICAL: Transform PRODUCTION API response to frontend format  
+      const transformedMatch = {
+        id: matchInfo.id,
+        status: matchInfo.status || 'unknown',
+        currentMap: 1, // Default to map 1
+        format: matchInfo.format || 'BO1',
+        viewers: matchInfo.viewers || 0,
+        streamUrl: matchInfo.stream_url,
         
-        // Team data with complete player rosters
+        // 🏆 Team data - from match_info
         team1: {
-          id: data.teams.team1.id,
-          name: data.teams.team1.name,
-          logo: data.teams.team1.logo,
-          score: data.match.team1_score,
-          players: data.teams.team1.players
+          id: matchInfo.team1_id || 'unknown',
+          name: matchInfo.team1_name || 'Team 1',
+          logo: '',
+          score: matchInfo.team1_score || 0,
+          shortName: matchInfo.team1_name || 'T1'
         },
         team2: {
-          id: data.teams.team2.id,
-          name: data.teams.team2.name, 
-          logo: data.teams.team2.logo,
-          score: data.match.team2_score,
-          players: data.teams.team2.players
+          id: matchInfo.team2_id || 'unknown',
+          name: matchInfo.team2_name || 'Team 2', 
+          logo: '',
+          score: matchInfo.team2_score || 0,
+          shortName: matchInfo.team2_name || 'T2'
         },
         
-        // Maps data from your new system
-        maps: data.maps || [],
-        playerStats: data.player_stats || {},
+        // 🗺️ Map data with team compositions from rosters
+        maps: [{
+          mapNumber: 1,
+          mapName: matchInfo.current_map || 'Tokyo 2099: Shibuya Sky',
+          mode: matchInfo.game_mode || 'Domination',
+          status: matchInfo.status,
+          team1Score: matchInfo.team1_score || 0,
+          team2Score: matchInfo.team2_score || 0,
+          
+          // 🎮 PRODUCTION: Map 6v6 player compositions from rosters
+          team1Composition: team1Roster.map((player, index) => ({
+            playerId: player.player_id,
+            name: player.name,
+            hero: player.hero || player.stats?.hero_played || 'Captain America',
+            role: MatchAPI.convertRoleToFrontend(player.role),
+            country: player.country || 'US',
+            avatar: player.avatar,
+            // 📊 PRODUCTION API statistics mapping
+            eliminations: player.stats?.eliminations || 0,
+            deaths: player.stats?.deaths || 0,
+            assists: player.stats?.assists || 0,
+            damage: player.stats?.damage || 0,
+            healing: player.stats?.healing || 0,
+            damageBlocked: player.stats?.damage_blocked || 0,
+            ultimateUsage: player.stats?.ultimate_usage || 0,
+            objectiveTime: player.stats?.objective_time || 0
+          })),
+          
+          team2Composition: team2Roster.map((player, index) => ({
+            playerId: player.player_id,
+            name: player.name,
+            hero: player.hero || player.stats?.hero_played || 'Hulk',
+            role: MatchAPI.convertRoleToFrontend(player.role),
+            country: player.country || 'US',
+            avatar: player.avatar,
+            // 📊 PRODUCTION API statistics mapping
+            eliminations: player.stats?.eliminations || 0,
+            deaths: player.stats?.deaths || 0,
+            assists: player.stats?.assists || 0,
+            damage: player.stats?.damage || 0,
+            healing: player.stats?.healing || 0,
+            damageBlocked: player.stats?.damage_blocked || 0,
+            ultimateUsage: player.stats?.ultimate_usage || 0,
+            objectiveTime: player.stats?.objective_time || 0
+          }))
+        }],
         
-        // Event info
-        event: data.event,
-        lastUpdated: data.last_updated
+        // 🏳️ Full player rosters (6v6 format)
+        team1Players: team1Roster.map(p => ({
+          ...p,
+          country: p.country || 'US',
+          role: MatchAPI.convertRoleToFrontend(p.role)
+        })),
+        team2Players: team2Roster.map(p => ({
+          ...p,
+          country: p.country || 'US', 
+          role: MatchAPI.convertRoleToFrontend(p.role)
+        })),
+        
+        lastUpdated: Date.now()
       };
       
-    } catch (error) {
-      console.error('❌ MatchAPI: Error loading live state:', error);
-      throw error;
-    }
-  },
-
-  // 🚀 NEW ADMIN ENDPOINTS - INSTANT DATA CONSISTENCY
-
-  /**
-   * 🎮 Update match status in real-time
-   * Uses PUT /api/admin/matches/{id}/status
-   */
-  async updateMatchStatus(matchId, status, apiHelper) {
-    try {
-      console.log('🎮 MatchAPI: Updating match status:', { matchId, status });
-      
-      const response = await apiHelper.put(`/admin/matches/${matchId}/status`, {
-        status: status // 'upcoming', 'live', 'paused', 'completed', 'cancelled'
-      });
-      
-      // Trigger cross-tab sync
-      this.triggerCrossTabSync('status-update', matchId, { status });
-      
-      console.log('✅ Match status updated:', response);
-      return response;
+      console.log('✅ PRODUCTION data transformed for frontend:', transformedMatch);
+      return transformedMatch;
       
     } catch (error) {
-      console.error('❌ MatchAPI: Error updating match status:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * 🦸 Update team composition (hero changes) in real-time
-   * Uses PUT /api/admin/matches/{id}/team-composition
-   */
-  async updateTeamComposition(matchId, mapIndex, compositions, apiHelper) {
-    try {
-      console.log('🦸 MatchAPI: Updating team composition:', { matchId, mapIndex, compositions });
-      
-      const response = await apiHelper.put(`/admin/matches/${matchId}/team-composition`, {
-        map_index: mapIndex,
-        team1_composition: compositions.team1_composition,
-        team2_composition: compositions.team2_composition
-      });
-      
-      // Trigger cross-tab sync
-      this.triggerCrossTabSync('composition-update', matchId, { mapIndex, compositions });
-      
-      console.log('✅ Team composition updated:', response);
-      return response;
-      
-    } catch (error) {
-      console.error('❌ MatchAPI: Error updating team composition:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * 🗺️ Update current map and mode
-   * Uses PUT /api/admin/matches/{id}/current-map
-   */
-  async updateCurrentMap(matchId, mapData, apiHelper) {
-    try {
-      console.log('🗺️ MatchAPI: Updating current map:', { matchId, mapData });
-      
-      const response = await apiHelper.put(`/admin/matches/${matchId}/current-map`, {
-        current_map: mapData.mapName,
-        current_mode: mapData.mode,
-        map_index: mapData.mapIndex
-      });
-      
-      // Trigger cross-tab sync
-      this.triggerCrossTabSync('map-update', matchId, mapData);
-      
-      console.log('✅ Current map updated:', response);
-      return response;
-      
-    } catch (error) {
-      console.error('❌ MatchAPI: Error updating current map:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * ⏱️ Control timer (start, pause, resume, stop, sync)
-   * Uses PUT /api/admin/matches/{id}/timer
-   */
-  async controlTimer(matchId, action, elapsed = 0, apiHelper) {
-    try {
-      console.log('⏱️ MatchAPI: Controlling timer:', { matchId, action, elapsed });
-      
-      const response = await apiHelper.put(`/admin/matches/${matchId}/timer`, {
-        action: action, // 'start', 'pause', 'resume', 'stop', 'sync'
-        elapsed_time: elapsed, // seconds
-        round_time: 0,
-        phase: 'round' // 'warmup', 'round', 'overtime', 'break'
-      });
-      
-      // Trigger cross-tab sync
-      this.triggerCrossTabSync('timer-update', matchId, { action, elapsed });
-      
-      console.log('✅ Timer controlled:', response);
-      return response;
-      
-    } catch (error) {
-      console.error('❌ MatchAPI: Error controlling timer:', error);
+      console.error('❌ MatchAPI: Error loading PRODUCTION scoreboard:', error);
       throw error;
     }
   },
@@ -269,7 +240,7 @@ export const MatchAPI = {
 
   /**
    * 📊 Update player statistics
-   * Uses PUT /api/admin/matches/{id}/player-stats/{playerId}
+   * Uses PUT /api/admin/matches/{id}/player/{playerId}/stats
    */
   async updatePlayerStats(matchId, playerId, stats, apiHelper) {
     try {
@@ -284,10 +255,11 @@ export const MatchAPI = {
         damage_blocked: stats.damageBlocked || 0,
         ultimate_usage: stats.ultimateUsage || 0,
         objective_time: stats.objectiveTime || 0,
-        hero_played: stats.hero
+        hero_played: stats.hero,
+        role_played: stats.role
       };
 
-      const response = await apiHelper.put(`/admin/matches/${matchId}/player-stats/${playerId}`, statsPayload);
+      const response = await apiHelper.put(`/admin/matches/${matchId}/player/${playerId}/stats`, statsPayload);
       
       // Trigger cross-tab sync
       this.triggerCrossTabSync('stats-update', matchId, { playerId, stats });
@@ -302,251 +274,7 @@ export const MatchAPI = {
   },
 
   /**
-   * 🎮 Get all Marvel Rivals heroes (29 total)
-   * Uses GET /api/game-data/all-heroes
-   */
-  async getAllHeroes(apiHelper) {
-    try {
-      console.log('🦸 MatchAPI: Loading all Marvel Rivals heroes');
-      
-      const response = await apiHelper.get('/game-data/all-heroes');
-      
-      console.log('✅ Heroes loaded:', response);
-      return response;
-      
-    } catch (error) {
-      console.error('❌ MatchAPI: Error loading heroes:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * 🗺️ Get all Marvel Rivals maps (10 total)
-   * Uses GET /api/game-data/maps
-   */
-  async getAllMaps(apiHelper) {
-    try {
-      console.log('🗺️ MatchAPI: Loading all Marvel Rivals maps');
-      
-      const response = await apiHelper.get('/game-data/maps');
-      
-      console.log('✅ Maps loaded:', response);
-      return response;
-      
-    } catch (error) {
-      console.error('❌ MatchAPI: Error loading maps:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * 🎯 Get all game modes (4 total)
-   * Uses GET /api/game-data/modes
-   */
-  async getAllModes(apiHelper) {
-    try {
-      console.log('🎯 MatchAPI: Loading all game modes');
-      
-      const response = await apiHelper.get('/game-data/modes');
-      
-      console.log('✅ Modes loaded:', response);
-      return response;
-      
-    } catch (error) {
-      console.error('❌ MatchAPI: Error loading modes:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * 🔍 Load complete match scoreboard (PRODUCTION ENDPOINT)
-   * Uses /matches/{id}/scoreboard - 6v6 format with 12 players
-   */
-  async loadCompleteMatch(matchId, apiHelper) {
-    try {
-      console.log('🔍 MatchAPI: Loading PRODUCTION scoreboard for match:', matchId);
-      
-      // ✅ CORRECT: Use scoreboard endpoint from production backend
-      const response = await apiHelper.get(`/matches/${matchId}/scoreboard`);
-      const data = response?.data;
-      
-      if (!data) {
-        throw new Error('No scoreboard data received from production backend');
-      }
-      
-      console.log('📥 PRODUCTION scoreboard data received:', data);
-      console.log('🔍 Data structure debug:', {
-        type: typeof data,
-        keys: Object.keys(data || {}),
-        hasMatch: !!data.match,
-        hasMatchInfo: !!data.match_info,
-        hasTeams: !!data.teams,
-        matchKeys: data.match ? Object.keys(data.match) : 'NO MATCH'
-      });
-      
-      // ✅ CORRECT STRUCTURE: The API actually returns data.match_info (not data.match)
-      const match = data.match_info || {};
-      const playerStats = data.player_statistics || [];
-      
-      if (!match.id) {
-        console.error('❌ No match ID found in response:', data);
-        throw new Error('No match ID found in scoreboard response');
-      }
-      
-      console.log('✅ Found match data:', match);
-      
-      // 🚨 CRITICAL: Transform PRODUCTION API response to frontend format  
-      const transformedMatch = {
-        id: match.id,
-        status: match.status || 'unknown',
-        currentMap: 1, // Default to map 1
-        format: match.format || match.match_format || 'BO1',
-        viewers: match.viewers || 0,
-        streamUrl: match.stream_url,
-        
-        // 🏆 Team data - extract from match object
-        team1: {
-          id: match.team1_id || 'unknown',
-          name: 'Team 1', // Will be populated from separate teams API call
-          logo: '',
-          score: match.team1_score || 0,
-          shortName: 'T1'
-        },
-        team2: {
-          id: match.team2_id || 'unknown',
-          name: 'Team 2', // Will be populated from separate teams API call
-          logo: '',
-          score: match.team2_score || 0,
-          shortName: 'T2'
-        },
-        
-        // 🗺️ CRITICAL FIX: Use actual backend maps data or create smart defaults
-        maps: (() => {
-          // If backend returns actual maps data, use it
-          if (data.maps && data.maps.length > 0) {
-            return data.maps.map((map, index) => ({
-              mapNumber: index + 1,
-              mapName: map.map_name || map.name || 'Tokyo 2099: Shibuya Sky',
-              mode: map.mode || 'Conquest',
-              status: map.status || data.match_info.status,
-              team1Score: map.team1_score || 0,
-              team2Score: map.team2_score || 0,
-              // 🚨 FIX: Properly transform team compositions from backend maps data
-              team1Composition: (map.team1_composition || []).map(comp => ({
-                playerId: comp.player_id || comp.id,
-                name: comp.player_name || comp.name,
-                hero: comp.hero || comp.hero_played || 'Captain America',
-                role: MatchAPI.convertRoleToFrontend(comp.role),
-                country: comp.country || 'US',
-                avatar: comp.avatar,
-                eliminations: comp.kills || 0,
-                deaths: comp.deaths || 0,
-                assists: comp.assists || 0,
-                damage: comp.damage || 0,
-                healing: comp.healing || 0,
-                damageBlocked: comp.damage_blocked || 0,
-                ultimateUsage: comp.ultimate_usage || 0,
-                objectiveTime: comp.objective_time || 0
-              })),
-              team2Composition: (map.team2_composition || []).map(comp => ({
-                playerId: comp.player_id || comp.id,
-                name: comp.player_name || comp.name,
-                hero: comp.hero || comp.hero_played || 'Captain America',
-                role: MatchAPI.convertRoleToFrontend(comp.role),
-                country: comp.country || 'US',
-                avatar: comp.avatar,
-                eliminations: comp.kills || 0,
-                deaths: comp.deaths || 0,
-                assists: comp.assists || 0,
-                damage: comp.damage || 0,
-                healing: comp.healing || 0,
-                damageBlocked: comp.damage_blocked || 0,
-                ultimateUsage: comp.ultimate_usage || 0,
-                objectiveTime: comp.objective_time || 0
-              }))
-            }));
-          }
-          
-          // Otherwise create default map with current match data
-          return [{
-            mapNumber: 1,
-            mapName: match.current_map || 'Tokyo 2099: Shibuya Sky',
-            mode: match.current_mode || 'Conquest', // Marvel Rivals default mode
-            status: match.status,
-            team1Score: match.team1_score || 0,
-            team2Score: match.team2_score || 0,
-          
-          // 🎮 PRODUCTION: Map 6v6 player statistics correctly
-          team1Composition: data.teams.team1.players.map((player, index) => {
-            const stats = data.teams.team1.statistics?.find(s => s.player_id === player.id) || {};
-            return {
-              playerId: player.id,
-              name: player.name,
-              hero: stats.hero_played || player.main_hero || 'Captain America',
-              role: MatchAPI.convertRoleToFrontend(player.role), // Convert Vanguard/Duelist/Strategist
-              country: player.country || 'DE', // test1 fallback
-              avatar: player.avatar,
-              // 📊 PRODUCTION API statistics mapping
-              eliminations: stats.kills || 0,           // E column
-              deaths: stats.deaths || 0,                // D column  
-              assists: stats.assists || 0,              // A column
-              damage: stats.damage || 0,                // DMG column
-              healing: stats.healing || 0,              // HEAL column
-              damageBlocked: stats.damage_blocked || 0, // BLK column
-              ultimateUsage: stats.ultimate_usage || 0,
-              objectiveTime: stats.objective_time || 0
-            };
-          }),
-          
-          team2Composition: data.teams.team2.players.map((player, index) => {
-            const stats = data.teams.team2.statistics?.find(s => s.player_id === player.id) || {};
-            return {
-              playerId: player.id,
-              name: player.name,
-              hero: stats.hero_played || player.main_hero || 'Hulk',
-              role: MatchAPI.convertRoleToFrontend(player.role),
-              country: player.country || 'KR', // test2 fallback
-              avatar: player.avatar,
-              // 📊 PRODUCTION API statistics mapping
-              eliminations: stats.kills || 0,           // E column
-              deaths: stats.deaths || 0,                // D column  
-              assists: stats.assists || 0,              // A column
-              damage: stats.damage || 0,                // DMG column
-              healing: stats.healing || 0,              // HEAL column
-              damageBlocked: stats.damage_blocked || 0, // BLK column
-              ultimateUsage: stats.ultimate_usage || 0,
-              objectiveTime: stats.objective_time || 0
-            };
-          })
-        }]
-        })(), // End of maps IIFE
-        
-        // 🏳️ Full player rosters (6v6 format)
-        team1Players: data.teams.team1.players.map(p => ({
-          ...p,
-          country: p.country || 'DE',
-          role: MatchAPI.convertRoleToFrontend(p.role)
-        })),
-        team2Players: data.teams.team2.players.map(p => ({
-          ...p,
-          country: p.country || 'KR', 
-          role: MatchAPI.convertRoleToFrontend(p.role)
-        })),
-        
-        lastUpdated: Date.now()
-      };
-      
-      console.log('✅ PRODUCTION data transformed for frontend:', transformedMatch);
-      return transformedMatch;
-      
-    } catch (error) {
-      console.error('❌ MatchAPI: Error loading PRODUCTION scoreboard:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * 💾 Save player statistics using BULK UPDATE (RECOMMENDED)
+   * 💾 Save player statistics using BULK UPDATE
    * Uses PUT /api/admin/matches/{id}/bulk-player-stats
    */
   async savePlayerStats(matchId, playerId, stats, apiHelper) {
@@ -582,23 +310,39 @@ export const MatchAPI = {
   },
 
   /**
-   * 📺 Update viewer count using PRODUCTION endpoint
+   * 🎮 Get all Marvel Rivals heroes (39 total)
+   * Uses GET /api/game-data/all-heroes
    */
-  async updateViewerCount(matchId, viewers, apiHelper) {
+  async getAllHeroes(apiHelper) {
     try {
-      console.log('📺 MatchAPI: Updating PRODUCTION viewer count:', { matchId, viewers });
+      console.log('🦸 MatchAPI: Loading all Marvel Rivals heroes');
       
-      const response = await apiHelper.post(`/matches/${matchId}/viewers`, {
-        viewers: viewers,
-        platform: 'Twitch',
-        stream_url: 'https://twitch.tv/marvelrivals'
-      });
+      const response = await apiHelper.get('/game-data/all-heroes');
       
-      console.log('✅ PRODUCTION viewer count updated:', response);
+      console.log('✅ Heroes loaded:', response);
       return response;
       
     } catch (error) {
-      console.error('❌ MatchAPI: Error updating viewer count:', error);
+      console.error('❌ MatchAPI: Error loading heroes:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 🗺️ Get all Marvel Rivals maps (10 total)
+   * Uses GET /api/game-data/maps
+   */
+  async getAllMaps(apiHelper) {
+    try {
+      console.log('🗺️ MatchAPI: Loading all Marvel Rivals maps');
+      
+      const response = await apiHelper.get('/game-data/maps');
+      
+      console.log('✅ Maps loaded:', response);
+      return response;
+      
+    } catch (error) {
+      console.error('❌ MatchAPI: Error loading maps:', error);
       throw error;
     }
   },
