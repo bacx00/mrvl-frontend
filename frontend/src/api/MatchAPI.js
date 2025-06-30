@@ -376,14 +376,32 @@ export const MatchAPI = {
       
       console.log('📥 PRODUCTION scoreboard data received:', data);
       
+      // ✅ SAFE PARSING: Check data structure before accessing properties
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid scoreboard response structure');
+      }
+      
+      // 🔍 DEBUG: Log the actual structure
+      console.log('🔍 API Response structure:', {
+        hasMatchInfo: !!data.match_info,
+        hasTeams: !!data.teams,
+        hasMaps: !!data.maps,
+        dataKeys: Object.keys(data)
+      });
+      
+      // ✅ SAFE ACCESS: Use optional chaining and fallbacks
+      const matchInfo = data.match_info || data || {};
+      const teams = data.teams || {};
+      const maps = data.maps || [];
+      
       // 🚨 CRITICAL: Transform PRODUCTION API response to frontend format
       const transformedMatch = {
-        id: data.match_info.id,
-        status: data.match_info.status,
+        id: matchInfo.id || data.id || 'unknown',
+        status: matchInfo.status || data.status || 'unknown',
         currentMap: 1, // Default to map 1
-        format: data.match_info.format || 'BO1',
-        viewers: data.match_info.viewers || 0,
-        streamUrl: data.match_info.stream_url,
+        format: matchInfo.format || data.format || 'BO1',
+        viewers: matchInfo.viewers || data.viewers || 0,
+        streamUrl: matchInfo.stream_url || data.stream_url,
         
         // 🏆 Team data from PRODUCTION API
         team1: {
