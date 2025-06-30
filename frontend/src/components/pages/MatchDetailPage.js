@@ -14,6 +14,8 @@ function MatchDetailPage({ matchId, navigateTo }) {
   const [replyText, setReplyText] = useState('');
   const [userVotes, setUserVotes] = useState({});
   const [matchTimer, setMatchTimer] = useState('00:00');
+  const [isPreparationPhase, setIsPreparationPhase] = useState(false);
+  const [preparationTimer, setPreparationTimer] = useState(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   const { user, isAuthenticated, api } = useAuth();
@@ -23,19 +25,74 @@ function MatchDetailPage({ matchId, navigateTo }) {
 
   console.log('🔍 MatchDetailPage: Using backend URL:', BACKEND_URL);
 
+  // 🎮 COMPLETE MARVEL RIVALS GAME MODES
+  const gameModesData = {
+    'Convoy': { 
+      duration: 18 * 60, 
+      displayName: 'Convoy', 
+      color: 'blue', 
+      description: 'Escort the payload to victory',
+      icon: '🚚'
+    },
+    'Domination': { 
+      duration: 12 * 60, 
+      displayName: 'Domination', 
+      color: 'red', 
+      description: 'Control strategic points',
+      icon: '🏁'
+    },
+    'Convergence': { 
+      duration: 15 * 60, 
+      displayName: 'Convergence', 
+      color: 'purple', 
+      description: 'Converge on objectives',
+      icon: '⚡'
+    },
+    'Conquest': { 
+      duration: 20 * 60, 
+      displayName: 'Conquest', 
+      color: 'green', 
+      description: 'Capture and hold territory',
+      icon: '💎'
+    },
+    'Doom Match': { 
+      duration: 10 * 60, 
+      displayName: 'Doom Match', 
+      color: 'orange', 
+      description: 'Eliminate all opponents',
+      icon: '💀'
+    },
+    'Escort': { 
+      duration: 16 * 60, 
+      displayName: 'Escort', 
+      color: 'yellow', 
+      description: 'Guide the target safely',
+      icon: '🛡️'
+    }
+  };
+
+  const getGameModeTimer = (mode) => {
+    return gameModesData[mode] || { 
+      duration: 15 * 60, 
+      displayName: mode || 'Unknown', 
+      color: 'gray', 
+      description: 'Unknown mode',
+      icon: '❓'
+    };
+  };
+
   // 🦸 HERO IMAGE SYSTEM WITH FALLBACKS
   const getHeroImageWithFallback = (heroName) => {
     if (!heroName) return null;
     
-    // Try to get hero image
     const imageUrl = getHeroImageSync(heroName);
     if (imageUrl) return imageUrl;
     
-    // Try alternative hero names
     const alternativeNames = {
       'Iron Man': 'iron_man',
       'Spider-Man': 'spider_man',
       'Black Widow': 'black_widow',
+      'Black Panther': 'black_panther',
       'Doctor Strange': 'doctor_strange',
       'Captain America': 'captain_america',
       'Winter Soldier': 'winter_soldier',
@@ -45,7 +102,9 @@ function MatchDetailPage({ matchId, navigateTo }) {
       'Luna Snow': 'luna_snow',
       'Adam Warlock': 'adam_warlock',
       'Cloak & Dagger': 'cloak_dagger',
-      'Squirrel Girl': 'squirrel_girl'
+      'Squirrel Girl': 'squirrel_girl',
+      'Peni Parker': 'peni_parker',
+      'Scarlet Witch': 'scarlet_witch'
     };
     
     const altName = alternativeNames[heroName];
@@ -54,33 +113,16 @@ function MatchDetailPage({ matchId, navigateTo }) {
       if (altImage) return altImage;
     }
     
-    // No image found, use fallback
     return null;
-  };
-
-  // 🎮 MARVEL RIVALS GAME MODE TIMERS
-  const getGameModeTimer = (mode) => {
-    const modeTimers = {
-      'Convoy': { duration: 18 * 60, displayName: 'Convoy', color: 'blue' }, // 18 minutes
-      'Domination': { duration: 12 * 60, displayName: 'Domination', color: 'red' }, // 12 minutes
-      'Convergence': { duration: 15 * 60, displayName: 'Convergence', color: 'purple' }, // 15 minutes
-      'Conquest': { duration: 20 * 60, displayName: 'Conquest', color: 'green' }, // 20 minutes
-      'Doom Match': { duration: 10 * 60, displayName: 'Doom Match', color: 'orange' }, // 10 minutes
-      'Escort': { duration: 16 * 60, displayName: 'Escort', color: 'yellow' } // 16 minutes
-    };
-    
-    return modeTimers[mode] || { duration: 15 * 60, displayName: mode || 'Unknown', color: 'gray' };
   };
 
   // 🚨 CRITICAL: EXTRACT MATCH ID FROM URL OR PROPS
   const getMatchId = () => {
-    // Try from props first
     if (matchId) {
       console.log('🔍 MatchDetailPage: Match ID from props:', matchId);
       return matchId;
     }
     
-    // Try from URL
     const urlParts = window.location.pathname.split('/');
     const matchDetailIndex = urlParts.findIndex(part => part === 'match-detail');
     if (matchDetailIndex !== -1 && urlParts[matchDetailIndex + 1]) {
@@ -89,7 +131,6 @@ function MatchDetailPage({ matchId, navigateTo }) {
       return idFromUrl;
     }
     
-    // Try from hash route
     if (window.location.hash) {
       const hashParts = window.location.hash.split('/');
       const matchDetailIndex = hashParts.findIndex(part => part === 'match-detail');
@@ -104,7 +145,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
     return null;
   };
 
-  // 🔥 PERFECT REAL-TIME SYNC SYSTEM
+  // 🔥 ENHANCED REAL-TIME SYNC SYSTEM - LISTEN FOR ALL ADMIN UPDATES
   useEffect(() => {
     const fetchMatchData = async (showLoading = true) => {
       const realMatchId = getMatchId();
@@ -116,11 +157,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
       }
 
       try {
-        console.log('🔍 MatchDetailPage: Fetching REAL match', realMatchId, 'from backend...');
-        
-        // ✅ CORRECT ENDPOINT: Use live-scoreboard from backend documentation
-        console.log(`🎯 MatchDetailPage: Using live-scoreboard endpoint for match ${realMatchId}`);
-        console.log(`🔗 Full URL: ${BACKEND_URL}/matches/${realMatchId}/live-scoreboard`);
+        console.log('🔍 MatchDetailPage: Fetching match data for ID:', realMatchId);
         
         if (!BACKEND_URL || BACKEND_URL === 'undefined') {
           throw new Error('Backend URL is not configured properly');
@@ -134,9 +171,6 @@ function MatchDetailPage({ matchId, navigateTo }) {
           }
         });
         
-        console.log('📡 Response status:', response.status);
-        console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
-        
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
@@ -146,13 +180,11 @@ function MatchDetailPage({ matchId, navigateTo }) {
         
         if (apiResponse.success && apiResponse.data) {
           const data = apiResponse.data;
-          
-          // ✅ CORRECT STRUCTURE: Backend actually returns data.match (not data.match_info)
           const matchData = data.match || {};
           let team1Players = [];
           let team2Players = [];
           
-          // ✅ PARSE MAPS_DATA JSON STRING to get player compositions
+          // Parse maps_data JSON string
           if (matchData.maps_data) {
             try {
               const mapsData = JSON.parse(matchData.maps_data);
@@ -163,15 +195,16 @@ function MatchDetailPage({ matchId, navigateTo }) {
                 
                 console.log('✅ Parsed team compositions:', {
                   team1Count: team1Players.length,
-                  team2Count: team2Players.length,
-                  team1Sample: team1Players[0],
-                  team2Sample: team2Players[0]
+                  team2Count: team2Players.length
                 });
               }
             } catch (error) {
               console.error('❌ Error parsing maps_data JSON:', error);
             }
           }
+          
+          // Calculate total maps for series
+          const totalMaps = matchData.format === 'BO3' ? 3 : matchData.format === 'BO5' ? 5 : 1;
           
           const transformedMatch = {
             id: matchData.id || realMatchId,
@@ -182,6 +215,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
             currentMap: matchData.current_map || 'Tokyo 2099: Shibuya Sky',
             gameMode: data.live_data?.current_mode || 'Domination',
             viewers: matchData.viewers || 0,
+            totalMaps: totalMaps,
             
             // Teams from live-scoreboard response
             team1: {
@@ -197,43 +231,49 @@ function MatchDetailPage({ matchId, navigateTo }) {
               players: team2Players
             },
             
-            // Maps and player stats from parsed compositions
-            maps: [{
-              mapName: matchData.current_map || 'Tokyo 2099: Shibuya Sky',
-              mode: data.live_data?.current_mode || 'Domination',
-              status: matchData.status,
-              team1Score: matchData.team1_score || 0,
-              team2Score: matchData.team2_score || 0,
-              timer: getGameModeTimer(data.live_data?.current_mode),
-              team1Composition: team1Players.map(player => ({
-                playerId: player.player_id,
-                name: player.player_name,
-                hero: player.hero || 'Captain America',
-                role: convertRoleToFrontend(player.role),
-                country: player.country || 'US',
-                avatar: player.avatar,
-                eliminations: player.eliminations || 0,
-                deaths: player.deaths || 0,
-                assists: player.assists || 0,
-                damage: player.damage || 0,
-                healing: player.healing || 0,
-                damageBlocked: player.damage_blocked || 0
-              })),
-              team2Composition: team2Players.map(player => ({
-                playerId: player.player_id,
-                name: player.player_name,
-                hero: player.hero || 'Hulk',
-                role: convertRoleToFrontend(player.role),
-                country: player.country || 'US',
-                avatar: player.avatar,
-                eliminations: player.eliminations || 0,
-                deaths: player.deaths || 0,
-                assists: player.assists || 0,
-                damage: player.damage || 0,
-                healing: player.healing || 0,
-                damageBlocked: player.damage_blocked || 0
-              }))
-            }],
+            // Enhanced maps structure for BO1/BO3/BO5
+            maps: Array.from({ length: totalMaps }, (_, index) => {
+              const isCurrentMap = index === 0; // For now, always show first map data
+              const modeTimer = getGameModeTimer(data.live_data?.current_mode || 'Domination');
+              
+              return {
+                mapNumber: index + 1,
+                mapName: isCurrentMap ? (matchData.current_map || 'Tokyo 2099: Shibuya Sky') : `Map ${index + 1}`,
+                mode: isCurrentMap ? (data.live_data?.current_mode || 'Domination') : 'TBD',
+                status: isCurrentMap ? matchData.status : 'upcoming',
+                team1Score: isCurrentMap ? (matchData.team1_score || 0) : 0,
+                team2Score: isCurrentMap ? (matchData.team2_score || 0) : 0,
+                timer: modeTimer,
+                team1Composition: isCurrentMap ? team1Players.map(player => ({
+                  playerId: player.player_id,
+                  name: player.player_name,
+                  hero: player.hero || 'Captain America',
+                  role: convertRoleToFrontend(player.role),
+                  country: player.country || 'US',
+                  avatar: player.avatar,
+                  eliminations: player.eliminations || 0,
+                  deaths: player.deaths || 0,
+                  assists: player.assists || 0,
+                  damage: player.damage || 0,
+                  healing: player.healing || 0,
+                  damageBlocked: player.damage_blocked || 0
+                })) : [],
+                team2Composition: isCurrentMap ? team2Players.map(player => ({
+                  playerId: player.player_id,
+                  name: player.player_name,
+                  hero: player.hero || 'Hulk',
+                  role: convertRoleToFrontend(player.role),
+                  country: player.country || 'US',
+                  avatar: player.avatar,
+                  eliminations: player.eliminations || 0,
+                  deaths: player.deaths || 0,
+                  assists: player.assists || 0,
+                  damage: player.damage || 0,
+                  healing: player.healing || 0,
+                  damageBlocked: player.damage_blocked || 0
+                })) : []
+              };
+            }),
             
             // Timer and other data
             currentRound: data.current_round,
@@ -249,9 +289,8 @@ function MatchDetailPage({ matchId, navigateTo }) {
         }
         
       } catch (error) {
-        console.error('❌ MatchDetailPage: Error fetching REAL match data:', error);
+        console.error('❌ MatchDetailPage: Error fetching match data:', error);
         
-        // Show detailed error information
         if (error.name === 'SyntaxError' && error.message.includes('Unexpected token')) {
           console.error('🚨 Received HTML instead of JSON - check backend URL and API endpoint');
           console.error('🔗 Current backend URL:', BACKEND_URL);
@@ -265,11 +304,12 @@ function MatchDetailPage({ matchId, navigateTo }) {
 
     fetchMatchData();
 
-    // 🔥 PERFECT REAL-TIME SYNC: Listen for cross-tab events
+    // 🔥 ENHANCED CROSS-TAB SYNC - LISTEN FOR ALL ADMIN UPDATES
     const handleMatchUpdate = (event) => {
       const { detail } = event;
       const currentMatchId = getMatchId();
-      console.log('🔥 MatchDetailPage: Event received:', {
+      
+      console.log('🔥 MatchDetailPage: Sync event received:', {
         eventType: detail.type,
         eventMatchId: detail.matchId,
         currentMatchId: currentMatchId,
@@ -277,55 +317,131 @@ function MatchDetailPage({ matchId, navigateTo }) {
       });
       
       if (detail.matchId == currentMatchId) {
-        console.log('🔥 MatchDetailPage: Processing real-time update:', detail.type, detail);
+        console.log('🔥 MatchDetailPage: Processing real-time update:', detail);
         
-        // If we have new data in the event, use it immediately
-        if (detail.matchData) {
-          console.log('🚀 MatchDetailPage: Using immediate data from event:', detail.matchData);
-          setMatch(detail.matchData);
+        // Handle different types of updates
+        switch (detail.type) {
+          case 'SCORE_UPDATE':
+            console.log('🏆 Score update received');
+            if (detail.matchData) {
+              setMatch(detail.matchData);
+            }
+            if (detail.overallScores) {
+              setMatch(prev => prev ? {
+                ...prev,
+                team1_score: detail.overallScores.team1,
+                team2_score: detail.overallScores.team2,
+                lastUpdated: Date.now()
+              } : prev);
+            }
+            break;
+            
+          case 'HERO_CHANGE':
+            console.log('🦸 Hero change received:', detail);
+            if (detail.matchData) {
+              setMatch(detail.matchData);
+            }
+            break;
+            
+          case 'STAT_UPDATE':
+            console.log('📊 Stat update received');
+            if (detail.matchData) {
+              setMatch(detail.matchData);
+            }
+            break;
+            
+          case 'TIMER_START':
+          case 'TIMER_PAUSE':
+          case 'TIMER_RESET':
+          case 'TIMER_UPDATE':
+            console.log('⏱️ Timer update received:', detail);
+            if (detail.timer !== undefined) {
+              setMatchTimer(detail.timer);
+            }
+            break;
+            
+          case 'MAP_ADVANCE':
+            console.log('🗺️ Map advance received');
+            if (detail.newMapIndex !== undefined) {
+              setCurrentMapIndex(detail.newMapIndex);
+            }
+            break;
+            
+          case 'PREPARATION_PHASE':
+            console.log('⏳ Preparation phase update');
+            setIsPreparationPhase(detail.isPreparation || false);
+            setPreparationTimer(detail.preparationTimer || 0);
+            break;
+            
+          case 'PRODUCTION_SAVE':
+            console.log('💾 Production save completed');
+            if (detail.matchData) {
+              setMatch(detail.matchData);
+            }
+            break;
+            
+          default:
+            console.log('🔄 General update received');
+            if (detail.matchData) {
+              setMatch(detail.matchData);
+            }
         }
         
-        // If scores are in the event, update immediately  
-        if (detail.scores) {
-          console.log('🏆 MatchDetailPage: Updating scores immediately:', detail.scores);
-          setMatch(prev => prev ? {
-            ...prev,
-            team1_score: detail.scores.team1,
-            team2_score: detail.scores.team2,
-            lastUpdated: Date.now()
-          } : prev);
-        }
-        
-        // Always fetch fresh data from backend for complete sync (but silently)
-        fetchMatchData(false); // Don't show loading spinner
+        // Always fetch fresh data for complete consistency (but silently)
+        fetchMatchData(false);
       }
     };
 
-    // Listen for ALL sync events
-    window.addEventListener('mrvl-match-updated', handleMatchUpdate);
-    window.addEventListener('mrvl-hero-updated', handleMatchUpdate);
-    window.addEventListener('mrvl-stats-updated', handleMatchUpdate);
-    window.addEventListener('mrvl-data-refresh', handleMatchUpdate);
+    // Listen for ALL possible sync events
+    const eventTypes = [
+      'mrvl-match-updated',
+      'mrvl-hero-updated', 
+      'mrvl-stats-updated',
+      'mrvl-score-updated',
+      'mrvl-timer-updated',
+      'mrvl-data-refresh'
+    ];
+    
+    eventTypes.forEach(eventType => {
+      window.addEventListener(eventType, handleMatchUpdate);
+    });
+
+    // Also listen for localStorage changes (additional sync method)
+    const handleStorageChange = (event) => {
+      if (event.key === 'mrvl-match-sync' || event.key === `mrvl-match-${getMatchId()}`) {
+        try {
+          const syncData = JSON.parse(event.newValue || '{}');
+          if (syncData.matchId == getMatchId()) {
+            console.log('🔄 Storage sync detected:', syncData);
+            handleMatchUpdate({ detail: syncData });
+          }
+        } catch (error) {
+          console.error('❌ Error parsing storage sync data:', error);
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
 
     return () => {
-      window.removeEventListener('mrvl-match-updated', handleMatchUpdate);
-      window.removeEventListener('mrvl-hero-updated', handleMatchUpdate);
-      window.removeEventListener('mrvl-stats-updated', handleMatchUpdate);
-      window.removeEventListener('mrvl-data-refresh', handleMatchUpdate);
+      eventTypes.forEach(eventType => {
+        window.removeEventListener(eventType, handleMatchUpdate);
+      });
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, [matchId, api, refreshTrigger, BACKEND_URL]);
 
   // Helper function to convert roles
   const convertRoleToFrontend = (backendRole) => {
     const roleMapping = {
-      'Vanguard': 'Tank',
-      'Duelist': 'DPS', 
-      'Strategist': 'Support',
-      'Tank': 'Tank',
-      'Support': 'Support',
-      'DPS': 'DPS'
+      'Vanguard': 'Vanguard',
+      'Duelist': 'Duelist', 
+      'Strategist': 'Strategist',
+      'Tank': 'Vanguard',
+      'Support': 'Strategist',
+      'DPS': 'Duelist'
     };
-    return roleMapping[backendRole] || 'Tank';
+    return roleMapping[backendRole] || 'Vanguard';
   };
 
   // Load comments using API helper
@@ -377,7 +493,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
       <div className="max-w-7xl mx-auto p-6">
         <div className="text-center py-12">
           <div className="text-4xl mb-4">⚔️</div>
-          <p className="text-gray-600 dark:text-gray-400">Loading real match details...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading match details...</p>
         </div>
       </div>
     );
@@ -390,7 +506,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
           <div className="text-4xl mb-4">❌</div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Match Not Found</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            The match you're looking for doesn't exist in the backend database or has been removed.
+            The match you're looking for doesn't exist or has been removed.
           </p>
           <button
             onClick={() => navigateTo && navigateTo('matches')}
@@ -403,7 +519,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
     );
   }
 
-  // Use ACTUAL match data from backend
+  // Use current map data
   const currentMap = match?.maps?.[currentMapIndex] || match?.maps?.[0] || null;
   const currentMapData = currentMap ? {
     map_name: currentMap.mapName || 'Tokyo 2099: Shibuya Sky',
@@ -426,14 +542,6 @@ function MatchDetailPage({ matchId, navigateTo }) {
     team1Players: [],
     team2Players: []
   };
-
-  console.log('🎯 MatchDetailPage: Using currentMapData:', {
-    mapName: currentMapData.map_name,
-    mode: currentMapData.mode,
-    timer: currentMapData.timer,
-    team1PlayersCount: currentMapData.team1Players.length,
-    team2PlayersCount: currentMapData.team2Players.length
-  });
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
@@ -463,21 +571,30 @@ function MatchDetailPage({ matchId, navigateTo }) {
         <div className="text-lg text-gray-600 dark:text-gray-400">
           {match.format === 'BO1' ? 'Best of 1' : 
            match.format === 'BO3' ? 'Best of 3' :
-           match.format === 'BO5' ? 'Best of 5' : 'Best of 1'} • {currentMapData?.map_name || 'Tokyo 2099: Shibuya Sky'}
+           match.format === 'BO5' ? 'Best of 5' : 'Best of 1'} • {currentMapData?.map_name}
         </div>
         
         {/* GAME MODE & TIMER INFO */}
         <div className="mt-2 flex justify-center items-center space-x-4">
           <div className={`px-3 py-1 rounded-full text-sm font-medium bg-${currentMapData.timer.color}-100 text-${currentMapData.timer.color}-800 dark:bg-${currentMapData.timer.color}-900/20 dark:text-${currentMapData.timer.color}-400`}>
-            🎮 {currentMapData.timer.displayName}
+            {currentMapData.timer.icon} {currentMapData.timer.displayName}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
             ⏱️ Match Duration: {Math.floor(currentMapData.timer.duration / 60)}m
           </div>
         </div>
         
+        {/* PREPARATION PHASE DISPLAY */}
+        {isPreparationPhase && preparationTimer > 0 && (
+          <div className="mt-4 flex justify-center">
+            <div className="bg-orange-600 text-white px-6 py-2 rounded-lg font-mono text-xl font-bold animate-pulse">
+              ⏳ PREP PHASE • {preparationTimer}s
+            </div>
+          </div>
+        )}
+        
         {/* LIVE MATCH TIMER */}
-        {match.status === 'live' && (
+        {match.status === 'live' && !isPreparationPhase && (
           <div className="mt-4 flex justify-center">
             <div className="bg-red-600 text-white px-6 py-2 rounded-lg font-mono text-xl font-bold animate-pulse">
               🔴 LIVE • {matchTimer}
@@ -486,48 +603,76 @@ function MatchDetailPage({ matchId, navigateTo }) {
         )}
       </div>
 
-      {/* SCORE DISPLAY */}
-      <div className="bg-gradient-to-r from-blue-50 to-red-50 dark:from-blue-900/20 dark:to-red-900/20 rounded-lg p-8">
-        <div className="flex items-center justify-center space-x-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">{match.team1?.name}</h2>
-            <div className="text-6xl font-bold text-blue-600 dark:text-blue-400">{match.team1_score || 0}</div>
-          </div>
-          
-          <div className="text-center">
-            <div className="text-4xl text-gray-500 dark:text-gray-500">VS</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              {match.format === 'BO1' ? 'Best of 1' : 
-               match.format === 'BO3' ? 'Best of 3' :
-               match.format === 'BO5' ? 'Best of 5' : 'Best of 1'}
-              <br />
-              <span className="text-blue-600 dark:text-blue-400 font-semibold">
-                {currentMapData?.mode || 'Domination'}
-              </span>
+      {/* SERIES PROGRESS FOR BO3/BO5 */}
+      {match.totalMaps > 1 && (
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg p-6">
+          <h3 className="text-xl font-bold text-center text-gray-900 dark:text-white mb-4">
+            🏆 Series Progress (First to {Math.ceil(match.totalMaps / 2)})
+          </h3>
+          <div className="flex items-center justify-center space-x-8 mb-4">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-2">{match.team1?.name}</h2>
+              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">{match.team1_score || 0}</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-3xl text-gray-500 dark:text-gray-500">VS</div>
+            </div>
+            
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">{match.team2?.name}</h2>
+              <div className="text-4xl font-bold text-red-600 dark:text-red-400">{match.team2_score || 0}</div>
             </div>
           </div>
           
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-red-600 dark:text-red-400 mb-2">{match.team2?.name}</h2>
-            <div className="text-6xl font-bold text-red-600 dark:text-red-400">{match.team2_score || 0}</div>
+          {/* Map Status Indicators */}
+          <div className="flex justify-center space-x-2">
+            {match.maps.map((map, index) => (
+              <div 
+                key={index}
+                className={`px-3 py-1 rounded text-sm ${
+                  index === currentMapIndex ? 'bg-yellow-600 text-white' :
+                  map.status === 'completed' ? 'bg-green-600 text-white' :
+                  'bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-300'
+                }`}
+              >
+                Map {index + 1}
+                {map.status === 'completed' && (
+                  <span className="ml-1">
+                    {map.team1Score > map.team2Score ? '(T1)' : '(T2)'}
+                  </span>
+                )}
+              </div>
+            ))}
           </div>
         </div>
-        
-        {/* Stream & Action Buttons */}
-        <div className="flex justify-center space-x-4 mt-8">
-          {(match.streamUrl || match.status === 'live') && (
-            <a
-              href={match.streamUrl || 'https://twitch.tv/marvelrivals'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-lg hover:shadow-xl transform hover:scale-105"
-            >
-              <span className="text-lg mr-2">📺</span>
-              <span className="font-semibold">Watch Stream</span>
-            </a>
-          )}
+      )}
+
+      {/* CURRENT MAP SCORE DISPLAY (for BO1 or single map view) */}
+      {match.totalMaps === 1 && (
+        <div className="bg-gradient-to-r from-blue-50 to-red-50 dark:from-blue-900/20 dark:to-red-900/20 rounded-lg p-8">
+          <div className="flex items-center justify-center space-x-8">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">{match.team1?.name}</h2>
+              <div className="text-6xl font-bold text-blue-600 dark:text-blue-400">{currentMap?.team1Score || 0}</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-4xl text-gray-500 dark:text-gray-500">VS</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                <span className="text-blue-600 dark:text-blue-400 font-semibold">
+                  {currentMapData?.mode || 'Domination'}
+                </span>
+              </div>
+            </div>
+            
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-red-600 dark:text-red-400 mb-2">{match.team2?.name}</h2>
+              <div className="text-6xl font-bold text-red-600 dark:text-red-400">{currentMap?.team2Score || 0}</div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* MATCH STATISTICS */}
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6">
@@ -569,7 +714,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
           {/* Team 1 Box */}
           <div className="border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-800/50">
             <div className="px-3 py-2 bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-              <div className="text-sm font-semibold text-red-600 dark:text-red-400">{match.team1.name}</div>
+              <div className="text-sm font-semibold text-blue-600 dark:text-blue-400">{match.team1.name}</div>
             </div>
             <div className="space-y-1">
               {currentMapData.team1Players.map((player, index) => (
@@ -618,7 +763,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
                       <div 
                         className="w-10 h-10 flex items-center justify-center text-xs font-bold text-center leading-tight text-white bg-gradient-to-br from-blue-500 to-purple-600 rounded border-2 border-gray-300 dark:border-gray-600 shadow-md"
                         style={{ display: getHeroImageWithFallback(player.hero) ? 'none' : 'flex' }}
-                        title={`${player.hero} (${getHeroRole(player.hero)}) - Image not available`}
+                        title={`${player.hero} (${player.role}) - Image not available`}
                       >
                         {(player.hero || 'Hero').split(' ').map(word => word.charAt(0)).join('').slice(0, 2).toUpperCase()}
                       </div>
@@ -705,7 +850,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
                       <div 
                         className="w-10 h-10 flex items-center justify-center text-xs font-bold text-center leading-tight text-white bg-gradient-to-br from-red-500 to-orange-600 rounded border-2 border-gray-300 dark:border-gray-600 shadow-md"
                         style={{ display: getHeroImageWithFallback(player.hero) ? 'none' : 'flex' }}
-                        title={`${player.hero} (${getHeroRole(player.hero)}) - Image not available`}
+                        title={`${player.hero} (${player.role}) - Image not available`}
                       >
                         {(player.hero || 'Hero').split(' ').map(word => word.charAt(0)).join('').slice(0, 2).toUpperCase()}
                       </div>
