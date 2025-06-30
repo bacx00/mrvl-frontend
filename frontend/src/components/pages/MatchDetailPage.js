@@ -554,8 +554,8 @@ function MatchDetailPage({ matchId, navigateTo }) {
   const currentMap = match?.maps?.[currentMapIndex] || match?.maps?.[0] || null;
   const currentMapData = currentMap ? {
     map_name: currentMap.mapName || 'Tokyo 2099: Shibuya Sky',
-    mode: currentMap.mode || 'Domination',
-    timer: currentMap.timer || getGameModeTimer(currentMap.mode),
+    mode: currentMap.mode || match?.gameMode || 'Domination',
+    timer: currentMap.timer || getGameModeTimer(currentMap.mode || match?.gameMode || 'Domination'),
     team1Players: (currentMap.team1Composition || []).map(p => ({
       ...p,
       name: p.name,
@@ -568,8 +568,8 @@ function MatchDetailPage({ matchId, navigateTo }) {
     }))
   } : {
     map_name: 'Tokyo 2099: Shibuya Sky',
-    mode: 'Domination',
-    timer: getGameModeTimer('Domination'),
+    mode: match?.gameMode || 'Domination',
+    timer: getGameModeTimer(match?.gameMode || 'Domination'),
     team1Players: [],
     team2Players: []
   };
