@@ -226,30 +226,27 @@ export const MatchAPI = {
   },
 
   /**
-   * 🏆 LIVE SCORING: Update match scores with auto-aggregation
-   * Backend auto-calculates overall scores from map wins
-   * Uses PUT /api/admin/matches/{id}/scores
+   * 🏆 LIVE SCORING: Update match scores using live control
+   * Uses PUT /api/admin/matches/{id}/live-control (from documentation)
    */
   async updateScores(matchId, scoreData, apiHelper) {
     try {
-      console.log('🏆 MatchAPI: Updating scores with auto-aggregation:', { matchId, scoreData });
+      console.log('🏆 MatchAPI: Updating scores with live control:', { matchId, scoreData });
       
-      // ✅ PROPER FORMAT: Backend expects map completion data for auto-aggregation
-      const formattedData = {
-        map_scores: scoreData.map_scores || []
+      // ✅ CORRECT FORMAT: Use live-control endpoint from documentation
+      const liveControlData = {
+        action: "update_score",
+        team1_score: scoreData.team1_score || 0,
+        team2_score: scoreData.team2_score || 0,
+        current_map: scoreData.current_map || scoreData.map_scores?.[0]?.map_name
       };
       
-      console.log('🎯 Sending to backend for auto-aggregation:', formattedData);
+      console.log('🎯 Sending to live-control endpoint:', liveControlData);
       
-      const response = await apiHelper.put(`/admin/matches/${matchId}/scores`, formattedData);
+      const response = await apiHelper.put(`/admin/matches/${matchId}/live-control`, liveControlData);
       
       // ✅ Backend now returns auto-calculated overall scores
-      console.log('🏆 Backend auto-aggregated scores:', {
-        team1_overall: response.data?.team1_score,
-        team2_overall: response.data?.team2_score,
-        status: response.data?.status,
-        calculation: response.data?.calculation_method
-      });
+      console.log('🏆 Backend live control response:', response);
       
       // Trigger cross-tab sync with backend-calculated scores
       this.triggerCrossTabSync('score-update', matchId, {
@@ -257,11 +254,11 @@ export const MatchAPI = {
           team1: response.data?.team1_score,
           team2: response.data?.team2_score
         },
-        mapScores: response.data?.map_scores,
+        action: "live_control_update",
         status: response.data?.status
       });
       
-      console.log('✅ Live scores updated with auto-aggregation:', response);
+      console.log('✅ Live scores updated via live-control:', response);
       return response;
       
     } catch (error) {
