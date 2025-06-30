@@ -341,7 +341,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     loadProductionScoreboard();
   }, [match?.id, isOpen, api]);
 
-  // 🏆 REAL-TIME SCORE UPDATE FUNCTIONS - PRODUCTION READY
+  // 🏆 LIVE SCORE UPDATE - PRODUCTION READY
   const updateMapScore = async (teamNumber, increment = true) => {
     try {
       const currentMap = matchStats.currentMap;
@@ -360,53 +360,43 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         const team1Rounds = currentMapData.team1Score || 0;
         const team2Rounds = currentMapData.team2Score || 0;
         
-        // Mark map as completed if either team reaches 3 rounds
-        if (team1Rounds >= 3 || team2Rounds >= 3) {
-          if (currentMapData.status !== 'completed') {
-            currentMapData.status = 'completed';
-            console.log(`🏆 MAP ${currentMap + 1} COMPLETED: ${team1Rounds}-${team2Rounds}`);
-          }
-        } else {
-          currentMapData.status = 'live'; // Map is ongoing
-        }
-        
         newStats.maps[currentMap] = currentMapData;
         
-        // ✅ BACKEND AUTO-AGGREGATION: Send map completion data
-        const scoreData = {
-          map_scores: newStats.maps.map((map, index) => ({
-            map_index: index,
-            team1_score: map.team1Score || 0,  // Rounds won on this map
-            team2_score: map.team2Score || 0,  // Rounds won on this map
-            status: map.status || 'upcoming'   // ✅ KEY: completion status
-          }))
+        // ✅ USE LIVE CONTROL ENDPOINT: Calculate overall scores
+        const team1OverallScore = team1Rounds >= 3 ? 1 : 0;
+        const team2OverallScore = team2Rounds >= 3 ? 1 : 0;
+        
+        const liveControlData = {
+          team1_score: team1OverallScore,
+          team2_score: team2OverallScore,
+          current_map: newStats.maps[currentMap].mapName || "Unknown Map"
         };
         
-        console.log(`🎯 MAP SCORE UPDATE: Team ${teamNumber} ${increment ? '+1' : '-1'} (${newMapScore} rounds)`);
-        console.log(`🏆 Sending to backend for auto-aggregation:`, scoreData);
+        console.log(`🎯 LIVE CONTROL UPDATE: Team ${teamNumber} ${increment ? '+1' : '-1'} (${newMapScore} rounds)`);
+        console.log(`🏆 Sending live control data:`, liveControlData);
         
-        // ✅ Call backend API for auto-aggregation (async)
-        MatchAPI.updateScores(match.id, scoreData, api)
+        // ✅ Call backend live control API (async)
+        MatchAPI.updateScores(match.id, liveControlData, api)
           .then((response) => {
-            console.log(`✅ Backend response:`, {
+            console.log(`✅ Live control response:`, {
               team1_overall: response.data?.team1_score,
               team2_overall: response.data?.team2_score,
-              status: response.data?.status,
-              calculation: response.data?.calculation_method
+              status: response.data?.status
             });
             
-            // ✅ Trigger cross-tab sync with backend-calculated data
+            // ✅ Trigger cross-tab sync with live control data
             MatchAPI.triggerCrossTabSync('score-update', match.id, { 
               mapIndex: currentMap, 
               teamNumber, 
               increment,
-              backendResponse: response.data
+              liveControlResponse: response.data
             });
           })
           .catch(error => console.error('❌ Error updating live score:', error));
         
         return newStats;
       });
+      
       
       
     } catch (error) {
