@@ -86,15 +86,15 @@ function MatchDetailPage({ matchId, navigateTo }) {
         if (apiResponse.success && apiResponse.data) {
           const data = apiResponse.data;
           
-          // ✅ REAL STRUCTURE: Based on your backend documentation
+          // ✅ CORRECT STRUCTURE: Backend returns data.match_info (not data.match)
           const transformedMatch = {
-            id: data.match?.id || realMatchId,
-            status: data.match?.status || 'unknown',
-            team1_score: data.match?.team1_score || 0,
-            team2_score: data.match?.team2_score || 0,
-            format: data.match?.format || data.match?.match_format || 'BO1',
-            currentMap: data.match?.current_map || 'Unknown Map',
-            viewers: data.match?.viewers || 0,
+            id: data.match_info?.id || realMatchId,
+            status: data.match_info?.status || 'unknown',
+            team1_score: data.match_info?.team1_score || 0,
+            team2_score: data.match_info?.team2_score || 0,
+            format: data.match_info?.format || 'BO1',
+            currentMap: data.match_info?.current_map || 'Unknown Map',
+            viewers: data.match_info?.viewers || 0,
             
             // Teams from live-scoreboard response
             team1: {
