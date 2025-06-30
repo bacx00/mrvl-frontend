@@ -530,33 +530,37 @@ export const MatchAPI = {
   },
 
   /**
-   * 💾 Save player statistics using PRODUCTION endpoints
-   * Uses /matches/{id}/players/{playerId}/stats
+   * 💾 Save player statistics using BULK UPDATE (RECOMMENDED)
+   * Uses PUT /api/admin/matches/{id}/bulk-player-stats
    */
   async savePlayerStats(matchId, playerId, stats, apiHelper) {
     try {
       console.log('💾 MatchAPI: Saving PRODUCTION player stats:', { matchId, playerId, stats });
       
-      // 🎯 CRITICAL: Use PRODUCTION player stats endpoint
-      const statsPayload = {
-        kills: stats.eliminations || 0,        // E → kills
-        deaths: stats.deaths || 0,             // D → deaths
-        assists: stats.assists || 0,           // A → assists
-        damage: stats.damage || 0,             // DMG → damage
-        healing: stats.healing || 0,           // HEAL → healing
-        damage_blocked: stats.damageBlocked || 0, // BLK → damage_blocked
-        hero_played: stats.hero,
-        ultimate_usage: stats.ultimateUsage || 0,
-        objective_time: stats.objectiveTime || 0
+      // ✅ CORRECT FORMAT: Use bulk update endpoint from documentation
+      const bulkData = {
+        round_id: 1,
+        player_stats: [{
+          player_id: playerId,
+          eliminations: stats.eliminations || stats.kills || 0,
+          deaths: stats.deaths || 0,
+          assists: stats.assists || 0,
+          damage: stats.damage || 0,
+          healing: stats.healing || 0,
+          damage_blocked: stats.damage_blocked || 0,
+          ultimate_usage: stats.ultimate_usage || 0,
+          hero_played: stats.hero || stats.hero_played || "Unknown",
+          role_played: stats.role || stats.role_played || "Unknown"
+        }]
       };
-
-      const response = await apiHelper.post(`/matches/${matchId}/players/${playerId}/stats`, statsPayload);
+      
+      const response = await apiHelper.put(`/admin/matches/${matchId}/bulk-player-stats`, bulkData);
       
       console.log('✅ PRODUCTION player stats saved:', response);
       return response;
       
     } catch (error) {
-      console.error('❌ MatchAPI: Error saving PRODUCTION player stats:', error);
+      console.error('❌ MatchAPI: Error saving player stats:', error);
       throw error;
     }
   },
