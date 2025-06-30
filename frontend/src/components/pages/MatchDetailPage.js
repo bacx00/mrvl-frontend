@@ -68,33 +68,62 @@ function MatchDetailPage({ matchId, navigateTo }) {
       }
 
       try {
-        if (showLoading) {
-          console.log(`🔍 MatchDetailPage: Fetching REAL match ${realMatchId} from backend...`);
-        }
+        console.log('🔍 MatchDetailPage: Fetching REAL match', realMatchId, 'from backend...');
         
-        // 🚨 CRITICAL FIX: Use SCOREBOARD endpoint via MatchAPI for complete data
-        console.log(`🎯 MatchDetailPage: Loading COMPLETE match data using MatchAPI.loadCompleteMatch(${realMatchId})`);
-        const matchData = await MatchAPI.loadCompleteMatch(realMatchId, api);
-        console.log('✅ MatchDetailPage: COMPLETE match data with heroes/logos loaded:', matchData);
+        // ✅ CORRECT ENDPOINT: Use live-scoreboard from documentation
+        console.log(`🎯 MatchDetailPage: Using live-scoreboard endpoint for match ${realMatchId}`);
         
-        if (showLoading) {
-          console.log('✅ MatchDetailPage: REAL match data received:', matchData);
-        }
+        const response = await fetch(`${BACKEND_URL}/matches/${realMatchId}/live-scoreboard`, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            ...(api.token && { 'Authorization': `Bearer ${api.token}` })
+          }
+        });
         
-        // 🚨 CRITICAL FIX: Use the complete match data from MatchAPI with all player compositions
-        if (matchData) {
-          console.log('🔥 MatchDetailPage: Setting complete match with player compositions:', {
-            team1_score: matchData.team1?.score || 0,
-            team2_score: matchData.team2?.score || 0,
-            status: matchData.status,
-            mapCount: matchData.maps?.length,
-            team1PlayersCount: matchData.maps?.[0]?.team1Composition?.length,
-            team2PlayersCount: matchData.maps?.[0]?.team2Composition?.length
-          });
+        const apiResponse = await response.json();
+        console.log('📥 Live scoreboard response:', apiResponse);
+        
+        if (apiResponse.success && apiResponse.data) {
+          const data = apiResponse.data;
           
-          setMatch(matchData);
+          // ✅ REAL STRUCTURE: Based on your backend documentation
+          const transformedMatch = {
+            id: data.match?.id || realMatchId,
+            status: data.match?.status || 'unknown',
+            team1_score: data.match?.team1_score || 0,
+            team2_score: data.match?.team2_score || 0,
+            format: data.match?.format || data.match?.match_format || 'BO1',
+            currentMap: data.match?.current_map || 'Unknown Map',
+            viewers: data.match?.viewers || 0,
+            
+            // Teams from live-scoreboard response
+            team1: {
+              id: data.match?.team1_id,
+              name: data.teams?.team1?.name || 'Team 1',
+              logo: data.teams?.team1?.logo || '',
+              players: data.teams?.team1?.players || []
+            },
+            team2: {
+              id: data.match?.team2_id, 
+              name: data.teams?.team2?.name || 'Team 2',
+              logo: data.teams?.team2?.logo || '',
+              players: data.teams?.team2?.players || []
+            },
+            
+            // Maps and player stats
+            maps: data.maps || [],
+            playerStats: data.player_statistics || [],
+            
+            // Timer and other data
+            currentRound: data.current_round,
+            activeTimers: data.active_timers || []
+          };
+          
+          console.log('✅ MatchDetailPage: Transformed match data:', transformedMatch);
+          setMatch(transformedMatch);
+          
         } else {
-          console.error('❌ No match data received from MatchAPI');
+          console.error('❌ Failed to load match data:', apiResponse);
           setMatch(null);
         }
         
