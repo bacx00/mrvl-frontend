@@ -520,9 +520,14 @@ function MatchDetailPage({ matchId, navigateTo }) {
         timestamp: new Date().toISOString()
       });
       
-      // Listen for both standard keys AND unique event keys
+      // Listen for both standard keys AND unique event keys AND event-specific keys
       const isRelevantKey = event.key === 'mrvl-match-sync' || 
                            event.key === `mrvl-match-${getMatchId()}` ||
+                           event.key === 'mrvl-timer-sync' ||
+                           event.key === 'mrvl-hero-sync' ||
+                           event.key === 'mrvl-score-sync' ||
+                           event.key === 'mrvl-stat-sync' ||
+                           event.key === 'mrvl-save-sync' ||
                            (event.key && event.key.startsWith('mrvl-match-sync-'));
       
       if (isRelevantKey) {
