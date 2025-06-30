@@ -147,66 +147,91 @@ function MatchDetailPage({ matchId, navigateTo }) {
         if (apiResponse.success && apiResponse.data) {
           const data = apiResponse.data;
           
-          // ✅ CORRECT STRUCTURE: Backend returns data.match_info (from documentation)
+          // ✅ CORRECT STRUCTURE: Backend actually returns data.match (not data.match_info)
+          const matchData = data.match || {};
+          let team1Players = [];
+          let team2Players = [];
+          
+          // ✅ PARSE MAPS_DATA JSON STRING to get player compositions
+          if (matchData.maps_data) {
+            try {
+              const mapsData = JSON.parse(matchData.maps_data);
+              if (mapsData && mapsData[0]) {
+                const mapData = mapsData[0];
+                team1Players = mapData.team1_composition || [];
+                team2Players = mapData.team2_composition || [];
+                
+                console.log('✅ Parsed team compositions:', {
+                  team1Count: team1Players.length,
+                  team2Count: team2Players.length,
+                  team1Sample: team1Players[0],
+                  team2Sample: team2Players[0]
+                });
+              }
+            } catch (error) {
+              console.error('❌ Error parsing maps_data JSON:', error);
+            }
+          }
+          
           const transformedMatch = {
-            id: data.match_info?.id || realMatchId,
-            status: data.match_info?.status || 'unknown',
-            team1_score: data.match_info?.team1_score || 0,
-            team2_score: data.match_info?.team2_score || 0,
-            format: data.match_info?.format || 'BO1',
-            currentMap: data.match_info?.current_map || 'Tokyo 2099: Shibuya Sky',
-            gameMode: data.match_info?.game_mode || 'Domination',
-            viewers: data.match_info?.viewers || 0,
+            id: matchData.id || realMatchId,
+            status: matchData.status || 'unknown',
+            team1_score: matchData.team1_score || 0,
+            team2_score: matchData.team2_score || 0,
+            format: matchData.format || matchData.match_format || 'BO1',
+            currentMap: matchData.current_map || 'Tokyo 2099: Shibuya Sky',
+            gameMode: data.live_data?.current_mode || 'Domination',
+            viewers: matchData.viewers || 0,
             
-            // Teams from live-scoreboard response using correct structure
+            // Teams from live-scoreboard response
             team1: {
-              id: data.match_info?.team1_id,
-              name: data.match_info?.team1_name || 'Team 1',
-              logo: '',
-              players: data.team1_roster || []
+              id: matchData.team1_id,
+              name: matchData.team1_name || 'Team 1',
+              logo: matchData.team1_logo || '',
+              players: team1Players
             },
             team2: {
-              id: data.match_info?.team2_id, 
-              name: data.match_info?.team2_name || 'Team 2',
-              logo: '',
-              players: data.team2_roster || []
+              id: matchData.team2_id, 
+              name: matchData.team2_name || 'Team 2',
+              logo: matchData.team2_logo || '',
+              players: team2Players
             },
             
-            // Maps and player stats from rosters
+            // Maps and player stats from parsed compositions
             maps: [{
-              mapName: data.match_info?.current_map || 'Tokyo 2099: Shibuya Sky',
-              mode: data.match_info?.game_mode || 'Domination',
-              status: data.match_info?.status,
-              team1Score: data.match_info?.team1_score || 0,
-              team2Score: data.match_info?.team2_score || 0,
-              timer: getGameModeTimer(data.match_info?.game_mode),
-              team1Composition: (data.team1_roster || []).map(player => ({
+              mapName: matchData.current_map || 'Tokyo 2099: Shibuya Sky',
+              mode: data.live_data?.current_mode || 'Domination',
+              status: matchData.status,
+              team1Score: matchData.team1_score || 0,
+              team2Score: matchData.team2_score || 0,
+              timer: getGameModeTimer(data.live_data?.current_mode),
+              team1Composition: team1Players.map(player => ({
                 playerId: player.player_id,
-                name: player.name,
-                hero: player.hero || player.stats?.hero_played || 'Captain America',
+                name: player.player_name,
+                hero: player.hero || 'Captain America',
                 role: convertRoleToFrontend(player.role),
                 country: player.country || 'US',
                 avatar: player.avatar,
-                eliminations: player.stats?.eliminations || 0,
-                deaths: player.stats?.deaths || 0,
-                assists: player.stats?.assists || 0,
-                damage: player.stats?.damage || 0,
-                healing: player.stats?.healing || 0,
-                damageBlocked: player.stats?.damage_blocked || 0
+                eliminations: player.eliminations || 0,
+                deaths: player.deaths || 0,
+                assists: player.assists || 0,
+                damage: player.damage || 0,
+                healing: player.healing || 0,
+                damageBlocked: player.damage_blocked || 0
               })),
-              team2Composition: (data.team2_roster || []).map(player => ({
+              team2Composition: team2Players.map(player => ({
                 playerId: player.player_id,
-                name: player.name,
-                hero: player.hero || player.stats?.hero_played || 'Hulk',
+                name: player.player_name,
+                hero: player.hero || 'Hulk',
                 role: convertRoleToFrontend(player.role),
                 country: player.country || 'US',
                 avatar: player.avatar,
-                eliminations: player.stats?.eliminations || 0,
-                deaths: player.stats?.deaths || 0,
-                assists: player.stats?.assists || 0,
-                damage: player.stats?.damage || 0,
-                healing: player.stats?.healing || 0,
-                damageBlocked: player.stats?.damage_blocked || 0
+                eliminations: player.eliminations || 0,
+                deaths: player.deaths || 0,
+                assists: player.assists || 0,
+                damage: player.damage || 0,
+                healing: player.healing || 0,
+                damageBlocked: player.damage_blocked || 0
               }))
             }],
             
