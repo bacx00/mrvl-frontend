@@ -333,13 +333,15 @@ function MatchDetailPage({ matchId, navigateTo }) {
       const currentMatchId = getMatchId();
       
       console.log('🔥 MatchDetailPage: Sync event received:', {
-        eventType: detail.type,
+        eventType: event.type,
+        detailType: detail.type,
         eventMatchId: detail.matchId,
         currentMatchId: currentMatchId,
         currentMatchIdType: typeof currentMatchId,
         eventMatchIdType: typeof detail.matchId,
         willProcess: detail.matchId == currentMatchId,
-        strictEquality: detail.matchId === currentMatchId
+        strictEquality: detail.matchId === currentMatchId,
+        fullDetail: detail
       });
       
       // ✅ IMPROVED MATCH ID COMPARISON - HANDLE STRING/NUMBER MISMATCH
@@ -351,87 +353,115 @@ function MatchDetailPage({ matchId, navigateTo }) {
         console.log('🔥 MatchDetailPage: Processing real-time update:', {
           type: detail.type,
           hasMatchData: !!detail.matchData,
-          timestamp: detail.timestamp
+          timestamp: detail.timestamp,
+          matchDataKeys: detail.matchData ? Object.keys(detail.matchData) : []
         });
         
-        // Handle different types of updates with IMMEDIATE RESPONSE
-        switch (detail.type) {
-          case 'SCORE_UPDATE':
-            console.log('🏆 Score update received - IMMEDIATE UPDATE');
-            if (detail.matchData) {
-              setMatch(detail.matchData);
-            }
-            if (detail.overallScores) {
-              setMatch(prev => prev ? {
-                ...prev,
-                team1_score: detail.overallScores.team1,
-                team2_score: detail.overallScores.team2,
-                lastUpdated: Date.now()
-              } : prev);
-            }
-            break;
-            
-          case 'HERO_CHANGE':
-            console.log('🦸 Hero change received - IMMEDIATE UPDATE:', detail);
-            if (detail.matchData) {
-              setMatch(detail.matchData);
-            }
-            break;
-            
-          case 'STAT_UPDATE':
-            console.log('📊 Stat update received - IMMEDIATE UPDATE');
-            if (detail.matchData) {
-              setMatch(detail.matchData);
-            }
-            break;
-            
-          case 'TIMER_START':
-          case 'TIMER_PAUSE':
-          case 'TIMER_RESET':
-          case 'TIMER_UPDATE':
-            console.log('⏱️ Timer update received - IMMEDIATE UPDATE:', detail);
-            if (detail.timer !== undefined) {
-              setMatchTimer(detail.timer);
-            }
-            if (detail.isRunning !== undefined) {
-              // Update visual timer state immediately
-              console.log('⏱️ Timer running state:', detail.isRunning);
-            }
-            // NO BACKEND FETCH for timer updates - use event data only
-            return; // Don't fetch backend data for timer updates
-            
-          case 'MAP_ADVANCE':
-            console.log('🗺️ Map advance received - IMMEDIATE UPDATE');
-            if (detail.newMapIndex !== undefined) {
-              setCurrentMapIndex(detail.newMapIndex);
-            }
-            break;
-            
-          case 'PREPARATION_PHASE':
-            console.log('⏳ Preparation phase update - IMMEDIATE UPDATE');
-            setIsPreparationPhase(detail.isPreparation || false);
-            setPreparationTimer(detail.preparationTimer || 0);
-            break;
-            
-          case 'PRODUCTION_SAVE':
-            console.log('💾 Production save completed - FULL REFRESH');
-            if (detail.matchData) {
-              setMatch(detail.matchData);
-            }
-            break;
-            
-          default:
-            console.log('🔄 General update received - IMMEDIATE UPDATE');
-            if (detail.matchData) {
-              setMatch(detail.matchData);
-            }
+        // Handle different types of updates with IMMEDIATE RESPONSE and ERROR HANDLING
+        try {
+          switch (detail.type) {
+            case 'SCORE_UPDATE':
+              console.log('🏆 Score update received - IMMEDIATE UPDATE', detail);
+              if (detail.matchData) {
+                console.log('🏆 Setting match data from SCORE_UPDATE:', detail.matchData);
+                setMatch(detail.matchData);
+                setRefreshTrigger(prev => prev + 1); // Force re-render
+              }
+              if (detail.overallScores) {
+                console.log('🏆 Updating overall scores:', detail.overallScores);
+                setMatch(prev => prev ? {
+                  ...prev,
+                  team1_score: detail.overallScores.team1,
+                  team2_score: detail.overallScores.team2,
+                  lastUpdated: Date.now()
+                } : prev);
+              }
+              break;
+              
+            case 'HERO_CHANGE':
+              console.log('🦸 Hero change received - IMMEDIATE UPDATE:', detail);
+              if (detail.matchData) {
+                console.log('🦸 Setting match data from HERO_CHANGE:', detail.matchData);
+                setMatch(detail.matchData);
+                setRefreshTrigger(prev => prev + 1); // Force re-render
+              }
+              break;
+              
+            case 'STAT_UPDATE':
+              console.log('📊 Stat update received - IMMEDIATE UPDATE', detail);
+              if (detail.matchData) {
+                console.log('📊 Setting match data from STAT_UPDATE:', detail.matchData);
+                setMatch(detail.matchData);
+                setRefreshTrigger(prev => prev + 1); // Force re-render
+              }
+              break;
+              
+            case 'TIMER_START':
+            case 'TIMER_PAUSE':
+            case 'TIMER_RESET':
+            case 'TIMER_UPDATE':
+              console.log('⏱️ Timer update received - IMMEDIATE UPDATE:', detail);
+              if (detail.timer !== undefined) {
+                setMatchTimer(detail.timer);
+              }
+              if (detail.isRunning !== undefined) {
+                // Update visual timer state immediately
+                console.log('⏱️ Timer running state:', detail.isRunning);
+              }
+              // NO BACKEND FETCH for timer updates - use event data only
+              return; // Don't fetch backend data for timer updates
+              
+            case 'MAP_ADVANCE':
+              console.log('🗺️ Map advance received - IMMEDIATE UPDATE');
+              if (detail.newMapIndex !== undefined) {
+                setCurrentMapIndex(detail.newMapIndex);
+              }
+              break;
+              
+            case 'PREPARATION_PHASE':
+              console.log('⏳ Preparation phase update - IMMEDIATE UPDATE');
+              setIsPreparationPhase(detail.isPreparation || false);
+              setPreparationTimer(detail.preparationTimer || 0);
+              break;
+              
+            case 'PRODUCTION_SAVE':
+              console.log('💾 Production save completed - FULL REFRESH');
+              if (detail.matchData) {
+                setMatch(detail.matchData);
+                setRefreshTrigger(prev => prev + 1);
+              }
+              break;
+              
+            case 'TEST_SYNC':
+              console.log('🧪 Test sync received - DEBUG EVENT:', detail);
+              if (detail.matchData) {
+                console.log('🧪 Test match data:', detail.matchData);
+              }
+              break;
+              
+            default:
+              console.log('🔄 General update received - IMMEDIATE UPDATE', detail);
+              if (detail.matchData) {
+                console.log('🔄 Setting match data from DEFAULT case:', detail.matchData);
+                setMatch(detail.matchData);
+                setRefreshTrigger(prev => prev + 1);
+              }
+          }
+          
+          // For non-timer updates, also fetch fresh data for consistency (silently)
+          if (detail.type !== 'TIMER_START' && detail.type !== 'TIMER_PAUSE' && 
+              detail.type !== 'TIMER_RESET' && detail.type !== 'TIMER_UPDATE') {
+            console.log('🔄 Fetching fresh data after non-timer update');
+            fetchMatchData(false); // Silent refresh
+          }
+        } catch (error) {
+          console.error('❌ Error processing sync event:', error, detail);
         }
-        
-        // For non-timer updates, also fetch fresh data for consistency (silently)
-        if (detail.type !== 'TIMER_START' && detail.type !== 'TIMER_PAUSE' && 
-            detail.type !== 'TIMER_RESET' && detail.type !== 'TIMER_UPDATE') {
-          fetchMatchData(false);
-        }
+      } else {
+        console.log('🚫 MatchDetailPage: Event ignored - Match ID mismatch:', {
+          eventMatchId: detail.matchId,
+          currentMatchId: currentMatchId
+        });
       }
     };
 
