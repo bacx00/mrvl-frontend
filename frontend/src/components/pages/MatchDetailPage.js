@@ -18,10 +18,59 @@ function MatchDetailPage({ matchId, navigateTo }) {
   
   const { user, isAuthenticated, api } = useAuth();
   
-  // 🔥 CRITICAL: REAL BACKEND API BASE URL FROM ENV ONLY
-  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+  // 🔥 CRITICAL: FIXED BACKEND URL LOADING
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://staging.mrvl.net/api';
 
   console.log('🔍 MatchDetailPage: Using backend URL:', BACKEND_URL);
+
+  // 🦸 HERO IMAGE SYSTEM WITH FALLBACKS
+  const getHeroImageWithFallback = (heroName) => {
+    if (!heroName) return null;
+    
+    // Try to get hero image
+    const imageUrl = getHeroImageSync(heroName);
+    if (imageUrl) return imageUrl;
+    
+    // Try alternative hero names
+    const alternativeNames = {
+      'Iron Man': 'iron_man',
+      'Spider-Man': 'spider_man',
+      'Black Widow': 'black_widow',
+      'Doctor Strange': 'doctor_strange',
+      'Captain America': 'captain_america',
+      'Winter Soldier': 'winter_soldier',
+      'Star-Lord': 'star_lord',
+      'Rocket Raccoon': 'rocket_raccoon',
+      'Jeff the Land Shark': 'jeff',
+      'Luna Snow': 'luna_snow',
+      'Adam Warlock': 'adam_warlock',
+      'Cloak & Dagger': 'cloak_dagger',
+      'Squirrel Girl': 'squirrel_girl'
+    };
+    
+    const altName = alternativeNames[heroName];
+    if (altName) {
+      const altImage = getHeroImageSync(altName);
+      if (altImage) return altImage;
+    }
+    
+    // No image found, use fallback
+    return null;
+  };
+
+  // 🎮 MARVEL RIVALS GAME MODE TIMERS
+  const getGameModeTimer = (mode) => {
+    const modeTimers = {
+      'Convoy': { duration: 18 * 60, displayName: 'Convoy', color: 'blue' }, // 18 minutes
+      'Domination': { duration: 12 * 60, displayName: 'Domination', color: 'red' }, // 12 minutes
+      'Convergence': { duration: 15 * 60, displayName: 'Convergence', color: 'purple' }, // 15 minutes
+      'Conquest': { duration: 20 * 60, displayName: 'Conquest', color: 'green' }, // 20 minutes
+      'Doom Match': { duration: 10 * 60, displayName: 'Doom Match', color: 'orange' }, // 10 minutes
+      'Escort': { duration: 16 * 60, displayName: 'Escort', color: 'yellow' } // 16 minutes
+    };
+    
+    return modeTimers[mode] || { duration: 15 * 60, displayName: mode || 'Unknown', color: 'gray' };
+  };
 
   // 🚨 CRITICAL: EXTRACT MATCH ID FROM URL OR PROPS
   const getMatchId = () => {
@@ -71,13 +120,26 @@ function MatchDetailPage({ matchId, navigateTo }) {
         
         // ✅ CORRECT ENDPOINT: Use live-scoreboard from backend documentation
         console.log(`🎯 MatchDetailPage: Using live-scoreboard endpoint for match ${realMatchId}`);
+        console.log(`🔗 Full URL: ${BACKEND_URL}/matches/${realMatchId}/live-scoreboard`);
+        
+        if (!BACKEND_URL || BACKEND_URL === 'undefined') {
+          throw new Error('Backend URL is not configured properly');
+        }
         
         const response = await fetch(`${BACKEND_URL}/matches/${realMatchId}/live-scoreboard`, {
           headers: {
+            'Content-Type': 'application/json',
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             ...(api.token && { 'Authorization': `Bearer ${api.token}` })
           }
         });
+        
+        console.log('📡 Response status:', response.status);
+        console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
         
         const apiResponse = await response.json();
         console.log('📥 Live scoreboard response:', apiResponse);
@@ -92,7 +154,8 @@ function MatchDetailPage({ matchId, navigateTo }) {
             team1_score: data.match_info?.team1_score || 0,
             team2_score: data.match_info?.team2_score || 0,
             format: data.match_info?.format || 'BO1',
-            currentMap: data.match_info?.current_map || 'Unknown Map',
+            currentMap: data.match_info?.current_map || 'Tokyo 2099: Shibuya Sky',
+            gameMode: data.match_info?.game_mode || 'Domination',
             viewers: data.match_info?.viewers || 0,
             
             // Teams from live-scoreboard response using correct structure
@@ -116,6 +179,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
               status: data.match_info?.status,
               team1Score: data.match_info?.team1_score || 0,
               team2Score: data.match_info?.team2_score || 0,
+              timer: getGameModeTimer(data.match_info?.game_mode),
               team1Composition: (data.team1_roster || []).map(player => ({
                 playerId: player.player_id,
                 name: player.name,
@@ -161,6 +225,13 @@ function MatchDetailPage({ matchId, navigateTo }) {
         
       } catch (error) {
         console.error('❌ MatchDetailPage: Error fetching REAL match data:', error);
+        
+        // Show detailed error information
+        if (error.name === 'SyntaxError' && error.message.includes('Unexpected token')) {
+          console.error('🚨 Received HTML instead of JSON - check backend URL and API endpoint');
+          console.error('🔗 Current backend URL:', BACKEND_URL);
+        }
+        
         setMatch(null);
       } finally {
         if (showLoading) setLoading(false);
@@ -217,7 +288,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
       window.removeEventListener('mrvl-stats-updated', handleMatchUpdate);
       window.removeEventListener('mrvl-data-refresh', handleMatchUpdate);
     };
-  }, [matchId, api, refreshTrigger]);
+  }, [matchId, api, refreshTrigger, BACKEND_URL]);
 
   // Helper function to convert roles
   const convertRoleToFrontend = (backendRole) => {
@@ -312,6 +383,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
   const currentMapData = currentMap ? {
     map_name: currentMap.mapName || 'Tokyo 2099: Shibuya Sky',
     mode: currentMap.mode || 'Domination',
+    timer: currentMap.timer || getGameModeTimer(currentMap.mode),
     team1Players: (currentMap.team1Composition || []).map(p => ({
       ...p,
       name: p.name,
@@ -325,6 +397,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
   } : {
     map_name: 'Tokyo 2099: Shibuya Sky',
     mode: 'Domination',
+    timer: getGameModeTimer('Domination'),
     team1Players: [],
     team2Players: []
   };
@@ -332,6 +405,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
   console.log('🎯 MatchDetailPage: Using currentMapData:', {
     mapName: currentMapData.map_name,
     mode: currentMapData.mode,
+    timer: currentMapData.timer,
     team1PlayersCount: currentMapData.team1Players.length,
     team2PlayersCount: currentMapData.team2Players.length
   });
@@ -365,6 +439,16 @@ function MatchDetailPage({ matchId, navigateTo }) {
           {match.format === 'BO1' ? 'Best of 1' : 
            match.format === 'BO3' ? 'Best of 3' :
            match.format === 'BO5' ? 'Best of 5' : 'Best of 1'} • {currentMapData?.map_name || 'Tokyo 2099: Shibuya Sky'}
+        </div>
+        
+        {/* GAME MODE & TIMER INFO */}
+        <div className="mt-2 flex justify-center items-center space-x-4">
+          <div className={`px-3 py-1 rounded-full text-sm font-medium bg-${currentMapData.timer.color}-100 text-${currentMapData.timer.color}-800 dark:bg-${currentMapData.timer.color}-900/20 dark:text-${currentMapData.timer.color}-400`}>
+            🎮 {currentMapData.timer.displayName}
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            ⏱️ Match Duration: {Math.floor(currentMapData.timer.duration / 60)}m
+          </div>
         </div>
         
         {/* LIVE MATCH TIMER */}
@@ -464,7 +548,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
             </div>
             <div className="space-y-1">
               {currentMapData.team1Players.map((player, index) => (
-                <div key={player.id} className="grid grid-cols-9 gap-2 items-center px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <div key={player.id || index} className="grid grid-cols-9 gap-2 items-center px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                   {/* Player Info */}
                   <div className="flex items-center space-x-2">
                     <div className="w-6 h-6 flex items-center justify-center" title={`Country: ${player.country}`}>
@@ -490,14 +574,14 @@ function MatchDetailPage({ matchId, navigateTo }) {
                     </div>
                   </div>
                   
-                  {/* Hero */}
+                  {/* Hero with Enhanced Image System */}
                   <div className="flex justify-center">
                     <div className="relative w-10 h-10">
-                      {getHeroImageSync(player.hero) ? (
+                      {getHeroImageWithFallback(player.hero) ? (
                         <img 
-                          src={getHeroImageSync(player.hero)}
+                          src={getHeroImageWithFallback(player.hero)}
                           alt={player.hero}
-                          className="w-10 h-10 object-cover rounded"
+                          className="w-10 h-10 object-cover rounded border-2 border-gray-300 dark:border-gray-600"
                           onError={(e) => {
                             e.target.style.display = 'none';
                             e.target.nextElementSibling.style.display = 'flex';
@@ -505,12 +589,13 @@ function MatchDetailPage({ matchId, navigateTo }) {
                         />
                       ) : null}
                       
+                      {/* Enhanced Text Fallback */}
                       <div 
-                        className="w-10 h-10 flex items-center justify-center text-xs font-bold text-center leading-tight text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded"
-                        style={{ display: getHeroImageSync(player.hero) ? 'none' : 'flex' }}
-                        title={`${player.hero} (${getHeroRole(player.hero)})`}
+                        className="w-10 h-10 flex items-center justify-center text-xs font-bold text-center leading-tight text-white bg-gradient-to-br from-blue-500 to-purple-600 rounded border-2 border-gray-300 dark:border-gray-600 shadow-md"
+                        style={{ display: getHeroImageWithFallback(player.hero) ? 'none' : 'flex' }}
+                        title={`${player.hero} (${getHeroRole(player.hero)}) - Image not available`}
                       >
-                        {player.hero}
+                        {(player.hero || 'Hero').split(' ').map(word => word.charAt(0)).join('').slice(0, 2).toUpperCase()}
                       </div>
                     </div>
                   </div>
@@ -550,7 +635,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
             </div>
             <div className="space-y-1">
               {currentMapData.team2Players.map((player, index) => (
-                <div key={player.id} className="grid grid-cols-9 gap-2 items-center px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <div key={player.id || index} className="grid grid-cols-9 gap-2 items-center px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                   {/* Player Info */}
                   <div className="flex items-center space-x-2">
                     <div className="w-6 h-6 flex items-center justify-center" title={`Country: ${player.country}`}>
@@ -576,14 +661,14 @@ function MatchDetailPage({ matchId, navigateTo }) {
                     </div>
                   </div>
                   
-                  {/* Hero */}
+                  {/* Hero with Enhanced Image System */}
                   <div className="flex justify-center">
                     <div className="relative w-10 h-10">
-                      {getHeroImageSync(player.hero) ? (
+                      {getHeroImageWithFallback(player.hero) ? (
                         <img 
-                          src={getHeroImageSync(player.hero)}
+                          src={getHeroImageWithFallback(player.hero)}
                           alt={player.hero}
-                          className="w-10 h-10 object-cover rounded"
+                          className="w-10 h-10 object-cover rounded border-2 border-gray-300 dark:border-gray-600"
                           onError={(e) => {
                             e.target.style.display = 'none';
                             e.target.nextElementSibling.style.display = 'flex';
@@ -591,12 +676,13 @@ function MatchDetailPage({ matchId, navigateTo }) {
                         />
                       ) : null}
                       
+                      {/* Enhanced Text Fallback */}
                       <div 
-                        className="w-10 h-10 flex items-center justify-center text-xs font-bold text-center leading-tight text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded"
-                        style={{ display: getHeroImageSync(player.hero) ? 'none' : 'flex' }}
-                        title={`${player.hero} (${getHeroRole(player.hero)})`}
+                        className="w-10 h-10 flex items-center justify-center text-xs font-bold text-center leading-tight text-white bg-gradient-to-br from-red-500 to-orange-600 rounded border-2 border-gray-300 dark:border-gray-600 shadow-md"
+                        style={{ display: getHeroImageWithFallback(player.hero) ? 'none' : 'flex' }}
+                        title={`${player.hero} (${getHeroRole(player.hero)}) - Image not available`}
                       >
-                        {player.hero}
+                        {(player.hero || 'Hero').split(' ').map(word => word.charAt(0)).join('').slice(0, 2).toUpperCase()}
                       </div>
                     </div>
                   </div>

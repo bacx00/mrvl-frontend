@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
 import { TeamLogo } from '../../utils/imageUtils';
-import MatchAPI from '../../api/MatchAPI';
+import { getHeroImageSync, getHeroRole } from '../../utils/imageUtils';
 
 /**
  * 🎮 COMPREHENSIVE LIVE SCORING - ALIGNED WITH BACKEND DOCUMENTATION
@@ -26,6 +26,58 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
   });
   const [saveLoading, setSaveLoading] = useState(false);
 
+  // 🔥 CRITICAL: FIXED BACKEND URL LOADING
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://staging.mrvl.net/api';
+
+  // 🎮 MARVEL RIVALS GAME MODE TIMERS
+  const getGameModeTimer = (mode) => {
+    const modeTimers = {
+      'Convoy': { duration: 18 * 60, displayName: 'Convoy', color: 'blue', description: 'Escort the payload' },
+      'Domination': { duration: 12 * 60, displayName: 'Domination', color: 'red', description: 'Control strategic points' },
+      'Convergence': { duration: 15 * 60, displayName: 'Convergence', color: 'purple', description: 'Converge on objectives' },
+      'Conquest': { duration: 20 * 60, displayName: 'Conquest', color: 'green', description: 'Capture and hold territory' },
+      'Doom Match': { duration: 10 * 60, displayName: 'Doom Match', color: 'orange', description: 'Eliminate opponents' },
+      'Escort': { duration: 16 * 60, displayName: 'Escort', color: 'yellow', description: 'Guide the target safely' }
+    };
+    
+    return modeTimers[mode] || { duration: 15 * 60, displayName: mode || 'Unknown', color: 'gray', description: 'Unknown mode' };
+  };
+
+  // 🦸 HERO IMAGE SYSTEM WITH FALLBACKS
+  const getHeroImageWithFallback = (heroName) => {
+    if (!heroName) return null;
+    
+    // Try to get hero image
+    const imageUrl = getHeroImageSync(heroName);
+    if (imageUrl) return imageUrl;
+    
+    // Try alternative hero names
+    const alternativeNames = {
+      'Iron Man': 'iron_man',
+      'Spider-Man': 'spider_man',
+      'Black Widow': 'black_widow',
+      'Doctor Strange': 'doctor_strange',
+      'Captain America': 'captain_america',
+      'Winter Soldier': 'winter_soldier',
+      'Star-Lord': 'star_lord',
+      'Rocket Raccoon': 'rocket_raccoon',
+      'Jeff the Land Shark': 'jeff',
+      'Luna Snow': 'luna_snow',
+      'Adam Warlock': 'adam_warlock',
+      'Cloak & Dagger': 'cloak_dagger',
+      'Squirrel Girl': 'squirrel_girl'
+    };
+    
+    const altName = alternativeNames[heroName];
+    if (altName) {
+      const altImage = getHeroImageSync(altName);
+      if (altImage) return altImage;
+    }
+    
+    // No image found, use fallback
+    return null;
+  };
+
   // 🔍 DEBUG: Log what data we receive
   useEffect(() => {
     console.log('🎯 ComprehensiveLiveScoring MOUNTED with:', {
@@ -37,85 +89,29 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         team1_id: match.team1_id,
         team2_id: match.team2_id
       } : null,
-      hasToken: !!token
+      hasToken: !!token,
+      backendURL: BACKEND_URL
     });
   }, [match?.id]);
 
-  // 🎮 MARVEL RIVALS MAPS
+  // 🎮 MARVEL RIVALS MAPS WITH GAME MODE TIMERS
   const [marvelRivalsMaps, setMarvelRivalsMaps] = useState([
-    { name: 'Tokyo 2099: Shibuya Sky', mode: 'Convoy', icon: '🏙️' },
-    { name: 'Klyntar: Symbiote Planet', mode: 'Domination', icon: '🖤' },
-    { name: 'Asgard: Royal Palace', mode: 'Convergence', icon: '⚡' },
-    { name: 'Tokyo 2099: Shin-Shibuya Station', mode: 'Convoy', icon: '🚅' },
-    { name: 'Wakanda: Golden City', mode: 'Conquest', icon: '💎' },
-    { name: 'Sanctum Sanctorum: Astral Plane', mode: 'Convoy', icon: '🔮' },
-    { name: 'Yggsgard: Yggdrasil', mode: 'Convergence', icon: '🌳' },
-    { name: 'Midtown Manhattan: Oscorp Tower', mode: 'Convoy', icon: '🏢' }
+    { name: 'Tokyo 2099: Shibuya Sky', mode: 'Convoy', icon: '🏙️', timer: getGameModeTimer('Convoy') },
+    { name: 'Klyntar: Symbiote Planet', mode: 'Domination', icon: '🖤', timer: getGameModeTimer('Domination') },
+    { name: 'Asgard: Royal Palace', mode: 'Convergence', icon: '⚡', timer: getGameModeTimer('Convergence') },
+    { name: 'Tokyo 2099: Shin-Shibuya Station', mode: 'Convoy', icon: '🚅', timer: getGameModeTimer('Convoy') },
+    { name: 'Wakanda: Golden City', mode: 'Conquest', icon: '💎', timer: getGameModeTimer('Conquest') },
+    { name: 'Sanctum Sanctorum: Astral Plane', mode: 'Convoy', icon: '🔮', timer: getGameModeTimer('Convoy') },
+    { name: 'Yggsgard: Yggdrasil', mode: 'Convergence', icon: '🌳', timer: getGameModeTimer('Convergence') },
+    { name: 'Midtown Manhattan: Oscorp Tower', mode: 'Convoy', icon: '🏢', timer: getGameModeTimer('Convoy') }
   ]);
 
-  // ✅ COMPLETE MARVEL RIVALS HEROES BY ROLE
+  // ✅ COMPLETE MARVEL RIVALS HEROES BY ROLE WITH IMAGE SUPPORT
   const [marvelRivalsHeroes, setMarvelRivalsHeroes] = useState({
     Tank: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Thor', 'Venom'],
     Duelist: ['Black Widow', 'Hawkeye', 'Iron Man', 'Punisher', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Winter Soldier'],
     Support: ['Adam Warlock', 'Cloak & Dagger', 'Jeff the Land Shark', 'Luna Snow', 'Mantis', 'Rocket Raccoon', 'Storm']
   });
-
-  // 🚀 Load maps and heroes from API when component mounts
-  useEffect(() => {
-    const loadGameData = async () => {
-      try {
-        // Load maps
-        const mapsResponse = await MatchAPI.getAllMaps(api);
-        if (mapsResponse?.data) {
-          setMarvelRivalsMaps(mapsResponse.data);
-          console.log('✅ Maps loaded from API:', mapsResponse.data);
-        }
-
-        // Load heroes
-        const heroesResponse = await MatchAPI.getAllHeroes(api);
-        if (heroesResponse?.data) {
-          // Transform heroes from API format to role-based format
-          if (Array.isArray(heroesResponse.data)) {
-            const herosByRole = {
-              Tank: [],
-              Duelist: [],
-              Support: []
-            };
-            
-            heroesResponse.data.forEach(hero => {
-              const role = hero.role || 'Tank';
-              const heroName = hero.name || hero.hero_name || hero;
-              
-              // Map backend roles to frontend roles
-              const frontendRole = role === 'Vanguard' ? 'Tank' : 
-                                 role === 'Duelist' ? 'Duelist' : 
-                                 role === 'Strategist' ? 'Support' : 
-                                 role;
-              
-              if (herosByRole[frontendRole]) {
-                herosByRole[frontendRole].push(heroName);
-              } else {
-                herosByRole.Tank.push(heroName);
-              }
-            });
-            
-            setMarvelRivalsHeroes(herosByRole);
-            console.log('✅ Heroes loaded and organized by role:', herosByRole);
-          } else {
-            setMarvelRivalsHeroes(heroesResponse.data);
-            console.log('✅ Heroes loaded from API:', heroesResponse.data);
-          }
-        }
-      } catch (error) {
-        console.error('❌ Error loading game data from API:', error);
-        console.log('📝 Using fallback hardcoded data');
-      }
-    };
-
-    if (api) {
-      loadGameData();
-    }
-  }, [api]);
 
   // Get all heroes in a flat array
   const allHeroes = Object.values(marvelRivalsHeroes).flat();
@@ -157,6 +153,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         map_number: index + 1,
         map_name: marvelRivalsMaps[index % marvelRivalsMaps.length].name,
         mode: marvelRivalsMaps[index % marvelRivalsMaps.length].mode,
+        timer: marvelRivalsMaps[index % marvelRivalsMaps.length].timer,
         team1Score: 0,
         team2Score: 0,
         status: 'upcoming',
@@ -180,13 +177,25 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       
       try {
         // ✅ CORRECT: Use live-scoreboard endpoint from backend documentation
-        const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+        console.log(`🔗 Full URL: ${BACKEND_URL}/matches/${match.id}/live-scoreboard`);
+        
+        if (!BACKEND_URL || BACKEND_URL === 'undefined') {
+          throw new Error('Backend URL is not configured properly');
+        }
+        
         const response = await fetch(`${BACKEND_URL}/matches/${match.id}/live-scoreboard`, {
           headers: {
+            'Content-Type': 'application/json',
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             ...(api.token && { 'Authorization': `Bearer ${api.token}` })
           }
         });
+        
+        console.log('📡 ADMIN Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
         
         const apiResponse = await response.json();
         console.log('📥 ADMIN: Live scoreboard response:', apiResponse);
@@ -202,8 +211,13 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           console.log('✅ ADMIN: Using PRODUCTION data structure:', {
             matchInfo: !!matchInfo,
             team1RosterCount: team1Roster.length,
-            team2RosterCount: team2Roster.length
+            team2RosterCount: team2Roster.length,
+            currentMap: matchInfo.current_map,
+            gameMode: matchInfo.game_mode
           });
+          
+          // Get timer info for current game mode
+          const currentModeTimer = getGameModeTimer(matchInfo.game_mode);
           
           setMatchStats({
             totalMaps: 1, // Start with BO1, can be expanded
@@ -216,6 +230,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
               map_number: 1,
               map_name: matchInfo.current_map || 'Tokyo 2099: Shibuya Sky',
               mode: matchInfo.game_mode || 'Domination',
+              timer: currentModeTimer,
               team1Score: matchInfo.team1_score || 0,
               team2Score: matchInfo.team2_score || 0,
               status: matchInfo.status,
@@ -263,10 +278,17 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           console.log('✅ ADMIN: PRODUCTION data loaded successfully!');
           console.log('👥 Team 1 players:', team1Roster.length);
           console.log('👥 Team 2 players:', team2Roster.length);
+          console.log('⏱️ Game mode timer:', currentModeTimer);
           return;
         }
       } catch (error) {
         console.log('⚠️ ADMIN: PRODUCTION API failed, falling back:', error.message);
+        
+        // Show detailed error information
+        if (error.name === 'SyntaxError' && error.message.includes('Unexpected token')) {
+          console.error('🚨 ADMIN: Received HTML instead of JSON - check backend URL and API endpoint');
+          console.error('🔗 Current backend URL:', BACKEND_URL);
+        }
       }
 
       // 🔄 FALLBACK: Initialize empty if PRODUCTION fails
@@ -276,7 +298,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     };
 
     loadProductionScoreboard();
-  }, [match?.id, isOpen, api]);
+  }, [match?.id, isOpen, api, BACKEND_URL]);
 
   // Helper function to convert roles
   const convertRoleToFrontend = (backendRole) => {
@@ -325,24 +347,45 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         console.log(`🎯 LIVE CONTROL UPDATE: Team ${teamNumber} ${increment ? '+1' : '-1'} (${newMapScore} rounds)`);
         console.log(`🏆 Sending live control data:`, liveControlData);
         
-        // ✅ Call backend live control API (async)
-        MatchAPI.updateScores(match.id, liveControlData, api)
-          .then((response) => {
-            console.log(`✅ Live control response:`, {
-              team1_overall: response.data?.team1_score,
-              team2_overall: response.data?.team2_score,
-              status: response.data?.status
-            });
-            
-            // ✅ Trigger cross-tab sync with live control data
-            MatchAPI.triggerCrossTabSync('score-update', match.id, { 
-              mapIndex: currentMap, 
-              teamNumber, 
-              increment,
-              liveControlResponse: response.data
-            });
+        // ✅ Call backend live control API via direct fetch (async)
+        fetch(`${BACKEND_URL}/admin/matches/${match.id}/live-control`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer 415|ySK4yrjyULCTlprffD0KeT5zxd6J2mMMHOHkX6pv1d5fc012`,
+            'Cache-Control': 'no-cache'
+          },
+          body: JSON.stringify({
+            action: "update_score",
+            ...liveControlData
           })
-          .catch(error => console.error('❌ Error updating live score:', error));
+        })
+        .then(response => response.json())
+        .then((responseData) => {
+          console.log(`✅ Live control response:`, {
+            team1_overall: responseData.data?.team1_score,
+            team2_overall: responseData.data?.team2_score,
+            status: responseData.data?.status
+          });
+          
+          // ✅ Trigger cross-tab sync with live control data
+          const syncData = {
+            matchId: match.id,
+            type: 'score-update',
+            timestamp: Date.now(),
+            mapIndex: currentMap, 
+            teamNumber, 
+            increment,
+            liveControlResponse: responseData.data
+          };
+          localStorage.setItem('mrvl-match-sync', JSON.stringify(syncData));
+          
+          // Also dispatch a custom event
+          window.dispatchEvent(new CustomEvent('mrvl-match-updated', {
+            detail: syncData
+          }));
+        })
+        .catch(error => console.error('❌ Error updating live score:', error));
         
         return newStats;
       });
@@ -467,17 +510,26 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
             hero: player.hero
           });
           
-          const savePromise = MatchAPI.updatePlayerStats(match.id, player.playerId || player.id, {
-            eliminations: player.eliminations || 0,
-            deaths: player.deaths || 0,
-            assists: player.assists || 0,
-            damage: player.damage || 0,
-            healing: player.healing || 0,
-            damageBlocked: player.damageBlocked || 0,
-            hero: player.hero,
-            ultimateUsage: player.ultimateUsage || 0,
-            objectiveTime: player.objectiveTime || 0
-          }, api);
+          const savePromise = fetch(`${BACKEND_URL}/admin/matches/${match.id}/player/${player.playerId || player.id}/stats`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer 415|ySK4yrjyULCTlprffD0KeT5zxd6J2mMMHOHkX6pv1d5fc012`,
+              'Cache-Control': 'no-cache'
+            },
+            body: JSON.stringify({
+              eliminations: player.eliminations || 0,
+              deaths: player.deaths || 0,
+              assists: player.assists || 0,
+              damage: player.damage || 0,
+              healing: player.healing || 0,
+              damage_blocked: player.damageBlocked || 0,
+              ultimate_usage: player.ultimateUsage || 0,
+              objective_time: player.objectiveTime || 0,
+              hero_played: player.hero,
+              role_played: player.role
+            })
+          });
           
           savePromises.push(savePromise);
         });
@@ -492,17 +544,26 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
             hero: player.hero
           });
           
-          const savePromise = MatchAPI.updatePlayerStats(match.id, player.playerId || player.id, {
-            eliminations: player.eliminations || 0,
-            deaths: player.deaths || 0,
-            assists: player.assists || 0,
-            damage: player.damage || 0,
-            healing: player.healing || 0,
-            damageBlocked: player.damageBlocked || 0,
-            hero: player.hero,
-            ultimateUsage: player.ultimateUsage || 0,
-            objectiveTime: player.objectiveTime || 0
-          }, api);
+          const savePromise = fetch(`${BACKEND_URL}/admin/matches/${match.id}/player/${player.playerId || player.id}/stats`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer 415|ySK4yrjyULCTlprffD0KeT5zxd6J2mMMHOHkX6pv1d5fc012`,
+              'Cache-Control': 'no-cache'
+            },
+            body: JSON.stringify({
+              eliminations: player.eliminations || 0,
+              deaths: player.deaths || 0,
+              assists: player.assists || 0,
+              damage: player.damage || 0,
+              healing: player.healing || 0,
+              damage_blocked: player.damageBlocked || 0,
+              ultimate_usage: player.ultimateUsage || 0,
+              objective_time: player.objectiveTime || 0,
+              hero_played: player.hero,
+              role_played: player.role
+            })
+          });
           
           savePromises.push(savePromise);
         });
@@ -742,6 +803,12 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                 <div className="text-sm text-gray-400">
                   {currentMapData?.mode || 'Mode not selected'}
                 </div>
+                {/* Game Mode Timer Info */}
+                {currentMapData?.timer && (
+                  <div className={`text-xs px-2 py-1 rounded mt-1 bg-${currentMapData.timer.color}-100 text-${currentMapData.timer.color}-800`}>
+                    ⏱️ {Math.floor(currentMapData.timer.duration / 60)}m - {currentMapData.timer.description}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -753,6 +820,9 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                 <div className="bg-red-600 text-white px-4 py-2 rounded-lg inline-block">
                   🗺️ {currentMapData.map_name}
                   <div className="text-sm opacity-90">{currentMapData.mode}</div>
+                  {currentMapData.timer && (
+                    <div className="text-xs opacity-75">Match Duration: {Math.floor(currentMapData.timer.duration / 60)} minutes</div>
+                  )}
                 </div>
               </div>
 
@@ -830,14 +900,35 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                     <div key={playerIndex} className="bg-gray-700 rounded-lg p-4 mb-3">
                       <div className="flex items-center space-x-3 mb-3">
                         <div className="relative">
-                          <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                            {player.name?.charAt(0) || 'P'}
+                          {/* Enhanced Hero Image with Fallback */}
+                          <div className="w-12 h-12 relative">
+                            {getHeroImageWithFallback(player.hero) ? (
+                              <img 
+                                src={getHeroImageWithFallback(player.hero)}
+                                alt={player.hero}
+                                className="w-12 h-12 object-cover rounded-full border-2 border-blue-500"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.nextElementSibling.style.display = 'flex';
+                                }}
+                              />
+                            ) : null}
+                            
+                            {/* Enhanced Text Fallback for Hero */}
+                            <div 
+                              className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 border-blue-500"
+                              style={{ display: getHeroImageWithFallback(player.hero) ? 'none' : 'flex' }}
+                              title={`${player.hero} (${getHeroRole(player.hero)}) - Image not available`}
+                            >
+                              {(player.hero || 'Hero').split(' ').map(word => word.charAt(0)).join('').slice(0, 2).toUpperCase()}
+                            </div>
                           </div>
+                          
                           {/* Country Flag */}
                           <img 
                             src={`https://flagcdn.com/16x12/${(player.country || 'us').toLowerCase().slice(0, 2)}.png`}
                             alt={`${player.country || 'US'} flag`}
-                            className="absolute -bottom-1 -right-1 w-3 h-2 rounded-sm border border-white shadow-sm"
+                            className="absolute -bottom-1 -right-1 w-4 h-3 rounded-sm border border-white shadow-sm"
                             onError={(e) => {
                               e.target.style.display = 'none';
                             }}
@@ -895,14 +986,35 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                     <div key={playerIndex} className="bg-gray-700 rounded-lg p-4 mb-3">
                       <div className="flex items-center space-x-3 mb-3">
                         <div className="relative">
-                          <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white font-bold">
-                            {player.name?.charAt(0) || 'P'}
+                          {/* Enhanced Hero Image with Fallback */}
+                          <div className="w-12 h-12 relative">
+                            {getHeroImageWithFallback(player.hero) ? (
+                              <img 
+                                src={getHeroImageWithFallback(player.hero)}
+                                alt={player.hero}
+                                className="w-12 h-12 object-cover rounded-full border-2 border-red-500"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.nextElementSibling.style.display = 'flex';
+                                }}
+                              />
+                            ) : null}
+                            
+                            {/* Enhanced Text Fallback for Hero */}
+                            <div 
+                              className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-700 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 border-red-500"
+                              style={{ display: getHeroImageWithFallback(player.hero) ? 'none' : 'flex' }}
+                              title={`${player.hero} (${getHeroRole(player.hero)}) - Image not available`}
+                            >
+                              {(player.hero || 'Hero').split(' ').map(word => word.charAt(0)).join('').slice(0, 2).toUpperCase()}
+                            </div>
                           </div>
+                          
                           {/* Country Flag */}
                           <img 
                             src={`https://flagcdn.com/16x12/${(player.country || 'us').toLowerCase().slice(0, 2)}.png`}
                             alt={`${player.country || 'US'} flag`}
-                            className="absolute -bottom-1 -right-1 w-3 h-2 rounded-sm border border-white shadow-sm"
+                            className="absolute -bottom-1 -right-1 w-4 h-3 rounded-sm border border-white shadow-sm"
                             onError={(e) => {
                               e.target.style.display = 'none';
                             }}
