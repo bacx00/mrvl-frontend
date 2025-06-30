@@ -382,6 +382,13 @@ export const MatchAPI = {
         hasTeams: !!data.teams,
         matchInfoKeys: data.match_info ? Object.keys(data.match_info) : 'NO MATCH_INFO'
       });
+      console.log('🔍 Data structure debug:', {
+        type: typeof data,
+        keys: Object.keys(data || {}),
+        hasMatchInfo: !!data.match_info,
+        hasTeams: !!data.teams,
+        matchInfoKeys: data.match_info ? Object.keys(data.match_info) : 'NO MATCH_INFO'
+      });
       
       // ✅ SAFE PARSING: Check data structure before accessing properties
       if (!data || typeof data !== 'object') {
