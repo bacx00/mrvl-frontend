@@ -445,6 +445,11 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         oldValue: null,
         storageArea: localStorage
       }));
+      
+      // FORCE cross-tab sync by changing mrvl-match-sync multiple times
+      setTimeout(() => {
+        localStorage.setItem('mrvl-match-sync', JSON.stringify({...syncData, forceUpdate: Date.now()}));
+      }, 20);
     }, 10); // Small delay to ensure processing
     
     // Dispatch multiple event types with debug logging
