@@ -256,12 +256,13 @@ function MatchDetailPage({ matchId, navigateTo }) {
             // Enhanced maps structure for BO1/BO3/BO5
             maps: Array.from({ length: totalMaps }, (_, index) => {
               const isCurrentMap = index === 0; // For now, always show first map data
-              const modeTimer = getGameModeTimer(data.live_data?.current_mode || 'Domination');
+              const mapGameMode = isCurrentMap ? currentGameMode : 'TBD';
+              const modeTimer = getGameModeTimer(mapGameMode);
               
               return {
                 mapNumber: index + 1,
                 mapName: isCurrentMap ? (matchData.current_map || 'Tokyo 2099: Shibuya Sky') : `Map ${index + 1}`,
-                mode: isCurrentMap ? (data.live_data?.current_mode || 'Domination') : 'TBD',
+                mode: mapGameMode,
                 status: isCurrentMap ? matchData.status : 'upcoming',
                 team1Score: isCurrentMap ? (matchData.team1_score || 0) : 0,
                 team2Score: isCurrentMap ? (matchData.team2_score || 0) : 0,
