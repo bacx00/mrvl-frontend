@@ -598,6 +598,31 @@ function MatchDetailPage({ matchId, navigateTo }) {
       // Clean up test
       setTimeout(() => localStorage.removeItem(testKey), 5000);
     }, 3000);
+    
+    // 🧪 TEST: Verify localStorage listener is working
+    setTimeout(() => {
+      console.log('🧪 TESTING: localStorage listener setup...');
+      console.log('🧪 Current localStorage items:');
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.includes('mrvl-match')) {
+          console.log(`🧪   ${key}: ${localStorage.getItem(key)?.substring(0, 100)}...`);
+        }
+      }
+      
+      // Test localStorage change detection
+      const testKey = `mrvl-match-test-${Date.now()}`;
+      console.log('🧪 TESTING: Triggering test localStorage change...');
+      localStorage.setItem(testKey, JSON.stringify({
+        matchId: getMatchId(),
+        type: 'TEST_STORAGE',
+        message: 'Testing localStorage cross-tab communication',
+        timestamp: Date.now()
+      }));
+      
+      // Clean up test
+      setTimeout(() => localStorage.removeItem(testKey), 5000);
+    }, 3000);
 
     return () => {
       eventTypes.forEach(eventType => {
