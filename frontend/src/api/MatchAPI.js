@@ -378,40 +378,22 @@ export const MatchAPI = {
       console.log('🔍 Data structure debug:', {
         type: typeof data,
         keys: Object.keys(data || {}),
+        hasMatch: !!data.match,
         hasMatchInfo: !!data.match_info,
         hasTeams: !!data.teams,
-        matchInfoKeys: data.match_info ? Object.keys(data.match_info) : 'NO MATCH_INFO'
-      });
-      console.log('🔍 Data structure debug:', {
-        type: typeof data,
-        keys: Object.keys(data || {}),
-        hasMatchInfo: !!data.match_info,
-        hasTeams: !!data.teams,
-        matchInfoKeys: data.match_info ? Object.keys(data.match_info) : 'NO MATCH_INFO'
+        matchKeys: data.match ? Object.keys(data.match) : 'NO MATCH'
       });
       
-      // ✅ SAFE PARSING: Check data structure before accessing properties
-      if (!data || typeof data !== 'object') {
-        throw new Error('Invalid scoreboard response structure');
-      }
+      // ✅ CORRECT STRUCTURE: The API actually returns data.match (not data.match_info)
+      const match = data.match || {};
+      const playerStats = data.player_statistics || [];
       
-      // 🔍 DEBUG: Log the actual structure
-      console.log('🔍 API Response structure:', {
-        hasMatchInfo: !!data.match_info,
-        hasTeams: !!data.teams,
-        hasMaps: !!data.maps,
-        dataKeys: Object.keys(data)
-      });
-      
-      // ✅ SAFE ACCESS: Use optional chaining and fallbacks
-      const matchInfo = data.match_info || data || {};
-      const teams = data.teams || {};
-      const maps = data.maps || [];
-      
-      if (!matchInfo.id && !data.id) {
+      if (!match.id) {
         console.error('❌ No match ID found in response:', data);
         throw new Error('No match ID found in scoreboard response');
       }
+      
+      console.log('✅ Found match data:', match);
       
       // 🚨 CRITICAL: Transform PRODUCTION API response to frontend format
       const transformedMatch = {
