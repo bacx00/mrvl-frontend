@@ -1,20 +1,70 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
 
-// ✅ CRITICAL FIX: CORRECT MARVEL RIVALS MAPS
+// ✅ COMPLETE MARVEL RIVALS CONFIGURATION - ALIGNED WITH LIVE SCORING
 const MARVEL_RIVALS_CONFIG = {
+  // 🗺️ ALL 12 MARVEL RIVALS MAPS WITH MODES
   maps: [
-    'Tokyo 2099: Shibuya Sky',
-    'Klyntar: Symbiote Planet', 
-    'Asgard: Royal Palace',
-    'Tokyo 2099: Shin-Shibuya Station',
-    'Wakanda: Golden City',
-    'Sanctum Sanctorum: Astral Plane',
-    'Yggsgard: Yggdrasil',
-    'Midtown Manhattan: Oscorp Tower'
+    { name: 'Tokyo 2099: Shibuya Sky', mode: 'Convoy', icon: '🏙️' },
+    { name: 'Tokyo 2099: Shin-Shibuya Station', mode: 'Convoy', icon: '🚅' },
+    { name: 'Midtown Manhattan: Oscorp Tower', mode: 'Convoy', icon: '🏢' },
+    { name: 'Sanctum Sanctorum: Astral Plane', mode: 'Convoy', icon: '🔮' },
+    { name: 'Klyntar: Symbiote Planet', mode: 'Domination', icon: '🖤' },
+    { name: 'Wakanda: Golden City', mode: 'Domination', icon: '💎' },
+    { name: 'Asgard: Royal Palace', mode: 'Convergence', icon: '⚡' },
+    { name: 'Yggsgard: Yggdrasil', mode: 'Convergence', icon: '🌳' },
+    { name: 'Intergalactic Empire of Wakanda', mode: 'Conquest', icon: '🌌' },
+    { name: 'Moon Base: Lunar Colony', mode: 'Conquest', icon: '🌙' },
+    { name: 'Hell\'s Kitchen: Daredevil Territory', mode: 'Doom Match', icon: '🔥' },
+    { name: 'X-Mansion: Training Grounds', mode: 'Escort', icon: '🎓' }
   ],
-  // Heroes will be loaded from API
-  herosByRole: {},
+  
+  // 🎮 ALL 6 GAME MODES WITH ACCURATE TIMERS
+  gameModes: {
+    'Convoy': { 
+      duration: 18 * 60, 
+      displayName: 'Convoy', 
+      color: 'blue', 
+      description: 'Escort the payload to victory',
+      icon: '🚚'
+    },
+    'Domination': { 
+      duration: 12 * 60, 
+      displayName: 'Domination', 
+      color: 'red', 
+      description: 'Control strategic points',
+      icon: '🏁'
+    },
+    'Convergence': { 
+      duration: 15 * 60, 
+      displayName: 'Convergence', 
+      color: 'purple', 
+      description: 'Converge on objectives',
+      icon: '⚡'
+    },
+    'Conquest': { 
+      duration: 20 * 60, 
+      displayName: 'Conquest', 
+      color: 'green', 
+      description: 'Capture and hold territory',
+      icon: '💎'
+    },
+    'Doom Match': { 
+      duration: 10 * 60, 
+      displayName: 'Doom Match', 
+      color: 'orange', 
+      description: 'Eliminate all opponents',
+      icon: '💀'
+    },
+    'Escort': { 
+      duration: 16 * 60, 
+      displayName: 'Escort', 
+      color: 'yellow', 
+      description: 'Guide the target safely',
+      icon: '🛡️'
+    }
+  },
+  
   formats: [
     { value: 'BO1', label: 'BO1 - Best of 1', maps: 1, description: 'Single elimination match' },
     { value: 'BO3', label: 'BO3 - Best of 3', maps: 3, description: 'First to win 2 maps' },
