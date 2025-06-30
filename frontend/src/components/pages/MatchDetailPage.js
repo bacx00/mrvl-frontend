@@ -564,7 +564,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
           }`}>
             {match.status === 'live' ? '🔴 LIVE' : 
              match.status === 'completed' ? '✅ COMPLETED' : 
-             '⏳ ' + match.status.toUpperCase()}
+             '⏳ ' + (match.status || 'UPCOMING').toUpperCase()}
           </div>
         </div>
         
