@@ -88,98 +88,119 @@ export const MatchAPI = {
         matchInfoKeys: data.match_info ? Object.keys(data.match_info) : 'NO MATCH_INFO'
       });
       
-      // ✅ CORRECT STRUCTURE: The API returns data.match_info (from documentation)
-      const matchInfo = data.match_info || {};
-      const team1Roster = data.team1_roster || [];
-      const team2Roster = data.team2_roster || [];
+      // ✅ CORRECT STRUCTURE: The API actually returns data.match (not data.match_info)
+      const matchData = data.match || {};
+      let team1Players = [];
+      let team2Players = [];
       
-      if (!matchInfo.id) {
+      // ✅ PARSE MAPS_DATA JSON STRING to get player compositions
+      if (matchData.maps_data) {
+        try {
+          const mapsData = JSON.parse(matchData.maps_data);
+          if (mapsData && mapsData[0]) {
+            const mapData = mapsData[0];
+            team1Players = mapData.team1_composition || [];
+            team2Players = mapData.team2_composition || [];
+            
+            console.log('✅ MatchAPI: Parsed team compositions:', {
+              team1Count: team1Players.length,
+              team2Count: team2Players.length
+            });
+          }
+        } catch (error) {
+          console.error('❌ MatchAPI: Error parsing maps_data JSON:', error);
+        }
+      }
+      
+      if (!matchData.id) {
         console.error('❌ No match ID found in response:', data);
         throw new Error('No match ID found in scoreboard response');
       }
       
-      console.log('✅ Found match data:', matchInfo);
+      console.log('✅ Found match data:', matchData);
       
       // 🚨 CRITICAL: Transform PRODUCTION API response to frontend format  
       const transformedMatch = {
-        id: matchInfo.id,
-        status: matchInfo.status || 'unknown',
+        id: matchData.id,
+        status: matchData.status || 'unknown',
         currentMap: 1, // Default to map 1
-        format: matchInfo.format || 'BO1',
-        viewers: matchInfo.viewers || 0,
-        streamUrl: matchInfo.stream_url,
+        format: matchData.format || matchData.match_format || 'BO1',
+        viewers: matchData.viewers || 0,
+        streamUrl: matchData.stream_url,
         
-        // 🏆 Team data - from match_info
+        // 🏆 Team data - from match data
         team1: {
-          id: matchInfo.team1_id || 'unknown',
-          name: matchInfo.team1_name || 'Team 1',
-          logo: '',
-          score: matchInfo.team1_score || 0,
-          shortName: matchInfo.team1_name || 'T1'
+          id: matchData.team1_id || 'unknown',
+          name: matchData.team1_name || 'Team 1',
+          logo: matchData.team1_logo || '',
+          score: matchData.team1_score || 0,
+          shortName: matchData.team1_short || matchData.team1_name || 'T1'
         },
         team2: {
-          id: matchInfo.team2_id || 'unknown',
-          name: matchInfo.team2_name || 'Team 2', 
-          logo: '',
-          score: matchInfo.team2_score || 0,
-          shortName: matchInfo.team2_name || 'T2'
+          id: matchData.team2_id || 'unknown',
+          name: matchData.team2_name || 'Team 2', 
+          logo: matchData.team2_logo || '',
+          score: matchData.team2_score || 0,
+          shortName: matchData.team2_short || matchData.team2_name || 'T2'
         },
         
-        // 🗺️ Map data with team compositions from rosters
+        // 🗺️ Map data with team compositions from parsed maps_data
         maps: [{
           mapNumber: 1,
-          mapName: matchInfo.current_map || 'Tokyo 2099: Shibuya Sky',
-          mode: matchInfo.game_mode || 'Domination',
-          status: matchInfo.status,
-          team1Score: matchInfo.team1_score || 0,
-          team2Score: matchInfo.team2_score || 0,
+          mapName: matchData.current_map || 'Tokyo 2099: Shibuya Sky',
+          mode: data.live_data?.current_mode || 'Domination',
+          status: matchData.status,
+          team1Score: matchData.team1_score || 0,
+          team2Score: matchData.team2_score || 0,
           
-          // 🎮 PRODUCTION: Map 6v6 player compositions from rosters
-          team1Composition: team1Roster.map((player, index) => ({
+          // 🎮 PRODUCTION: Map 6v6 player compositions from parsed maps_data
+          team1Composition: team1Players.map((player, index) => ({
             playerId: player.player_id,
-            name: player.name,
-            hero: player.hero || player.stats?.hero_played || 'Captain America',
+            name: player.player_name,
+            hero: player.hero || 'Captain America',
             role: MatchAPI.convertRoleToFrontend(player.role),
             country: player.country || 'US',
             avatar: player.avatar,
             // 📊 PRODUCTION API statistics mapping
-            eliminations: player.stats?.eliminations || 0,
-            deaths: player.stats?.deaths || 0,
-            assists: player.stats?.assists || 0,
-            damage: player.stats?.damage || 0,
-            healing: player.stats?.healing || 0,
-            damageBlocked: player.stats?.damage_blocked || 0,
-            ultimateUsage: player.stats?.ultimate_usage || 0,
-            objectiveTime: player.stats?.objective_time || 0
+            eliminations: player.eliminations || 0,
+            deaths: player.deaths || 0,
+            assists: player.assists || 0,
+            damage: player.damage || 0,
+            healing: player.healing || 0,
+            damageBlocked: player.damage_blocked || 0,
+            ultimateUsage: player.ultimate_usage || 0,
+            objectiveTime: player.objective_time || 0
           })),
           
-          team2Composition: team2Roster.map((player, index) => ({
+          team2Composition: team2Players.map((player, index) => ({
             playerId: player.player_id,
-            name: player.name,
-            hero: player.hero || player.stats?.hero_played || 'Hulk',
+            name: player.player_name,
+            hero: player.hero || 'Hulk',
             role: MatchAPI.convertRoleToFrontend(player.role),
             country: player.country || 'US',
             avatar: player.avatar,
             // 📊 PRODUCTION API statistics mapping
-            eliminations: player.stats?.eliminations || 0,
-            deaths: player.stats?.deaths || 0,
-            assists: player.stats?.assists || 0,
-            damage: player.stats?.damage || 0,
-            healing: player.stats?.healing || 0,
-            damageBlocked: player.stats?.damage_blocked || 0,
-            ultimateUsage: player.stats?.ultimate_usage || 0,
-            objectiveTime: player.stats?.objective_time || 0
+            eliminations: player.eliminations || 0,
+            deaths: player.deaths || 0,
+            assists: player.assists || 0,
+            damage: player.damage || 0,
+            healing: player.healing || 0,
+            damageBlocked: player.damage_blocked || 0,
+            ultimateUsage: player.ultimate_usage || 0,
+            objectiveTime: player.objective_time || 0
           }))
         }],
         
         // 🏳️ Full player rosters (6v6 format)
-        team1Players: team1Roster.map(p => ({
+        team1Players: team1Players.map(p => ({
           ...p,
+          name: p.player_name,
           country: p.country || 'US',
           role: MatchAPI.convertRoleToFrontend(p.role)
         })),
-        team2Players: team2Roster.map(p => ({
+        team2Players: team2Players.map(p => ({
           ...p,
+          name: p.player_name,
           country: p.country || 'US', 
           role: MatchAPI.convertRoleToFrontend(p.role)
         })),
