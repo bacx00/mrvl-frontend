@@ -481,6 +481,19 @@ function MatchDetailPage({ matchId, navigateTo }) {
     });
     
     console.log('🎧 MatchDetailPage: All event listeners registered for match:', getMatchId());
+    
+    // 🧪 TEST: Dispatch a test event to verify listener setup
+    setTimeout(() => {
+      console.log('🧪 MatchDetailPage: Dispatching test event to verify listeners...');
+      window.dispatchEvent(new CustomEvent('mrvl-match-updated', {
+        detail: {
+          matchId: getMatchId(),
+          type: 'TEST_FROM_PUBLIC',
+          timestamp: Date.now(),
+          message: 'Testing if MatchDetailPage can receive its own events'
+        }
+      }));
+    }, 2000);
 
     // Also listen for localStorage changes (additional sync method)
     const handleStorageChange = (event) => {
