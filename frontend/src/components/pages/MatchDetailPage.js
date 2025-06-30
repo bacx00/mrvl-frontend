@@ -476,8 +476,11 @@ function MatchDetailPage({ matchId, navigateTo }) {
     ];
     
     eventTypes.forEach(eventType => {
+      console.log(`🎧 MatchDetailPage: Registering listener for ${eventType}`);
       window.addEventListener(eventType, handleMatchUpdate);
     });
+    
+    console.log('🎧 MatchDetailPage: All event listeners registered for match:', getMatchId());
 
     // Also listen for localStorage changes (additional sync method)
     const handleStorageChange = (event) => {
