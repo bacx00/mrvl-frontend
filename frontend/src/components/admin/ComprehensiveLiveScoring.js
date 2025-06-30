@@ -417,15 +417,30 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       hasMatchData: !!data.matchData
     });
     
+    // 🔥 USE EVENT-SPECIFIC KEYS TO PREVENT TIMER OVERWRITES
+    const keyMap = {
+      'TIMER_UPDATE': 'mrvl-timer-sync',
+      'HERO_CHANGE': 'mrvl-hero-sync', 
+      'SCORE_UPDATE': 'mrvl-score-sync',
+      'STAT_UPDATE': 'mrvl-stat-sync',
+      'PRODUCTION_SAVE': 'mrvl-save-sync'
+    };
+    
+    const specificKey = keyMap[type] || 'mrvl-match-sync';
+    
     // Multiple sync methods for reliability - USE UNIQUE KEYS TO PREVENT OVERWRITES
     const uniqueKey = `mrvl-match-sync-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    localStorage.setItem('mrvl-match-sync', JSON.stringify(syncData));
+    
+    // Set different keys for different event types
+    localStorage.setItem('mrvl-match-sync', JSON.stringify(syncData)); // Keep main key
+    localStorage.setItem(specificKey, JSON.stringify(syncData)); // Event-specific key
     localStorage.setItem(`mrvl-match-${match.id}`, JSON.stringify(syncData));
     localStorage.setItem(uniqueKey, JSON.stringify(syncData)); // Unique key for each event
     
     console.log('🔥 ADMIN: Setting localStorage with keys:', {
-      'mrvl-match-sync': 'overwritable',
-      [`mrvl-match-${match.id}`]: 'overwritable', 
+      'mrvl-match-sync': 'main key',
+      [specificKey]: `event-specific (${type})`,
+      [`mrvl-match-${match.id}`]: 'match-specific', 
       [uniqueKey]: 'unique for this event'
     });
     
@@ -437,6 +452,16 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       storageArea: localStorage
     }));
     
+    // CRITICAL: Also dispatch with event-specific key to ensure cross-tab detection
+    setTimeout(() => {
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: specificKey,
+        newValue: JSON.stringify(syncData),
+        oldValue: null,
+        storageArea: localStorage
+      }));
+    }, 10); // Small delay to ensure processing
+    
     // Also dispatch with unique key to ensure cross-tab detection
     setTimeout(() => {
       window.dispatchEvent(new StorageEvent('storage', {
@@ -445,12 +470,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         oldValue: null,
         storageArea: localStorage
       }));
-      
-      // FORCE cross-tab sync by changing mrvl-match-sync multiple times
-      setTimeout(() => {
-        localStorage.setItem('mrvl-match-sync', JSON.stringify({...syncData, forceUpdate: Date.now()}));
-      }, 20);
-    }, 10); // Small delay to ensure processing
+    }, 20); // Small delay to ensure processing
     
     // Dispatch multiple event types with debug logging
     const eventTypes = ['mrvl-match-updated', 'mrvl-hero-updated', 'mrvl-stats-updated', 'mrvl-score-updated', 'mrvl-data-refresh'];
@@ -459,7 +479,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       window.dispatchEvent(new CustomEvent(eventType, { detail: syncData }));
     });
     
-    console.log('🔥 ADMIN: Multi-channel sync completed:', { type, matchId: match.id, timestamp: syncData.timestamp });
+    console.log('🔥 ADMIN: Multi-channel sync completed:', { type, matchId: match.id, timestamp: syncData.timestamp, specificKey });
   };
 
   // 🏆 ENHANCED SCORE UPDATE WITH REAL-TIME SYNC
