@@ -384,8 +384,8 @@ export const MatchAPI = {
         matchKeys: data.match ? Object.keys(data.match) : 'NO MATCH'
       });
       
-      // ✅ CORRECT STRUCTURE: The API actually returns data.match (not data.match_info)
-      const match = data.match || {};
+      // ✅ CORRECT STRUCTURE: The API actually returns data.match_info (not data.match)
+      const match = data.match_info || {};
       const playerStats = data.player_statistics || [];
       
       if (!match.id) {
