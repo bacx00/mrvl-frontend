@@ -206,6 +206,28 @@ function MatchDetailPage({ matchId, navigateTo }) {
           // Calculate total maps for series
           const totalMaps = matchData.format === 'BO3' ? 3 : matchData.format === 'BO5' ? 5 : 1;
           
+          // 🎮 IMPROVED GAME MODE DETECTION
+          let currentGameMode = 'Domination'; // Default fallback
+          if (data.live_data?.current_mode) {
+            currentGameMode = data.live_data.current_mode;
+          } else if (matchData.current_mode) {
+            currentGameMode = matchData.current_mode;
+          } else if (matchData.game_mode) {
+            currentGameMode = matchData.game_mode;
+          } else if (matchData.maps_data) {
+            // Try to get mode from first map in maps_data
+            try {
+              const mapsData = JSON.parse(matchData.maps_data);
+              if (mapsData && mapsData[0] && mapsData[0].mode) {
+                currentGameMode = mapsData[0].mode;
+              }
+            } catch (error) {
+              console.log('Could not parse game mode from maps_data:', error);
+            }
+          }
+          
+          console.log('🎮 Game mode detected:', currentGameMode);
+          
           const transformedMatch = {
             id: matchData.id || realMatchId,
             status: matchData.status || 'unknown',
@@ -213,7 +235,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
             team2_score: matchData.team2_score || 0,
             format: matchData.format || matchData.match_format || 'BO1',
             currentMap: matchData.current_map || 'Tokyo 2099: Shibuya Sky',
-            gameMode: data.live_data?.current_mode || 'Domination',
+            gameMode: currentGameMode,
             viewers: matchData.viewers || 0,
             totalMaps: totalMaps,
             
