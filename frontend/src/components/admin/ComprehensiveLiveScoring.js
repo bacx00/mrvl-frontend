@@ -417,9 +417,17 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       hasMatchData: !!data.matchData
     });
     
-    // Multiple sync methods for reliability
+    // Multiple sync methods for reliability - USE UNIQUE KEYS TO PREVENT OVERWRITES
+    const uniqueKey = `mrvl-match-sync-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     localStorage.setItem('mrvl-match-sync', JSON.stringify(syncData));
     localStorage.setItem(`mrvl-match-${match.id}`, JSON.stringify(syncData));
+    localStorage.setItem(uniqueKey, JSON.stringify(syncData)); // Unique key for each event
+    
+    console.log('🔥 ADMIN: Setting localStorage with keys:', {
+      'mrvl-match-sync': 'overwritable',
+      [`mrvl-match-${match.id}`]: 'overwritable', 
+      [uniqueKey]: 'unique for this event'
+    });
     
     // Force a storage event for same-page sync
     window.dispatchEvent(new StorageEvent('storage', {
@@ -428,6 +436,16 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       oldValue: null,
       storageArea: localStorage
     }));
+    
+    // Also dispatch with unique key to ensure cross-tab detection
+    setTimeout(() => {
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: uniqueKey,
+        newValue: JSON.stringify(syncData),
+        oldValue: null,
+        storageArea: localStorage
+      }));
+    }, 10); // Small delay to ensure processing
     
     // Dispatch multiple event types with debug logging
     const eventTypes = ['mrvl-match-updated', 'mrvl-hero-updated', 'mrvl-stats-updated', 'mrvl-score-updated', 'mrvl-data-refresh'];
