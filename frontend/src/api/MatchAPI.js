@@ -467,14 +467,14 @@ export const MatchAPI = {
             }));
           }
           
-          // Otherwise create default map with player data
+          // Otherwise create default map with current match data
           return [{
             mapNumber: 1,
-            mapName: data.match_info.current_map || 'Tokyo 2099: Shibuya Sky',
-            mode: 'Conquest', // Marvel Rivals default mode
-            status: data.match_info.status,
-            team1Score: data.match_info.team1_score || 0,
-            team2Score: data.match_info.team2_score || 0,
+            mapName: match.current_map || 'Tokyo 2099: Shibuya Sky',
+            mode: match.current_mode || 'Conquest', // Marvel Rivals default mode
+            status: match.status,
+            team1Score: match.team1_score || 0,
+            team2Score: match.team2_score || 0,
           
           // 🎮 PRODUCTION: Map 6v6 player statistics correctly
           team1Composition: data.teams.team1.players.map((player, index) => {
