@@ -657,7 +657,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     console.log('🔄 Timer reset with enhanced sync');
   };
 
-  // Enhanced timer effect with sync
+  // ⏱️ ENHANCED TIMER SYNC WITH IMMEDIATE DISPATCH
   useEffect(() => {
     let interval;
     if (isTimerRunning && matchStatus === 'live') {
@@ -673,13 +673,13 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         setMatchTimer(timeString);
         localStorage.setItem(`match-timer-${match.id}`, timeString);
         
-        // Sync timer every 10 seconds to avoid spam
-        if (elapsed % 10 === 0) {
-          triggerRealTimeSync('TIMER_UPDATE', {
-            timer: timeString,
-            isRunning: true
-          });
-        }
+        // 🔥 IMMEDIATE SYNC EVERY SECOND FOR REAL-TIME UPDATES
+        triggerRealTimeSync('TIMER_UPDATE', {
+          timer: timeString,
+          isRunning: true,
+          elapsed: elapsed,
+          immediate: true
+        });
       }, 1000);
     }
     return () => clearInterval(interval);
