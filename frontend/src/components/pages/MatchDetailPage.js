@@ -70,10 +70,10 @@ function MatchDetailPage({ matchId, navigateTo }) {
       try {
         console.log('🔍 MatchDetailPage: Fetching REAL match', realMatchId, 'from backend...');
         
-        // ✅ CORRECT ENDPOINT: Use live-scoreboard from documentation
-        console.log(`🎯 MatchDetailPage: Using live-scoreboard endpoint for match ${realMatchId}`);
+        // ✅ CORRECT ENDPOINT: Use scoreboard endpoint from production backend
+        console.log(`🎯 MatchDetailPage: Using scoreboard endpoint for match ${realMatchId}`);
         
-        const response = await fetch(`${BACKEND_URL}/matches/${realMatchId}/live-scoreboard`, {
+        const response = await fetch(`${BACKEND_URL}/matches/${realMatchId}/scoreboard`, {
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             ...(api.token && { 'Authorization': `Bearer ${api.token}` })
