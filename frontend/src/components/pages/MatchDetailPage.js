@@ -388,7 +388,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
               break;
               
             case 'STAT_UPDATE':
-              console.log('📊 Stat update received - IMMEDIATE UPDATE', detail);
+              console.log('📊 Stat update received - IMMEDIATE UPDATE');
               if (detail.matchData) {
                 console.log('📊 Setting match data from STAT_UPDATE:', detail.matchData);
                 setMatch(detail.matchData);
