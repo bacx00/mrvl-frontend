@@ -756,23 +756,49 @@ function MatchForm({ matchId, navigateTo }) {
                   </div>
                 </div>
                 
-                {/* Map Selection */}
+                {/* Map Selection with Mode Display */}
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                    Select Map
+                    Select Marvel Rivals Map
                   </label>
                   <select
                     value={map.map_name}
-                    onChange={(e) => handleMapChange(mapIndex, 'map_name', e.target.value)}
+                    onChange={(e) => {
+                      const selectedMapName = e.target.value;
+                      const selectedMapData = MARVEL_RIVALS_CONFIG.maps.find(m => m.name === selectedMapName);
+                      handleMapChange(mapIndex, 'map_name', selectedMapName);
+                      if (selectedMapData) {
+                        handleMapChange(mapIndex, 'mode', selectedMapData.mode);
+                      }
+                    }}
                     className="form-input"
                   >
-                    {MARVEL_RIVALS_CONFIG.maps.map(mapName => (
-                      <option key={mapName} value={mapName}>{mapName}</option>
+                    {MARVEL_RIVALS_CONFIG.maps.map(mapData => (
+                      <option key={mapData.name} value={mapData.name}>
+                        {mapData.icon} {mapData.name} ({mapData.mode})
+                      </option>
                     ))}
                   </select>
+                  {/* Current Mode Display */}
+                  {map.mode && MARVEL_RIVALS_CONFIG.gameModes[map.mode] && (
+                    <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xl">{MARVEL_RIVALS_CONFIG.gameModes[map.mode].icon}</span>
+                        <span className="font-bold text-gray-900 dark:text-white">
+                          {MARVEL_RIVALS_CONFIG.gameModes[map.mode].displayName}
+                        </span>
+                        <span className="text-gray-600 dark:text-gray-400">
+                          • {Math.floor(MARVEL_RIVALS_CONFIG.gameModes[map.mode].duration / 60)} minutes
+                        </span>
+                      </div>
+                      <div className="text-gray-600 dark:text-gray-400 mt-1">
+                        {MARVEL_RIVALS_CONFIG.gameModes[map.mode].description}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* 🎮 GAME MODE SELECTION */}
+                {/* 🎮 GAME MODE SELECTION (AUTO-SET BUT EDITABLE) */}
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                     Game Mode
@@ -782,10 +808,11 @@ function MatchForm({ matchId, navigateTo }) {
                     onChange={(e) => handleMapChange(mapIndex, 'mode', e.target.value)}
                     className="form-input"
                   >
-                    <option value="Convoy">Convoy</option>
-                    <option value="Domination">Domination</option>
-                    <option value="Convergence">Convergence</option>
-                    <option value="Conquest">Conquest</option>
+                    {Object.entries(MARVEL_RIVALS_CONFIG.gameModes).map(([mode, modeData]) => (
+                      <option key={mode} value={mode}>
+                        {modeData.icon} {modeData.displayName} - {Math.floor(modeData.duration / 60)}min
+                      </option>
+                    ))}
                   </select>
                 </div>
 
