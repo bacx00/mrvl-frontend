@@ -832,7 +832,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
           {/* Team 2 Box */}
           <div className="border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-800/50">
             <div className="px-3 py-2 bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-              <div className="text-sm font-semibold text-red-600 dark:text-red-400">{match.team2.name}</div>
+              <div className="text-sm font-semibold text-red-600 dark:text-red-400">{match.team2?.name || 'Team 2'}</div>
             </div>
             <div className="space-y-1">
               {currentMapData.team2Players.map((player, index) => (
