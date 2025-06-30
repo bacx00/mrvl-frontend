@@ -79,12 +79,12 @@ const MARVEL_RIVALS_CONFIG = {
   ]
 };
 
-// ✅ PERFECT MATCH INITIALIZATION WITH HERO PRE-SELECTION
+// ✅ PERFECT MATCH INITIALIZATION WITH COMPLETE MARVEL RIVALS MAPS
 const getInitialMatchData = (format = 'BO1') => {
   const formatConfig = MARVEL_RIVALS_CONFIG.formats.find(f => f.value === format);
-  const mapCount = formatConfig?.maps || 1; // Default to 1 map for BO1
+  const mapCount = formatConfig?.maps || 1;
   
-  console.log(`🎮 CRITICAL FIX: Initializing ${format} match with EXACTLY ${mapCount} maps`);
+  console.log(`🎮 INITIALIZING ${format} match with ${mapCount} maps from complete map pool`);
   
   return {
     team1_id: '',
@@ -97,22 +97,28 @@ const getInitialMatchData = (format = 'BO1') => {
     description: '',
     team1_score: 0,
     team2_score: 0,
-    // 🚨 CRITICAL: EXACTLY the right number of maps
-    maps: Array.from({ length: mapCount }, (_, index) => ({
-      map_number: index + 1,
-      map_name: MARVEL_RIVALS_CONFIG.maps[index] || MARVEL_RIVALS_CONFIG.maps[0],
-      team1_score: 0,
-      team2_score: 0,
-      status: 'upcoming',
-      winner_id: null,
-      duration: null,
-      // 🎮 EMPTY COMPOSITIONS - WILL BE POPULATED WITH REAL PLAYERS
-      team1_composition: [],
-      team2_composition: []
-    })),
+    // 🚨 CRITICAL: Use complete Marvel Rivals maps with modes
+    maps: Array.from({ length: mapCount }, (_, index) => {
+      const selectedMap = MARVEL_RIVALS_CONFIG.maps[index % MARVEL_RIVALS_CONFIG.maps.length];
+      return {
+        map_number: index + 1,
+        map_name: selectedMap.name,
+        mode: selectedMap.mode,
+        timer: MARVEL_RIVALS_CONFIG.gameModes[selectedMap.mode],
+        icon: selectedMap.icon,
+        team1_score: 0,
+        team2_score: 0,
+        status: 'upcoming',
+        winner_id: null,
+        duration: null,
+        // 🎮 EMPTY COMPOSITIONS - WILL BE POPULATED WITH REAL PLAYERS
+        team1_composition: [],
+        team2_composition: []
+      };
+    }),
     viewers: 0,
     featured: false,
-    map_pool: MARVEL_RIVALS_CONFIG.maps.slice(0, mapCount) // EXACTLY mapCount maps
+    map_pool: MARVEL_RIVALS_CONFIG.maps.slice(0, mapCount)
   };
 };
 
