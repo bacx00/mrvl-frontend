@@ -378,7 +378,10 @@ function MatchDetailPage({ matchId, navigateTo }) {
                 const team2Score = detail.overallScores.team2 || detail.overallScores[1] || 0;
                 
                 console.log(`🏆 IMMEDIATE: Setting live scores to Team1=${team1Score}, Team2=${team2Score}`);
+                console.log(`🏆 BEFORE UPDATE: liveScores was:`, liveScores);
                 setLiveScores({ team1: team1Score, team2: team2Score });
+                console.log(`🏆 AFTER UPDATE: liveScores should be Team1=${team1Score}, Team2=${team2Score}`);
+                
                 setLastScoreUpdate({ 
                   team1: team1Score, 
                   team2: team2Score, 
