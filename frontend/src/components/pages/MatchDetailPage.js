@@ -492,7 +492,28 @@ function MatchDetailPage({ matchId, navigateTo }) {
     // 🔥 FIX: Ensure handleMatchUpdate is properly called for CustomEvents
     const customEventHandler = (event) => {
       console.log(`🎧 MatchDetailPage: CustomEvent ${event.type} received, calling handleMatchUpdate`);
+      console.log(`🎧 Event detail:`, event.detail);
+      console.log(`🎧 Current match ID:`, getMatchId());
+      
+      // 🔥 CRITICAL: Verify the event has the proper structure
+      if (!event.detail) {
+        console.error('❌ CustomEvent missing detail property!', event);
+        return;
+      }
+      
+      if (!event.detail.matchId) {
+        console.error('❌ CustomEvent detail missing matchId!', event.detail);
+        return;
+      }
+      
+      if (!event.detail.type) {
+        console.error('❌ CustomEvent detail missing type!', event.detail);
+        return;
+      }
+      
+      console.log(`🎧 Event validation passed, calling handleMatchUpdate`);
       handleMatchUpdate(event);
+      console.log(`🎧 handleMatchUpdate call completed for ${event.type}`);
     };
     
     eventTypes.forEach(eventType => {
