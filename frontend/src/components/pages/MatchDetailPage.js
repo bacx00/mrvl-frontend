@@ -456,6 +456,19 @@ function MatchDetailPage({ matchId, navigateTo }) {
             case 'HERO_CHANGE':
               console.log('🦸 Hero change received - IMMEDIATE UPDATE:', detail);
               
+              // 🔥 IMMEDIATE HERO CHANGE UPDATE (like timer)
+              if (detail.hero && detail.playerName) {
+                console.log(`🦸 IMMEDIATE: ${detail.playerName} → ${detail.hero} (${detail.role})`);
+                setLastHeroChange({
+                  playerName: detail.playerName,
+                  hero: detail.hero,
+                  role: detail.role,
+                  team: detail.team,
+                  mapIndex: detail.mapIndex,
+                  timestamp: Date.now()
+                });
+              }
+              
               // PRIORITY 1: Update match data immediately if provided
               if (detail.matchData) {
                 console.log('🦸 Setting match data from HERO_CHANGE:', detail.matchData);
