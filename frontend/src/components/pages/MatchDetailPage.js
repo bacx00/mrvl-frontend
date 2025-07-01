@@ -364,11 +364,15 @@ function MatchDetailPage({ matchId, navigateTo }) {
           switch (detail.type) {
             case 'SCORE_UPDATE':
               console.log('🏆 Score update received - IMMEDIATE UPDATE', detail);
+              
+              // PRIORITY 1: Update match data immediately if provided
               if (detail.matchData) {
                 console.log('🏆 Setting match data from SCORE_UPDATE:', detail.matchData);
                 setMatch(detail.matchData);
                 setRefreshTrigger(prev => prev + 1); // Force re-render
               }
+              
+              // PRIORITY 2: Update overall scores immediately
               if (detail.overallScores) {
                 console.log('🏆 Updating overall scores:', detail.overallScores);
                 // Handle different score data structures
@@ -385,7 +389,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
                 console.log(`🏆 Scores updated to: Team1=${team1Score}, Team2=${team2Score}`);
               }
               
-              // Also handle map-level score updates for immediate feedback
+              // PRIORITY 3: Handle map-level score updates for immediate feedback
               if (detail.mapScore !== undefined && detail.teamNumber && detail.mapIndex !== undefined) {
                 console.log(`🗺️ Map score update: Team ${detail.teamNumber} = ${detail.mapScore} on map ${detail.mapIndex + 1}`);
                 setMatch(prev => {
