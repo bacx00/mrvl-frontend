@@ -511,6 +511,20 @@ function MatchDetailPage({ matchId, navigateTo }) {
               
             case 'STAT_UPDATE':
               console.log('📊 Stat update received - IMMEDIATE UPDATE');
+              
+              // 🔥 IMMEDIATE STAT UPDATE (like timer)
+              if (detail.playerName && detail.statName && detail.value !== undefined) {
+                console.log(`📊 IMMEDIATE: ${detail.playerName} ${detail.statName} = ${detail.value}`);
+                setLastStatUpdate({
+                  playerName: detail.playerName,
+                  statName: detail.statName,
+                  value: detail.value,
+                  team: detail.team,
+                  mapIndex: detail.mapIndex,
+                  timestamp: Date.now()
+                });
+              }
+              
               if (detail.matchData) {
                 console.log('📊 Setting match data from STAT_UPDATE:', detail.matchData);
                 setMatch(detail.matchData);
