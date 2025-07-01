@@ -24,6 +24,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
   const [lastHeroChange, setLastHeroChange] = useState(null);
   const [lastStatUpdate, setLastStatUpdate] = useState(null);
   const [lastScoreUpdate, setLastScoreUpdate] = useState(null);
+  const [lastProcessedEventId, setLastProcessedEventId] = useState(null);
   
   const { user, isAuthenticated, api } = useAuth();
   
