@@ -1308,7 +1308,9 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
               )}
             </button>
             
-            {/* DEBUG: Test Sync Button */}
+            
+            {/* DEBUG: Test Sync Button - REMOVED TO PREVENT CONFLICTS */}
+            {false && (
             <button
               onClick={() => {
                 console.log('🧪 TESTING SYNC: Manually triggering test sync');
@@ -1327,6 +1329,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
             >
               🧪 Test Sync
             </button>
+            )}
             
             {matchStats.totalMaps > 1 && currentMapIndex + 1 < matchStats.totalMaps && (
               <button
