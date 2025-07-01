@@ -898,7 +898,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       console.log('✅ ALL PLAYER STATS SAVED TO PRODUCTION API');
       
       // Final comprehensive sync - USE CURRENT ROUND SCORES not mapWins
-      const currentMapData = matchStats.maps[currentMapIndex] || matchStats.maps[0];
+      // (currentMapData already declared above)
       triggerRealTimeSync('PRODUCTION_SAVE', {
         playersUpdated: savePromises.length,
         // Send current round scores for consistency with real-time updates
