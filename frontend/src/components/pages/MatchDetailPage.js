@@ -25,6 +25,13 @@ function MatchDetailPage({ matchId, navigateTo }) {
   const [lastStatUpdate, setLastStatUpdate] = useState(null);
   const [lastScoreUpdate, setLastScoreUpdate] = useState(null);
   
+  // 🔥 LIVE UPDATES STATE - IMMEDIATE LIKE TIMER (no complex data structures)
+  const [liveScores, setLiveScores] = useState({ team1: 0, team2: 0 });
+  const [liveSeriesScores, setLiveSeriesScores] = useState({ team1: 0, team2: 0 });
+  const [lastHeroChange, setLastHeroChange] = useState(null);
+  const [lastStatUpdate, setLastStatUpdate] = useState(null);
+  const [lastScoreUpdate, setLastScoreUpdate] = useState(null);
+  
   const { user, isAuthenticated, api } = useAuth();
   
   // 🔥 CRITICAL: FIXED BACKEND URL LOADING
