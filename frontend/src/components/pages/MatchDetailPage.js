@@ -358,10 +358,19 @@ function MatchDetailPage({ matchId, navigateTo }) {
                        String(detail.matchId) === String(currentMatchId);
       
       if (matchesId) {
+        // 🔥 PREVENT DUPLICATE EVENT PROCESSING
+        const eventId = `${detail.type}-${detail.timestamp}-${detail.matchId}`;
+        if (lastProcessedEventId === eventId) {
+          console.log('🚫 Skipping duplicate event:', eventId);
+          return;
+        }
+        setLastProcessedEventId(eventId);
+        
         console.log('🔥 MatchDetailPage: Processing real-time update:', {
           type: detail.type,
           hasMatchData: !!detail.matchData,
           timestamp: detail.timestamp,
+          eventId,
           matchDataKeys: detail.matchData ? Object.keys(detail.matchData) : []
         });
         
