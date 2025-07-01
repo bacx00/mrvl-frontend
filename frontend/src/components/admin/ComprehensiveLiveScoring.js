@@ -617,8 +617,9 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         const completeMatchData = {
           id: match.id,
           status: matchStatus,
-          team1_score: newStats.mapWins?.team1 || 0,
-          team2_score: newStats.mapWins?.team2 || 0,
+          // Use CURRENT ROUND SCORES for immediate display
+          team1_score: currentMap.team1Score || 0,
+          team2_score: currentMap.team2Score || 0,
           format: match.format || 'BO1',
           currentMap: newStats.maps[mapIndex]?.map_name || 'Tokyo 2099: Shibuya Sky',
           gameMode: newStats.maps[mapIndex]?.mode || 'Domination',
