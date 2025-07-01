@@ -465,7 +465,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
       }
     };
 
-    // Listen for ALL possible sync events
+    // Listen for ALL possible sync events with proper event handling
     const eventTypes = [
       'mrvl-match-updated',
       'mrvl-hero-updated', 
@@ -475,9 +475,15 @@ function MatchDetailPage({ matchId, navigateTo }) {
       'mrvl-data-refresh'
     ];
     
+    // 🔥 FIX: Ensure handleMatchUpdate is properly called for CustomEvents
+    const customEventHandler = (event) => {
+      console.log(`🎧 MatchDetailPage: CustomEvent ${event.type} received, calling handleMatchUpdate`);
+      handleMatchUpdate(event);
+    };
+    
     eventTypes.forEach(eventType => {
       console.log(`🎧 MatchDetailPage: Registering listener for ${eventType}`);
-      window.addEventListener(eventType, handleMatchUpdate);
+      window.addEventListener(eventType, customEventHandler);
     });
     
     console.log('🎧 MatchDetailPage: All event listeners registered for match:', getMatchId());
