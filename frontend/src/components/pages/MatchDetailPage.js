@@ -527,14 +527,29 @@ function MatchDetailPage({ matchId, navigateTo }) {
     setTimeout(() => {
       console.log('🧪 MatchDetailPage: Dispatching test event to verify listeners...');
       console.log('🧪 Current match ID for testing:', getMatchId());
-      window.dispatchEvent(new CustomEvent('mrvl-match-updated', {
-        detail: {
-          matchId: getMatchId(),
-          type: 'TEST_FROM_PUBLIC',
-          timestamp: Date.now(),
-          message: 'Testing if MatchDetailPage can receive its own events'
-        }
-      }));
+      
+      // Test multiple event types to verify they all work
+      const testEvents = [
+        { type: 'mrvl-match-updated', eventType: 'TEST_FROM_PUBLIC' },
+        { type: 'mrvl-score-updated', eventType: 'SCORE_UPDATE' },
+        { type: 'mrvl-stats-updated', eventType: 'STAT_UPDATE' },
+        { type: 'mrvl-hero-updated', eventType: 'HERO_CHANGE' }
+      ];
+      
+      testEvents.forEach((test, index) => {
+        setTimeout(() => {
+          console.log(`🧪 Testing ${test.type} with type ${test.eventType}`);
+          window.dispatchEvent(new CustomEvent(test.type, {
+            detail: {
+              matchId: getMatchId(),
+              type: test.eventType,
+              timestamp: Date.now(),
+              message: `Testing if MatchDetailPage can receive ${test.type} events`,
+              testData: true
+            }
+          }));
+        }, index * 500); // Stagger the tests
+      });
     }, 2000);
     
     // 🔍 DIAGNOSTIC: Log when ANY event is received (even non-matching match IDs)
