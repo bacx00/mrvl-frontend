@@ -19,7 +19,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   // 🔥 LIVE UPDATES STATE - IMMEDIATE LIKE TIMER (no complex data structures)
-  const [liveScores, setLiveScores] = useState({ team1: 0, team2: 0 });
+  const [liveScores, setLiveScores] = useState({ team1: null, team2: null });
   const [liveSeriesScores, setLiveSeriesScores] = useState({ team1: 0, team2: 0 });
   const [lastHeroChange, setLastHeroChange] = useState(null);
   const [lastStatUpdate, setLastStatUpdate] = useState(null);
