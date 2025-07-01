@@ -563,7 +563,13 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           teamNumber,
           increment,
           mapScore: newMapScore,
+          // Send CURRENT ROUND SCORES immediately (not just mapWins)
           overallScores: {
+            team1: currentMapData.team1Score || 0,
+            team2: currentMapData.team2Score || 0
+          },
+          // Also send map wins for series tracking
+          seriesScores: {
             team1: newStats.mapWins?.team1 || 0,
             team2: newStats.mapWins?.team2 || 0
           },
