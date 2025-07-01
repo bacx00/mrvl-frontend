@@ -371,12 +371,43 @@ function MatchDetailPage({ matchId, navigateTo }) {
               }
               if (detail.overallScores) {
                 console.log('🏆 Updating overall scores:', detail.overallScores);
+                // Handle different score data structures
+                const team1Score = detail.overallScores.team1 || detail.overallScores[0] || 0;
+                const team2Score = detail.overallScores.team2 || detail.overallScores[1] || 0;
+                
                 setMatch(prev => prev ? {
                   ...prev,
-                  team1_score: detail.overallScores.team1,
-                  team2_score: detail.overallScores.team2,
+                  team1_score: team1Score,
+                  team2_score: team2Score,
                   lastUpdated: Date.now()
                 } : prev);
+                
+                console.log(`🏆 Scores updated to: Team1=${team1Score}, Team2=${team2Score}`);
+              }
+              
+              // Also handle map-level score updates for immediate feedback
+              if (detail.mapScore !== undefined && detail.teamNumber && detail.mapIndex !== undefined) {
+                console.log(`🗺️ Map score update: Team ${detail.teamNumber} = ${detail.mapScore} on map ${detail.mapIndex + 1}`);
+                setMatch(prev => {
+                  if (!prev || !prev.maps || !prev.maps[detail.mapIndex]) return prev;
+                  
+                  const updatedMaps = [...prev.maps];
+                  const mapToUpdate = { ...updatedMaps[detail.mapIndex] };
+                  
+                  if (detail.teamNumber === 1) {
+                    mapToUpdate.team1Score = detail.mapScore;
+                  } else if (detail.teamNumber === 2) {
+                    mapToUpdate.team2Score = detail.mapScore;
+                  }
+                  
+                  updatedMaps[detail.mapIndex] = mapToUpdate;
+                  
+                  return {
+                    ...prev,
+                    maps: updatedMaps,
+                    lastUpdated: Date.now()
+                  };
+                });
               }
               console.log('🏆 SCORE_UPDATE processing completed');
               break;
