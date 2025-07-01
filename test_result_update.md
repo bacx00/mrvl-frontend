@@ -125,7 +125,7 @@ ls: cannot access '/app/backend/': No such file or directory
 ```
 $ cat /app/frontend/.env
 WDS_SOCKET_PORT=443
-REACT_APP_BACKEND_URL=https://6ebd964e-6cb1-4708-ab9d-1f65d35a0909.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://6a0eed99-5619-45b3-98fc-c64cc0296f47.preview.emergentagent.com
 ```
 
 ## 🧪 **MATCH CREATION AND SCOREBOARD TESTING (JUNE 26, 2025 - UPDATE 2):**
