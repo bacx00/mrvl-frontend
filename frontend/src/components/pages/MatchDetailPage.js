@@ -498,10 +498,20 @@ function MatchDetailPage({ matchId, navigateTo }) {
           console.log('🔥 SWITCH STATEMENT completed, proceeding to background refresh check');
           
           // For non-timer updates, also fetch fresh data for consistency (silently)
+          // BUT for SCORE_UPDATE, delay the refresh to let real-time update show first
           if (detail.type !== 'TIMER_START' && detail.type !== 'TIMER_PAUSE' && 
               detail.type !== 'TIMER_RESET' && detail.type !== 'TIMER_UPDATE') {
-            console.log('🔄 Fetching fresh data after non-timer update');
-            fetchMatchData(false); // Silent refresh
+            
+            if (detail.type === 'SCORE_UPDATE') {
+              // Delay background refresh for score updates to show immediate changes first
+              setTimeout(() => {
+                console.log('🔄 Delayed refresh after SCORE_UPDATE for consistency');
+                fetchMatchData(false); // Silent refresh after delay
+              }, 2000); // 2 second delay
+            } else {
+              console.log('🔄 Fetching fresh data after non-timer update');
+              fetchMatchData(false); // Immediate silent refresh for other updates
+            }
           }
         } catch (error) {
           console.error('❌ Error processing sync event:', error, detail);
