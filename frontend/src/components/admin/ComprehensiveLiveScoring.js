@@ -563,7 +563,10 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           teamNumber,
           increment,
           mapScore: newMapScore,
-          overallScores: newStats.mapWins,
+          overallScores: {
+            team1: newStats.mapWins?.team1 || 0,
+            team2: newStats.mapWins?.team2 || 0
+          },
           matchData: completeMatchData
         });
         
