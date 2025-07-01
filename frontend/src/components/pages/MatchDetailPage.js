@@ -655,7 +655,8 @@ function MatchDetailPage({ matchId, navigateTo }) {
 
     return () => {
       eventTypes.forEach(eventType => {
-        window.removeEventListener(eventType, handleMatchUpdate);
+        window.removeEventListener(eventType, customEventHandler);
+        window.removeEventListener(eventType, diagnosticHandler);
       });
       window.removeEventListener('storage', handleStorageChange);
     };
