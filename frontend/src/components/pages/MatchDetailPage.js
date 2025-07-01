@@ -1035,7 +1035,9 @@ function MatchDetailPage({ matchId, navigateTo }) {
           <div className="flex items-center justify-center space-x-8 mb-4">
             <div className="text-center">
               <h2 className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-2">{match.team1?.name}</h2>
-              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">{match.team1_score || 0}</div>
+              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+                {liveScores.team1 !== null ? liveScores.team1 : (match.team1_score || 0)}
+              </div>
             </div>
             
             <div className="text-center">
