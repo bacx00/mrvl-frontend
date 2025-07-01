@@ -897,11 +897,22 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       
       console.log('✅ ALL PLAYER STATS SAVED TO PRODUCTION API');
       
-      // Final comprehensive sync
+      // Final comprehensive sync - USE CURRENT ROUND SCORES not mapWins
+      const currentMapData = matchStats.maps[currentMapIndex] || matchStats.maps[0];
       triggerRealTimeSync('PRODUCTION_SAVE', {
         playersUpdated: savePromises.length,
-        scores: matchStats.mapWins,
-        matchData: matchStats
+        // Send current round scores for consistency with real-time updates
+        scores: {
+          team1: currentMapData?.team1Score || 0,
+          team2: currentMapData?.team2Score || 0
+        },
+        seriesScores: matchStats.mapWins, // Keep series scores separate
+        matchData: {
+          ...matchStats,
+          // Ensure current round scores are in main match data
+          team1_score: currentMapData?.team1Score || 0,
+          team2_score: currentMapData?.team2Score || 0
+        }
       });
       
     } catch (error) {
