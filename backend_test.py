@@ -16,7 +16,7 @@ class MarvelRivalsAPITester:
                             break
             except Exception as e:
                 print(f"Warning: Could not read REACT_APP_BACKEND_URL from frontend/.env: {e}")
-                base_url = "https://6a0eed99-5619-45b3-98fc-c64cc0296f47.preview.emergentagent.com"
+                base_url = "https://0e1ee56d-c58a-4f78-84f3-9070be16bf4c.preview.emergentagent.com"
         
         self.base_url = base_url
         self.api_url = f"{base_url}/api"  # API URL with /api prefix
