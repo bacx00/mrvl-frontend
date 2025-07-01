@@ -359,6 +359,8 @@ function MatchDetailPage({ matchId, navigateTo }) {
         
         // Handle different types of updates with IMMEDIATE RESPONSE and ERROR HANDLING
         try {
+          console.log('🔥 ENTERING SWITCH STATEMENT for type:', detail.type);
+          
           switch (detail.type) {
             case 'SCORE_UPDATE':
               console.log('🏆 Score update received - IMMEDIATE UPDATE', detail);
@@ -376,6 +378,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
                   lastUpdated: Date.now()
                 } : prev);
               }
+              console.log('🏆 SCORE_UPDATE processing completed');
               break;
               
             case 'HERO_CHANGE':
@@ -385,6 +388,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
                 setMatch(detail.matchData);
                 setRefreshTrigger(prev => prev + 1); // Force re-render
               }
+              console.log('🦸 HERO_CHANGE processing completed');
               break;
               
             case 'STAT_UPDATE':
@@ -394,6 +398,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
                 setMatch(detail.matchData);
                 setRefreshTrigger(prev => prev + 1); // Force re-render
               }
+              console.log('📊 STAT_UPDATE processing completed');
               break;
               
             case 'TIMER_START':
@@ -409,6 +414,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
                 console.log('⏱️ Timer running state:', detail.isRunning);
               }
               // NO BACKEND FETCH for timer updates - use event data only
+              console.log('⏱️ TIMER update processing completed - returning early');
               return; // Don't fetch backend data for timer updates
               
             case 'MAP_ADVANCE':
@@ -416,12 +422,14 @@ function MatchDetailPage({ matchId, navigateTo }) {
               if (detail.newMapIndex !== undefined) {
                 setCurrentMapIndex(detail.newMapIndex);
               }
+              console.log('🗺️ MAP_ADVANCE processing completed');
               break;
               
             case 'PREPARATION_PHASE':
               console.log('⏳ Preparation phase update - IMMEDIATE UPDATE');
               setIsPreparationPhase(detail.isPreparation || false);
               setPreparationTimer(detail.preparationTimer || 0);
+              console.log('⏳ PREPARATION_PHASE processing completed');
               break;
               
             case 'PRODUCTION_SAVE':
@@ -430,13 +438,16 @@ function MatchDetailPage({ matchId, navigateTo }) {
                 setMatch(detail.matchData);
                 setRefreshTrigger(prev => prev + 1);
               }
+              console.log('💾 PRODUCTION_SAVE processing completed');
               break;
               
             case 'TEST_SYNC':
+            case 'TEST_FROM_PUBLIC':
               console.log('🧪 Test sync received - DEBUG EVENT:', detail);
               if (detail.matchData) {
                 console.log('🧪 Test match data:', detail.matchData);
               }
+              console.log('🧪 TEST processing completed');
               break;
               
             default:
@@ -446,7 +457,10 @@ function MatchDetailPage({ matchId, navigateTo }) {
                 setMatch(detail.matchData);
                 setRefreshTrigger(prev => prev + 1);
               }
+              console.log('🔄 DEFAULT case processing completed');
           }
+          
+          console.log('🔥 SWITCH STATEMENT completed, proceeding to background refresh check');
           
           // For non-timer updates, also fetch fresh data for consistency (silently)
           if (detail.type !== 'TIMER_START' && detail.type !== 'TIMER_PAUSE' && 
