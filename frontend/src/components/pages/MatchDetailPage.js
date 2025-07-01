@@ -379,6 +379,29 @@ function MatchDetailPage({ matchId, navigateTo }) {
             case 'SCORE_UPDATE':
               console.log('🏆 Score update received - IMMEDIATE UPDATE', detail);
               
+              // 🔥 IMMEDIATE LIVE SCORES UPDATE (like timer)
+              if (detail.overallScores) {
+                const team1Score = detail.overallScores.team1 || detail.overallScores[0] || 0;
+                const team2Score = detail.overallScores.team2 || detail.overallScores[1] || 0;
+                
+                console.log(`🏆 IMMEDIATE: Setting live scores to Team1=${team1Score}, Team2=${team2Score}`);
+                setLiveScores({ team1: team1Score, team2: team2Score });
+                setLastScoreUpdate({ 
+                  team1: team1Score, 
+                  team2: team2Score, 
+                  timestamp: Date.now(),
+                  mapIndex: detail.mapIndex 
+                });
+              }
+              
+              // Also update series scores if provided
+              if (detail.seriesScores) {
+                setLiveSeriesScores({ 
+                  team1: detail.seriesScores.team1 || 0, 
+                  team2: detail.seriesScores.team2 || 0 
+                });
+              }
+              
               // PRIORITY 1: Update match data immediately if provided
               if (detail.matchData) {
                 console.log('🏆 Setting match data from SCORE_UPDATE:', detail.matchData);
