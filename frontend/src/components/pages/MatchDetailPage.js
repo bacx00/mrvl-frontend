@@ -418,10 +418,43 @@ function MatchDetailPage({ matchId, navigateTo }) {
               
             case 'HERO_CHANGE':
               console.log('🦸 Hero change received - IMMEDIATE UPDATE:', detail);
+              
+              // PRIORITY 1: Update match data immediately if provided
               if (detail.matchData) {
                 console.log('🦸 Setting match data from HERO_CHANGE:', detail.matchData);
                 setMatch(detail.matchData);
                 setRefreshTrigger(prev => prev + 1); // Force re-render
+              }
+              
+              // PRIORITY 2: Handle specific hero change for immediate feedback
+              if (detail.hero && detail.playerName && detail.mapIndex !== undefined) {
+                console.log(`🦸 Player ${detail.playerName} changed to ${detail.hero} (${detail.role}) on ${detail.team}`);
+                setMatch(prev => {
+                  if (!prev || !prev.maps || !prev.maps[detail.mapIndex]) return prev;
+                  
+                  const updatedMaps = [...prev.maps];
+                  const mapToUpdate = { ...updatedMaps[detail.mapIndex] };
+                  const playersKey = detail.team === 'team1' ? 'team1Players' : 'team2Players';
+                  
+                  if (mapToUpdate[playersKey] && mapToUpdate[playersKey][detail.playerIndex]) {
+                    const updatedPlayers = [...mapToUpdate[playersKey]];
+                    updatedPlayers[detail.playerIndex] = {
+                      ...updatedPlayers[detail.playerIndex],
+                      hero: detail.hero,
+                      role: detail.role
+                    };
+                    mapToUpdate[playersKey] = updatedPlayers;
+                    updatedMaps[detail.mapIndex] = mapToUpdate;
+                    
+                    return {
+                      ...prev,
+                      maps: updatedMaps,
+                      lastUpdated: Date.now()
+                    };
+                  }
+                  
+                  return prev;
+                });
               }
               console.log('🦸 HERO_CHANGE processing completed');
               break;
