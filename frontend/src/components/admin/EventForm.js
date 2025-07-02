@@ -102,10 +102,32 @@ function EventForm({ eventId, navigateTo }) {
     setSaving(true);
 
     try {
+      // 🖼️ CRITICAL FIX: Handle image upload properly
+      let imageUrl = formData.image;
+      
+      if (imageFile) {
+        console.log('📤 EventForm: Uploading event image...');
+        const imageFormData = new FormData();
+        imageFormData.append('image', imageFile);
+        
+        try {
+          const imageResponse = await api.post('/admin/upload/event-image', imageFormData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          
+          imageUrl = imageResponse.data?.url || imageResponse.data?.image_url || imageResponse.url;
+          console.log('✅ EventForm: Image uploaded successfully:', imageUrl);
+        } catch (imageError) {
+          console.error('❌ EventForm: Image upload failed:', imageError);
+          // Continue with event creation but without image
+          imageUrl = '';
+        }
+      }
+
       const submitData = {
         name: formData.name.trim(),
         description: formData.description.trim(),
-        type: formData.type, // Use exact backend-supported values
+        type: formData.type,
         tier: formData.tier,
         status: formData.status,
         start_date: formData.startDate,
@@ -116,14 +138,14 @@ function EventForm({ eventId, navigateTo }) {
         teams: parseInt(formData.teams) || 0,
         format: formData.format,
         organizer: formData.organizer,
-        image: formData.image,
+        featured_image: imageUrl, // 🔥 CRITICAL: Use featured_image field
+        image: imageUrl, // Keep both for compatibility
         registration_open: formData.registrationOpen,
         stream_url: formData.streamUrl
       };
 
       let response;
       if (isEdit) {
-        // FIXED: Use POST with method spoofing for Laravel backend updates
         submitData._method = 'PUT';
         response = await api.post(`/admin/events/${eventId}`, submitData);
       } else {

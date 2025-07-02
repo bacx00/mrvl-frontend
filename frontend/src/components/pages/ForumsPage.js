@@ -152,6 +152,28 @@ function ForumsPage({ navigateTo }) {
     }
   }, [selectedCategory, searchQuery, sortBy, api]);
 
+  // 🔄 Listen for category updates from CreateThreadPage and other components
+  useEffect(() => {
+    const handleCategoryUpdate = () => {
+      console.log('🔄 ForumsPage: Category update detected, refreshing forum data...');
+      fetchForumData();
+    };
+
+    const handleThreadCreated = () => {
+      console.log('🔄 ForumsPage: New thread created, refreshing forum data...');
+      fetchForumData();
+    };
+
+    // Listen for category and thread updates
+    window.addEventListener('forum-category-updated', handleCategoryUpdate);
+    window.addEventListener('forum-thread-created', handleThreadCreated);
+    
+    return () => {
+      window.removeEventListener('forum-category-updated', handleCategoryUpdate);
+      window.removeEventListener('forum-thread-created', handleThreadCreated);
+    };
+  }, [fetchForumData]);
+
   // ✅ ENHANCED: More realistic time formatting
   const formatTimeAgo = (dateString) => {
     if (!dateString) return 'Just now';

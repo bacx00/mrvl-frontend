@@ -154,12 +154,16 @@ function NewsDetailPage({ params, navigateTo }) {
       {/* Article Header */}
       <article className="mb-8">
         {/* Featured Image */}
-        {article.featured_image_url && (
+        {(article.featured_image_url || article.featured_image || article.image) && (
           <div className="aspect-video overflow-hidden rounded-lg mb-6">
             <img 
               src={getNewsFeaturedImageUrl(article)} 
               alt={article.title}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                console.error('❌ Featured image failed to load:', e.target.src);
+                e.target.style.display = 'none';
+              }}
             />
           </div>
         )}
@@ -247,12 +251,16 @@ function NewsDetailPage({ params, navigateTo }) {
                   navigateTo && navigateTo('news-detail', { id: relatedArticle.id });
                 }}
               >
-                {relatedArticle.featured_image_url && (
+                {(relatedArticle.featured_image_url || relatedArticle.featured_image || relatedArticle.image) && (
                   <div className="aspect-video overflow-hidden rounded-t-lg">
                     <img 
-                      src={relatedArticle.featured_image_url} 
+                      src={getNewsFeaturedImageUrl(relatedArticle)} 
                       alt={relatedArticle.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        console.error('❌ Related article image failed to load:', e.target.src);
+                        e.target.style.display = 'none';
+                      }}
                     />
                   </div>
                 )}

@@ -238,13 +238,17 @@ function EventsPage({ navigateTo }) {
                       className="relative border-2 border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:border-red-300 dark:hover:border-red-600 cursor-pointer transition-all duration-200 transform hover:scale-[1.02]"
                       onClick={() => handleEventClick(event.id)}
                       style={{
-                        backgroundImage: event.image ? `url(${event.image})` : 'none',
+                        backgroundImage: (event.featured_image || event.image) ? `url(${event.featured_image || event.image})` : 'none',
                         backgroundSize: 'cover',
                         backgroundPosition: 'center'
                       }}
                     >
-                      {/* Background Overlay */}
-                      <div className="absolute inset-0 bg-white/90 dark:bg-gray-800/90 hover:bg-gray-50/95 dark:hover:bg-gray-700/95 transition-all duration-200"></div>
+                      {/* Background Overlay - Red tint for live events */}
+                      <div className={`absolute inset-0 transition-all duration-200 ${
+                        event.status === 'live' 
+                          ? 'bg-red-50/95 dark:bg-red-900/85 hover:bg-red-100/95 dark:hover:bg-red-800/90' 
+                          : 'bg-white/90 dark:bg-gray-800/90 hover:bg-gray-50/95 dark:hover:bg-gray-700/95'
+                      }`}></div>
                       
                       {/* Content Layer */}
                       <div className="relative z-10 p-5">

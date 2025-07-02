@@ -94,6 +94,7 @@ const getInitialMatchData = (format = 'BO1') => {
     format: format,
     status: 'upcoming',
     stream_url: '',
+    betting_url: '',
     description: '',
     team1_score: 0,
     team2_score: 0,
@@ -465,8 +466,10 @@ function MatchForm({ matchId, navigateTo }) {
         format: formData.format || 'BO1',
         scheduled_at: new Date(formData.scheduled_at).toISOString(),
         description: formData.description || '',
+        stream_url: formData.stream_url || null,
+        betting_url: formData.betting_url || null,
         
-        // 🚨 CRITICAL: Save complete map compositions for production
+        // 🚨 CRITICAL: Save complete map compositions for production (6v6 format)
         maps_data: formData.maps.map((map, index) => ({
           map_number: index + 1,
           map_name: map.map_name,           // ✅ PRESERVE selected map
@@ -475,36 +478,44 @@ function MatchForm({ matchId, navigateTo }) {
           team2_score: parseInt(map.team2_score) || 0,
           status: 'upcoming',
           
-          // 🦸 PRESERVE HERO COMPOSITIONS for production
-          team1_composition: (map.team1_composition || []).map(player => ({
-            player_id: player.player_id || player.id,
-            player_name: player.player_name || player.name,
-            hero: player.hero,              // ✅ PRESERVE hero selection
-            role: player.role,
-            country: player.country || 'DE',
-            // Initialize stats
-            eliminations: 0,
-            deaths: 0,
-            assists: 0,
-            damage: 0,
-            healing: 0,
-            damage_blocked: 0
-          })),
+          // 🦸 ENSURE 6v6 TEAM COMPOSITIONS for production
+          team1_composition: (map.team1_composition || [])
+            .slice(0, 6) // Ensure exactly 6 players
+            .map(player => ({
+              player_id: player.player_id || player.id,
+              player_name: player.player_name || player.name || player.username,
+              hero: player.hero || 'Captain America',
+              role: player.role || 'Vanguard',
+              country: player.country || player.nationality || 'US',
+              // Initialize all required stats for 6v6
+              eliminations: 0,
+              deaths: 0,
+              assists: 0,
+              damage: 0,
+              healing: 0,
+              damage_blocked: 0,
+              ultimate_usage: 0,
+              objective_time: 0
+            })),
           
-          team2_composition: (map.team2_composition || []).map(player => ({
-            player_id: player.player_id || player.id,
-            player_name: player.player_name || player.name,
-            hero: player.hero,              // ✅ PRESERVE hero selection
-            role: player.role,
-            country: player.country || 'KR',
-            // Initialize stats
-            eliminations: 0,
-            deaths: 0,
-            assists: 0,
-            damage: 0,
-            healing: 0,
-            damage_blocked: 0
-          }))
+          team2_composition: (map.team2_composition || [])
+            .slice(0, 6) // Ensure exactly 6 players
+            .map(player => ({
+              player_id: player.player_id || player.id,
+              player_name: player.player_name || player.name || player.username,
+              hero: player.hero || 'Hulk',
+              role: player.role || 'Vanguard',
+              country: player.country || player.nationality || 'US',
+              // Initialize all required stats for 6v6
+              eliminations: 0,
+              deaths: 0,
+              assists: 0,
+              damage: 0,
+              healing: 0,
+              damage_blocked: 0,
+              ultimate_usage: 0,
+              objective_time: 0
+            }))
         }))
       };
       
@@ -705,7 +716,7 @@ function MatchForm({ matchId, navigateTo }) {
               </select>
             </div>
 
-            <div className="md:col-span-2">
+            <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                 Stream URL
               </label>
@@ -716,6 +727,20 @@ function MatchForm({ matchId, navigateTo }) {
                 onChange={handleInputChange}
                 className="form-input"
                 placeholder="https://twitch.tv/marvelrivals"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Betting URL
+              </label>
+              <input
+                type="url"
+                name="betting_url"
+                value={formData.betting_url}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="https://betting-site.com/match/123"
               />
             </div>
 

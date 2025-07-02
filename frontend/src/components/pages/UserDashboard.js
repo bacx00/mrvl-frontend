@@ -16,30 +16,108 @@ function UserDashboard() {
     try {
       setLoading(true);
       
-      // Simulate user-specific data
-      setUserStats({
-        posts: 23,
-        threadsCreated: 5,
-        reputation: 1247,
-        joinDate: user?.created_at || '2024-01-15',
-        favoriteHero: 'Iron Man',
-        winRate: 76.3,
-        matchesPlayed: 45,
-        rank: 'Gold II'
-      });
+      // 🔍 Fetch REAL user statistics from backend
+      try {
+        const statsResponse = await api.get('/user/stats');
+        const statsData = statsResponse?.data?.data || statsResponse?.data || {};
+        
+        setUserStats({
+          posts: statsData.posts_count || 0,
+          threadsCreated: statsData.threads_count || 0,
+          reputation: statsData.reputation || 0,
+          joinDate: user?.created_at || statsData.join_date || '2024-01-01',
+          favoriteHero: user?.favoriteHero || statsData.favorite_hero || 'Not set',
+          winRate: statsData.win_rate || 0,
+          matchesPlayed: statsData.matches_played || 0,
+          rank: statsData.rank || 'Unranked'
+        });
+        
+        console.log('✅ UserDashboard: Real user stats loaded');
+      } catch (statsError) {
+        console.warn('⚠️ UserDashboard: Stats API not available, using defaults');
+        setUserStats({
+          posts: 0,
+          threadsCreated: 0,
+          reputation: 0,
+          joinDate: user?.created_at || '2024-01-01',
+          favoriteHero: user?.favoriteHero || 'Not set',
+          winRate: 0,
+          matchesPlayed: 0,
+          rank: 'Unranked'
+        });
+      }
 
-      setRecentActivity([
-        { type: 'post', content: 'Replied to "Best Iron Man builds"', time: '2 hours ago', icon: '💬' },
-        { type: 'match', content: 'Won ranked match vs Team Beta', time: '1 day ago', icon: '🏆' },
-        { type: 'thread', content: 'Created thread "Meta changes discussion"', time: '2 days ago', icon: '📝' },
-        { type: 'achievement', content: 'Earned "Community Helper" badge', time: '3 days ago', icon: '🏅' },
-        { type: 'friend', content: 'Connected with ProGamer_X', time: '5 days ago', icon: '👥' }
-      ]);
+      // 🔍 Fetch REAL user activity from backend
+      try {
+        const activityResponse = await api.get('/user/activity');
+        const activityData = activityResponse?.data?.data || activityResponse?.data || [];
+        
+        if (Array.isArray(activityData) && activityData.length > 0) {
+          const formattedActivity = activityData.map(activity => ({
+            type: activity.type || 'activity',
+            content: activity.description || activity.content || 'Activity',
+            time: formatTimeAgo(activity.created_at || activity.time),
+            icon: getActivityIcon(activity.type)
+          }));
+          
+          setRecentActivity(formattedActivity);
+          console.log('✅ UserDashboard: Real activity loaded:', formattedActivity.length);
+        } else {
+          setRecentActivity([]);
+        }
+      } catch (activityError) {
+        console.warn('⚠️ UserDashboard: Activity API not available');
+        setRecentActivity([]);
+      }
+      
     } catch (err) {
-      console.error('Failed to fetch user data:', err);
+      console.error('❌ UserDashboard: Failed to fetch user data:', err);
+      // Set empty defaults instead of fake data
+      setUserStats({
+        posts: 0,
+        threadsCreated: 0,
+        reputation: 0,
+        joinDate: user?.created_at || '2024-01-01',
+        favoriteHero: user?.favoriteHero || 'Not set',
+        winRate: 0,
+        matchesPlayed: 0,
+        rank: 'Unranked'
+      });
+      setRecentActivity([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to format time ago
+  const formatTimeAgo = (dateString) => {
+    if (!dateString) return 'Recently';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMinutes = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffMinutes > 0) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+    return 'Just now';
+  };
+
+  // Helper function to get activity icon
+  const getActivityIcon = (type) => {
+    const iconMap = {
+      'post': '💬',
+      'thread': '📝',
+      'match': '🏆',
+      'achievement': '🏅',
+      'friend': '👥',
+      'comment': '💭',
+      'vote': '👍',
+      'login': '🔐'
+    };
+    return iconMap[type] || '📊';
   };
 
   const tabs = [

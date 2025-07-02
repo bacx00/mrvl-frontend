@@ -78,8 +78,9 @@ function CreateThreadPage({ navigateTo }) {
 
       alert('✅ Thread created successfully!');
       
-      // CRITICAL FIX: Emit event to refresh forum list
-      window.dispatchEvent(new CustomEvent('mrvl-thread-created'));
+      // CRITICAL FIX: Emit events to refresh forum list and categories
+      window.dispatchEvent(new CustomEvent('forum-thread-created'));
+      window.dispatchEvent(new CustomEvent('forum-category-updated'));
       
       // Navigate to the created thread or back to forums
       setTimeout(() => {

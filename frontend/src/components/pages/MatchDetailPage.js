@@ -181,9 +181,16 @@ function MatchDetailPage({ matchId, navigateTo }) {
           let team1Players = [];
           let team2Players = [];
           
-          // Parse maps_data array (already parsed)
-          if (matchData.maps_data && Array.isArray(matchData.maps_data)) {
+          // Parse maps_data array with comprehensive fallback logic
+          console.log('🔍 Raw API Response - maps_data:', matchData.maps_data);
+          console.log('🔍 Raw API Response - current_map_index:', matchData.current_map_index);
+          console.log('🔍 Raw API Response - root team1_composition:', matchData.team1_composition);
+          console.log('🔍 Raw API Response - root team2_composition:', matchData.team2_composition);
+          
+          if (matchData.maps_data && Array.isArray(matchData.maps_data) && matchData.maps_data.length > 0) {
             const currentMapData = matchData.maps_data[matchData.current_map_index || 0];
+            console.log('🔍 Current map data:', currentMapData);
+            
             if (currentMapData) {
               team1Players = currentMapData.team1_composition || [];
               team2Players = currentMapData.team2_composition || [];
@@ -191,9 +198,25 @@ function MatchDetailPage({ matchId, navigateTo }) {
               console.log('✅ Parsed team compositions from maps_data:', {
                 team1Count: team1Players.length,
                 team2Count: team2Players.length,
-                currentMapIndex: matchData.current_map_index || 0
+                currentMapIndex: matchData.current_map_index || 0,
+                team1Sample: team1Players[0],
+                team2Sample: team2Players[0]
               });
             }
+          }
+          
+          // 🚨 ENHANCED FALLBACK: If maps_data failed, try root level compositions
+          if (!team1Players.length || !team2Players.length) {
+            console.log('⚠️ Maps_data failed, trying root level compositions...');
+            team1Players = matchData.team1_composition || [];
+            team2Players = matchData.team2_composition || [];
+            
+            console.log('📋 Root level fallback result:', {
+              team1Count: team1Players.length,
+              team2Count: team2Players.length,
+              team1Sample: team1Players[0],
+              team2Sample: team2Players[0]
+            });
           }
           
           // 🚨 ENHANCED FALLBACK: If maps_data failed, try other sources
@@ -261,29 +284,31 @@ function MatchDetailPage({ matchId, navigateTo }) {
           }
           
           const transformedMatch = {
-            id: matchData.id || realMatchId,
+            id: matchData.match_id || realMatchId,
             status: matchData.status || 'unknown',
             team1_score: matchData.team1_score || 0,
             team2_score: matchData.team2_score || 0,
             format: matchData.format || 'BO1',
-            currentMap: matchData.maps_data?.[matchData.current_map_index || 0]?.map_name || 'Tokyo 2099: Shibuya Sky',
-            gameMode: currentGameMode,
-            viewers: matchData.viewers || 0,
+            currentMap: matchData.current_map || matchData.maps_data?.[0]?.name || 'Unknown Map',
+            gameMode: matchData.current_mode || matchData.maps_data?.[0]?.mode || 'Unknown Mode',
+            viewers: matchData.viewer_count || 0,
             totalMaps: totalMaps,
             stream_url: matchData.stream_url,
             betting_url: matchData.betting_url,
+            timer: matchData.timer || '00:00',
+            timer_running: matchData.timer_running || false,
             
-            // Teams from live-scoreboard response
+            // Teams from live-scoreboard response with better field mapping
             team1: {
-              id: matchData.team1?.id || matchData.team1_id,
-              name: matchData.team1?.name || matchData.team1_name || 'Team 1',
-              logo: matchData.team1?.logo_url || matchData.team1?.logo || '',
+              id: matchData.team1_id,
+              name: matchData.team1_name || 'Team 1',
+              logo: matchData.teams?.team1?.logo || '',
               players: team1Players
             },
             team2: {
-              id: matchData.team2?.id || matchData.team2_id, 
-              name: matchData.team2?.name || matchData.team2_name || 'Team 2',
-              logo: matchData.team2?.logo_url || matchData.team2?.logo || '',
+              id: matchData.team2_id, 
+              name: matchData.team2_name || 'Team 2',
+              logo: matchData.teams?.team2?.logo || '',
               players: team2Players
             },
             
@@ -296,7 +321,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
               if (mapData) {
                 return {
                   mapNumber: index + 1,
-                  mapName: mapData.map_name || `Map ${index + 1}`,
+                  mapName: mapData.name || mapData.map_name || `Map ${index + 1}`,
                   mode: mapData.mode || 'Domination',
                   status: isCurrentMap ? matchData.status : (mapData.status || 'upcoming'),
                   team1Score: mapData.team1_score || 0,
@@ -1032,39 +1057,43 @@ function MatchDetailPage({ matchId, navigateTo }) {
     );
   }
 
-  // Use current map data
+  // Use current map data - fixed to match backend structure
   const currentMap = match?.maps?.[currentMapIndex] || match?.maps?.[0] || null;
   const currentMapData = currentMap ? {
-    map_name: currentMap.mapName || 'Tokyo 2099: Shibuya Sky',
-    mode: currentMap.mode || match?.gameMode || 'Domination',
+    map_name: currentMap.mapName || match?.currentMap || 'Unknown Map',
+    mode: currentMap.mode || match?.gameMode || 'Unknown Mode',
     timer: currentMap.timer || getGameModeTimer(currentMap.mode || match?.gameMode || 'Domination'),
     team1Players: (currentMap.team1Composition || match?.team1?.players || []).map(p => ({
       ...p,
       name: p.name || p.player_name || p.username || `Player ${p.player_id || p.id}`,
       id: p.playerId || p.player_id || p.id,
-      country: p.country || p.nationality || 'US'
+      country: p.country || p.nationality || 'US',
+      hero: p.hero || p.current_hero || p.main_hero || 'Unknown Hero'
     })),
     team2Players: (currentMap.team2Composition || match?.team2?.players || []).map(p => ({
       ...p,
       name: p.name || p.player_name || p.username || `Player ${p.player_id || p.id}`, 
       id: p.playerId || p.player_id || p.id,
-      country: p.country || p.nationality || 'US'
+      country: p.country || p.nationality || 'US',
+      hero: p.hero || p.current_hero || p.main_hero || 'Unknown Hero'
     }))
   } : {
-    map_name: 'Tokyo 2099: Shibuya Sky',
-    mode: match?.gameMode || 'Domination',
+    map_name: match?.currentMap || 'Unknown Map',
+    mode: match?.gameMode || 'Unknown Mode',
     timer: getGameModeTimer(match?.gameMode || 'Domination'),
     team1Players: (match?.team1?.players || []).map(p => ({
       ...p,
       name: p.name || p.player_name || p.username || `Player ${p.player_id || p.id}`,
       id: p.playerId || p.player_id || p.id,
-      country: p.country || p.nationality || 'US'
+      country: p.country || p.nationality || 'US',
+      hero: p.hero || p.current_hero || p.main_hero || 'Unknown Hero'
     })),
     team2Players: (match?.team2?.players || []).map(p => ({
       ...p,
       name: p.name || p.player_name || p.username || `Player ${p.player_id || p.id}`,
       id: p.playerId || p.player_id || p.id,
-      country: p.country || p.nationality || 'US'
+      country: p.country || p.nationality || 'US',
+      hero: p.hero || p.current_hero || p.main_hero || 'Unknown Hero'
     }))
   };
 
@@ -1102,7 +1131,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
         {/* GAME MODE & TIMER INFO */}
         <div className="mt-2 flex justify-center items-center space-x-4">
           <div className={`px-3 py-1 rounded-full text-sm font-medium bg-${currentMapData.timer.color}-100 text-${currentMapData.timer.color}-800 dark:bg-${currentMapData.timer.color}-900/20 dark:text-${currentMapData.timer.color}-400`}>
-            {currentMapData.timer.displayName}
+            {currentMapData?.mode || 'Unknown Mode'}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
             Match Duration: {Math.floor(currentMapData.timer.duration / 60)}m
@@ -1151,27 +1180,16 @@ function MatchDetailPage({ matchId, navigateTo }) {
             </a>
           )}
           
-          {/* V/D Buttons */}
-          <div className="flex space-x-2">
-            <button
-              onClick={() => {
-                alert(`You predict ${match.team1?.name} will win!`);
-              }}
-              className="flex items-center space-x-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-            >
-              <span>🏆</span>
-              <span>V - {match.team1?.name}</span>
-            </button>
-            <button
-              onClick={() => {
-                alert(`You predict ${match.team2?.name} will win!`);
-              }}
-              className="flex items-center space-x-2 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
-            >
-              <span>🏆</span>
-              <span>V - {match.team2?.name}</span>
-            </button>
-          </div>
+          {/* V/D Button */}
+          <button
+            onClick={() => {
+              alert('Victory/Defeat tracking enabled');
+            }}
+            className="flex items-center space-x-2 px-4 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
+          >
+            <span>📊</span>
+            <span>V/D Stats</span>
+          </button>
           
           {/* Betting Button */}
           {match.betting_url && (
@@ -1363,10 +1381,10 @@ function MatchDetailPage({ matchId, navigateTo }) {
                   {/* Hero with Enhanced Image System */}
                   <div className="flex justify-center">
                     <div className="relative w-10 h-10">
-                      {getHeroImageWithFallback(player.hero) ? (
+                      {getHeroImageWithFallback(player.hero || player.current_hero || player.main_hero) ? (
                         <img 
-                          src={getHeroImageWithFallback(player.hero)}
-                          alt={player.hero}
+                          src={getHeroImageWithFallback(player.hero || player.current_hero || player.main_hero)}
+                          alt={player.hero || player.current_hero || player.main_hero}
                           className="w-10 h-10 object-cover rounded border-2 border-gray-300 dark:border-gray-600"
                           onError={(e) => {
                             e.target.style.display = 'none';
@@ -1377,11 +1395,19 @@ function MatchDetailPage({ matchId, navigateTo }) {
                       
                       {/* Enhanced Text Fallback */}
                       <div 
-                        className="w-10 h-10 flex items-center justify-center text-xs font-bold text-center leading-tight text-white bg-gradient-to-br from-blue-500 to-purple-600 rounded border-2 border-gray-300 dark:border-gray-600 shadow-md"
-                        style={{ display: getHeroImageWithFallback(player.hero) ? 'none' : 'flex' }}
-                        title={`${player.hero} (${player.role}) - Image not available`}
+                        className="w-10 h-10 flex items-center justify-center text-xs font-bold text-center leading-tight text-white bg-gradient-to-br from-gray-600 to-gray-800 rounded border-2 border-gray-300 dark:border-gray-600 shadow-md"
+                        style={{ display: getHeroImageWithFallback(player.hero || player.current_hero || player.main_hero) ? 'none' : 'flex' }}
+                        title={`${player.hero || player.current_hero || player.main_hero || 'Unknown'} (${player.role}) - Image not available`}
                       >
-                        {(player.hero || 'Hero').split(' ').map(word => word.charAt(0)).join('').slice(0, 2).toUpperCase()}
+                        <span className="text-center">
+                          {(player.hero || player.current_hero || player.main_hero || 'Hero')
+                            .replace(/[^a-zA-Z\s]/g, '')
+                            .split(' ')
+                            .map(word => word.charAt(0))
+                            .join('')
+                            .slice(0, 2)
+                            .toUpperCase() || 'HE'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1450,10 +1476,10 @@ function MatchDetailPage({ matchId, navigateTo }) {
                   {/* Hero with Enhanced Image System */}
                   <div className="flex justify-center">
                     <div className="relative w-10 h-10">
-                      {getHeroImageWithFallback(player.hero) ? (
+                      {getHeroImageWithFallback(player.hero || player.current_hero || player.main_hero) ? (
                         <img 
-                          src={getHeroImageWithFallback(player.hero)}
-                          alt={player.hero}
+                          src={getHeroImageWithFallback(player.hero || player.current_hero || player.main_hero)}
+                          alt={player.hero || player.current_hero || player.main_hero}
                           className="w-10 h-10 object-cover rounded border-2 border-gray-300 dark:border-gray-600"
                           onError={(e) => {
                             e.target.style.display = 'none';

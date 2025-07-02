@@ -32,6 +32,98 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
   // 🔥 CRITICAL: FIXED BACKEND URL LOADING
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://staging.mrvl.net/api';
 
+  // 🔄 PERSISTENT STATE MANAGEMENT - Preserve live match state across page refresh/navigation
+  const STORAGE_KEYS = {
+    matchStats: `match-stats-${match?.id}`,
+    currentMapIndex: `match-map-index-${match?.id}`,
+    matchStatus: `match-status-${match?.id}`,
+    matchTimer: `match-timer-${match?.id}`,
+    timerRunning: `match-timer-running-${match?.id}`,
+    timerStart: `match-timer-start-${match?.id}`,
+    preparationPhase: `match-prep-phase-${match?.id}`,
+    preparationTimer: `match-prep-timer-${match?.id}`
+  };
+
+  // Load persistent state on component mount
+  useEffect(() => {
+    if (!match?.id) return;
+    
+    try {
+      // Restore match stats
+      const savedMatchStats = sessionStorage.getItem(STORAGE_KEYS.matchStats);
+      if (savedMatchStats) {
+        const parsed = JSON.parse(savedMatchStats);
+        setMatchStats(parsed);
+        console.log('🔄 Restored match stats from session storage');
+      }
+      
+      // Restore current map index
+      const savedMapIndex = sessionStorage.getItem(STORAGE_KEYS.currentMapIndex);
+      if (savedMapIndex !== null) {
+        setCurrentMapIndex(parseInt(savedMapIndex));
+        console.log('🔄 Restored map index:', savedMapIndex);
+      }
+      
+      // Restore match status
+      const savedStatus = sessionStorage.getItem(STORAGE_KEYS.matchStatus);
+      if (savedStatus) {
+        setMatchStatus(savedStatus);
+        console.log('🔄 Restored match status:', savedStatus);
+      }
+      
+      // Restore timer state
+      const savedTimer = sessionStorage.getItem(STORAGE_KEYS.matchTimer);
+      const savedTimerRunning = sessionStorage.getItem(STORAGE_KEYS.timerRunning);
+      const savedTimerStart = sessionStorage.getItem(STORAGE_KEYS.timerStart);
+      
+      if (savedTimer) setMatchTimer(savedTimer);
+      if (savedTimerRunning) setIsTimerRunning(savedTimerRunning === 'true');
+      if (savedTimerStart) setTimerStartTime(parseInt(savedTimerStart));
+      
+      // Restore preparation phase
+      const savedPrepPhase = sessionStorage.getItem(STORAGE_KEYS.preparationPhase);
+      const savedPrepTimer = sessionStorage.getItem(STORAGE_KEYS.preparationTimer);
+      
+      if (savedPrepPhase) setIsPreparationPhase(savedPrepPhase === 'true');
+      if (savedPrepTimer) setPreparationTimer(parseInt(savedPrepTimer));
+      
+      console.log('✅ Live match state restored from session storage');
+    } catch (error) {
+      console.error('❌ Error restoring match state:', error);
+    }
+  }, [match?.id]);
+
+  // Save state whenever it changes
+  useEffect(() => {
+    if (!match?.id || !matchStats) return;
+    sessionStorage.setItem(STORAGE_KEYS.matchStats, JSON.stringify(matchStats));
+  }, [matchStats, match?.id]);
+
+  useEffect(() => {
+    if (!match?.id) return;
+    sessionStorage.setItem(STORAGE_KEYS.currentMapIndex, currentMapIndex.toString());
+  }, [currentMapIndex, match?.id]);
+
+  useEffect(() => {
+    if (!match?.id) return;
+    sessionStorage.setItem(STORAGE_KEYS.matchStatus, matchStatus);
+  }, [matchStatus, match?.id]);
+
+  useEffect(() => {
+    if (!match?.id) return;
+    sessionStorage.setItem(STORAGE_KEYS.matchTimer, matchTimer);
+    sessionStorage.setItem(STORAGE_KEYS.timerRunning, isTimerRunning.toString());
+    if (timerStartTime) {
+      sessionStorage.setItem(STORAGE_KEYS.timerStart, timerStartTime.toString());
+    }
+  }, [matchTimer, isTimerRunning, timerStartTime, match?.id]);
+
+  useEffect(() => {
+    if (!match?.id) return;
+    sessionStorage.setItem(STORAGE_KEYS.preparationPhase, isPreparationPhase.toString());
+    sessionStorage.setItem(STORAGE_KEYS.preparationTimer, preparationTimer.toString());
+  }, [isPreparationPhase, preparationTimer, match?.id]);
+
   // 🎮 COMPLETE MARVEL RIVALS GAME MODES WITH ACCURATE TIMERS
   const gameModesData = {
     'Convoy': { 
@@ -334,12 +426,12 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                   winner: null,
                   duration: 'Live',
                 team1Players: team1Players.map(player => ({
-                  id: player.player_id,
-                  playerId: player.player_id,
-                  name: player.player_name,
-                  hero: player.hero || 'Captain America',
+                  id: player.player_id || player.id,
+                  playerId: player.player_id || player.id,
+                  name: player.name || player.player_name || player.username || `Player ${player.player_id}`,
+                  hero: player.hero || player.current_hero || player.main_hero || 'Captain America',
                   role: convertRoleToFrontend(player.role),
-                  country: player.country || 'US',
+                  country: player.country || player.nationality || 'US',
                   avatar: player.avatar,
                   eliminations: player.eliminations || 0,
                   deaths: player.deaths || 0,
@@ -351,12 +443,12 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                   objectiveTime: player.objective_time || 0
                 })),
                 team2Players: team2Players.map(player => ({
-                  id: player.player_id,
-                  playerId: player.player_id,
-                  name: player.player_name,
-                  hero: player.hero || 'Hulk',
+                  id: player.player_id || player.id,
+                  playerId: player.player_id || player.id,
+                  name: player.name || player.player_name || player.username || `Player ${player.player_id}`,
+                  hero: player.hero || player.current_hero || player.main_hero || 'Hulk',
                   role: convertRoleToFrontend(player.role),
-                  country: player.country || 'US',
+                  country: player.country || player.nationality || 'US',
                   avatar: player.avatar,
                   eliminations: player.eliminations || 0,
                   deaths: player.deaths || 0,
@@ -482,7 +574,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     console.log('🔥 ADMIN: Multi-channel sync completed:', { type, matchId: match.id, timestamp: syncData.timestamp, specificKey });
   };
 
-  // 🏆 ENHANCED SCORE UPDATE WITH REAL-TIME SYNC
+  // 🏆 ENHANCED SCORE UPDATE WITH BACKEND API INTEGRATION
   const updateMapScore = async (teamNumber, increment = true) => {
     if (!matchStats) return;
     
@@ -526,6 +618,24 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
             setPreparationTimer(45);
           }
         }
+        
+        // 🚨 CRITICAL FIX: Send score update to backend API immediately
+        const sendScoreToBackend = async () => {
+          try {
+            await api.put(`/admin/matches/${match.id}/live-control`, {
+              action: "update_score",
+              team1_score: currentMapData.team1Score || 0,
+              team2_score: currentMapData.team2Score || 0,
+              current_map: currentMapData.map_name || 'Tokyo 2099: Shibuya Sky'
+            });
+            console.log('✅ Score sent to backend API');
+          } catch (error) {
+            console.error('❌ Error sending score to backend:', error);
+          }
+        };
+        
+        // Send to backend asynchronously
+        sendScoreToBackend();
         
         // 🔥 CREATE COMPLETE MATCH DATA FOR SCORE SYNC
         const completeMatchData = {
@@ -774,12 +884,23 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
   }, [isPreparationPhase, preparationTimer]);
 
   // Timer controls with enhanced sync
-  const startTimer = () => {
+  const startTimer = async () => {
     const startTime = Date.now();
     setIsTimerRunning(true);
     setTimerStartTime(startTime);
     localStorage.setItem(`match-timer-running-${match.id}`, 'true');
     localStorage.setItem(`match-timer-start-${match.id}`, startTime.toString());
+    
+    // Update backend timer
+    try {
+      await api.post(`/admin/matches/${match.id}/live-control`, {
+        action: 'update_timer',
+        timer: '00:00',
+        current_map_index: currentMapIndex
+      });
+    } catch (error) {
+      console.error('❌ Error updating timer on backend:', error);
+    }
     
     triggerRealTimeSync('TIMER_START', {
       timer: '00:00',
@@ -840,12 +961,21 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           elapsed: elapsed,
           immediate: true
         });
+        
+        // Update backend every 10 seconds to avoid too many API calls
+        if (elapsed % 10 === 0) {
+          api.post(`/admin/matches/${match.id}/live-control`, {
+            action: 'update_timer',
+            timer: timeString,
+            current_map_index: currentMapIndex
+          }).catch(error => console.error('❌ Error syncing timer to backend:', error));
+        }
       }, 1000);
     }
     return () => clearInterval(interval);
   }, [isTimerRunning, matchStatus, timerStartTime, match.id]);
 
-  // 🔄 PRODUCTION SAVE FUNCTION
+  // 🔄 PRODUCTION SAVE FUNCTION - FIXED FOR BACKEND API
   const handleSaveStats = async () => {
     if (!matchStats || !match) {
       console.log('❌ Cannot save: Missing matchStats or match');
@@ -855,7 +985,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     setSaveLoading(true);
     
     try {
-      console.log('🔄 SAVING TO PRODUCTION API - 6v6 Format');
+      console.log('🔄 SAVING TO PRODUCTION API - FIXED FORMAT');
       
       const currentMapData = matchStats.maps[currentMapIndex] || matchStats.maps[0];
       
@@ -863,61 +993,74 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         throw new Error('No map data available for save');
       }
 
-      const savePromises = [];
-      
-      // Save all player stats
-      [...(currentMapData.team1Players || []), ...(currentMapData.team2Players || [])].forEach(player => {
-        if (player.playerId) {
-          const savePromise = fetch(`${BACKEND_URL}/admin/matches/${match.id}/player/${player.playerId}/stats`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer 415|ySK4yrjyULCTlprffD0KeT5zxd6J2mMMHOHkX6pv1d5fc012`,
-              'Cache-Control': 'no-cache'
-            },
-            body: JSON.stringify({
-              eliminations: player.eliminations || 0,
-              deaths: player.deaths || 0,
-              assists: player.assists || 0,
-              damage: player.damage || 0,
-              healing: player.healing || 0,
-              damage_blocked: player.damageBlocked || 0,
-              ultimate_usage: player.ultimateUsage || 0,
-              objective_time: player.objectiveTime || 0,
-              hero_played: player.hero,
-              role_played: player.role
-            })
-          });
-          
-          savePromises.push(savePromise);
-        }
+      // 🚨 CRITICAL FIX 1: Update scores with CORRECT API format using POST
+      const liveControlResponse = await api.post(`/admin/matches/${match.id}/live-control`, {
+        action: "update_scores",
+        team_scores: {
+          team1: currentMapData.team1Score || 0,
+          team2: currentMapData.team2Score || 0
+        },
+        map_number: currentMapIndex + 1,
+        timer: matchTimer,
+        current_map_index: currentMapIndex,
+        is_preparation_phase: isPreparationPhase,
+        preparation_timer: preparationTimer
       });
+      
+      console.log('✅ Live control updated:', liveControlResponse);
 
-      await Promise.all(savePromises);
+      // 🚨 CRITICAL FIX 2: Update player stats with bulk endpoint
+      const allPlayers = [
+        ...(currentMapData.team1Players || []).map(player => ({
+          ...player,
+          team: 'team1'
+        })),
+        ...(currentMapData.team2Players || []).map(player => ({
+          ...player,
+          team: 'team2'
+        }))
+      ];
+
+      if (allPlayers.length > 0) {
+        const compositionResponse = await api.post(`/admin/matches/${match.id}/live-control`, {
+          action: 'update_composition',
+          map_number: currentMapIndex + 1,
+          player_stats: allPlayers.map(player => ({
+            player_id: player.playerId || player.id,
+            hero: player.hero,
+            eliminations: player.eliminations || 0,
+            deaths: player.deaths || 0,
+            assists: player.assists || 0,
+            damage: player.damage || 0,
+            healing: player.healing || 0,
+            blocked: player.damageBlocked || 0
+          }))
+        });
+        
+        console.log('✅ Player compositions and stats updated via live-control:', compositionResponse);
+      }
       
-      console.log('✅ ALL PLAYER STATS SAVED TO PRODUCTION API');
+      console.log('✅ ALL DATA SAVED TO PRODUCTION API VIA CORRECT ENDPOINTS');
       
-      // Final comprehensive sync - USE CURRENT ROUND SCORES not mapWins
-      // (currentMapData already declared above)
+      // Final comprehensive sync with correct data structure
       triggerRealTimeSync('PRODUCTION_SAVE', {
-        playersUpdated: savePromises.length,
-        // Send current round scores for consistency with real-time updates
+        playersUpdated: allPlayers.length,
         scores: {
           team1: currentMapData?.team1Score || 0,
           team2: currentMapData?.team2Score || 0
         },
-        seriesScores: matchStats.mapWins, // Keep series scores separate
+        seriesScores: matchStats.mapWins,
         matchData: {
           ...matchStats,
-          // Ensure current round scores are in main match data
           team1_score: currentMapData?.team1Score || 0,
-          team2_score: currentMapData?.team2Score || 0
+          team2_score: currentMapData?.team2Score || 0,
+          current_map: currentMapData.map_name || 'Tokyo 2099: Shibuya Sky'
         }
       });
       
     } catch (error) {
       console.error('❌ Error saving to PRODUCTION API:', error);
-      alert(`❌ Error saving: ${error.message || 'Unknown error'}`);
+      alert(`❌ Error saving: ${error.response?.data?.message || error.message || 'Unknown error'}`);
     } finally {
       setSaveLoading(false);
     }
@@ -1309,27 +1452,124 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
             </button>
             
             
-            {/* DEBUG: Test Sync Button - REMOVED TO PREVENT CONFLICTS */}
-            {false && (
-            <button
-              onClick={() => {
-                console.log('🧪 TESTING SYNC: Manually triggering test sync');
-                triggerRealTimeSync('TEST_SYNC', {
-                  testMessage: 'Hello from admin!',
-                  timestamp: Date.now(),
-                  matchData: {
-                    id: match.id,
-                    team1: { name: 'Test Team 1' },
-                    team2: { name: 'Test Team 2' },
-                    status: 'testing'
+            {/* COMPREHENSIVE LIVE TESTING PANEL */}
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {/* Score Update Tests */}
+              <button
+                onClick={() => {
+                  const currentMapData = matchStats.maps[currentMapIndex];
+                  updateMapScore(1, (currentMapData.team1Score || 0) + 1);
+                  triggerRealTimeSync('SCORE_UPDATE', {
+                    teamNumber: 1,
+                    mapScore: (currentMapData.team1Score || 0) + 1,
+                    mapIndex: currentMapIndex,
+                    scores: { 
+                      team1: (currentMapData.team1Score || 0) + 1, 
+                      team2: currentMapData.team2Score || 0 
+                    }
+                  });
+                }}
+                className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm"
+              >
+                🏆 +1 Team 1
+              </button>
+              
+              <button
+                onClick={() => {
+                  const currentMapData = matchStats.maps[currentMapIndex];
+                  updateMapScore(2, (currentMapData.team2Score || 0) + 1);
+                  triggerRealTimeSync('SCORE_UPDATE', {
+                    teamNumber: 2,
+                    mapScore: (currentMapData.team2Score || 0) + 1,
+                    mapIndex: currentMapIndex,
+                    scores: { 
+                      team1: currentMapData.team1Score || 0, 
+                      team2: (currentMapData.team2Score || 0) + 1 
+                    }
+                  });
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm"
+              >
+                🏆 +1 Team 2
+              </button>
+              
+              {/* Hero Change Test */}
+              <button
+                onClick={() => {
+                  const testHeroes = ['Spider-Man', 'Iron Man', 'Hulk', 'Thor', 'Captain America', 'Wolverine'];
+                  const randomHero = testHeroes[Math.floor(Math.random() * testHeroes.length)];
+                  triggerRealTimeSync('HERO_CHANGE', {
+                    playerName: `Test Player ${Math.floor(Math.random() * 6) + 1}`,
+                    hero: randomHero,
+                    role: 'Duelist',
+                    team: Math.random() > 0.5 ? 'team1' : 'team2',
+                    mapIndex: currentMapIndex
+                  });
+                }}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm"
+              >
+                🦸 Random Hero
+              </button>
+              
+              {/* Timer Test */}
+              <button
+                onClick={() => {
+                  const testTime = `${Math.floor(Math.random() * 20).toString().padStart(2, '0')}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`;
+                  setMatchTimer(testTime);
+                  triggerRealTimeSync('TIMER_UPDATE', {
+                    timer: testTime,
+                    isRunning: true,
+                    mapIndex: currentMapIndex,
+                    immediate: true
+                  });
+                }}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded text-sm"
+              >
+                ⏱️ Random Timer
+              </button>
+              
+              {/* All Game Modes Test */}
+              <button
+                onClick={() => {
+                  const gameModes = ['Convoy', 'Domination', 'Convergence', 'Conquest', 'Doom Match', 'Escort'];
+                  const randomMode = gameModes[Math.floor(Math.random() * gameModes.length)];
+                  const currentMapData = matchStats.maps[currentMapIndex];
+                  if (currentMapData) {
+                    currentMapData.mode = randomMode;
+                    setMatchStats({...matchStats});
+                    triggerRealTimeSync('MODE_CHANGE', {
+                      newMode: randomMode,
+                      mapIndex: currentMapIndex
+                    });
                   }
-                });
-              }}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm"
-            >
-              🧪 Test Sync
-            </button>
-            )}
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm"
+              >
+                🎮 Random Mode
+              </button>
+              
+              {/* Full Match Sync Test */}
+              <button
+                onClick={() => {
+                  triggerRealTimeSync('PRODUCTION_SAVE', {
+                    scores: { team1: 2, team2: 1 },
+                    timer: matchTimer,
+                    currentMap: matchStats.maps[currentMapIndex]?.map_name,
+                    allMapsUpdated: true,
+                    matchData: {
+                      ...matchStats,
+                      team1_score: 2,
+                      team2_score: 1,
+                      status: 'live',
+                      lastUpdated: Date.now()
+                    }
+                  });
+                }}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded text-sm"
+              >
+                💾 Full Sync Test
+              </button>
+            </div>
             
             {matchStats.totalMaps > 1 && currentMapIndex + 1 < matchStats.totalMaps && (
               <button
