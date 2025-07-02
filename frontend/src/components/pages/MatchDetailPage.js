@@ -330,10 +330,10 @@ function MatchDetailPage({ matchId, navigateTo }) {
               players: team2Players
             },
             
-            // Enhanced maps structure for BO1/BO3/BO5
+            // Enhanced maps structure for BO1/BO3/BO5 - Use parsed data
             maps: Array.from({ length: totalMaps }, (_, index) => {
-              // Use the actual map data if available
-              const mapData = matchData.maps_data?.[index];
+              // Use the parsed map data if available
+              const mapData = parsedMapsData?.[index];
               const isCurrentMap = index === (matchData.current_map_index || 0);
               
               if (mapData) {
