@@ -181,14 +181,30 @@ function MatchDetailPage({ matchId, navigateTo }) {
           let team1Players = [];
           let team2Players = [];
           
-          // Parse maps_data array with comprehensive fallback logic
+          // Parse maps_data with better handling for JSON strings and arrays
           console.log('🔍 Raw API Response - maps_data:', matchData.maps_data);
-          console.log('🔍 Raw API Response - current_map_index:', matchData.current_map_index);
-          console.log('🔍 Raw API Response - root team1_composition:', matchData.team1_composition);
-          console.log('🔍 Raw API Response - root team2_composition:', matchData.team2_composition);
+          console.log('🔍 Raw API Response - maps_data type:', typeof matchData.maps_data);
           
-          if (matchData.maps_data && Array.isArray(matchData.maps_data) && matchData.maps_data.length > 0) {
-            const currentMapData = matchData.maps_data[matchData.current_map_index || 0];
+          let parsedMapsData = null;
+          
+          // Handle maps_data as JSON string or array
+          if (matchData.maps_data) {
+            if (typeof matchData.maps_data === 'string') {
+              try {
+                parsedMapsData = JSON.parse(matchData.maps_data);
+                console.log('✅ Parsed maps_data from JSON string:', parsedMapsData);
+              } catch (error) {
+                console.error('❌ Error parsing maps_data JSON:', error);
+                parsedMapsData = null;
+              }
+            } else if (Array.isArray(matchData.maps_data)) {
+              parsedMapsData = matchData.maps_data;
+              console.log('✅ Using maps_data array directly:', parsedMapsData);
+            }
+          }
+          
+          if (parsedMapsData && Array.isArray(parsedMapsData) && parsedMapsData.length > 0) {
+            const currentMapData = parsedMapsData[matchData.current_map_index || 0];
             console.log('🔍 Current map data:', currentMapData);
             
             if (currentMapData) {
@@ -199,6 +215,8 @@ function MatchDetailPage({ matchId, navigateTo }) {
                 team1Count: team1Players.length,
                 team2Count: team2Players.length,
                 currentMapIndex: matchData.current_map_index || 0,
+                mapName: currentMapData.name || currentMapData.map_name,
+                gameMode: currentMapData.mode,
                 team1Sample: team1Players[0],
                 team2Sample: team2Players[0]
               });
