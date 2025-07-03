@@ -273,14 +273,18 @@ function MatchDetailPage({ matchId, navigateTo }) {
           // Calculate total maps for series
           const totalMaps = matchData.format === 'BO3' ? 3 : matchData.format === 'BO5' ? 5 : 1;
           
-          // 🎮 IMPROVED GAME MODE DETECTION
+          // 🎮 IMPROVED GAME MODE DETECTION - Use parsed data
           let currentGameMode = 'Domination'; // Default fallback
-          if (matchData.maps_data && matchData.maps_data[matchData.current_map_index || 0]) {
-            const currentMapData = matchData.maps_data[matchData.current_map_index || 0];
-            currentGameMode = currentMapData.mode || currentGameMode;
+          if (parsedMapsData && parsedMapsData[matchData.current_map_index || 0]) {
+            const currentMapData = parsedMapsData[matchData.current_map_index || 0];
+            currentGameMode = currentMapData.mode || currentMapData.game_mode || currentGameMode;
+            console.log('🎮 Game mode from parsed maps_data:', currentGameMode);
+          } else if (matchData.current_mode) {
+            currentGameMode = matchData.current_mode;
+            console.log('🎮 Game mode from current_mode field:', currentGameMode);
           }
           
-          console.log('🎮 Game mode detected:', currentGameMode);
+          console.log('🎮 Final game mode detected:', currentGameMode);
           
           // Update live timer state
           if (matchData.live_timer) {
