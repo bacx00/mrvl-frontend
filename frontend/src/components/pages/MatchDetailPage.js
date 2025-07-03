@@ -1296,21 +1296,38 @@ function MatchDetailPage({ matchId, navigateTo }) {
           <div className="flex items-center justify-center space-x-8">
             <div className="text-center">
               <h2 className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">{match.team1?.name}</h2>
-              <div className="text-6xl font-bold text-blue-600 dark:text-blue-400">{currentMap?.team1Score || 0}</div>
+              <div className="text-6xl font-bold text-blue-600 dark:text-blue-400">
+                {liveScores.team1 !== null ? liveScores.team1 : (match.maps?.[0]?.team1Score || match.team1_score || 0)}
+              </div>
+              {liveScores.team1 !== null && (
+                <div className="text-xs text-green-500 animate-pulse mt-2">
+                  🔴 LIVE ROUND: {liveScores.team1}
+                </div>
+              )}
             </div>
             
             <div className="text-center">
               <div className="text-4xl text-gray-500 dark:text-gray-500">VS</div>
               <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                 <span className="text-blue-600 dark:text-blue-400 font-semibold">
-                  {currentMapData?.mode || 'Domination'}
+                  {match.gameMode || match.maps?.[0]?.mode || 'Domination'}
                 </span>
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {match.currentMap || match.maps?.[0]?.mapName || 'Current Map'}
               </div>
             </div>
             
             <div className="text-center">
               <h2 className="text-3xl font-bold text-red-600 dark:text-red-400 mb-2">{match.team2?.name}</h2>
-              <div className="text-6xl font-bold text-red-600 dark:text-red-400">{currentMap?.team2Score || 0}</div>
+              <div className="text-6xl font-bold text-red-600 dark:text-red-400">
+                {liveScores.team2 !== null ? liveScores.team2 : (match.maps?.[0]?.team2Score || match.team2_score || 0)}
+              </div>
+              {liveScores.team2 !== null && (
+                <div className="text-xs text-green-500 animate-pulse mt-2">
+                  🔴 LIVE ROUND: {liveScores.team2}
+                </div>
+              )}
             </div>
           </div>
         </div>
