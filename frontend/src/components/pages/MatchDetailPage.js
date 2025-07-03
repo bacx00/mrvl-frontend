@@ -1241,11 +1241,11 @@ function MatchDetailPage({ matchId, navigateTo }) {
             <div className="text-center">
               <h2 className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-2">{match.team1?.name}</h2>
               <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">
-                {liveScores.team1 !== null ? liveScores.team1 : (currentMap?.team1Score || match.team1_score || 0)}
+                {liveScores.team1 !== null ? liveScores.team1 : (match.team1_score || 0)}
               </div>
-              {lastScoreUpdate && (
+              {liveScores.team1 !== null && (
                 <div className="text-xs text-green-500 animate-pulse">
-                  Live: {lastScoreUpdate.team1}
+                  🔴 LIVE: {liveScores.team1}
                 </div>
               )}
             </div>
