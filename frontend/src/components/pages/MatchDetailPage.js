@@ -498,7 +498,11 @@ function MatchDetailPage({ matchId, navigateTo }) {
                 
                 console.log(`🏆 IMMEDIATE: Setting live scores to Team1=${team1Score}, Team2=${team2Score}`);
                 console.log(`🏆 BEFORE UPDATE: liveScores was:`, liveScores);
+                
+                // 🔥 FORCE STATE UPDATE AND RE-RENDER
                 setLiveScores({ team1: team1Score, team2: team2Score });
+                setRefreshTrigger(prev => prev + 1); // Force re-render
+                
                 console.log(`🏆 AFTER UPDATE: liveScores should be Team1=${team1Score}, Team2=${team2Score}`);
                 
                 setLastScoreUpdate({ 
@@ -507,6 +511,16 @@ function MatchDetailPage({ matchId, navigateTo }) {
                   timestamp: Date.now(),
                   mapIndex: detail.mapIndex 
                 });
+              }
+              
+              // 🔥 FALLBACK: Try to extract scores from matchData if overallScores missing
+              else if (detail.matchData) {
+                const team1Score = detail.matchData.team1_score || detail.matchData.team1Score || 0;
+                const team2Score = detail.matchData.team2_score || detail.matchData.team2Score || 0;
+                
+                console.log(`🏆 FALLBACK: Setting live scores from matchData Team1=${team1Score}, Team2=${team2Score}`);
+                setLiveScores({ team1: team1Score, team2: team2Score });
+                setRefreshTrigger(prev => prev + 1); // Force re-render
               }
               
               // Also update series scores if provided
