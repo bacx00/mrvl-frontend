@@ -311,8 +311,11 @@ function MatchDetailPage({ matchId, navigateTo }) {
             team1_score: matchData.team1_score || 0,
             team2_score: matchData.team2_score || 0,
             format: matchData.format || 'BO1',
-            currentMap: matchData.current_map || matchData.maps_data?.[0]?.name || 'Unknown Map',
-            gameMode: matchData.current_mode || matchData.maps_data?.[0]?.mode || 'Unknown Mode',
+            currentMap: parsedMapsData?.[matchData.current_map_index || 0]?.name || 
+                       parsedMapsData?.[matchData.current_map_index || 0]?.map_name || 
+                       matchData.current_map || 
+                       'Unknown Map',
+            gameMode: currentGameMode,
             viewers: matchData.viewer_count || 0,
             totalMaps: totalMaps,
             stream_url: matchData.stream_url,
