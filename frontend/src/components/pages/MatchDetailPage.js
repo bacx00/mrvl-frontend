@@ -1164,16 +1164,16 @@ function MatchDetailPage({ matchId, navigateTo }) {
         <div className="text-lg text-gray-600 dark:text-gray-400">
           {match.format === 'BO1' ? 'Best of 1' : 
            match.format === 'BO3' ? 'Best of 3' :
-           match.format === 'BO5' ? 'Best of 5' : 'Best of 1'} • {currentMapData?.map_name}
+           match.format === 'BO5' ? 'Best of 5' : 'Best of 1'} • {match.currentMap || match.maps?.[currentMapIndex]?.mapName || 'Current Map'}
         </div>
         
         {/* GAME MODE & TIMER INFO */}
         <div className="mt-2 flex justify-center items-center space-x-4">
-          <div className={`px-3 py-1 rounded-full text-sm font-medium bg-${currentMapData.timer.color}-100 text-${currentMapData.timer.color}-800 dark:bg-${currentMapData.timer.color}-900/20 dark:text-${currentMapData.timer.color}-400`}>
-            {currentMapData?.mode || 'Unknown Mode'}
+          <div className={`px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400`}>
+            {match.gameMode || match.maps?.[currentMapIndex]?.mode || 'Domination'}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Match Duration: {Math.floor(currentMapData.timer.duration / 60)}m
+            Match Duration: {Math.floor((match.maps?.[currentMapIndex]?.timer?.duration || 720) / 60)}m
           </div>
         </div>
         
