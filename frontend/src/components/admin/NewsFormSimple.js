@@ -96,6 +96,12 @@ function NewsFormSimple({ newsId, navigateTo }) {
       alert('Content is required');
       return;
     }
+    
+    // Validate content length (backend requires at least 50 characters)
+    if (formData.content.trim().length < 50) {
+      alert('Article content must be at least 50 characters long. Please add more details to your article.');
+      return;
+    }
 
     setSaving(true);
 
@@ -196,7 +202,7 @@ function NewsFormSimple({ newsId, navigateTo }) {
             value={formData.title}
             onChange={handleInputChange}
             className="w-full px-4 py-3 bg-[#0f1419] border border-[#2b3d4d] rounded-lg text-white placeholder-[#768894] focus:border-[#fa4454] focus:outline-none text-xl"
-            placeholder="Article Title"
+            placeholder="e.g., Team Liquid signs new roster for VCT 2025"
             required
           />
         </div>
@@ -256,19 +262,24 @@ function NewsFormSimple({ newsId, navigateTo }) {
             onChange={handleInputChange}
             rows={2}
             className="w-full p-3 bg-[#0f1419] border border-[#2b3d4d] rounded-lg text-white placeholder-[#768894] focus:border-[#fa4454] focus:outline-none resize-none"
-            placeholder="Brief summary that appears in article previews..."
+            placeholder="e.g., The European powerhouse completes their roster with two new signings ahead of the upcoming season."
           />
         </div>
 
         {/* Content */}
         <div>
-          <label className="block text-sm font-medium text-[#768894] mb-2">
-            Content
-          </label>
+          <div className="flex justify-between items-center mb-2">
+            <label className="text-sm font-medium text-[#768894]">
+              Content
+            </label>
+            <span className={`text-xs ${formData.content.trim().length < 50 ? 'text-red-400' : 'text-[#768894]'}`}>
+              {formData.content.trim().length} / 50 minimum characters
+            </span>
+          </div>
           <SimpleTextEditor
             value={formData.content}
             onChange={(value) => setFormData(prev => ({ ...prev, content: value }))}
-            placeholder="Write your article content here..."
+            placeholder="Write your article content here (minimum 50 characters). Include details about teams, players, tournament results, or game updates. Follow the style of professional esports journalism."
             rows={15}
           />
         </div>
@@ -286,10 +297,11 @@ function NewsFormSimple({ newsId, navigateTo }) {
               onChange={handleInputChange}
               className="w-full px-3 py-2 bg-[#0f1419] border border-[#2b3d4d] rounded text-white focus:border-[#fa4454] focus:outline-none text-sm"
             >
-              <option value="news">News</option>
               <option value="esports">Esports</option>
-              <option value="updates">Updates</option>
+              <option value="news">General News</option>
+              <option value="updates">Game Updates</option>
               <option value="events">Events</option>
+              <option value="community">Community</option>
             </select>
           </div>
 

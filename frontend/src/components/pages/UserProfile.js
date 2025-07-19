@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
-import { getHeroImageSync } from '../../utils/imageUtils';
+import HeroImage from '../shared/HeroImage';
 
 function UserProfile({ navigateTo }) {
   const { user, api, updateUser } = useAuth();
@@ -124,20 +124,6 @@ function UserProfile({ navigateTo }) {
     fetchTeams();
   }, [fetchUserActivity, fetchTeams]);
 
-  const getHeroImage = (heroName) => {
-    if (!heroName) return null;
-    return getHeroImageSync(heroName);
-  };
-
-  const [imageErrors, setImageErrors] = useState(new Set());
-
-  const handleImageError = (heroName) => {
-    setImageErrors(prev => new Set(prev).add(heroName));
-  };
-
-  const isImageBroken = (heroName) => {
-    return imageErrors.has(heroName);
-  };
 
   const getCountryFlag = (countryCode) => {
     return `https://flagcdn.com/24x18/${countryCode.toLowerCase()}.png`;
@@ -322,30 +308,27 @@ function UserProfile({ navigateTo }) {
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Profile Picture</h3>
         <div className="flex items-center space-x-6">
           <div className="relative">
-            <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-              {profileData.hero_avatar && !isImageBroken(profileData.hero_avatar) && getHeroImage(profileData.hero_avatar) ? (
-                <img 
-                  src={getHeroImage(profileData.hero_avatar)} 
-                  alt={profileData.hero_avatar}
-                  className="w-full h-full object-cover"
-                  onError={() => handleImageError(profileData.hero_avatar)}
+            {profileData.hero_avatar ? (
+              <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                <HeroImage 
+                  heroName={profileData.hero_avatar}
+                  size="2xl"
+                  className="w-full h-full"
                 />
-              ) : profileData.hero_avatar ? (
-                <div className="w-full h-full bg-gradient-to-br from-red-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm text-center px-2">
-                  {profileData.hero_avatar}
-                </div>
-              ) : profileData.avatar ? (
+              </div>
+            ) : profileData.avatar ? (
+              <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                 <img 
                   src={profileData.avatar} 
                   alt="Avatar"
                   className="w-full h-full object-cover"
                 />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
-                  {profileData.name.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
+                {profileData.name.charAt(0).toUpperCase()}
+              </div>
+            )}
           </div>
           <div className="flex flex-col space-y-2">
             <button
@@ -883,18 +866,11 @@ function UserProfile({ navigateTo }) {
                         className="relative group"
                       >
                         <div className="w-full h-20 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                          {!isImageBroken(hero) && getHeroImage(hero) ? (
-                            <img 
-                              src={getHeroImage(hero)} 
-                              alt={hero}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                              onError={() => handleImageError(hero)}
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-xs text-gray-600 dark:text-gray-400 font-bold text-center px-1">
-                              {hero}
-                            </div>
-                          )}
+                          <HeroImage 
+                            heroName={hero}
+                            size="xl"
+                            className="w-full h-full"
+                          />
                         </div>
                         <div className="text-xs mt-1 text-center text-gray-700 dark:text-gray-300">{hero}</div>
                       </button>

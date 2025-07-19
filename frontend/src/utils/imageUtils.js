@@ -45,6 +45,12 @@ export const getImageUrl = (imagePath, type = 'general') => {
   // CORE FIX: Handle backend storage paths properly
   // Backend returns paths like: "teams/logos/filename.jpg" or "players/avatars/filename.jpg"
   if (imagePath.includes('/')) {
+    // Special handling for hero images - they're in public/images/heroes not storage
+    if (imagePath.includes('/heroes/') || imagePath.includes('/heroes-portraits/')) {
+      const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+      return `${API_CONFIG.BASE_URL}${cleanPath}`;
+    }
+    
     // Always add /storage/ prefix for backend file paths
     const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
     
@@ -194,8 +200,11 @@ export const getUserAvatarUrl = (user) => {
   if (!user) return getImageUrl(null, 'player-avatar');
   
   // Check if user is using a hero as avatar
-  if (user.avatar && user.avatar.startsWith('/images/heroes/')) {
-    return `${API_CONFIG.BASE_URL}${user.avatar}`;
+  if (user.avatar && user.avatar.includes('/heroes/')) {
+    // Hero images are in public/images/heroes/ not storage
+    // Remove any /storage prefix if present
+    const cleanPath = user.avatar.replace('/storage', '');
+    return `${API_CONFIG.BASE_URL}${cleanPath}`;
   }
   
   // Check ALL possible avatar fields from backend response

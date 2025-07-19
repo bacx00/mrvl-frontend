@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
 import { TeamLogo, getCountryFlag } from '../../utils/imageUtils';
-import ComprehensiveMatchControl from './ComprehensiveMatchControl';
+import SinglePageLiveScoring from './SinglePageLiveScoring';
 
 function AdminMatches({ navigateTo }) {
   const [matches, setMatches] = useState([]);
@@ -522,7 +522,7 @@ function AdminMatches({ navigateTo }) {
 
       {/* COMPREHENSIVE MATCH CONTROL CENTER */}
       {comprehensiveScoring.match && (
-        <ComprehensiveMatchControl
+        <SinglePageLiveScoring
           match={comprehensiveScoring.match}
           isOpen={comprehensiveScoring.isOpen}
           onClose={closeComprehensiveScoring}

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
-import { getHeroImageSync, getHeroRole, getCountryFlag } from '../../utils/imageUtils';
+import { getCountryFlag } from '../../utils/imageUtils';
 import UserDisplay from '../shared/UserDisplay';
 import VotingButtons from '../shared/VotingButtons';
-import ComprehensiveMatchControl from '../admin/ComprehensiveMatchControl';
+import SinglePageLiveScoring from '../admin/SinglePageLiveScoring';
+import HeroImage from '../shared/HeroImage';
 import {
   GAME_MODES,
   PLAYER_STATS,
@@ -178,40 +179,6 @@ function MatchDetailPage({ matchId, navigateTo }) {
     };
   };
 
-  // 🦸 HERO IMAGE SYSTEM WITH FALLBACKS
-  const getHeroImageWithFallback = (heroName) => {
-    if (!heroName) return null;
-    
-    const imageUrl = getHeroImageSync(heroName);
-    if (imageUrl) return imageUrl;
-    
-    const alternativeNames = {
-      'Iron Man': 'iron_man',
-      'Spider-Man': 'spider_man',
-      'Black Widow': 'black_widow',
-      'Black Panther': 'black_panther',
-      'Doctor Strange': 'doctor_strange',
-      'Captain America': 'captain_america',
-      'Winter Soldier': 'winter_soldier',
-      'Star-Lord': 'star_lord',
-      'Rocket Raccoon': 'rocket_raccoon',
-      'Jeff the Land Shark': 'jeff',
-      'Luna Snow': 'luna_snow',
-      'Adam Warlock': 'adam_warlock',
-      'Cloak & Dagger': 'cloak_dagger',
-      'Squirrel Girl': 'squirrel_girl',
-      'Peni Parker': 'peni_parker',
-      'Scarlet Witch': 'scarlet_witch'
-    };
-    
-    const altName = alternativeNames[heroName];
-    if (altName) {
-      const altImage = getHeroImageSync(altName);
-      if (altImage) return altImage;
-    }
-    
-    return null;
-  };
 
   // 🚨 CRITICAL: EXTRACT MATCH ID FROM URL OR PROPS
   const getMatchId = () => {
@@ -617,7 +584,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
     if (match?.status === 'live') {
       pollInterval = setInterval(() => {
         fetchMatchData(false); // Silent refresh
-      }, 2000);
+      }, 1000); // Poll every second for live matches to show timer updates
     }
 
     // 🔥 ENHANCED CROSS-TAB SYNC - LISTEN FOR ALL ADMIN UPDATES
@@ -1900,30 +1867,11 @@ function MatchDetailPage({ matchId, navigateTo }) {
                   
                   {/* Hero Image */}
                   <div className="flex justify-center">
-                    {(() => {
-                      // Try multiple possible hero name fields
-                      const heroName = player.hero || player.current_hero || player.main_hero || player.heroName || player.hero_name;
-                      const heroImage = heroName ? getHeroImageWithFallback(heroName) : null;
-                      
-                      if (heroImage) {
-                        return (
-                          <img 
-                            src={heroImage}
-                            alt={heroName}
-                            className="w-10 h-10 object-contain"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.parentNode.innerHTML = `<div class="text-xs text-gray-600 dark:text-gray-400 text-center">${heroName || 'Unknown'}</div>`;
-                            }}
-                          />
-                        );
-                      }
-                      return (
-                        <div className="text-xs text-gray-600 dark:text-gray-400 text-center">
-                          {heroName || 'Unknown'}
-                        </div>
-                      );
-                    })()}
+                    <HeroImage 
+                      heroName={player.hero || player.current_hero || player.main_hero || player.heroName || player.hero_name}
+                      size="md"
+                      showRole={false}
+                    />
                   </div>
                   
                   {/* Stats */}
@@ -1982,30 +1930,11 @@ function MatchDetailPage({ matchId, navigateTo }) {
                   
                   {/* Hero Image */}
                   <div className="flex justify-center">
-                    {(() => {
-                      // Try multiple possible hero name fields
-                      const heroName = player.hero || player.current_hero || player.main_hero || player.heroName || player.hero_name;
-                      const heroImage = heroName ? getHeroImageWithFallback(heroName) : null;
-                      
-                      if (heroImage) {
-                        return (
-                          <img 
-                            src={heroImage}
-                            alt={heroName}
-                            className="w-10 h-10 object-contain"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.parentNode.innerHTML = `<div class="text-xs text-gray-600 dark:text-gray-400 text-center">${heroName || 'Unknown'}</div>`;
-                            }}
-                          />
-                        );
-                      }
-                      return (
-                        <div className="text-xs text-gray-600 dark:text-gray-400 text-center">
-                          {heroName || 'Unknown'}
-                        </div>
-                      );
-                    })()}
+                    <HeroImage 
+                      heroName={player.hero || player.current_hero || player.main_hero || player.heroName || player.hero_name}
+                      size="md"
+                      showRole={false}
+                    />
                   </div>
                   
                   {/* Stats */}
@@ -2234,9 +2163,9 @@ function MatchDetailPage({ matchId, navigateTo }) {
         )}
       </div>
       
-      {/* Comprehensive Match Control Center - Render outside of page content */}
+      {/* Single Page Live Scoring - Render outside of page content */}
       {showLiveScoring && (
-        <ComprehensiveMatchControl
+        <SinglePageLiveScoring
           isOpen={showLiveScoring}
           match={match}
           onClose={() => setShowLiveScoring(false)}

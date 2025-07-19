@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
 import { TeamLogo } from '../../utils/imageUtils';
-import ComprehensiveMatchControl from './ComprehensiveMatchControl';
+import SinglePageLiveScoring from './SinglePageLiveScoring';
 
 /**
  * LIVE SCORING DASHBOARD - DEDICATED INTERFACE FOR REAL-TIME MATCH CONTROL
@@ -262,7 +262,7 @@ function LiveScoringDashboard({ navigateTo }) {
 
       {/* Comprehensive Match Control Center */}
       {selectedMatch && (
-        <ComprehensiveMatchControl
+        <SinglePageLiveScoring
           match={selectedMatch}
           isOpen={scoringOpen}
           onClose={closeLiveScoring}

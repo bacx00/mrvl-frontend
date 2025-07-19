@@ -285,6 +285,47 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  // Update user data (used after profile updates)
+  const updateUser = useCallback(async () => {
+    try {
+      const response = await api.get('/user');
+      console.log('📥 updateUser raw response:', response);
+      
+      // The backend returns { data: { ...userData }, success: true }
+      // We need to extract the nested user data
+      let userData;
+      if (response && response.data && typeof response.data === 'object') {
+        // This is the correct structure from AuthController::user()
+        userData = response.data;
+      } else if (response && response.user) {
+        // Fallback for different response structure
+        userData = response.user;
+      } else {
+        // Last resort - use response directly
+        userData = response;
+      }
+      
+      console.log('👤 Extracted user data:', userData);
+      
+      // Ensure roles are properly set
+      if (userData && !userData.roles && userData.role) {
+        userData.roles = [userData.role];
+      }
+      
+      // Update localStorage with new user data for persistence
+      if (userData) {
+        localStorage.setItem('userData', JSON.stringify(userData));
+      }
+      
+      setUser(userData);
+      console.log('✅ User context updated successfully with:', userData);
+      return userData;
+    } catch (error) {
+      console.error('❌ Failed to update user:', error);
+      throw error;
+    }
+  }, []);
+
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     if (token) {
@@ -510,8 +551,9 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    updateUser,
     api,
-  }), [user, loading, isAuthenticated, isAdmin, isModerator, login, register, logout]);
+  }), [user, loading, isAuthenticated, isAdmin, isModerator, login, register, logout, updateUser]);
 
   return (
     <AuthContext.Provider value={contextValue}>

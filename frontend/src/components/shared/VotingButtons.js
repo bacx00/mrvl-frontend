@@ -50,6 +50,12 @@ function VotingButtons({
 
     if (loading) return;
 
+    // Prevent voting on temporary items
+    if (itemId && itemId.toString().startsWith('temp-')) {
+      alert('Please wait for the post to be created before voting');
+      return;
+    }
+
     setLoading(true);
     try {
       const endpoint = getVoteEndpoint();

@@ -46,7 +46,7 @@ import AdminForums from './components/admin/AdminForums';
 import NewsFormSimple from './components/admin/NewsFormSimple';
 import EventForm from './components/admin/EventForm';
 import MatchForm from './components/admin/MatchForm';
-import ComprehensiveMatchControl from './components/admin/ComprehensiveMatchControl';
+import SinglePageLiveScoring from './components/admin/SinglePageLiveScoring';
 
 import './App.css';
 
@@ -89,7 +89,7 @@ const ROUTES = {
   'admin-event-edit': (props) => <EventForm {...props} eventId={props.params?.id} />,
   'admin-match-create': (props) => <MatchForm {...props} />,
   'admin-match-edit': (props) => <MatchForm {...props} matchId={props.params?.id} />,
-  'admin-live-scoring': (props) => <ComprehensiveMatchControl {...props} />,
+  'admin-live-scoring': (props) => <SinglePageLiveScoring {...props} />,
   'admin-forums': AdminForums,
   'admin-forum-categories': AdminForums,
   'admin-news-categories': AdminNews,

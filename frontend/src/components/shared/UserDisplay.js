@@ -1,5 +1,6 @@
 import React from 'react';
 import UserAvatar from '../common/UserAvatar';
+import { getImageUrl } from '../../utils/imageUtils';
 
 function UserDisplay({ 
   user, 
@@ -32,7 +33,7 @@ function UserDisplay({
     <div className={`flex items-center space-x-2 ${className}`}>
       {/* Avatar with hero flair */}
       {showAvatar && (
-        <UserAvatar user={user} size={size} showFlairs={false} />
+        <UserAvatar user={user} size={size} showFlairs={false} showName={false} />
       )}
 
       {/* Username */}
@@ -53,7 +54,7 @@ function UserDisplay({
           {user.team_flair.logo ? (
             <>
               <img 
-                src={user.team_flair.logo}
+                src={getImageUrl(user.team_flair.logo, 'team-logo')}
                 alt={user.team_flair.short_name || user.team_flair.name}
                 className={`${sizeClasses[size]} object-contain rounded`}
                 title={user.team_flair.name}

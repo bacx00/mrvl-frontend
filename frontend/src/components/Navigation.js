@@ -424,24 +424,7 @@ function Navigation({ currentPage, navigateTo, onAuthClick, user: propUser }) {
                   onClick={() => handleNavigationClick('user-profile', { id: user.id })}
                   className="flex items-center space-x-2 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 >
-                  <UserAvatar user={user} size="sm" showFlairs={false} />
-                  
-                  {/* Username */}
-                  <div className="hidden sm:block">
-                    <div className="text-xs font-medium text-gray-900 dark:text-white">
-                      {user.name}
-                    </div>
-                  </div>
-                  
-                  {/* Team Flair */}
-                  {user.team_flair && user.show_team_flair && (
-                    <img 
-                      src={user.team_flair.logo || '/images/team-placeholder.svg'}
-                      alt={user.team_flair.short_name || user.team_flair.name}
-                      className="w-5 h-5 object-contain"
-                      title={user.team_flair.name}
-                    />
-                  )}
+                  <UserAvatar user={user} size="sm" showFlairs={true} showName={true} />
                 </button>
 
                 {/* Logout */}

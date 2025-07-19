@@ -124,7 +124,8 @@ function EventDetailPage({ params, navigateTo }) {
       setSelectedTeamId('');
     } catch (error) {
       console.error('❌ Error adding team:', error);
-      alert('Failed to add team: ' + (error.response?.data?.message || error.message));
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to add team';
+      alert(errorMessage);
     }
   };
 
@@ -139,7 +140,8 @@ function EventDetailPage({ params, navigateTo }) {
       await fetchEventData();
     } catch (error) {
       console.error('❌ Error removing team:', error);
-      alert('Failed to remove team: ' + (error.response?.data?.message || error.message));
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to remove team';
+      alert(errorMessage);
     }
   };
 

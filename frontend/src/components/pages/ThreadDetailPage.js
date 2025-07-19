@@ -21,15 +21,19 @@ function ThreadDetailPage({ params, navigateTo }) {
     try {
       setLoading(true);
       
-      // Fetch thread details (includes posts)
-      const threadResponse = await api.get(`/forums/threads/${threadId}`);
+      // Add timestamp to prevent caching
+      const timestamp = new Date().getTime();
+      const threadResponse = await api.get(`/forums/threads/${threadId}?t=${timestamp}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       
       const threadData = threadResponse.data?.data || threadResponse.data;
       const postsData = threadData.posts || [];
       
-      console.log('✅ Thread loaded:', threadData);
-      console.log('✅ Thread posts loaded:', postsData.length);
-      
+      // Thread data loaded successfully
       setThread(threadData);
       setPosts(postsData);
       
@@ -44,7 +48,7 @@ function ThreadDetailPage({ params, navigateTo }) {
 
   useEffect(() => {
     fetchThreadData();
-  }, [threadId, fetchThreadData]);
+  }, [fetchThreadData]);
 
   const formatTimeAgo = (dateString) => {
     if (!dateString) return 'Unknown';
@@ -122,6 +126,12 @@ function ThreadDetailPage({ params, navigateTo }) {
     e.preventDefault();
     if (!replyContent.trim() || submitting) return;
 
+    // Check if replying to a temporary post
+    if (replyToPost?.id && replyToPost.id.toString().startsWith('temp-')) {
+      alert('Please wait for the post to be created before replying to it.');
+      return;
+    }
+
     try {
       setSubmitting(true);
       
@@ -130,68 +140,32 @@ function ThreadDetailPage({ params, navigateTo }) {
         parent_id: replyToPost?.id || null
       };
       
-      // Optimistic update - add the reply immediately
-      const tempReply = {
-        id: `temp-${Date.now()}`, // Temporary ID
-        content: replyContent.trim(),
-        author: user,
-        stats: { score: 0, upvotes: 0, downvotes: 0 },
-        meta: { created_at: new Date().toISOString(), edited: false },
-        mentions: [],
-        user_vote: null,
-        replies: [],
-        is_temp: true // Mark as temporary
-      };
-
-      // Add to appropriate location
-      if (replyToPost?.id) {
-        // Add as nested reply
-        setPosts(prevPosts => 
-          prevPosts.map(post => {
-            if (post.id === replyToPost.id) {
-              return {
-                ...post,
-                replies: [...(post.replies || []), tempReply]
-              };
-            }
-            return post;
-          })
-        );
-      } else {
-        // Add as top-level post
-        setPosts(prevPosts => [...prevPosts, tempReply]);
-      }
-
       const response = await api.post(`/user/forums/threads/${threadId}/posts`, payload);
       
       if (response.data?.success) {
         setReplyContent('');
         setReplyToPost(null);
         
-        // Always refresh to get the complete post data and updated counts
+        // Immediately fetch fresh data
         await fetchThreadData();
       } else {
-        // Remove optimistic update on failure
-        if (replyToPost?.id) {
-          setPosts(prevPosts => 
-            prevPosts.map(post => {
-              if (post.id === replyToPost.id) {
-                return {
-                  ...post,
-                  replies: (post.replies || []).filter(r => r.id !== tempReply.id)
-                };
-              }
-              return post;
-            })
-          );
-        } else {
-          setPosts(prevPosts => prevPosts.filter(p => p.id !== tempReply.id));
-        }
+        alert('Failed to submit reply. Please try again.');
       }
       
     } catch (error) {
       console.error('❌ Failed to submit reply:', error);
-      alert('Failed to submit reply. Please try again.');
+      
+      // Check for specific error messages
+      if (error.message?.includes('Thread is locked')) {
+        alert('This thread is locked and no longer accepts replies.');
+        // Refresh thread data to update UI
+        await fetchThreadData();
+      } else if (error.message?.includes('parent id is invalid')) {
+        alert('The post you are replying to no longer exists. The page will refresh.');
+        await fetchThreadData();
+      } else {
+        alert('Failed to submit reply. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -207,20 +181,6 @@ function ThreadDetailPage({ params, navigateTo }) {
 
     try {
       setSubmitting(true);
-      
-      // Optimistic update
-      setPosts(prevPosts => 
-        prevPosts.map(post => {
-          if (post.id === postId) {
-            return {
-              ...post,
-              content: editContent.trim(),
-              meta: { ...post.meta, edited: true, updated_at: new Date().toISOString() }
-            };
-          }
-          return post;
-        })
-      );
 
       const response = await api.put(`/user/forums/posts/${postId}`, {
         content: editContent.trim()
@@ -229,17 +189,15 @@ function ThreadDetailPage({ params, navigateTo }) {
       if (response.data?.success) {
         setEditingPost(null);
         setEditContent('');
-        // Refresh to get server data
+        
+        // Immediately fetch fresh data
         await fetchThreadData();
       } else {
-        // Revert optimistic update on failure
-        await fetchThreadData();
+        alert('Failed to edit post. Please try again.');
       }
     } catch (error) {
       console.error('❌ Failed to edit post:', error);
       alert('Failed to edit post. Please try again.');
-      // Revert optimistic update on error
-      await fetchThreadData();
     } finally {
       setSubmitting(false);
     }
@@ -250,24 +208,18 @@ function ThreadDetailPage({ params, navigateTo }) {
 
     try {
       setSubmitting(true);
-      
-      // Optimistic update - hide the post immediately
-      setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
 
       const response = await api.delete(`/user/forums/posts/${postId}`);
 
       if (response.data?.success) {
-        // Post successfully deleted - keep it hidden
-        await fetchThreadData(); // Refresh to update counts
-      } else {
-        // Revert optimistic update on failure
+        // Immediately fetch fresh data
         await fetchThreadData();
+      } else {
+        alert('Failed to delete post. Please try again.');
       }
     } catch (error) {
       console.error('❌ Failed to delete post:', error);
       alert('Failed to delete post. Please try again.');
-      // Revert optimistic update on error
-      await fetchThreadData();
     } finally {
       setSubmitting(false);
     }
@@ -275,14 +227,18 @@ function ThreadDetailPage({ params, navigateTo }) {
 
   const handlePinThread = async () => {
     try {
-      const endpoint = thread.pinned 
+      const isCurrentlyPinned = thread.meta?.pinned;
+      
+      const endpoint = isCurrentlyPinned 
         ? `/admin/forums/threads/${threadId}/unpin`
         : `/admin/forums/threads/${threadId}/pin`;
       
       const response = await api.post(endpoint);
       
-      if (response.data?.success) {
-        setThread(prev => ({ ...prev, pinned: !prev.pinned }));
+      // Check for success in response or successful message
+      if (response.data?.success || response.data?.message?.includes('successfully')) {
+        // Immediately fetch fresh data
+        await fetchThreadData();
       } else {
         alert('Failed to update thread pin status');
       }
@@ -294,14 +250,18 @@ function ThreadDetailPage({ params, navigateTo }) {
 
   const handleLockThread = async () => {
     try {
-      const endpoint = thread.locked 
+      const isCurrentlyLocked = thread.meta?.locked;
+      
+      const endpoint = isCurrentlyLocked 
         ? `/admin/forums/threads/${threadId}/unlock`
         : `/admin/forums/threads/${threadId}/lock`;
       
       const response = await api.post(endpoint);
       
-      if (response.data?.success) {
-        setThread(prev => ({ ...prev, locked: !prev.locked }));
+      // Check for success in response or successful message
+      if (response.data?.success || response.data?.message?.includes('successfully')) {
+        // Immediately fetch fresh data
+        await fetchThreadData();
       } else {
         alert('Failed to update thread lock status');
       }
@@ -370,7 +330,7 @@ function ThreadDetailPage({ params, navigateTo }) {
           {/* Post Actions */}
           <div className="flex items-center space-x-4 mb-3">
             {/* Reply Button */}
-            {isAuthenticated && (
+            {isAuthenticated && !post.is_temp && !thread.meta?.locked && (
               <button
                 onClick={() => setReplyToPost(post)}
                 className="text-xs text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
@@ -565,12 +525,12 @@ function ThreadDetailPage({ params, navigateTo }) {
           <div className="flex-1 min-w-0">
             {/* Thread badges */}
             <div className="flex items-center space-x-2 mb-3">
-              {thread.pinned && (
+              {thread.meta?.pinned && (
                 <span className="px-2 py-1 text-xs font-bold rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
                   📌 PINNED
                 </span>
               )}
-              {thread.locked && (
+              {thread.meta?.locked && (
                 <span className="px-2 py-1 text-xs font-bold rounded bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300">
                   🔒 LOCKED
                 </span>
@@ -638,22 +598,22 @@ function ThreadDetailPage({ params, navigateTo }) {
                   <button
                     onClick={() => handlePinThread()}
                     className={`px-3 py-1 text-xs rounded ${
-                      thread.pinned 
+                      thread.meta?.pinned 
                         ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300' 
                         : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                     } hover:opacity-80 transition-opacity`}
                   >
-                    {thread.pinned ? '📌 Unpin' : '📌 Pin'}
+                    {thread.meta?.pinned ? '📌 Unpin' : '📌 Pin'}
                   </button>
                   <button
                     onClick={() => handleLockThread()}
                     className={`px-3 py-1 text-xs rounded ${
-                      thread.locked 
+                      thread.meta?.locked 
                         ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300' 
                         : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                     } hover:opacity-80 transition-opacity`}
                   >
-                    {thread.locked ? '🔒 Unlock' : '🔒 Lock'}
+                    {thread.meta?.locked ? '🔒 Unlock' : '🔒 Lock'}
                   </button>
                 </div>
               </div>
@@ -674,7 +634,7 @@ function ThreadDetailPage({ params, navigateTo }) {
       )}
 
       {/* Reply Form */}
-      {isAuthenticated && !thread.locked && !replyToPost && (
+      {isAuthenticated && !thread.meta?.locked && !replyToPost && (
         <div className="card p-6 mt-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Post Reply</h3>
           <form onSubmit={handleSubmitReply}>
@@ -702,7 +662,7 @@ function ThreadDetailPage({ params, navigateTo }) {
       )}
 
       {/* Login Prompt for Unauthenticated Users */}
-      {!isAuthenticated && !thread.locked && (
+      {!isAuthenticated && !thread.meta?.locked && (
         <div className="card p-6 mt-6 text-center">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Join the Discussion</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
@@ -718,7 +678,7 @@ function ThreadDetailPage({ params, navigateTo }) {
       )}
 
       {/* Locked Notice */}
-      {thread.locked && (
+      {thread.meta?.locked && (
         <div className="card p-6 mt-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
           <div className="flex items-center space-x-2 text-red-800 dark:text-red-300">
             <span className="text-lg">🔒</span>

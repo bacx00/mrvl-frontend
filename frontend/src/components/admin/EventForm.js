@@ -148,7 +148,8 @@ function EventForm({ eventId, navigateTo }) {
       alert('Team added successfully!');
     } catch (error) {
       console.error('Error adding team:', error);
-      alert('Error adding team');
+      const errorMessage = error.response?.data?.message || error.message || 'Error adding team';
+      alert(errorMessage);
     }
   };
 
@@ -161,7 +162,8 @@ function EventForm({ eventId, navigateTo }) {
       alert('Team removed successfully!');
     } catch (error) {
       console.error('Error removing team:', error);
-      alert('Error removing team');
+      const errorMessage = error.response?.data?.message || error.message || 'Error removing team';
+      alert(errorMessage);
     }
   };
 
