@@ -1,25 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
 import { TeamLogo, PlayerAvatar, getCountryFlag } from '../../utils/imageUtils';
+import { parseTextWithMentions } from '../shared/UserDisplay';
+import MentionsSection from '../shared/MentionsSection';
 
 function TeamDetailPage({ params, navigateTo }) {
   const [team, setTeam] = useState(null);
   const [players, setPlayers] = useState([]);
-  const [matches, setMatches] = useState([]);
-  const [stats, setStats] = useState({});
-  const [activeTab, setActiveTab] = useState('overview');
+  const [upcomingMatches, setUpcomingMatches] = useState([]);
+  const [liveMatches, setLiveMatches] = useState([]);
+  const [recentMatches, setRecentMatches] = useState([]);
+  const [matchStats, setMatchStats] = useState({});
+  const [activeMatchTab, setActiveMatchTab] = useState('recent');
   const [loading, setLoading] = useState(true);
+  const [matchesLoading, setMatchesLoading] = useState(false);
+  const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, per_page: 10, total: 0 });
   const { api } = useAuth();
 
   const teamId = params?.id;
-
-  console.log('🔍 TeamDetailPage - Received team ID:', teamId);
 
   useEffect(() => {
     if (teamId) {
       fetchTeamData();
     } else {
-      console.error('❌ TeamDetailPage: No team ID provided');
+      console.error('TeamDetailPage: No team ID provided');
       setLoading(false);
     }
   }, [teamId]);
@@ -27,105 +31,172 @@ function TeamDetailPage({ params, navigateTo }) {
   const fetchTeamData = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Fetching team data for ID:', teamId);
+      console.log('Fetching team data for ID:', teamId);
       
-      // Try to fetch real team data from API
-      try {
-        const response = await api.get(`/teams/${teamId}`);
-        let teamData = response.data || response;
-        
-        console.log('✅ Real team data received:', teamData);
-        
-        // Transform backend data to frontend format
-        const transformedTeam = {
-          id: teamData.id,
-          name: teamData.name,
-          shortName: teamData.short_name,
-          logo: teamData.logo_url || teamData.logo,
-          country: teamData.country,
-          region: teamData.region,
-          rating: teamData.rating || 1500,
-          rank: teamData.rank,
-          winRate: teamData.win_rate || 0,
-          points: teamData.points || 0,
-          peak: teamData.peak || teamData.rating,
-          founded: teamData.founded,
-          captain: teamData.captain,
-          coach: teamData.coach,
-          website: teamData.website,
-          earnings: teamData.earnings,
-          social_media: teamData.social_media,
-          achievements: teamData.achievements,
-          created_at: teamData.created_at
-        };
+      // Fetch comprehensive team data from API
+      const response = await api.get(`/teams/${teamId}`);
+      const teamData = response.data?.data || response.data || response;
+      
+      console.log('Real team data received:', teamData);
+      
+      // Transform backend data to frontend format
+      const transformedTeam = {
+        id: teamData.id,
+        name: teamData.name,
+        shortName: teamData.short_name || teamData.shortName,
+        logo: teamData.logo_url || teamData.logo,
+        country: teamData.country,
+        region: teamData.region,
+        rating: teamData.rating || 1500,
+        rank: teamData.rank,
+        winRate: teamData.stats?.win_rate || 0,
+        points: teamData.points || 0,
+        peak: teamData.peak_rating || teamData.rating,
+        founded: teamData.founded,
+        captain: teamData.captain,
+        coach: teamData.coach,
+        website: teamData.website,
+        earnings: teamData.earnings || teamData.total_earnings || 0,
+        social_media: teamData.social_media || teamData.social_links || {},
+        achievements: teamData.achievements || [],
+        created_at: teamData.created_at,
+        division: teamData.division,
+        wins: teamData.wins || 0,
+        losses: teamData.losses || 0
+      };
 
-        // Fetch team players
-        let teamPlayers = [];
+      // Extract players from team data
+      let teamPlayers = [];
+      if (teamData.current_roster && Array.isArray(teamData.current_roster)) {
+        teamPlayers = teamData.current_roster;
+      } else if (teamData.players && Array.isArray(teamData.players)) {
+        teamPlayers = teamData.players;
+      } else {
+        // Fetch players separately if not included
         try {
-          const playersResponse = await api.get(`/players`);
-          const allPlayers = playersResponse.data || playersResponse || [];
-          // Filter players belonging to this team
-          teamPlayers = allPlayers.filter(player => 
-            player.team_id === parseInt(teamId) || 
-            (player.team && player.team.id === parseInt(teamId))
-          );
-          console.log('✅ Team players found:', teamPlayers.length);
+          const playersResponse = await api.get(`/players?team_id=${teamId}`);
+          teamPlayers = playersResponse.data?.data || playersResponse.data || [];
         } catch (error) {
-          console.error('❌ Error fetching team players:', error);
+          console.error('Error fetching team players:', error);
         }
-
-        // Set the transformed team data
-        setTeam(transformedTeam);
-        setPlayers(teamPlayers);
-        setMatches([]);
-        setStats({});
-        
-      } catch (error) {
-        console.error('❌ Error fetching team data from API - NO FALLBACK DATA:', error);
-        
-        // ✅ NO MOCK DATA - Set null/empty states
-        setTeam(null);
-        setPlayers([]);
-        setMatches([]);
-        setStats({});
-        
-        console.log('❌ TeamDetailPage: No team data available for ID:', teamId);
       }
-    } catch (error) {
-      console.error('❌ Error in fetchTeamData:', error);
+      console.log('Team players found:', teamPlayers.length);
+
+      // Fetch all match categories using new API endpoints
+      await fetchTeamMatches();
+
+      // Calculate team stats from backend data
+      const teamStats = {
+        rating: transformedTeam.rating,
+        ranking: transformedTeam.rank || 1,
+        winRate: teamData.stats?.win_rate || 0,
+        mapsWon: teamData.stats?.maps_won || 0,
+        mapsLost: teamData.stats?.maps_lost || 0,
+        avgTeamRating: calculateAvgTeamRating(teamPlayers),
+        bestMap: teamData.stats?.best_map || 'Unknown',
+        totalEarnings: transformedTeam.earnings,
+        matchesPlayed: teamData.stats?.matches_played || 0,
+        averageMatchDuration: teamData.stats?.avg_match_duration || 25,
+        recentForm: teamData.stats?.recent_form || teamData.form || [],
+        mapWinRate: teamData.stats?.map_win_rates || {},
+        record: `${transformedTeam.wins}-${transformedTeam.losses}`,
+        mapDifferential: teamData.stats?.map_differential || 0
+      };
+
+      // Set all data
+      setTeam(transformedTeam);
+      setPlayers(teamPlayers);
+      setMatchStats(teamStats);
       
-      // ✅ NO MOCK DATA - Set null/empty states
+    } catch (error) {
+      console.error('Error fetching team data:', error);
+      
+      // NO MOCK DATA - Set null/empty states
       setTeam(null);
       setPlayers([]);
-      setMatches([]);
-      setStats({});
+      setUpcomingMatches([]);
+      setLiveMatches([]);
+      setRecentMatches([]);
+      setMatchStats({});
     } finally {
       setLoading(false);
     }
   };
 
-  // No fallback data generation - Using null states for errors
-  const generateFallbackPlayers = (teamId) => {
-    const playerNames = [
-      'Tony Stark', 'Steve Rogers', 'Natasha Romanoff', 'Bruce Banner', 'Clint Barton',
-      'Thor Odinson', 'Wanda Maximoff', 'Vision', 'Sam Wilson', 'James Rhodes',
-      'Scott Lang', 'Hope van Dyne', 'Carol Danvers', 'Stephen Strange', 'Peter Parker'
-    ];
+  // Fetch team matches from new API endpoints
+  const fetchTeamMatches = async (page = 1) => {
+    if (!teamId) return;
     
-    const roles = ['Duelist', 'Tank', 'Support', 'Duelist', 'Support'];
-    const countries = ['US', 'CA', 'UK', 'DE', 'FR', 'KR', 'JP', 'BR'];
-    
-    return Array.from({ length: 5 }, (_, i) => ({
-      id: parseInt(teamId) * 100 + i + 1,
-      name: playerNames[Math.floor(Math.random() * playerNames.length)],
-      username: `Player${i + 1}`,
-      real_name: playerNames[Math.floor(Math.random() * playerNames.length)],
-      role: roles[i],
-      country: countries[Math.floor(Math.random() * countries.length)],
-      age: Math.floor(Math.random() * 10) + 18,
-      rating: Math.floor(Math.random() * 800) + 1200,
-      main_hero: ['Iron Man', 'Captain America', 'Thor', 'Hulk', 'Spider-Man'][i]
-    }));
+    try {
+      setMatchesLoading(true);
+      
+      // Fetch all match categories in parallel
+      const [upcomingResponse, liveResponse, recentResponse, statsResponse] = await Promise.all([
+        api.get(`/teams/${teamId}/matches/upcoming?per_page=10&page=${page}`).catch(() => ({ data: { data: [], meta: {} } })),
+        api.get(`/teams/${teamId}/matches/live`).catch(() => ({ data: { data: [] } })),
+        api.get(`/teams/${teamId}/matches/recent?per_page=10&page=${page}`).catch(() => ({ data: { data: [], meta: {} } })),
+        api.get(`/teams/${teamId}/matches/stats`).catch(() => ({ data: { data: {} } }))
+      ]);
+      
+      // Set upcoming matches
+      const upcomingData = upcomingResponse.data.data || [];
+      setUpcomingMatches(upcomingData);
+      
+      // Set live matches
+      const liveData = liveResponse.data.data || [];
+      setLiveMatches(liveData);
+      
+      // Set recent matches
+      const recentData = recentResponse.data.data || [];
+      setRecentMatches(recentData);
+      
+      // Set pagination for active tab
+      if (recentResponse.data.meta) {
+        setPagination(recentResponse.data.meta);
+      }
+      
+      // Set match statistics
+      const statsData = statsResponse.data.data || {};
+      setMatchStats(prev => ({ ...prev, ...statsData }));
+      
+      console.log('Team matches loaded:', {
+        upcoming: upcomingData.length,
+        live: liveData.length,
+        recent: recentData.length
+      });
+      
+    } catch (error) {
+      console.error('Error fetching team matches:', error);
+    } finally {
+      setMatchesLoading(false);
+    }
+  };
+
+  // Handle match tab change
+  const handleMatchTabChange = async (tab) => {
+    setActiveMatchTab(tab);
+    if (tab === 'recent' && recentMatches.length === 0) {
+      await fetchTeamMatches();
+    }
+  };
+
+  // Handle pagination
+  const handlePageChange = async (page) => {
+    await fetchTeamMatches(page);
+  };
+
+  // Helper function to format currency
+  const formatCurrency = (amount) => {
+    if (typeof amount === 'string' && amount.includes('$')) return amount;
+    if (!amount || amount === 0) return '$0';
+    return `$${amount.toLocaleString()}`;
+  };
+
+  // Helper function to format date
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Unknown';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   // Utility function to calculate average team rating
@@ -138,20 +209,12 @@ function TeamDetailPage({ params, navigateTo }) {
   const getRoleColor = (role) => {
     switch (role) {
       case 'Duelist': return 'text-red-600 dark:text-red-400';
-      case 'Tank': return 'text-blue-600 dark:text-blue-400';
-      case 'Support': return 'text-green-600 dark:text-green-400';
+      case 'Vanguard': return 'text-blue-600 dark:text-blue-400';
+      case 'Strategist': return 'text-green-600 dark:text-green-400';
       case 'Coach': return 'text-purple-600 dark:text-purple-400';
-      case 'IGL': return 'text-yellow-600 dark:text-yellow-400';
       default: return 'text-gray-600 dark:text-gray-400';
     }
   };
-
-  const tabs = [
-    { id: 'overview', name: 'Overview' },
-    { id: 'roster', name: 'Roster' },
-    { id: 'matches', name: 'Match History' },
-    { id: 'stats', name: 'Statistics' }
-  ];
 
   if (loading) {
     return (
@@ -167,337 +230,594 @@ function TeamDetailPage({ params, navigateTo }) {
   if (!team) {
     return (
       <div className="card p-12 text-center">
-        <div className="text-6xl mb-4">🔍</div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Team Not Found</h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
+        <div className="text-4xl mb-4">Team Not Found</div>
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
           The team you're looking for doesn't exist or may have been removed.
-        </p>
-        <button 
-          onClick={() => navigateTo && navigateTo('teams')} 
-          className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+        </h3>
+        <button
+          onClick={() => navigateTo('teams')}
+          className="btn bg-red-600 text-white hover:bg-red-700 mt-4"
         >
-          ← Back to Teams
+          View All Teams
         </button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-500">
-        <button 
-          onClick={() => navigateTo && navigateTo('home')}
-          className="hover:text-red-600 dark:hover:text-red-400 transition-colors"
-        >
-          Home
-        </button>
-        <span>›</span>
-        <button 
-          onClick={() => navigateTo && navigateTo('teams')}
-          className="hover:text-red-600 dark:hover:text-red-400 transition-colors"
-        >
-          Teams
-        </button>
-        <span>›</span>
-        <span className="text-gray-900 dark:text-white">{team.shortName}</span>
-      </div>
-
+    <div className="animate-fade-in">
       {/* VLR.gg Style Team Header */}
-      <div className="card">
-        {/* Header Background */}
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-600 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/10 dark:to-red-800/10">
-          <div className="flex items-center justify-between">
+      <div className="card mb-8">
+        <div className="border border-white dark:border-gray-300 p-8 bg-gray-50 dark:bg-gray-800">
+          <div className="flex items-start justify-between">
             <div className="flex items-center space-x-6">
               <TeamLogo 
                 team={team} 
-                size="w-20 h-20" 
-                className="border-2 border-white dark:border-gray-800 shadow-lg"
+                size="w-24 h-24" 
+                className="ring-4 ring-white/20"
               />
               <div>
                 <h1 className="text-4xl font-bold text-gray-900 dark:text-white">{team.name}</h1>
-                <div className="flex items-center space-x-4 mt-2">
-                  <span className="text-xl text-gray-600 dark:text-gray-400 font-medium">{team.shortName}</span>
+                <div className="text-xl text-gray-600 dark:text-gray-300 mb-2">{team.shortName}</div>
+                <div className="flex items-center space-x-4 mb-3">
                   <div className="flex items-center space-x-2">
                     <span className="text-lg">{getCountryFlag(team.country)}</span>
-                    <span className="text-gray-600 dark:text-gray-400">{team.region}</span>
+                    <span className="text-gray-600 dark:text-gray-300">{team.region}</span>
                   </div>
                 </div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-4xl font-bold text-red-600 dark:text-red-400">{Math.floor(stats.rating)}</div>
-              <div className="text-sm text-gray-500 dark:text-gray-500">Team Rating</div>
-              <div className="text-lg font-bold text-green-600 dark:text-green-400 mt-1">#{stats.ranking}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-500">World Rank</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Team Info Grid */}
-        <div className="p-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-            <div>
-              <div className="text-gray-500 dark:text-gray-500 text-sm">Win Rate</div>
-              <div className="font-bold text-green-600 dark:text-green-400 text-xl mt-1">{stats.winRate}%</div>
-            </div>
-            <div>
-              <div className="text-gray-500 dark:text-gray-500 text-sm">Maps Won</div>
-              <div className="font-medium text-gray-900 dark:text-white mt-1">{stats.mapsWon}</div>
-            </div>
-            <div>
-              <div className="text-gray-500 dark:text-gray-500 text-sm">Maps Lost</div>
-              <div className="font-medium text-gray-900 dark:text-white mt-1">{stats.mapsLost}</div>
-            </div>
-            <div>
-              <div className="text-gray-500 dark:text-gray-500 text-sm">Avg Team Rating</div>
-              <div className="font-medium text-gray-900 dark:text-white mt-1">{stats.avgTeamRating}</div>
-            </div>
-            <div>
-              <div className="text-gray-500 dark:text-gray-500 text-sm">Best Map</div>
-              <div className="font-medium text-gray-900 dark:text-white mt-1">{stats.bestMap}</div>
-            </div>
-            <div>
-              <div className="text-gray-500 dark:text-gray-500 text-sm">Total Earnings</div>
-              <div className="font-medium text-green-600 dark:text-green-400 mt-1">{stats.totalEarnings}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Form */}
-      <div className="card p-6">
-        <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Recent Form</h3>
-        <div className="flex items-center space-x-2">
-          {stats.recentForm && stats.recentForm.map((result, index) => (
-            <div
-              key={index}
-              className={`w-8 h-8 rounded flex items-center justify-center font-bold text-white text-sm ${
-                result === 'W' ? 'bg-green-600' : 'bg-red-600'
-              }`}
-            >
-              {result}
-            </div>
-          ))}
-          <span className="ml-4 text-gray-600 dark:text-gray-400 text-sm">Last 10 matches</span>
-        </div>
-      </div>
-
-      {/* Navigation Tabs */}
-      <div className="card">
-        <div className="flex border-b border-gray-200 dark:border-gray-700">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-                activeTab === tab.id
-                  ? 'text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400 bg-red-50 dark:bg-red-900/10'
-                  : 'text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-              }`}
-            >
-              {tab.name}
-            </button>
-          ))}
-        </div>
-
-        <div className="p-6">
-          {/* Overview Tab */}
-          {activeTab === 'overview' && (
-            <div className="space-y-8">
-              {/* Performance Overview */}
-              <div>
-                <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Performance Overview</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded">
-                    <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">{stats.winRate}%</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-500">Win Rate</div>
+                {/* Social Links - VLR.gg Style */}
+                {team.social_media && Object.keys(team.social_media).length > 0 && (
+                  <div className="flex items-center space-x-4">
+                    {team.social_media.twitter && (
+                      <a 
+                        href={`https://twitter.com/${team.social_media.twitter}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
+                      >
+                        🐦 Twitter
+                      </a>
+                    )}
+                    {team.social_media.instagram && (
+                      <a 
+                        href={`https://instagram.com/${team.social_media.instagram}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
+                      >
+                        📷 Instagram
+                      </a>
+                    )}
+                    {team.social_media.youtube && (
+                      <a 
+                        href={`https://youtube.com/@${team.social_media.youtube}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
+                      >
+                        🎥 YouTube
+                      </a>
+                    )}
+                    {team.social_media.website && (
+                      <a 
+                        href={team.social_media.website.startsWith('http') ? team.social_media.website : `https://${team.social_media.website}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
+                      >
+                        🌐 Website
+                      </a>
+                    )}
                   </div>
-                  <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded">
-                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">{stats.matchesPlayed}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-500">Matches Played</div>
-                  </div>
-                  <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded">
-                    <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-1">{stats.averageMatchDuration}m</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-500">Avg Match Duration</div>
-                  </div>
-                  <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded">
-                    <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mb-1">#{stats.ranking}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-500">World Ranking</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Key Players Preview */}
-              <div>
-                <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Key Players</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {players.slice(0, 3).map((player) => (
-                    <div
-                      key={player.id}
-                      className="border border-gray-200 dark:border-gray-700 rounded p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                      onClick={() => navigateTo && navigateTo('player-detail', { id: player.id })}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <PlayerAvatar player={player} size="w-12 h-12" />
-                        <div className="flex-1">
-                          <div className="font-medium text-gray-900 dark:text-white">{player.username || player.name}</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-500">{player.real_name || player.realName}</div>
-                          <div className={`text-sm font-medium ${getRoleColor(player.role)}`}>{player.role}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-red-600 dark:text-red-400">{Math.floor(player.rating || 1500)}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-500">Rating</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Roster Tab */}
-          {activeTab === 'roster' && (
-            <div>
-              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Current Roster</h3>
-              <div className="space-y-4">
-                {players.length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="text-gray-500 dark:text-gray-500">No players found for this team</div>
-                  </div>
-                ) : (
-                  players.map((player) => (
-                    <div
-                      key={player.id}
-                      className="border border-gray-200 dark:border-gray-700 rounded p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                      onClick={() => navigateTo && navigateTo('player-detail', { id: player.id })}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <PlayerAvatar player={player} size="w-16 h-16" />
-                          <div>
-                            <div className="font-bold text-gray-900 dark:text-white text-lg">{player.username || player.name}</div>
-                            <div className="text-gray-600 dark:text-gray-400">{player.real_name || player.realName}</div>
-                            <div className="flex items-center space-x-3 mt-1">
-                              <span className={`font-medium ${getRoleColor(player.role)}`}>{player.role}</span>
-                              <span className="text-gray-500 dark:text-gray-500">•</span>
-                              <span className="text-gray-600 dark:text-gray-400">{getCountryFlag(player.country)} {player.country}</span>
-                              {player.age && (
-                                <>
-                                  <span className="text-gray-500 dark:text-gray-500">•</span>
-                                  <span className="text-gray-600 dark:text-gray-400">{player.age} years</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-red-600 dark:text-red-400">{Math.floor(player.rating || 1500)}</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-500">Rating</div>
-                          {player.main_hero && (
-                            <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Main: {player.main_hero}</div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))
                 )}
               </div>
             </div>
-          )}
+            <div className="text-right">
+              <div className="text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(matchStats.totalEarnings || team.earnings || 0)}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-300">Total Earnings</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{Math.floor(matchStats.rating || team.rating || 1500)}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-300">Rating • #{matchStats.ranking || team.rank || 'N/A'}</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-          {/* Match History Tab */}
-          {activeTab === 'matches' && (
-            <div>
-              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Recent Match History</h3>
-              <div className="space-y-2">
-                {matches.map((match) => (
-                  <div key={match.id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-8 h-8 rounded flex items-center justify-center text-xs font-bold ${
-                        match.result === 'W' 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                      }`}>
-                        {match.result}
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900 dark:text-white">vs {match.opponent.short_name}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-500">{match.event}</div>
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="font-bold text-gray-900 dark:text-white">{match.score}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-500">{match.maps.join(', ')}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">{match.date}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-500">{match.duration}</div>
-                    </div>
+      {/* Main Content Layout - VLR.gg Style */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Content Area */}
+        <div className="lg:col-span-2 space-y-8">
+
+          {/* Team Statistics */}
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Team Statistics</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div>
+                <div className="text-gray-500 dark:text-gray-500 text-sm">Record</div>
+                <div className="font-bold text-gray-900 dark:text-white text-lg mt-1">{matchStats.record || `${team.wins || 0}-${team.losses || 0}`}</div>
+              </div>
+              <div>
+                <div className="text-gray-500 dark:text-gray-500 text-sm">Win Rate</div>
+                <div className="font-bold text-green-600 dark:text-green-400 text-lg mt-1">{matchStats.winRate || 0}%</div>
+              </div>
+              <div>
+                <div className="text-gray-500 dark:text-gray-500 text-sm">Avg Team Rating</div>
+                <div className="font-medium text-gray-900 dark:text-white mt-1">{Math.floor(matchStats.avgTeamRating || 1500)}</div>
+              </div>
+              <div>
+                <div className="text-gray-500 dark:text-gray-500 text-sm">Map Diff</div>
+                <div className={`font-medium mt-1 ${(matchStats.mapDifferential || 0) > 0 ? 'text-green-600' : (matchStats.mapDifferential || 0) < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                  {(matchStats.mapDifferential || 0) > 0 ? '+' : ''}{matchStats.mapDifferential || 0}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Form */}
+          {matchStats.recentForm && matchStats.recentForm.length > 0 && (
+            <div className="card p-6">
+              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Recent Form</h3>
+              <div className="flex items-center space-x-2">
+                {matchStats.recentForm.map((result, index) => (
+                  <div
+                    key={index}
+                    className={`w-8 h-8 rounded flex items-center justify-center font-bold text-white text-sm ${
+                      result === 'W' ? 'bg-green-600' : 'bg-red-600'
+                    }`}
+                  >
+                    {result}
                   </div>
                 ))}
+                <span className="ml-4 text-gray-600 dark:text-gray-400 text-sm">Last {matchStats.recentForm.length} matches</span>
               </div>
             </div>
           )}
 
-          {/* Statistics Tab */}
-          {activeTab === 'stats' && (
-            <div className="space-y-8">
-              {/* Map Performance */}
-              <div>
-                <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Map Performance</h3>
-                <div className="space-y-4">
-                  {Object.entries(stats.mapWinRate || {}).map(([map, data]) => (
-                    <div key={map} className="border border-gray-200 dark:border-gray-700 rounded p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-gray-900 dark:text-white">{map}</h4>
-                        <span className="text-gray-600 dark:text-gray-400 text-sm">{data.played} matches</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-48 h-2 bg-gray-200 dark:bg-gray-700 rounded">
-                            <div 
-                              className="h-full bg-green-600 rounded" 
-                              style={{ width: `${data.winRate}%` }}
-                            />
-                          </div>
-                          <span className="font-bold text-green-600 dark:text-green-400">{data.winRate}%</span>
-                        </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                          {data.won}W - {data.lost}L
-                        </div>
-                      </div>
+          {/* Active Roster */}
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Active Roster</h3>
+            <div className="space-y-3">
+              {players.map((player) => (
+                <div
+                  key={player.id}
+                  className="flex items-center space-x-4 p-3 border border-gray-200 dark:border-gray-700 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                  onClick={() => navigateTo && navigateTo('player-detail', { id: player.id })}
+                >
+                  <PlayerAvatar player={player} size="w-12 h-12" />
+                  <div className="flex-1">
+                    <div className="font-semibold text-gray-900 dark:text-white hover:text-red-600 dark:hover:text-red-400">
+                      {player.username || player.name}
                     </div>
-                  ))}
+                    <div className="flex items-center space-x-2 text-sm">
+                      <span className={getRoleColor(player.role)}>{player.role}</span>
+                      <span className="text-gray-500">•</span>
+                      <span className="text-gray-600 dark:text-gray-400">{player.real_name}</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-gray-900 dark:text-white">{player.rating || 1500}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-500">Rating</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {team.coach && (
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center space-x-2">
+                  <span className="text-gray-600 dark:text-gray-400">Coach:</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{team.coach}</span>
                 </div>
               </div>
+            )}
+          </div>
 
-              {/* Team Statistics */}
-              <div>
-                <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Team Statistics</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  <div className="text-center p-6 bg-gray-50 dark:bg-gray-800 rounded">
-                    <div className="text-3xl mb-2">🏆</div>
-                    <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mb-1">#{stats.ranking}</div>
-                    <div className="text-gray-600 dark:text-gray-400">World Rank</div>
-                  </div>
-                  <div className="text-center p-6 bg-gray-50 dark:bg-gray-800 rounded">
-                    <div className="text-3xl mb-2">⚔️</div>
-                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">{(stats.mapsWon || 0) + (stats.mapsLost || 0)}</div>
-                    <div className="text-gray-600 dark:text-gray-400">Total Maps</div>
-                  </div>
-                  <div className="text-center p-6 bg-gray-50 dark:bg-gray-800 rounded">
-                    <div className="text-3xl mb-2">💰</div>
-                    <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">{stats.totalEarnings}</div>
-                    <div className="text-gray-600 dark:text-gray-400">Earnings</div>
-                  </div>
-                  <div className="text-center p-6 bg-gray-50 dark:bg-gray-800 rounded">
-                    <div className="text-3xl mb-2">⭐</div>
-                    <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-1">{stats.avgTeamRating}</div>
-                    <div className="text-gray-600 dark:text-gray-400">Avg Rating</div>
-                  </div>
+          {/* Match History Section - VLR.gg Style */}
+          <div className="card">
+            {/* Match Tabs */}
+            <div className="border-b border-gray-200 dark:border-gray-700">
+              <div className="flex">
+                <button
+                  onClick={() => handleMatchTabChange('upcoming')}
+                  className={`px-6 py-4 text-sm font-medium transition-colors flex items-center space-x-2 ${
+                    activeMatchTab === 'upcoming'
+                      ? 'text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400 bg-red-50 dark:bg-red-900/10'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                  }`}
+                >
+                  <span>Upcoming</span>
+                  {upcomingMatches.length > 0 && (
+                    <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+                      {upcomingMatches.length}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => handleMatchTabChange('live')}
+                  className={`px-6 py-4 text-sm font-medium transition-colors flex items-center space-x-2 ${
+                    activeMatchTab === 'live'
+                      ? 'text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400 bg-red-50 dark:bg-red-900/10'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                  }`}
+                >
+                  <span>Live</span>
+                  {liveMatches.length > 0 && (
+                    <span className="bg-red-600 text-white text-xs px-2 py-1 rounded-full animate-pulse">
+                      {liveMatches.length}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => handleMatchTabChange('recent')}
+                  className={`px-6 py-4 text-sm font-medium transition-colors flex items-center space-x-2 ${
+                    activeMatchTab === 'recent'
+                      ? 'text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400 bg-red-50 dark:bg-red-900/10'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                  }`}
+                >
+                  <span>Recent Results</span>
+                  {recentMatches.length > 0 && (
+                    <span className="bg-gray-600 text-white text-xs px-2 py-1 rounded-full">
+                      {recentMatches.length}
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Match Content */}
+            <div className="p-6">
+              {matchesLoading ? (
+                <div className="text-center py-8">
+                  <div className="loading-spinner mx-auto mb-4"></div>
+                  <p className="text-gray-600 dark:text-gray-400">Loading matches...</p>
                 </div>
+              ) : (
+                <>
+                  {/* Upcoming Matches */}
+                  {activeMatchTab === 'upcoming' && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
+                        Upcoming Matches ({upcomingMatches.length})
+                      </h3>
+                      {upcomingMatches.length > 0 ? (
+                        <div className="space-y-3">
+                          {upcomingMatches.map((match, index) => (
+                            <div 
+                              key={match.id || index}
+                              onClick={() => navigateTo('match-detail', { id: match.id })}
+                              className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/20 cursor-pointer transition-colors border border-blue-200 dark:border-blue-800"
+                            >
+                              <div className="flex items-center space-x-4">
+                                {/* Event Logo - VLR.gg Style */}
+                                {match.event_logo && (
+                                  <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
+                                    <img 
+                                      src={match.event_logo} 
+                                      alt={match.event_name} 
+                                      className="w-full h-full object-cover" 
+                                    />
+                                  </div>
+                                )}
+                                
+                                {/* Time Badge */}
+                                <div className="text-blue-600 dark:text-blue-400 font-bold text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded">
+                                  {match.time_until || 'SCHEDULED'}
+                                </div>
+                                
+                                {/* Teams Display - VLR.gg Style with Both Logos */}
+                                <div className="flex items-center space-x-3">
+                                  {/* Current Team Logo */}
+                                  <TeamLogo team={team} size="w-8 h-8" />
+                                  
+                                  {/* VS Badge */}
+                                  <div className="text-gray-400 font-medium text-sm">
+                                    VS
+                                  </div>
+                                  
+                                  {/* Opponent Logo */}
+                                  <TeamLogo team={match.opponent} size="w-8 h-8" />
+                                  
+                                  {/* Match Info */}
+                                  <div>
+                                    <div className="font-medium text-gray-900 dark:text-white">
+                                      {match.opponent?.name || 'TBD'}
+                                    </div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-500">
+                                      {match.event_name} • {match.format || 'BO3'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Date & Time */}
+                              <div className="text-right">
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                  {formatDate(match.scheduled_at)}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-500">
+                                  {new Date(match.scheduled_at).toLocaleTimeString('en-US', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <div className="text-gray-500 dark:text-gray-500">No upcoming matches scheduled</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Live Matches */}
+                  {activeMatchTab === 'live' && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4 flex items-center">
+                        <span className="w-3 h-3 bg-red-500 rounded-full mr-2 animate-pulse"></span>
+                        Live Matches ({liveMatches.length})
+                      </h3>
+                      {liveMatches.length > 0 ? (
+                        <div className="space-y-3">
+                          {liveMatches.map((match, index) => (
+                            <div 
+                              key={match.id || index}
+                              onClick={() => navigateTo('match-detail', { id: match.id })}
+                              className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/10 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 cursor-pointer transition-colors border border-red-200 dark:border-red-800"
+                            >
+                              <div className="flex items-center space-x-4">
+                                {/* Event Logo - VLR.gg Style */}
+                                {match.event_logo && (
+                                  <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
+                                    <img 
+                                      src={match.event_logo} 
+                                      alt={match.event_name} 
+                                      className="w-full h-full object-cover" 
+                                    />
+                                  </div>
+                                )}
+                                
+                                {/* LIVE Badge */}
+                                <div className="bg-red-600 text-white px-3 py-1 text-xs font-bold rounded-full animate-pulse">
+                                  LIVE
+                                </div>
+                                
+                                {/* Teams Display - VLR.gg Style with Both Logos */}
+                                <div className="flex items-center space-x-3">
+                                  {/* Current Team Logo */}
+                                  <TeamLogo team={team} size="w-8 h-8" />
+                                  
+                                  {/* Live Score */}
+                                  <div className="text-center min-w-[60px]">
+                                    <div className="text-lg font-bold text-gray-900 dark:text-white">
+                                      <span className="text-red-600 dark:text-red-400">{match.team_score || 0}</span>
+                                      <span className="mx-1 text-gray-400">-</span>
+                                      <span className="text-blue-600 dark:text-blue-400">{match.opponent_score || 0}</span>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Opponent Logo */}
+                                  <TeamLogo team={match.opponent} size="w-8 h-8" />
+                                  
+                                  {/* Match Info */}
+                                  <div>
+                                    <div className="font-medium text-gray-900 dark:text-white">
+                                      {match.opponent?.name || 'TBD'}
+                                    </div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-500">
+                                      {match.event_name} • Map {match.current_map || 1}/{match.maps_total || 3}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Format */}
+                              <div className="text-right">
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                  {match.format || 'BO3'}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <div className="text-gray-500 dark:text-gray-500">No live matches</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Recent Results */}
+                  {activeMatchTab === 'recent' && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
+                        Recent Results ({recentMatches.length})
+                      </h3>
+                      {recentMatches.length > 0 ? (
+                        <div className="space-y-3">
+                          {recentMatches.map((match, index) => {
+                            const isTeam1 = match.team1_id === team.id;
+                            const teamScore = isTeam1 ? match.team1_score : match.team2_score;
+                            const opponentScore = isTeam1 ? match.team2_score : match.team1_score;
+                            const opponent = isTeam1 ? match.team2 : match.team1;
+                            const won = teamScore > opponentScore;
+                            
+                            return (
+                              <div 
+                                key={match.id || index}
+                                onClick={() => navigateTo('match-detail', { id: match.id })}
+                                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                              >
+                                <div className="flex items-center space-x-4">
+                                  {/* Event Logo - VLR.gg Style */}
+                                  {match.event_logo && (
+                                    <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
+                                      <img 
+                                        src={match.event_logo} 
+                                        alt={match.event_name} 
+                                        className="w-full h-full object-cover" 
+                                      />
+                                    </div>
+                                  )}
+                                  
+                                  {/* Result Badge */}
+                                  <div className={`px-2 py-1 rounded text-xs font-bold ${
+                                    won ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' 
+                                        : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+                                  }`}>
+                                    {won ? 'W' : 'L'}
+                                  </div>
+                                  
+                                  {/* Teams Display - VLR.gg Style with Both Logos */}
+                                  <div className="flex items-center space-x-3">
+                                    {/* Current Team Logo */}
+                                    <TeamLogo team={team} size="w-8 h-8" />
+                                    
+                                    {/* Score */}
+                                    <div className="text-center min-w-[60px]">
+                                      <div className="font-bold text-gray-900 dark:text-white">
+                                        <span className={won ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}>
+                                          {teamScore}
+                                        </span>
+                                        <span className="mx-1 text-gray-400">-</span>
+                                        <span className={!won ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}>
+                                          {opponentScore}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Opponent Logo */}
+                                    <TeamLogo team={opponent} size="w-8 h-8" />
+                                    
+                                    {/* Match Info */}
+                                    <div>
+                                      <div className="font-medium text-gray-900 dark:text-white">
+                                        {opponent?.name || 'TBD'}
+                                      </div>
+                                      <div className="text-xs text-gray-500 dark:text-gray-500">
+                                        {match.event_name || 'Scrim'} • {match.format || 'BO3'}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {/* Date */}
+                                <div className="text-right">
+                                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                                    {formatDate(match.scheduled_at)}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          
+                          {/* Pagination */}
+                          {pagination.last_page > 1 && (
+                            <div className="flex items-center justify-center space-x-2 pt-4">
+                              <button
+                                onClick={() => handlePageChange(pagination.current_page - 1)}
+                                disabled={pagination.current_page <= 1}
+                                className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50"
+                              >
+                                Previous
+                              </button>
+                              <span className="text-sm text-gray-600 dark:text-gray-400">
+                                Page {pagination.current_page} of {pagination.last_page}
+                              </span>
+                              <button
+                                onClick={() => handlePageChange(pagination.current_page + 1)}
+                                disabled={pagination.current_page >= pagination.last_page}
+                                className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50"
+                              >
+                                Next
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <div className="text-gray-500 dark:text-gray-500">No recent matches</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Sidebar - VLR.gg Style */}
+        <div className="space-y-6">
+          {/* Recent Mentions - VLR.gg Style */}
+          <div className="card p-6">
+            <MentionsSection 
+              entityType="team" 
+              entityId={team.id} 
+              title="Recent Mentions"
+            />
+          </div>
+
+          {/* Team Information */}
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Team Information</h3>
+            <div className="space-y-3">
+              <div>
+                <div className="text-gray-500 dark:text-gray-500 text-sm">Founded</div>
+                <div className="font-medium text-gray-900 dark:text-white">{team.founded ? new Date(team.founded).getFullYear() : 'N/A'}</div>
+              </div>
+              <div>
+                <div className="text-gray-500 dark:text-gray-500 text-sm">Region</div>
+                <div className="font-medium text-gray-900 dark:text-white">{team.region}</div>
+              </div>
+              <div>
+                <div className="text-gray-500 dark:text-gray-500 text-sm">Captain</div>
+                <div className="font-medium text-gray-900 dark:text-white">{team.captain || 'N/A'}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Achievements */}
+          {team.achievements && team.achievements.length > 0 && (
+            <div className="card p-6">
+              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Major Achievements</h3>
+              <div className="space-y-4">
+                {team.achievements.map((achievement, index) => (
+                  <div key={index} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="flex items-center space-x-3 mb-2">
+                      {achievement.event_logo && (
+                        <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0">
+                          <img 
+                            src={achievement.event_logo} 
+                            alt={achievement.event_name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <div className={`text-lg font-bold ${
+                        achievement.placement === 1 ? 'text-yellow-500' :
+                        achievement.placement === 2 ? 'text-gray-400' :
+                        achievement.placement === 3 ? 'text-orange-600' :
+                        'text-gray-600 dark:text-gray-400'
+                      }`}>
+                        #{achievement.placement}
+                      </div>
+                    </div>
+                    <div className="font-semibold text-gray-900 dark:text-white text-sm">
+                      {achievement.event_name}
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                      {formatDate(achievement.date)}
+                    </div>
+                    {achievement.prize && (
+                      <div className="text-green-600 dark:text-green-400 font-semibold text-sm mt-1">
+                        {formatCurrency(achievement.prize)}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}

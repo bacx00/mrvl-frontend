@@ -1,101 +1,270 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
-import { getNewsFeaturedImageUrl } from '../../utils/imageUtils';
+import UserDisplay from '../shared/UserDisplay';
+import VotingButtons from '../shared/VotingButtons';
+import MentionAutocomplete from '../shared/MentionAutocomplete';
+import MentionLink from '../shared/MentionLink';
+import { processContentWithMentions } from '../../utils/mentionUtils';
 
 function NewsDetailPage({ params, navigateTo }) {
-  const { isAdmin, isModerator, api } = useAuth();
   const [article, setArticle] = useState(null);
+  const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [relatedNews, setRelatedNews] = useState([]);
+  const [commentText, setCommentText] = useState('');
+  const [replyToId, setReplyToId] = useState(null);
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const { api, user, isAuthenticated } = useAuth();
 
-  const fetchArticle = useCallback(async () => {
-    setLoading(true);
-    
+  const articleId = params?.id;
+
+  useEffect(() => {
+    if (articleId) {
+      fetchArticle();
+    }
+  }, [articleId]);
+
+  const fetchArticle = async () => {
     try {
-      console.log('🔍 NewsDetailPage: Fetching article with ID:', params.id);
+      setLoading(true);
+      console.log('🔍 NewsDetailPage: Fetching article ID:', articleId);
       
-      // ✅ FIXED: ONLY USE REAL BACKEND DATA - PROPER ERROR HANDLING
-      const response = await api.get(`/news/${params.id}`);
+      const response = await api.get(`/news/${articleId}`);
+      const articleData = response.data?.data || response.data || response;
       
-      // Handle Laravel API response structure properly
-      const articleData = response?.data?.data || response?.data || response;
+      console.log('✅ Article loaded:', articleData);
+      setArticle(articleData);
+      setComments(articleData.comments || []);
       
-      if (articleData && articleData.id) {
-        console.log('✅ NewsDetailPage: Real article loaded:', articleData);
-        setArticle(articleData);
-        
-        // Fetch related articles
-        try {
-          const relatedResponse = await api.get('/news');
-          const allNews = relatedResponse?.data?.data || relatedResponse?.data || relatedResponse || [];
-          
-          // Filter out current article and take 3 related ones
-          const related = allNews
-            .filter(news => news.id !== articleData.id)
-            .slice(0, 3);
-          setRelatedNews(related);
-          console.log('✅ NewsDetailPage: Related articles loaded:', related.length);
-        } catch (relatedError) {
-          console.warn('Could not fetch related articles:', relatedError);
-          setRelatedNews([]);
-        }
-      } else {
-        console.warn('⚠️ NewsDetailPage: Article data structure invalid:', articleData);
-        setArticle(null);
+      // Increment view count
+      try {
+        await api.post(`/news/${articleId}/view`);
+      } catch (error) {
+        console.log('View count failed (likely not logged in)');
       }
       
     } catch (error) {
-      console.error('❌ NewsDetailPage: Backend API failed:', error.message);
-      
-      // ✅ IMPROVED: Check if it's a 404 or server issue
-      if (error.message.includes('404') || error.message.includes('No query results')) {
-        console.log('📰 NewsDetailPage: Article not found (404) - this is normal for non-existent articles');
-      } else {
-        console.error('🚨 NewsDetailPage: Server error:', error);
-      }
-      
-      setArticle(null); // ✅ NO MOCK DATA - Show proper not found message
+      console.error('❌ Error fetching article:', error);
+      setArticle(null);
     } finally {
       setLoading(false);
     }
-  }, [api, params.id]);
+  };
 
-  useEffect(() => {
-    if (params.id) {
-      fetchArticle();
+  const handleSubmitComment = async (e) => {
+    e.preventDefault();
+    
+    if (!isAuthenticated) {
+      alert('Please log in to comment');
+      return;
     }
-  }, [fetchArticle]);
+    
+    if (!commentText.trim()) {
+      return;
+    }
 
-  const getCategoryColor = (category) => {
-    switch (category) {
-      case 'tournaments': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
-      case 'updates': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'balance': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
-      case 'esports': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
-      case 'content': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      case 'community': return 'bg-pink-100 text-pink-800 dark:bg-pink-900/20 dark:text-pink-400';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
+    setSubmittingComment(true);
+    try {
+      const response = await api.post(`/news/${articleId}/comments`, {
+        content: commentText,
+        parent_id: replyToId
+      });
+
+      if (response.data.success) {
+        setCommentText('');
+        setReplyToId(null);
+        // Refresh comments
+        await fetchArticle();
+      }
+    } catch (error) {
+      console.error('Error posting comment:', error);
+      alert('Failed to post comment');
+    } finally {
+      setSubmittingComment(false);
     }
   };
 
+  const renderContentWithMentions = (content, mentions = []) => {
+    if (!content) return null;
+    
+    // Create a map of mention texts to their data
+    const mentionMap = {};
+    mentions.forEach(mention => {
+      mentionMap[mention.mention_text] = mention;
+    });
+    
+    // Split content by mentions pattern
+    const mentionPattern = /(@\w+|@team:\w+|@player:\w+)/g;
+    const parts = content.split(mentionPattern);
+    
+    return parts.map((part, index) => {
+      const mentionData = mentionMap[part];
+      
+      if (mentionData) {
+        return (
+          <MentionLink
+            key={index}
+            mention={mentionData}
+            onClick={(mention) => {
+              const nav = {
+                player: () => navigateTo('player-detail', { id: mention.id }),
+                team: () => navigateTo('team-detail', { id: mention.id }),
+                user: () => navigateTo('user-profile', { id: mention.id })
+              };
+              
+              if (nav[mention.type]) {
+                nav[mention.type]();
+              }
+            }}
+          />
+        );
+      }
+      
+      // For unlinked mentions, still style them
+      if (part.match(mentionPattern)) {
+        return (
+          <span key={index} className="text-red-600 dark:text-red-400 font-medium">
+            {part}
+          </span>
+        );
+      }
+      
+      return part;
+    });
+  };
+
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInHours < 48) return 'Yesterday';
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+    
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: 'numeric'
     });
+  };
+
+  const renderComment = (comment, isReply = false, depth = 0) => {
+    // Use inline style for consistent indentation
+    const marginStyle = isReply ? { marginLeft: `${Math.min(depth * 2, 6)}rem` } : {};
+    
+    return (
+      <div 
+        key={comment.id} 
+        className={`${isReply ? 'pl-4 border-l-2 border-gray-200 dark:border-gray-700' : ''} py-4`}
+        style={marginStyle}
+      >
+        <div className="flex items-start space-x-3">
+          {/* Voting (left side) */}
+          <VotingButtons
+            itemType="news_comment"
+            itemId={comment.id}
+            parentId={articleId}
+            initialUpvotes={comment.stats?.upvotes || 0}
+            initialDownvotes={comment.stats?.downvotes || 0}
+            userVote={comment.user_vote}
+            direction="vertical"
+            size="sm"
+          />
+
+          {/* Comment content */}
+          <div className="flex-1">
+            {/* Author info */}
+            <div className="flex items-center space-x-2 mb-2">
+              <UserDisplay
+                user={comment.author}
+                showAvatar={true}
+                showHeroFlair={true}
+                showTeamFlair={true}
+                size="sm"
+                clickable={false}
+              />
+              <span className="text-xs text-gray-500 dark:text-gray-500">
+                {formatDate(comment.meta?.created_at)}
+              </span>
+              {comment.meta?.edited && (
+                <span className="text-xs text-gray-400 dark:text-gray-600">(edited)</span>
+              )}
+            </div>
+
+            {/* Comment text with mentions */}
+            <div className="text-gray-900 dark:text-white mb-2">
+              {renderContentWithMentions(comment.content, comment.mentions || [])}
+            </div>
+
+            {/* Comment actions */}
+            <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-500">
+              <button
+                onClick={() => setReplyToId(comment.id)}
+                className="hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              >
+                Reply
+              </button>
+              
+              {comment.mentions && comment.mentions.length > 0 && (
+                <span className="flex items-center space-x-1">
+                  <span>@</span>
+                  <span>{comment.mentions.length} mentions</span>
+                </span>
+              )}
+            </div>
+
+            {/* Reply form */}
+            {replyToId === comment.id && (
+              <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded">
+                <form onSubmit={handleSubmitComment}>
+                  <MentionAutocomplete
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    placeholder={`Reply to ${comment.author?.name}...`}
+                    rows={3}
+                    className="px-3 py-2 text-sm"
+                  />
+                  <div className="flex justify-end space-x-2 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setReplyToId(null)}
+                      className="px-3 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={submittingComment || !commentText.trim()}
+                      className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {submittingComment ? 'Posting...' : 'Reply'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Nested replies */}
+            {comment.replies && comment.replies.length > 0 && (
+              <div className="mt-4 space-y-2">
+                {comment.replies.map(reply => renderComment(reply, true, depth + 1))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="loading-spinner mx-auto mb-4"></div>
-            <div className="text-gray-600 dark:text-gray-400">Loading article...</div>
-          </div>
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="loading-spinner mx-auto mb-4"></div>
+          <div className="text-gray-600 dark:text-gray-400">Loading article...</div>
         </div>
       </div>
     );
@@ -103,201 +272,213 @@ function NewsDetailPage({ params, navigateTo }) {
 
   if (!article) {
     return (
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center py-12">
-          <div className="text-4xl mb-4">📰</div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Article not found</h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            The news article you're looking for doesn't exist or has been removed.
-          </p>
-          <button
-            onClick={() => navigateTo && navigateTo('news')}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-          >
-            ← Back to News
-          </button>
-        </div>
+      <div className="card p-12 text-center">
+        <div className="text-6xl mb-4">📰</div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Article Not Found</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">
+          The article you're looking for doesn't exist or may have been removed.
+        </p>
+        <button 
+          onClick={() => navigateTo && navigateTo('news')} 
+          className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+        >
+          ← Back to News
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Navigation */}
-      <div className="flex items-center justify-between mb-6">
-        <button
-          onClick={() => navigateTo && navigateTo('news')}
-          className="text-red-600 dark:text-red-400 hover:underline text-sm"
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Breadcrumb */}
+      <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-500">
+        <button 
+          onClick={() => navigateTo && navigateTo('home')}
+          className="hover:text-red-600 dark:hover:text-red-400 transition-colors"
         >
-          ← Back to News
+          Home
         </button>
-        
-        {/* Admin/Moderator Actions */}
-        {(isAdmin() || isModerator()) && (
-          <div className="flex items-center space-x-2">
-            <button 
-              onClick={() => navigateTo && navigateTo('admin-news-edit', { id: article.id })}
-              className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-            >
-              ✏️ Edit
-            </button>
-            <button 
-              onClick={() => navigateTo && navigateTo('admin-news-create')}
-              className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-            >
-              ➕ New Article
-            </button>
-          </div>
-        )}
+        <span>›</span>
+        <button 
+          onClick={() => navigateTo && navigateTo('news')}
+          className="hover:text-red-600 dark:hover:text-red-400 transition-colors"
+        >
+          News
+        </button>
+        <span>›</span>
+        <span className="text-gray-900 dark:text-white">{article.title}</span>
       </div>
 
-      {/* Article Header */}
-      <article className="mb-8">
-        {/* Featured Image */}
-        {(article.featured_image_url || article.featured_image || article.image) && (
-          <div className="aspect-video overflow-hidden rounded-lg mb-6">
+      {/* Article */}
+      <article className="card overflow-hidden">
+        {/* Article header */}
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          {/* Category and meta */}
+          <div className="flex items-center space-x-3 mb-4">
+            {article.category && (
+              <span 
+                className="px-3 py-1 text-xs font-bold rounded-full text-white"
+                style={{ backgroundColor: article.category.color || '#6b7280' }}
+              >
+                {article.category.icon || '📰'} {article.category.name}
+              </span>
+            )}
+            {article.meta?.featured && (
+              <span className="px-3 py-1 text-xs font-bold rounded-full bg-yellow-500 text-white">
+                FEATURED
+              </span>
+            )}
+            <span className="text-xs text-gray-500 dark:text-gray-500">
+              {article.region || 'INTL'}
+            </span>
+          </div>
+
+          {/* Title */}
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            {article.title}
+          </h1>
+
+          {/* Author and meta */}
+          <div className="flex items-center justify-between">
+            <UserDisplay
+              user={article.author}
+              showAvatar={true}
+              showTeamFlair={true}
+              size="md"
+              clickable={false}
+            />
+            
+            <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-500">
+              <span>{formatDate(article.meta?.published_at || article.meta?.created_at)}</span>
+              {article.stats?.views > 0 && (
+                <span>👁 {article.stats.views.toLocaleString()}</span>
+              )}
+              {article.meta?.read_time && (
+                <span>📖 {article.meta.read_time} min read</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Featured image */}
+        {article.featured_image && (
+          <div className="aspect-video overflow-hidden bg-gray-100 dark:bg-gray-800">
             <img 
-              src={getNewsFeaturedImageUrl(article)} 
+              src={article.featured_image}
               alt={article.title}
               className="w-full h-full object-cover"
               onError={(e) => {
-                console.error('❌ Featured image failed to load:', e.target.src);
-                e.target.style.display = 'none';
+                e.target.onerror = null;
+                e.target.src = '/images/news-placeholder.png';
               }}
             />
           </div>
         )}
 
-        {/* Article Meta */}
-        <div className="flex items-center space-x-3 mb-4">
-          <span className={`px-3 py-1 text-sm font-bold rounded ${getCategoryColor(article.category)}`}>
-            {(article.category || 'news').toUpperCase()}
-          </span>
-          
-          {article.featured && (
-            <span className="px-3 py-1 text-sm font-bold rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200">
-              ⭐ FEATURED
-            </span>
+        {/* Article content */}
+        <div className="p-6">
+          {article.excerpt && (
+            <div className="text-lg text-gray-700 dark:text-gray-300 mb-6 font-medium">
+              {article.excerpt}
+            </div>
           )}
           
-          <div className="text-sm text-gray-500 dark:text-gray-500">
-            {formatDate(article.published_at || article.created_at)}
+          <div className="prose dark:prose-invert max-w-none">
+            {article.mentions && article.mentions.length > 0 
+              ? processContentWithMentions(article.content, article.mentions)
+              : <div dangerouslySetInnerHTML={{ __html: article.content }} />
+            }
           </div>
         </div>
 
-        {/* Article Title */}
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-          {article.title}
-        </h1>
-
-        {/* Article Stats */}
-        <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-gray-500 mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-2">
-            <span>{article.author?.avatar || '👤'}</span>
-            <span>By {article.author?.name || 'MRVL Team'}</span>
+        {/* Article voting and sharing */}
+        <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <VotingButtons
+              itemType="news"
+              itemId={article.id}
+              initialUpvotes={article.stats?.upvotes || 0}
+              initialDownvotes={article.stats?.downvotes || 0}
+              userVote={article.user_vote}
+              direction="horizontal"
+            />
+            
+            <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-500">
+              <span>💬 {comments.length} comments</span>
+              <button className="hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                🔗 Share
+              </button>
+            </div>
           </div>
-          
-          {article.views && (
-            <div className="flex items-center space-x-1">
-              <span>👁</span>
-              <span>{article.views.toLocaleString()} views</span>
-            </div>
-          )}
-          
-          {article.comments_count && (
-            <div className="flex items-center space-x-1">
-              <span>💬</span>
-              <span>{article.comments_count} comments</span>
-            </div>
-          )}
         </div>
-
-        {/* Article Content */}
-        <div 
-          className="prose prose-lg dark:prose-invert max-w-none"
-          dangerouslySetInnerHTML={{ __html: article.content }}
-        />
-
-        {/* Tags */}
-        {article.tags && article.tags.length > 0 && (
-          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Tags:</h4>
-            <div className="flex flex-wrap gap-2">
-              {article.tags.map((tag, index) => (
-                <span 
-                  key={index}
-                  className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
       </article>
 
-      {/* Related Articles */}
-      {relatedNews.length > 0 && (
-        <div className="mt-12">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Related Articles</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {relatedNews.map((relatedArticle) => (
-              <div 
-                key={relatedArticle.id} 
-                className="card hover:shadow-lg transition-shadow cursor-pointer group"
-                onClick={() => {
-                  console.log('🔗 NewsDetailPage: Clicking related article with ID:', relatedArticle.id);
-                  navigateTo && navigateTo('news-detail', { id: relatedArticle.id });
-                }}
-              >
-                {(relatedArticle.featured_image_url || relatedArticle.featured_image || relatedArticle.image) && (
-                  <div className="aspect-video overflow-hidden rounded-t-lg">
-                    <img 
-                      src={getNewsFeaturedImageUrl(relatedArticle)} 
-                      alt={relatedArticle.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => {
-                        console.error('❌ Related article image failed to load:', e.target.src);
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  </div>
-                )}
-                
-                <div className="p-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className={`px-2 py-1 text-xs font-bold rounded ${getCategoryColor(relatedArticle.category)}`}>
-                      {(relatedArticle.category || 'news').toUpperCase()}
-                    </span>
-                  </div>
-                  
-                  <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors line-clamp-2">
-                    {relatedArticle.title}
-                  </h4>
-                  
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
-                    {relatedArticle.excerpt}
-                  </p>
+      {/* Comments Section */}
+      <div className="card">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            Comments ({comments.length})
+          </h2>
+        </div>
 
-                  <div className="text-xs text-gray-500 dark:text-gray-500">
-                    {formatDate(relatedArticle.created_at)}
+        {/* Comment form */}
+        {isAuthenticated ? (
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <form onSubmit={handleSubmitComment}>
+              <div className="flex items-start space-x-3">
+                <UserDisplay
+                  user={user}
+                  showAvatar={true}
+                  showTeamFlair={false}
+                  size="sm"
+                />
+                <div className="flex-1">
+                  <MentionAutocomplete
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    placeholder="Add a comment... Use @username to mention someone"
+                    rows={4}
+                    className="px-3 py-2"
+                  />
+                  <div className="flex justify-end mt-2">
+                    <button
+                      type="submit"
+                      disabled={submittingComment || !commentText.trim()}
+                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {submittingComment ? 'Posting...' : 'Post Comment'}
+                    </button>
                   </div>
                 </div>
               </div>
-            ))}
+            </form>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700 text-center">
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Please log in to leave a comment
+            </p>
+            <button 
+              onClick={() => window.dispatchEvent(new CustomEvent('mrvl-show-auth-modal'))}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+            >
+              Log In
+            </button>
+          </div>
+        )}
 
-      {/* Back to News Button */}
-      <div className="mt-12 text-center">
-        <button
-          onClick={() => navigateTo && navigateTo('news')}
-          className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-        >
-          ← Back to All News
-        </button>
+        {/* Comments list */}
+        <div className="divide-y divide-gray-200 dark:divide-gray-700">
+          {comments.length > 0 ? (
+            comments.map(comment => renderComment(comment))
+          ) : (
+            <div className="p-6 text-center">
+              <div className="text-gray-500 dark:text-gray-500">
+                No comments yet. Be the first to comment!
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

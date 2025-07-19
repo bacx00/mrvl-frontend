@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
+import { useMentionAutocomplete } from '../../hooks/useMentionAutocomplete';
 import ImageUpload from '../shared/ImageUpload';
+import MentionDropdown from '../shared/MentionDropdown';
 
 function NewsForm({ newsId, navigateTo }) {
   const [formData, setFormData] = useState({
@@ -12,13 +14,53 @@ function NewsForm({ newsId, navigateTo }) {
     featured: false,
     image: '',
     publishedAt: '',
-    tags: []
+    tags: [],
+    metaTitle: '',
+    metaDescription: '',
+    slug: '',
+    authorNotes: '',
+    relatedMatches: [],
+    relatedTeams: [],
+    relatedPlayers: []
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [tagInput, setTagInput] = useState('');
+  const [contentPreview, setContentPreview] = useState(false);
+  const [matchSuggestions, setMatchSuggestions] = useState([]);
+  const [teamSuggestions, setTeamSuggestions] = useState([]);
+  const [playerSuggestions, setPlayerSuggestions] = useState([]);
+  const [wordCount, setWordCount] = useState(0);
   const { api } = useAuth();
+
+  // Mention autocomplete for content
+  const {
+    textareaRef: contentTextareaRef,
+    dropdownRef: contentDropdownRef,
+    showDropdown: showContentDropdown,
+    mentionResults: contentMentionResults,
+    selectedIndex: contentSelectedIndex,
+    loading: contentMentionLoading,
+    dropdownPosition: contentDropdownPosition,
+    handleInputChange: handleContentInputChange,
+    handleKeyDown: handleContentKeyDown,
+    selectMention: selectContentMention
+  } = useMentionAutocomplete();
+
+  // Mention autocomplete for excerpt
+  const {
+    textareaRef: excerptTextareaRef,
+    dropdownRef: excerptDropdownRef,
+    showDropdown: showExcerptDropdown,
+    mentionResults: excerptMentionResults,
+    selectedIndex: excerptSelectedIndex,
+    loading: excerptMentionLoading,
+    dropdownPosition: excerptDropdownPosition,
+    handleInputChange: handleExcerptInputChange,
+    handleKeyDown: handleExcerptKeyDown,
+    selectMention: selectExcerptMention
+  } = useMentionAutocomplete();
 
   const isEdit = Boolean(newsId);
 
@@ -58,6 +100,16 @@ function NewsForm({ newsId, navigateTo }) {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  const handleContentChange = (e) => {
+    handleInputChange(e);
+    handleContentInputChange(e, null);
+  };
+
+  const handleExcerptChange = (e) => {
+    handleInputChange(e);
+    handleExcerptInputChange(e, null);
   };
 
   const handleImageSelect = (file, previewUrl) => {
@@ -102,6 +154,11 @@ function NewsForm({ newsId, navigateTo }) {
       alert('Content is required');
       return;
     }
+    
+    if (formData.content.trim().length < 50) {
+      alert('Content must be at least 50 characters long');
+      return;
+    }
 
     setSaving(true);
 
@@ -110,10 +167,14 @@ function NewsForm({ newsId, navigateTo }) {
         title: formData.title.trim(),
         excerpt: formData.excerpt.trim(),
         content: formData.content.trim(),
-        category: formData.category,
+        category_id: formData.category === 'esports' ? 1 : 
+                     formData.category === 'updates' ? 2 : 
+                     formData.category === 'community' ? 3 : 
+                     formData.category === 'guides' ? 4 : 
+                     formData.category === 'opinion' ? 5 : 1,
         status: formData.status,
         featured: formData.featured,
-        image: formData.image,
+        featured_image: formData.image || null,
         published_at: formData.publishedAt || null,
         tags: formData.tags
       };
@@ -123,6 +184,22 @@ function NewsForm({ newsId, navigateTo }) {
         response = await api.put(`/admin/news/${newsId}`, submitData);
       } else {
         response = await api.post('/admin/news', submitData);
+      }
+
+      // If we have a new image file, upload it
+      if (imageFile && response?.data?.data?.id) {
+        const articleId = isEdit ? newsId : response.data.data.id;
+        const formData = new FormData();
+        formData.append('image', imageFile);
+        
+        try {
+          await api.post(`/admin/news/${articleId}/featured-image`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+        } catch (imageError) {
+          console.error('Error uploading image:', imageError);
+          // Don't fail the whole operation if image upload fails
+        }
       }
 
       alert(`News article ${isEdit ? 'updated' : 'created'} successfully!`);
@@ -217,17 +294,39 @@ function NewsForm({ newsId, navigateTo }) {
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                 Excerpt *
               </label>
-              <textarea
-                name="excerpt"
-                value={formData.excerpt}
-                onChange={handleInputChange}
-                rows={2}
-                className="form-input"
-                placeholder="Brief summary of the article..."
-                required
-              />
+              <div className="relative">
+                <textarea
+                  ref={excerptTextareaRef}
+                  name="excerpt"
+                  value={formData.excerpt}
+                  onChange={handleExcerptChange}
+                  onKeyDown={(e) => {
+                    const result = handleExcerptKeyDown(e, null);
+                    if (result?.selectMention) {
+                      selectExcerptMention(result.selectMention, (newValue) => {
+                        setFormData(prev => ({ ...prev, excerpt: newValue }));
+                      }, formData.excerpt);
+                    }
+                  }}
+                  rows={2}
+                  className="form-input"
+                  placeholder="Brief summary of the article... (Type @ to mention teams/players)"
+                  required
+                />
+                <MentionDropdown
+                  show={showExcerptDropdown}
+                  results={excerptMentionResults}
+                  selectedIndex={excerptSelectedIndex}
+                  loading={excerptMentionLoading}
+                  position={excerptDropdownPosition}
+                  onSelect={(mention) => selectExcerptMention(mention, (newValue) => {
+                    setFormData(prev => ({ ...prev, excerpt: newValue }));
+                  }, formData.excerpt)}
+                  dropdownRef={excerptDropdownRef}
+                />
+              </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Short description that appears in article previews
+                Short description that appears in article previews. Type @ to mention teams, players, or users!
               </p>
             </div>
 
@@ -236,15 +335,37 @@ function NewsForm({ newsId, navigateTo }) {
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                 Content *
               </label>
-              <textarea
-                name="content"
-                value={formData.content}
-                onChange={handleInputChange}
-                rows={12}
-                className="form-input"
-                placeholder="Write your article content here..."
-                required
-              />
+              <div className="relative">
+                <textarea
+                  ref={contentTextareaRef}
+                  name="content"
+                  value={formData.content}
+                  onChange={handleContentChange}
+                  onKeyDown={(e) => {
+                    const result = handleContentKeyDown(e, null);
+                    if (result?.selectMention) {
+                      selectContentMention(result.selectMention, (newValue) => {
+                        setFormData(prev => ({ ...prev, content: newValue }));
+                      }, formData.content);
+                    }
+                  }}
+                  rows={12}
+                  className="form-input"
+                  placeholder="Write your article content here... (Type @ to mention teams, players, or users)"
+                  required
+                />
+                <MentionDropdown
+                  show={showContentDropdown}
+                  results={contentMentionResults}
+                  selectedIndex={contentSelectedIndex}
+                  loading={contentMentionLoading}
+                  position={contentDropdownPosition}
+                  onSelect={(mention) => selectContentMention(mention, (newValue) => {
+                    setFormData(prev => ({ ...prev, content: newValue }));
+                  }, formData.content)}
+                  dropdownRef={contentDropdownRef}
+                />
+              </div>
             </div>
           </div>
         </div>

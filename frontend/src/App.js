@@ -20,10 +20,13 @@ import ForumsPage from './components/pages/ForumsPage';
 import ThreadDetailPage from './components/pages/ThreadDetailPage';
 import CreateThreadPage from './components/pages/CreateThreadPage';
 import UserDashboard from './components/pages/UserDashboard';
+import SimpleUserProfile from './components/pages/SimpleUserProfile';
 import StatsPage from './components/pages/StatsPage';
 import SearchPage from './components/pages/SearchPage';
 import TestPage from './components/pages/TestPage';
+import PasswordReset from './components/pages/PasswordReset';
 import Footer from './components/Footer';
+import Breadcrumbs from './components/shared/Breadcrumbs';
 
 // Footer pages
 import ContactPage from './components/pages/footer/ContactPage';
@@ -40,10 +43,10 @@ import UserForm from './components/admin/UserForm';
 import AdminNews from './components/admin/AdminNews';
 import AdminEvents from './components/admin/AdminEvents';
 import AdminForums from './components/admin/AdminForums';
-import NewsForm from './components/admin/NewsForm';
+import NewsFormSimple from './components/admin/NewsFormSimple';
 import EventForm from './components/admin/EventForm';
 import MatchForm from './components/admin/MatchForm';
-import ComprehensiveLiveScoring from './components/admin/ComprehensiveLiveScoring';
+import ComprehensiveMatchControl from './components/admin/ComprehensiveMatchControl';
 
 import './App.css';
 
@@ -53,7 +56,7 @@ const ROUTES = {
   'news': NewsPage,
   'news-detail': NewsDetailPage,
   'matches': MatchesPage,
-  'match-detail': (props) => <MatchDetailPage {...props} matchId={props.params?.id} />,
+  'match-detail': (props) => <MatchDetailPage {...props} matchId={props.params?.id || props.id} />,
   'team-detail': TeamDetailPage,
   'players': PlayersPage,
   'player-detail': PlayerDetailPage,
@@ -64,9 +67,11 @@ const ROUTES = {
   'thread-detail': ThreadDetailPage,
   'create-thread': CreateThreadPage,
   'user-dashboard': UserDashboard,
+  'user-profile': SimpleUserProfile,
   'stats': StatsPage,
   'search': SearchPage,
   'test': TestPage,
+  'reset-password': PasswordReset,
   
   // Admin Routes - Complete and working
   'admin-dashboard': AdminDashboard,
@@ -77,15 +82,17 @@ const ROUTES = {
   'admin-user-create': (props) => <UserForm {...props} />,
   'admin-user-edit': (props) => <UserForm {...props} userId={props.params?.id} />,
   'admin-news': AdminNews,
-  'admin-news-create': (props) => <NewsForm {...props} />,
-  'admin-news-edit': (props) => <NewsForm {...props} newsId={props.params?.id} />,
+  'admin-news-create': (props) => <NewsFormSimple {...props} />,
+  'admin-news-edit': (props) => <NewsFormSimple {...props} newsId={props.params?.id} />,
   'admin-events': AdminEvents,
   'admin-event-create': (props) => <EventForm {...props} />,
   'admin-event-edit': (props) => <EventForm {...props} eventId={props.params?.id} />,
   'admin-match-create': (props) => <MatchForm {...props} />,
   'admin-match-edit': (props) => <MatchForm {...props} matchId={props.params?.id} />,
-  'admin-live-scoring': (props) => <ComprehensiveLiveScoring {...props} />,
+  'admin-live-scoring': (props) => <ComprehensiveMatchControl {...props} />,
   'admin-forums': AdminForums,
+  'admin-forum-categories': AdminForums,
+  'admin-news-categories': AdminNews,
   
   // Footer pages
   'contact': ContactPage,
@@ -98,13 +105,30 @@ function AppContent() {
   const [currentPage, setCurrentPage] = useState('home');
   const [pageParams, setPageParams] = useState({});
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const { theme } = useTheme();
 
-  // FIXED: Hash routing support - single event handler
+  // FIXED: Hash routing support + URL pathname routing for reset password
   useEffect(() => {
-    const handleHashChange = () => {
+    const handleRouting = () => {
       const hash = window.location.hash.slice(1); // Remove #
+      const pathname = window.location.pathname;
+      
+      // Handle direct URL routes like /reset-password
+      if (pathname === '/reset-password' && window.location.search) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const email = urlParams.get('email');
+        
+        if (token && email) {
+          console.log('🔗 Direct reset password URL detected');
+          setCurrentPage('reset-password');
+          setPageParams({ token, email });
+          return;
+        }
+      }
+      
+      // Handle hash-based routing
       if (hash) {
         const [routeName, ...paramParts] = hash.split('/');
         if (ROUTES[routeName]) {
@@ -116,21 +140,21 @@ function AppContent() {
           setCurrentPage(routeName);
           setPageParams(params);
         }
-      } else {
-        // Empty hash means home
+      } else if (pathname === '/') {
+        // Root path means home
         setCurrentPage('home');
         setPageParams({});
       }
     };
 
-    // Handle initial page load from hash
-    handleHashChange();
+    // Handle initial page load
+    handleRouting();
 
     // Listen for hash changes (includes back/forward button)
-    window.addEventListener('hashchange', handleHashChange);
+    window.addEventListener('hashchange', handleRouting);
     
     return () => {
-      window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('hashchange', handleRouting);
     };
   }, []);
 
@@ -152,13 +176,21 @@ function AppContent() {
   const navigateTo = (page, params = {}) => {
     console.log('🧭 Navigating to:', page, params);
     setCurrentPage(page);
-    setPageParams(params);
+    
+    // Handle different parameter formats
+    let normalizedParams = params;
+    if (typeof params === 'string' || typeof params === 'number') {
+      // If params is just an ID, convert to object
+      normalizedParams = { id: params };
+    }
+    
+    setPageParams(normalizedParams);
     
     // Update URL hash
     if (page === 'home') {
       window.location.hash = '';
     } else {
-      const hashUrl = params.id ? `${page}/${params.id}` : page;
+      const hashUrl = normalizedParams.id ? `${page}/${normalizedParams.id}` : page;
       window.location.hash = hashUrl;
     }
     
@@ -213,18 +245,6 @@ function AppContent() {
     return <CurrentPageComponent navigateTo={navigateTo} params={pageParams} onAuthClick={handleAuthClick} />;
   };
 
-  // Show loading screen
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-500 via-purple-600 to-blue-600">
-        <div className="text-center">
-          <div className="text-4xl font-bold mb-4 text-white animate-pulse">MRVL</div>
-          <div className="text-white/80 font-medium">Loading Marvel Rivals Esports...</div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-all duration-300">
       {/* Navigation */}
@@ -234,6 +254,13 @@ function AppContent() {
         onAuthClick={handleAuthClick}
         user={user}
         theme={theme}
+      />
+
+      {/* Breadcrumbs */}
+      <Breadcrumbs 
+        currentPage={currentPage}
+        pageParams={pageParams}
+        navigateTo={navigateTo}
       />
 
       {/* Main Content */}

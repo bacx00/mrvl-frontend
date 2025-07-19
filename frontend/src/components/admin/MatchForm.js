@@ -1,90 +1,103 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
+import {
+  MARVEL_RIVALS_MAPS,
+  GAME_MODES,
+  HEROES,
+  MATCH_FORMATS,
+  MATCH_STATUSES,
+  getMapPool,
+  getModeRotation
+} from '../../constants/marvelRivalsData';
 
-// ✅ COMPLETE MARVEL RIVALS CONFIGURATION - ALIGNED WITH LIVE SCORING
+// COMPLETE MARVEL RIVALS CONFIGURATION - SYNCHRONIZED WITH CONSTANTS
 const MARVEL_RIVALS_CONFIG = {
-  // 🗺️ ALL 12 MARVEL RIVALS MAPS WITH MODES
+  // MARVEL RIVALS SEASON 2.5 MAPS (from seeded data)
   maps: [
-    { name: 'Tokyo 2099: Shibuya Sky', mode: 'Convoy', icon: '🏙️' },
-    { name: 'Tokyo 2099: Shin-Shibuya Station', mode: 'Convoy', icon: '🚅' },
-    { name: 'Midtown Manhattan: Oscorp Tower', mode: 'Convoy', icon: '🏢' },
-    { name: 'Sanctum Sanctorum: Astral Plane', mode: 'Convoy', icon: '🔮' },
-    { name: 'Klyntar: Symbiote Planet', mode: 'Domination', icon: '🖤' },
-    { name: 'Wakanda: Golden City', mode: 'Domination', icon: '💎' },
-    { name: 'Asgard: Royal Palace', mode: 'Convergence', icon: '⚡' },
-    { name: 'Yggsgard: Yggdrasil', mode: 'Convergence', icon: '🌳' },
-    { name: 'Intergalactic Empire of Wakanda', mode: 'Conquest', icon: '🌌' },
-    { name: 'Moon Base: Lunar Colony', mode: 'Conquest', icon: '🌙' },
-    { name: 'Hell\'s Kitchen: Daredevil Territory', mode: 'Doom Match', icon: '🔥' },
-    { name: 'X-Mansion: Training Grounds', mode: 'Escort', icon: '🎓' }
+    // COMPETITIVE MAPS (4 total)
+    { name: 'Hellfire Gala: Krakoa', mode: 'Domination', icon: 'fire', type: 'Competitive' },
+    { name: 'Hydra Charteris Base: Hell\'s Heaven', mode: 'Domination', icon: 'gear', type: 'Competitive' },
+    { name: 'Intergalactic Empire of Wakanda: Birnin T\'Challa', mode: 'Domination', icon: 'gem', type: 'Competitive' },
+    { name: 'Empire of Eternal Night: Central Park', mode: 'Convoy', icon: 'night', type: 'Competitive' },
+    // CASUAL MAPS
+    { name: 'Tokyo 2099: Spider-Islands', mode: 'Convoy', icon: 'cityscape', type: 'Casual' },
+    { name: 'Yggsgard: Yggdrasill Path', mode: 'Convoy', icon: 'tree', type: 'Casual' },
+    { name: 'Empire of Eternal Night: Midtown', mode: 'Convoy', icon: 'building', type: 'Casual' },
+    { name: 'Empire of Eternal Night: Sanctum Sanctorum', mode: 'Convergence', icon: 'crystal', type: 'Casual' },
+    { name: 'Klyntar: Symbiotic Surface', mode: 'Convergence', icon: 'heart', type: 'Casual' },
+    { name: 'Intergalactic Empire of Wakanda: Hall of Djalia', mode: 'Convergence', icon: 'sparkles', type: 'Casual' }
   ],
   
-  // 🎮 ALL 6 GAME MODES WITH ACCURATE TIMERS
+  // ALL 6 GAME MODES WITH ACCURATE TIMERS
   gameModes: {
     'Convoy': { 
       duration: 18 * 60, 
       displayName: 'Convoy', 
       color: 'blue', 
       description: 'Escort the payload to victory',
-      icon: '🚚'
+      icon: 'truck'
     },
     'Domination': { 
       duration: 12 * 60, 
       displayName: 'Domination', 
       color: 'red', 
       description: 'Control strategic points',
-      icon: '🏁'
+      icon: 'flag'
     },
     'Convergence': { 
       duration: 15 * 60, 
       displayName: 'Convergence', 
       color: 'purple', 
       description: 'Converge on objectives',
-      icon: '⚡'
+      icon: 'lightning'
     },
     'Conquest': { 
       duration: 20 * 60, 
       displayName: 'Conquest', 
       color: 'green', 
       description: 'Capture and hold territory',
-      icon: '💎'
+      icon: 'gem'
     },
     'Doom Match': { 
       duration: 10 * 60, 
       displayName: 'Doom Match', 
       color: 'orange', 
       description: 'Eliminate all opponents',
-      icon: '💀'
+      icon: 'skull'
     },
     'Escort': { 
       duration: 16 * 60, 
       displayName: 'Escort', 
       color: 'yellow', 
       description: 'Guide the target safely',
-      icon: '🛡️'
+      icon: 'shield'
     }
   },
   
   formats: [
     { value: 'BO1', label: 'BO1 - Best of 1', maps: 1, description: 'Single elimination match' },
     { value: 'BO3', label: 'BO3 - Best of 3', maps: 3, description: 'First to win 2 maps' },
-    { value: 'BO5', label: 'BO5 - Best of 5', maps: 5, description: 'First to win 3 maps' }
+    { value: 'BO5', label: 'BO5 - Best of 5', maps: 5, description: 'First to win 3 maps' },
+    { value: 'BO7', label: 'BO7 - Best of 7', maps: 7, description: 'First to win 4 maps' },
+    { value: 'BO9', label: 'BO9 - Best of 9', maps: 9, description: 'First to win 5 maps' }
   ],
   statuses: [
-    { value: 'upcoming', label: '📅 Upcoming', color: 'blue' },
-    { value: 'live', label: '🔴 Live', color: 'red' },
-    { value: 'completed', label: '✅ Completed', color: 'green' },
-    { value: 'cancelled', label: '❌ Cancelled', color: 'gray' },
-    { value: 'postponed', label: '⏳ Postponed', color: 'yellow' }
+    { value: 'upcoming', label: 'Upcoming', color: 'blue' },
+    { value: 'live', label: 'Live', color: 'red' },
+    { value: 'completed', label: 'Completed', color: 'green' },
+    { value: 'cancelled', label: 'Cancelled', color: 'gray' },
+    { value: 'postponed', label: 'Postponed', color: 'yellow' }
   ]
 };
 
-// ✅ PERFECT MATCH INITIALIZATION WITH COMPLETE MARVEL RIVALS MAPS
+// PERFECT MATCH INITIALIZATION WITH ACCURATE MARVEL RIVALS DATA
 const getInitialMatchData = (format = 'BO1') => {
-  const formatConfig = MARVEL_RIVALS_CONFIG.formats.find(f => f.value === format);
+  const formatConfig = MATCH_FORMATS.find(f => f.value === format);
   const mapCount = formatConfig?.maps || 1;
+  const mapPool = getMapPool(format);
+  const modeRotation = getModeRotation(format);
   
-  console.log(`🎮 INITIALIZING ${format} match with ${mapCount} maps from complete map pool`);
+  console.log(`INITIALIZING ${format} match with ${mapCount} maps from Season 2.5 pool`);
   
   return {
     team1_id: '',
@@ -93,28 +106,43 @@ const getInitialMatchData = (format = 'BO1') => {
     scheduled_at: new Date(Date.now() + 3600000).toISOString().slice(0, 16),
     format: format,
     status: 'upcoming',
-    stream_url: '',
-    betting_url: '',
-    description: '',
+    //  ENHANCED: Multiple URLs support
+    stream_urls: [''],
+    betting_urls: [''],
+    vod_urls: [''],
+    round: '',
+    bracket_position: '',
+    allow_past_date: false,
     team1_score: 0,
     team2_score: 0,
-    // 🚨 CRITICAL: Use complete Marvel Rivals maps with modes
+    // CRITICAL: Use accurate Season 2.5 maps with proper mode rotation
     maps: Array.from({ length: mapCount }, (_, index) => {
-      const selectedMap = MARVEL_RIVALS_CONFIG.maps[index % MARVEL_RIVALS_CONFIG.maps.length];
+      const mapData = mapPool[index] || mapPool[0];
+      const mode = modeRotation[index];
+      const modeData = GAME_MODES[mode];
+      
       return {
         map_number: index + 1,
-        map_name: selectedMap.name,
-        mode: selectedMap.mode,
-        timer: MARVEL_RIVALS_CONFIG.gameModes[selectedMap.mode],
-        icon: selectedMap.icon,
+        map_name: mapData.name,
+        map_id: mapData.id,
+        mode: mode,
+        timer: modeData.timer,
+        icon: mapData.icon,
         team1_score: 0,
         team2_score: 0,
+        team1_rounds: 0, // For Domination
+        team2_rounds: 0,
         status: 'upcoming',
         winner_id: null,
         duration: null,
-        // 🎮 EMPTY COMPOSITIONS - WILL BE POPULATED WITH REAL PLAYERS
+        overtime: false,
+        // PLAYER COMPOSITIONS WITH STATS TRACKING
         team1_composition: [],
-        team2_composition: []
+        team2_composition: [],
+        // MAP-SPECIFIC DATA
+        checkpoints_reached: [],
+        capture_progress: 0,
+        payload_distance: 0
       };
     }),
     viewers: 0,
@@ -132,33 +160,35 @@ function MatchForm({ matchId, navigateTo }) {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  // 🔥 FIX: Add heroes state with COMPLETE MARVEL RIVALS ROSTER (39 HEROES)
-  const [herosByRole, setHerosByRole] = useState({
-    Vanguard: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Peni Parker', 'Thor', 'Venom'],
-    Duelist: ['Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Iron Man', 'Magik', 'Namor', 'Psylocke', 'Punisher', 'Scarlet Witch', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Storm', 'Winter Soldier', 'Wolverine'],
-    Strategist: ['Adam Warlock', 'Cloak & Dagger', 'Jeff the Land Shark', 'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon']
+  // ENHANCED: URL management state
+  const [urlSections, setUrlSections] = useState({
+    streams: [{ url: '', label: 'Primary Stream' }],
+    betting: [{ url: '', label: 'Primary Betting' }],
+    vods: [{ url: '', label: 'VOD 1' }]
   });
+  // SEASON 2.5 HERO ROSTER (39 HEROES)
+  const [herosByRole, setHerosByRole] = useState(HEROES);
   
   const { api } = useAuth();
   const isEdit = Boolean(matchId);
 
-  // 🔥 CRITICAL: REAL BACKEND API BASE URL FROM ENV ONLY
+  // CRITICAL: REAL BACKEND API BASE URL FROM ENV ONLY
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
-  console.log('🔍 MatchForm: Using backend URL:', BACKEND_URL);
+  console.log('MatchForm: Using backend URL:', BACKEND_URL);
 
-  // ✅ CRITICAL: Load heroes from live backend API
+  // CRITICAL: Load heroes from live backend API
   useEffect(() => {
     const loadHeroesFromAPI = async () => {
       try {
-        console.log('🎮 Loading heroes from backend API...');
+        console.log('Loading heroes from backend API...');
         const response = await api.get('/heroes');
         const heroData = response?.data;
         
-        console.log('✅ Heroes loaded from API:', heroData);
+        console.log('Heroes loaded from API:', heroData);
         
         if (heroData && heroData.by_role) {
-          // 🚨 CRITICAL FIX: Handle correct API structure - data.by_role
+          // CRITICAL FIX: Handle correct API structure - data.by_role
           const transformedHeroes = {};
           
           for (const [role, heroes] of Object.entries(heroData.by_role)) {
@@ -175,53 +205,54 @@ function MatchForm({ matchId, navigateTo }) {
             }
           }
           
-          // 🔥 FIX: Update React state instead of global object
+          // FIX: Update React state instead of global object
           setHerosByRole(transformedHeroes);
-          console.log('🎮 Heroes state updated from API:', transformedHeroes);
+          console.log('Heroes state updated from API:', transformedHeroes);
         }
       } catch (error) {
-        console.error('❌ Error loading heroes from API:', error);
+        console.error('Error loading heroes from API:', error);
         // Fallback heroes are already set in the initial state
-        console.log('🎮 Using fallback heroes from initial state');
+        console.log('Using fallback heroes from initial state');
       }
     };
     
     loadHeroesFromAPI();
   }, [api]);
 
-  // 🚨 CRITICAL: REAL BACKEND DATA LOADING - NO MOCK DATA
+  // CRITICAL: REAL BACKEND DATA LOADING - NO MOCK DATA
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        console.log('🔍 MatchForm: Fetching REAL backend data...');
+        console.log('MatchForm: Fetching REAL backend data...');
         
-        // 🔥 CRITICAL: Get REAL teams from backend using API helper
+        // CRITICAL: Get REAL teams from backend using API helper
         const teamsResponse = await api.get('/teams');
         const realTeams = teamsResponse?.data || [];
         setTeams(Array.isArray(realTeams) ? realTeams : []);
-        console.log('✅ REAL Teams loaded:', realTeams.length, realTeams);
+        console.log('REAL Teams loaded:', realTeams.length, realTeams);
 
-        // 🔥 CRITICAL: Get REAL events from backend using API helper
+        //  CRITICAL: Get REAL events from backend using API helper
         const eventsResponse = await api.get('/events');
         const realEvents = eventsResponse?.data || [];
         setEvents(Array.isArray(realEvents) ? realEvents : []);
-        console.log('✅ REAL Events loaded:', realEvents.length, realEvents);
+        console.log('REAL Events loaded:', realEvents.length, realEvents);
 
         // If editing, load REAL match data
         if (isEdit && matchId) {
           try {
-            console.log(`🔍 Loading REAL match data for ID: ${matchId}`);
+            console.log(`Loading REAL match data for ID: ${matchId}`);
             const matchResponse = await api.get(`/admin/matches/${matchId}`);
             const realMatchData = matchResponse?.data;
             
             if (realMatchData) {
-              console.log('✅ REAL Match data loaded:', realMatchData);
+              console.log('REAL Match data loaded:', realMatchData);
               
-              // 🚨 CRITICAL FIX: Ensure correct map count for the format
+              // CRITICAL FIX: Ensure correct map count for the format
+              // CRITICAL FIX: Only use baseData for missing/empty fields, preserve all existing data
               const baseData = getInitialMatchData(realMatchData.format || 'BO1');
               
-              // 🚨 CRITICAL FIX: Preserve existing hero compositions from maps_data
+              // Preserve existing hero compositions from maps_data
               const preservedMaps = realMatchData.maps_data && realMatchData.maps_data.length > 0 
                 ? realMatchData.maps_data.map((mapData, index) => ({
                     map_name: mapData.map_name || baseData.maps[index]?.map_name || 'Tokyo 2099: Shibuya Sky',
@@ -232,15 +263,24 @@ function MatchForm({ matchId, navigateTo }) {
                 : baseData.maps;
               
               const transformedData = {
-                ...baseData, // Start with correct map structure
-                ...realMatchData, // Then add real match data
-                team1_id: realMatchData.team1_id || realMatchData.team1?.id || '',
-                team2_id: realMatchData.team2_id || realMatchData.team2?.id || '',
-                event_id: realMatchData.event_id || realMatchData.event?.id || '',
+                // Start with real match data (preserves all existing values)
+                ...realMatchData,
+                // Only fill in missing fields from baseData
+                team1_id: realMatchData.team1_id || realMatchData.team1?.id || baseData.team1_id || '',
+                team2_id: realMatchData.team2_id || realMatchData.team2?.id || baseData.team2_id || '',
+                event_id: realMatchData.event_id || realMatchData.event?.id || baseData.event_id || '',
+                format: realMatchData.format || baseData.format,
                 scheduled_at: realMatchData.scheduled_at ? 
                   new Date(realMatchData.scheduled_at).toISOString().slice(0, 16) : 
                   new Date(Date.now() + 3600000).toISOString().slice(0, 16),
-                // 🚨 PRESERVE existing hero compositions
+                // ENHANCED: Handle multiple URLs from backend
+                stream_urls: realMatchData.stream_urls || (realMatchData.stream_url ? [realMatchData.stream_url] : ['']),
+                betting_urls: realMatchData.betting_urls || (realMatchData.betting_url ? [realMatchData.betting_url] : ['']),
+                vod_urls: realMatchData.vod_urls || [''],
+                round: realMatchData.round || '',
+                bracket_position: realMatchData.bracket_position || '',
+                allow_past_date: realMatchData.allow_past_date || false,
+                // PRESERVE existing hero compositions
                 maps: preservedMaps,
                 map_pool: baseData.map_pool
               };
@@ -253,7 +293,7 @@ function MatchForm({ matchId, navigateTo }) {
               setSelectedTeam1(team1);
               setSelectedTeam2(team2);
               
-              // 🔥 CRITICAL: IMMEDIATELY LOAD REAL PLAYERS FOR SELECTED TEAMS
+              // CRITICAL: IMMEDIATELY LOAD REAL PLAYERS FOR SELECTED TEAMS
               if (team1) {
                 await loadRealPlayersForTeam(team1, 'team1', transformedData);
               }
@@ -261,14 +301,21 @@ function MatchForm({ matchId, navigateTo }) {
                 await loadRealPlayersForTeam(team2, 'team2', transformedData);
               }
               
-              console.log('✅ Real match data loaded and players populated');
+              // Initialize URL sections from loaded data
+              setUrlSections({
+                streams: (transformedData.stream_urls || ['']).map((url, i) => ({ url, label: `Stream ${i + 1}` })),
+                betting: (transformedData.betting_urls || ['']).map((url, i) => ({ url, label: `Betting ${i + 1}` })),
+                vods: (transformedData.vod_urls || ['']).map((url, i) => ({ url, label: `VOD ${i + 1}` }))
+              });
+              
+              console.log('Real match data loaded and players populated');
             }
           } catch (error) {
-            console.error('❌ Error loading real match data:', error);
+            console.error('Error loading real match data:', error);
           }
         }
       } catch (error) {
-        console.error('❌ Error fetching real form data:', error);
+        console.error('Error fetching real form data:', error);
       } finally {
         setLoading(false);
       }
@@ -277,20 +324,20 @@ function MatchForm({ matchId, navigateTo }) {
     fetchData();
   }, [matchId, isEdit, api]);
 
-  // 🚨 CRITICAL: LOAD REAL PLAYERS FOR TEAM
+  // CRITICAL: LOAD REAL PLAYERS FOR TEAM
   const loadRealPlayersForTeam = async (team, teamKey, currentFormData = formData) => {
     try {
-      console.log(`🔍 Loading REAL players for ${team.name} (ID: ${team.id})`);
+      console.log(`Loading REAL players for ${team.name} (ID: ${team.id})`);
       
-      // 🔥 CRITICAL: Fetch REAL team details with players using API helper
+      // CRITICAL: Fetch REAL team details with players using API helper
       const teamResponse = await api.get(`/teams/${team.id}`);
       const teamWithPlayers = teamResponse?.data;
       
-      if (teamWithPlayers && teamWithPlayers.players) {
-        const realPlayers = teamWithPlayers.players;
-        console.log(`✅ Found ${realPlayers.length} REAL players for ${team.name}:`, realPlayers);
+      if (teamWithPlayers && (teamWithPlayers.players || teamWithPlayers.current_roster)) {
+        const realPlayers = teamWithPlayers.players || teamWithPlayers.current_roster;
+        console.log(`Found ${realPlayers.length} REAL players for ${team.name}:`, realPlayers);
         
-        // 🔥 POPULATE REAL PLAYERS IMMEDIATELY IN FORM DATA
+        // POPULATE REAL PLAYERS IMMEDIATELY IN FORM DATA
         const compositionKey = teamKey === 'team1' ? 'team1_composition' : 'team2_composition';
         
         setFormData(prev => ({
@@ -299,7 +346,7 @@ function MatchForm({ matchId, navigateTo }) {
             ...map,
             [compositionKey]: realPlayers.slice(0, 6).map((player, index) => ({
               player_id: player.id,
-              player_name: player.name, // 🔥 REAL PLAYER NAME
+              player_name: player.name, // REAL PLAYER NAME
               hero: player.main_hero || (index % 2 === 0 ? 'Captain America' : 'Storm'),
               role: player.role || 'Tank',
               country: player.country || player.nationality || 'US',
@@ -315,21 +362,21 @@ function MatchForm({ matchId, navigateTo }) {
           }))
         }));
         
-        console.log(`✅ ${team.name} composition updated with REAL players:`, realPlayers.map(p => p.name));
+        console.log(`${team.name} composition updated with REAL players:`, realPlayers.map(p => p.name));
         return realPlayers;
       } else {
-        console.log(`❌ No players found for ${team.name}`);
+        console.log(`No players found for ${team.name}`);
         return [];
       }
     } catch (error) {
-      console.error(`❌ Error loading real players for ${team.name}:`, error);
+      console.error(`Error loading real players for ${team.name}:`, error);
       return [];
     }
   };
 
-  // ✅ PERFECT FORMAT CHANGE HANDLER
+  // PERFECT FORMAT CHANGE HANDLER
   const handleFormatChange = (newFormat) => {
-    console.log(`🔄 Changing format from ${formData.format} to ${newFormat}`);
+    console.log(`Changing format from ${formData.format} to ${newFormat}`);
     
     const newMatchData = getInitialMatchData(newFormat);
     setFormData(prev => ({
@@ -342,15 +389,52 @@ function MatchForm({ matchId, navigateTo }) {
       team2_score: 0
     }));
     
-    console.log(`✅ Format changed to ${newFormat} with ${newMatchData.maps.length} maps`);
+    console.log(`Format changed to ${newFormat} with ${newMatchData.maps.length} maps`);
   };
 
-  // ✅ PERFECT INPUT CHANGE HANDLER - FIXED REAL PLAYER POPULATION
+  // ENHANCED: URL Management Functions
+  const addUrlField = (type) => {
+    setUrlSections(prev => ({
+      ...prev,
+      [type]: [...prev[type], { url: '', label: `${type.charAt(0).toUpperCase() + type.slice(1)} ${prev[type].length + 1}` }]
+    }));
+    
+    // Update form data
+    const fieldName = `${type}_urls`;
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: [...(prev[fieldName] || []), '']
+    }));
+  };
+
+  const removeUrlField = (type, index) => {
+    setUrlSections(prev => ({
+      ...prev,
+      [type]: prev[type].filter((_, i) => i !== index)
+    }));
+    
+    // Update form data
+    const fieldName = `${type}_urls`;
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: prev[fieldName].filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleUrlChange = (type, index, value) => {
+    const fieldName = `${type}_urls`;
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: prev[fieldName].map((url, i) => i === index ? value : url)
+    }));
+  };
+
+  // PERFECT INPUT CHANGE HANDLER - FIXED REAL PLAYER POPULATION
   const handleInputChange = async (e) => {
     const { name, value, type, checked } = e.target;
     const actualValue = type === 'checkbox' ? checked : value;
     
-    console.log(`🔄 Input change: ${name} = ${actualValue}`);
+    console.log(`Input change: ${name} = ${actualValue}`);
     
     if (name === 'format') {
       handleFormatChange(actualValue);
@@ -362,22 +446,22 @@ function MatchForm({ matchId, navigateTo }) {
       [name]: actualValue
     }));
     
-    // 🚨 CRITICAL FIX: POPULATE REAL PLAYERS WHEN TEAM SELECTED
+    // CRITICAL FIX: POPULATE REAL PLAYERS WHEN TEAM SELECTED
     if (name === 'team1_id' && actualValue) {
       const team = teams.find(t => t.id == actualValue);
       setSelectedTeam1(team);
-      console.log('✅ Team 1 selected:', team?.name);
+      console.log('Team 1 selected:', team?.name);
       
-      // 🔥 IMMEDIATELY LOAD REAL PLAYERS
+      // IMMEDIATELY LOAD REAL PLAYERS
       if (team) {
         await loadRealPlayersForTeam(team, 'team1');
       }
     } else if (name === 'team2_id' && actualValue) {
       const team = teams.find(t => t.id == actualValue);
       setSelectedTeam2(team);
-      console.log('✅ Team 2 selected:', team?.name);
+      console.log('Team 2 selected:', team?.name);
       
-      // 🔥 IMMEDIATELY LOAD REAL PLAYERS
+      // IMMEDIATELY LOAD REAL PLAYERS
       if (team) {
         await loadRealPlayersForTeam(team, 'team2');
       }
@@ -389,13 +473,13 @@ function MatchForm({ matchId, navigateTo }) {
     }
   };
 
-  // ✅ HERO CHANGE HANDLER FOR PLAYER COMPOSITIONS
+  // HERO CHANGE HANDLER FOR PLAYER COMPOSITIONS
   const handlePlayerHeroChange = (mapIndex, team, playerIndex, hero, role) => {
-    // 🚨 CRITICAL FIX: Ensure hero is always a string, not an object
+    // CRITICAL FIX: Ensure hero is always a string, not an object
     const heroName = typeof hero === 'object' && hero.name ? hero.name : String(hero);
     const roleString = typeof role === 'object' && role.name ? role.name : String(role);
     
-    console.log(`🎮 Player ${playerIndex + 1} on ${team} changing to ${heroName} (${roleString}) for Map ${mapIndex + 1}`);
+    console.log(`Player ${playerIndex + 1} on ${team} changing to ${heroName} (${roleString}) for Map ${mapIndex + 1}`);
     
     setFormData(prev => ({
       ...prev,
@@ -410,9 +494,9 @@ function MatchForm({ matchId, navigateTo }) {
     }));
   };
 
-  // ✅ PERFECT MAP CHANGE HANDLER  
+  // PERFECT MAP CHANGE HANDLER  
   const handleMapChange = (mapIndex, field, value) => {
-    console.log(`🗺️ Map ${mapIndex + 1} ${field} changed to:`, value);
+    console.log(`Map ${mapIndex + 1} ${field} changed to:`, value);
     
     setFormData(prev => ({
       ...prev,
@@ -422,7 +506,7 @@ function MatchForm({ matchId, navigateTo }) {
     }));
   };
 
-  // ✅ PERFECT FORM VALIDATION
+  // PERFECT FORM VALIDATION
   const validateForm = () => {
     const newErrors = {};
     
@@ -431,7 +515,7 @@ function MatchForm({ matchId, navigateTo }) {
     if (formData.team1_id === formData.team2_id) {
       newErrors.team2_id = 'Teams must be different';
     }
-    if (!formData.event_id) newErrors.event_id = 'Event is required';
+    // Event is optional - matches can be created without events
     if (!formData.scheduled_at) newErrors.scheduled_at = 'Schedule time is required';
     if (!formData.format) newErrors.format = 'Format is required';
     
@@ -446,18 +530,18 @@ function MatchForm({ matchId, navigateTo }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  // ✅ PERFECT SAVE HANDLER - REAL BACKEND INTEGRATION WITH API HELPER
+  // PERFECT SAVE HANDLER - REAL BACKEND INTEGRATION WITH API HELPER
   const handleSave = async () => {
     if (!validateForm()) {
-      console.log('❌ Form validation failed:', errors);
+      console.log('Form validation failed:', errors);
       return;
     }
     
     setSaving(true);
     try {
-      console.log('💾 Saving match to PRODUCTION backend...', formData);
+      console.log('Saving match to PRODUCTION backend...', formData);
       
-      // 🎯 PRODUCTION: Prepare data for EXACT backend structure
+      // PRODUCTION: Prepare data for EXACT backend structure
       const productionData = {
         team1_id: parseInt(formData.team1_id),
         team2_id: parseInt(formData.team2_id),
@@ -465,20 +549,24 @@ function MatchForm({ matchId, navigateTo }) {
         status: formData.status || 'upcoming',
         format: formData.format || 'BO1',
         scheduled_at: new Date(formData.scheduled_at).toISOString(),
-        description: formData.description || '',
-        stream_url: formData.stream_url || null,
-        betting_url: formData.betting_url || null,
+        // ENHANCED: Multiple URLs support
+        stream_urls: (formData.stream_urls || ['']).filter(url => url.trim()),
+        betting_urls: (formData.betting_urls || ['']).filter(url => url.trim()),
+        vod_urls: (formData.vod_urls || ['']).filter(url => url.trim()),
+        round: formData.round || null,
+        bracket_position: formData.bracket_position || null,
+        allow_past_date: formData.allow_past_date || false,
         
-        // 🚨 CRITICAL: Save complete map compositions for production (6v6 format)
+        // CRITICAL: Save complete map compositions for production (6v6 format)
         maps_data: formData.maps.map((map, index) => ({
           map_number: index + 1,
-          map_name: map.map_name,           // ✅ PRESERVE selected map
-          mode: map.mode,                   // ✅ PRESERVE selected mode
+          map_name: map.map_name,           // PRESERVE selected map
+          mode: map.mode,                   // PRESERVE selected mode
           team1_score: parseInt(map.team1_score) || 0,
           team2_score: parseInt(map.team2_score) || 0,
           status: 'upcoming',
           
-          // 🦸 ENSURE 6v6 TEAM COMPOSITIONS for production
+          // ENSURE 6v6 TEAM COMPOSITIONS for production
           team1_composition: (map.team1_composition || [])
             .slice(0, 6) // Ensure exactly 6 players
             .map(player => ({
@@ -523,24 +611,24 @@ function MatchForm({ matchId, navigateTo }) {
       
       let response;
       if (isEdit) {
-        console.log('🔄 Updating existing match via PRODUCTION API...');
-        // 🎯 PRODUCTION: Use complete update endpoint
+        console.log('Updating existing match via PRODUCTION API...');
+        // PRODUCTION: Use complete update endpoint
         response = await api.put(`/admin/matches/${matchId}/complete-update`, productionData);
       } else {
-        console.log('🚀 Creating new match via PRODUCTION API...');
+        console.log('Creating new match via PRODUCTION API...');
         response = await api.post('/admin/matches', productionData);
       }
       
-      console.log('✅ Match saved to PRODUCTION backend successfully:', response);
-      alert(`✅ Match ${isEdit ? 'updated' : 'created'} successfully with preserved heroes and maps!`);
+      console.log('Match saved to PRODUCTION backend successfully:', response);
+      alert(`Match ${isEdit ? 'updated' : 'created'} successfully with preserved heroes and maps!`);
       
       // Navigate back to matches list
       if (navigateTo) {
         navigateTo('admin-matches');
       }
     } catch (error) {
-      console.error('❌ Error saving match to PRODUCTION backend:', error);
-      alert(`❌ Error saving match: ${error.message || 'Unknown error'}`);
+      console.error('Error saving match to PRODUCTION backend:', error);
+      alert(`Error saving match: ${error.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
@@ -550,7 +638,7 @@ function MatchForm({ matchId, navigateTo }) {
     return (
       <div className="max-w-4xl mx-auto">
         <div className="text-center py-8">
-          <div className="text-2xl mb-4">⚔️</div>
+          <div className="text-2xl mb-4">MATCHES</div>
           <p className="text-gray-600 dark:text-gray-400">Loading real match form data...</p>
         </div>
       </div>
@@ -563,7 +651,7 @@ function MatchForm({ matchId, navigateTo }) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {isEdit ? '✏️ Edit Match' : '⚔️ Create New Match'}
+            {isEdit ? 'Edit Match' : 'Create New Match'}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
             {isEdit ? 'Update match details and scoring' : 'Set up a new Marvel Rivals tournament match'}
@@ -580,7 +668,7 @@ function MatchForm({ matchId, navigateTo }) {
       <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-6">
         {/* Teams Selection */}
         <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">🎮 Teams</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Teams</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -639,7 +727,7 @@ function MatchForm({ matchId, navigateTo }) {
 
         {/* Match Details */}
         <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">📝 Match Details</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Match Details</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -680,7 +768,7 @@ function MatchForm({ matchId, navigateTo }) {
                 ))}
               </select>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                ✅ Changing format will reset map configuration
+                Changing format will reset map configuration
               </p>
             </div>
 
@@ -694,8 +782,22 @@ function MatchForm({ matchId, navigateTo }) {
                 value={formData.scheduled_at}
                 onChange={handleInputChange}
                 className={`form-input ${errors.scheduled_at ? 'border-red-500' : ''}`}
+                min={formData.allow_past_date ? undefined : new Date().toISOString().slice(0, 16)}
                 required
               />
+              <div className="mt-2 flex items-center">
+                <input
+                  type="checkbox"
+                  id="allow_past_date"
+                  name="allow_past_date"
+                  checked={formData.allow_past_date}
+                  onChange={handleInputChange}
+                  className="mr-2"
+                />
+                <label htmlFor="allow_past_date" className="text-sm text-gray-600 dark:text-gray-400">
+                  Allow past dates (for completed matches)
+                </label>
+              </div>
             </div>
 
             <div>
@@ -718,44 +820,151 @@ function MatchForm({ matchId, navigateTo }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Stream URL
+                Tournament Round
               </label>
               <input
-                type="url"
-                name="stream_url"
-                value={formData.stream_url}
+                type="text"
+                name="round"
+                value={formData.round}
                 onChange={handleInputChange}
                 className="form-input"
-                placeholder="https://twitch.tv/marvelrivals"
+                placeholder="Semi-Finals, Quarter-Finals, etc."
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Betting URL
+                Bracket Position
               </label>
               <input
-                type="url"
-                name="betting_url"
-                value={formData.betting_url}
+                type="text"
+                name="bracket_position"
+                value={formData.bracket_position}
                 onChange={handleInputChange}
                 className="form-input"
-                placeholder="https://betting-site.com/match/123"
+                placeholder="Upper Bracket, Lower Bracket, etc."
               />
             </div>
+          </div>
+        </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Description
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                rows={3}
-                className="form-input"
-                placeholder="Match description, stakes, context, etc..."
-              />
+        {/* ENHANCED: Multiple URLs Section */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Streaming & Betting URLs</h3>
+          
+          <div className="space-y-6">
+            {/* Stream URLs */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Stream URLs
+                </label>
+                <button
+                  type="button"
+                  onClick={() => addUrlField('streams')}
+                  className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                >
+                  + Add Stream
+                </button>
+              </div>
+              <div className="space-y-2">
+                {(formData.stream_urls || ['']).map((url, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <input
+                      type="url"
+                      value={url}
+                      onChange={(e) => handleUrlChange('streams', index, e.target.value)}
+                      className="form-input flex-1"
+                      placeholder={`https://twitch.tv/stream${index + 1}`}
+                    />
+                    {(formData.stream_urls || []).length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeUrlField('streams', index)}
+                        className="px-2 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Betting URLs */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Betting URLs
+                </label>
+                <button
+                  type="button"
+                  onClick={() => addUrlField('betting')}
+                  className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                >
+                  + Add Betting
+                </button>
+              </div>
+              <div className="space-y-2">
+                {(formData.betting_urls || ['']).map((url, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <input
+                      type="url"
+                      value={url}
+                      onChange={(e) => handleUrlChange('betting', index, e.target.value)}
+                      className="form-input flex-1"
+                      placeholder={`https://bet365.com/match${index + 1}`}
+                    />
+                    {(formData.betting_urls || []).length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeUrlField('betting', index)}
+                        className="px-2 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* VOD URLs */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">
+                  VOD URLs
+                </label>
+                <button
+                  type="button"
+                  onClick={() => addUrlField('vods')}
+                  className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"
+                >
+                  + Add VOD
+                </button>
+              </div>
+              <div className="space-y-2">
+                {(formData.vod_urls || ['']).map((url, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <input
+                      type="url"
+                      value={url}
+                      onChange={(e) => handleUrlChange('vods', index, e.target.value)}
+                      className="form-input flex-1"
+                      placeholder={`https://youtube.com/vod${index + 1}`}
+                    />
+                    {(formData.vod_urls || []).length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeUrlField('vods', index)}
+                        className="px-2 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -763,7 +972,7 @@ function MatchForm({ matchId, navigateTo }) {
         {/* Marvel Rivals Maps Configuration + Real Player Display */}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            🗺️ Marvel Rivals Maps & Team Compositions ({formData.format})
+            Marvel Rivals Maps & Team Compositions ({formData.format})
           </h3>
           
           <div className="space-y-6">
@@ -812,18 +1021,12 @@ function MatchForm({ matchId, navigateTo }) {
                         <span className="font-bold text-gray-900 dark:text-white">
                           {MARVEL_RIVALS_CONFIG.gameModes[map.mode].displayName}
                         </span>
-                        <span className="text-gray-600 dark:text-gray-400">
-                          • {Math.floor(MARVEL_RIVALS_CONFIG.gameModes[map.mode].duration / 60)} minutes
-                        </span>
-                      </div>
-                      <div className="text-gray-600 dark:text-gray-400 mt-1">
-                        {MARVEL_RIVALS_CONFIG.gameModes[map.mode].description}
                       </div>
                     </div>
                   )}
                 </div>
 
-                {/* 🎮 GAME MODE SELECTION (AUTO-SET BUT EDITABLE) */}
+                {/* GAME MODE SELECTION (AUTO-SET BUT EDITABLE) */}
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                     Game Mode
@@ -841,7 +1044,7 @@ function MatchForm({ matchId, navigateTo }) {
                   </select>
                 </div>
 
-                {/* 🔥 REAL PLAYER COMPOSITIONS DISPLAY */}
+                {/* REAL PLAYER COMPOSITIONS DISPLAY */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Team 1 Composition */}
                   <div className="border border-blue-200 dark:border-blue-700 rounded-lg p-4 bg-blue-50 dark:bg-blue-900/10">
@@ -855,7 +1058,7 @@ function MatchForm({ matchId, navigateTo }) {
                           <div key={playerIndex} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
                             <div className="flex items-center justify-between mb-2">
                               <span className="font-bold text-green-600 dark:text-green-400">
-                                ✅ {player.player_name || player.name || `Player ${playerIndex + 1}`}
+                                {player.player_name || player.name || `Player ${playerIndex + 1}`}
                               </span>
                               <div className={`px-2 py-1 rounded text-xs font-medium ${
                                 player.role === 'Tank' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
@@ -908,7 +1111,7 @@ function MatchForm({ matchId, navigateTo }) {
                           <div key={playerIndex} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
                             <div className="flex items-center justify-between mb-2">
                               <span className="font-bold text-green-600 dark:text-green-400">
-                                ✅ {player.player_name || player.name || `Player ${playerIndex + 1}`}
+                                {player.player_name || player.name || `Player ${playerIndex + 1}`}
                               </span>
                               <div className={`px-2 py-1 rounded text-xs font-medium ${
                                 player.role === 'Tank' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
@@ -986,7 +1189,7 @@ function MatchForm({ matchId, navigateTo }) {
           
           <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <div className="text-sm text-blue-800 dark:text-blue-200">
-              <div className="font-bold mb-2">🎯 Current Match Score:</div>
+              <div className="font-bold mb-2">Current Match Score:</div>
               <div className="text-2xl">
                 {selectedTeam1?.short_name || 'Team 1'}: <span className="font-bold">{formData.team1_score}</span> - 
                 {selectedTeam2?.short_name || 'Team 2'}: <span className="font-bold">{formData.team2_score}</span>
@@ -1002,7 +1205,7 @@ function MatchForm({ matchId, navigateTo }) {
             disabled={saving}
             className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold"
           >
-            {saving ? '💾 Saving...' : isEdit ? '💾 Update Match' : '🚀 Create Match'}
+            {saving ? 'Saving...' : isEdit ? 'Update Match' : 'Create Match'}
           </button>
           <button
             type="button"

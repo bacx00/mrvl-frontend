@@ -4,14 +4,12 @@ import { TeamLogo } from '../../utils/imageUtils';
 
 function TeamsPage({ navigateTo }) {
   const [teams, setTeams] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [selectedRegion, setSelectedRegion] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const { api } = useAuth();
 
   const fetchTeams = useCallback(async () => {
     try {
-      setLoading(true);
       console.log('🔍 TeamsPage: Fetching teams from real API...');
       
       const response = await api.get('/teams');
@@ -33,7 +31,7 @@ function TeamsPage({ navigateTo }) {
         logo: team.logo,
         region: team.region,
         country: team.country,
-        flag: getCountryFlag(team.country),
+        flag: team.flag || getCountryFlag(team.country),
         rating: team.rating || 0,
         rank: team.rank || 0,
         winRate: team.win_rate || Math.floor(Math.random() * 30) + 70,
@@ -52,53 +50,8 @@ function TeamsPage({ navigateTo }) {
       console.log('✅ TeamsPage: Teams transformation complete with real IDs');
     } catch (error) {
       console.error('❌ TeamsPage: Error fetching teams:', error);
-      // Set fallback data with REAL backend structure using actual IDs
-      setTeams([
-        {
-          id: 30,
-          name: "Team Alpha Test",
-          shortName: "ALF",
-          logo: "teams/logos/56lKPjwutD9twfsufkT1U7tVg3MSG2tg8Wpb8M6o.jpg",
-          region: "NA",
-          country: "United States",
-          flag: "🇺🇸",
-          rating: 2458,
-          rank: 1,
-          winRate: 92.3,
-          founded: "2024",
-          captain: "TestPlayer1",
-          players: [],
-          achievements: ["Test Tournament Winner"],
-          socialMedia: {
-            twitter: "@ALFEsports",
-            twitch: "alf_gaming",
-            youtube: "TeamAlphaGaming"
-          }
-        },
-        {
-          id: 31,
-          name: "Team Beta Test",
-          shortName: "BET",
-          logo: "teams/logos/example.jpg",
-          region: "EU",
-          country: "Germany",
-          flag: "🇩🇪",
-          rating: 2387,
-          rank: 2,
-          winRate: 89.1,
-          founded: "2024",
-          captain: "TestPlayer2",
-          players: [],
-          achievements: ["EU Regional Qualifier"],
-          socialMedia: {
-            twitter: "@BETEsports",
-            twitch: "bet_gaming",
-            youtube: "TeamBetaGaming"
-          }
-        }
-      ]);
-    } finally {
-      setLoading(false);
+      // NO MOCK DATA - Set empty array on error
+      setTeams([]);
     }
   }, [api]);
 
@@ -143,17 +96,6 @@ function TeamsPage({ navigateTo }) {
       alert('Navigation error: Unable to view team profile');
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="loading-spinner mx-auto mb-4"></div>
-          <div className="text-gray-600 dark:text-gray-400">Loading teams...</div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="animate-fade-in">

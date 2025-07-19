@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
+import { getImageUrl } from '../../utils/imageUtils';
 
 function UserForm({ navigateTo, userId = null }) {
   const [formData, setFormData] = useState({
@@ -7,7 +8,7 @@ function UserForm({ navigateTo, userId = null }) {
     email: '',
     password: '',
     roles: ['user'], // Default to user role
-    avatar: '👤',
+    avatar: null,
     status: 'active'
   });
 
@@ -34,6 +35,7 @@ function UserForm({ navigateTo, userId = null }) {
         password: '', // Don't populate password field for security
         roles: user.roles || ['user']
       });
+      
     } catch (error) {
       console.error('Error fetching user:', error);
       alert('Error loading user data. Please try again.');
@@ -77,6 +79,7 @@ function UserForm({ navigateTo, userId = null }) {
         response = await api.post('/admin/users', dataToSend);
       }
 
+
       alert(`User ${isEdit ? 'updated' : 'created'} successfully!`);
       navigateTo('admin-dashboard');
     } catch (error) {
@@ -105,7 +108,7 @@ function UserForm({ navigateTo, userId = null }) {
     });
   };
 
-  const avatarOptions = ['👤', '👩', '👨', '🧑', '👱', '👸', '🤴', '🧙', '🦸', '🦹', '🛡️', '⭐', '🎮', '🏆'];
+
   
   // FIXED: Use exact backend-supported role values (lowercase)
   const roleOptions = [
@@ -244,22 +247,9 @@ function UserForm({ navigateTo, userId = null }) {
                 <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
                   Avatar
                 </label>
-                <div className="grid grid-cols-7 gap-2">
-                  {avatarOptions.map(avatar => (
-                    <div
-                      key={avatar}
-                      onClick={() => handleChange('avatar', avatar)}
-                      className={`
-                        text-2xl p-2 rounded-md text-center cursor-pointer
-                        ${formData.avatar === avatar 
-                          ? 'bg-blue-100 dark:bg-blue-900 border-2 border-blue-500 dark:border-blue-400' 
-                          : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}
-                      `}
-                    >
-                      {avatar}
-                    </div>
-                  ))}
-                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Users select their hero avatar from their profile settings page. Admin cannot set user avatars.
+                </p>
               </div>
             </div>
           </div>

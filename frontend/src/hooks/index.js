@@ -265,10 +265,18 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUser = useCallback(async () => {
     try {
-      const userData = await api.get('/user');
-      const user = userData.user || userData;
+      const response = await api.get('/user');
+      // Handle both data structures from backend
+      const user = response.data || response.user || response;
+      
+      // Ensure roles are properly set
+      if (user && !user.roles && user.role) {
+        user.roles = [user.role];
+      }
+      
       setUser(user);
       setIsAuthenticated(true);
+      console.log('User data fetched successfully:', user);
     } catch (error) {
       console.error('Failed to fetch user:', error);
       logout();
@@ -289,16 +297,42 @@ export const AuthProvider = ({ children }) => {
           );
           
           const userPromise = api.get('/user');
-          const userData = await Promise.race([userPromise, timeoutPromise]);
+          const response = await Promise.race([userPromise, timeoutPromise]);
           
-          const user = userData.user || userData;
+          // Handle both data structures from backend
+          const user = response.data || response.user || response;
+          
+          // Ensure roles are properly set
+          if (user && !user.roles && user.role) {
+            user.roles = [user.role];
+          }
+          
           setUser(user);
           setIsAuthenticated(true);
+          console.log('Initial user data loaded:', user);
         } catch (error) {
-          console.error('Failed to fetch user (expected in frontend-only mode):', error);
-          localStorage.removeItem('authToken');
-          setUser(null);
-          setIsAuthenticated(false);
+          console.error('Failed to fetch user from API:', error);
+          
+          // Try to recover user data from localStorage
+          const cachedUserData = localStorage.getItem('userData');
+          if (cachedUserData) {
+            try {
+              const user = JSON.parse(cachedUserData);
+              console.log('Recovered user data from cache:', user);
+              setUser(user);
+              setIsAuthenticated(true);
+            } catch (parseError) {
+              console.error('Failed to parse cached user data:', parseError);
+              localStorage.removeItem('authToken');
+              localStorage.removeItem('userData');
+              setUser(null);
+              setIsAuthenticated(false);
+            }
+          } else {
+            localStorage.removeItem('authToken');
+            setUser(null);
+            setIsAuthenticated(false);
+          }
         } finally {
           setLoading(false);
         }
@@ -326,6 +360,8 @@ export const AuthProvider = ({ children }) => {
         const userData = response.user;
         
         localStorage.setItem('authToken', token);
+        // Also persist user data for role recovery
+        localStorage.setItem('userData', JSON.stringify(userData));
         setUser(userData);
         setIsAuthenticated(true);
         
@@ -388,6 +424,8 @@ export const AuthProvider = ({ children }) => {
         const user = response.user;
         
         localStorage.setItem('authToken', token);
+        // Also persist user data for role recovery
+        localStorage.setItem('userData', JSON.stringify(user));
         setUser(user);
         setIsAuthenticated(true);
         
@@ -433,6 +471,7 @@ export const AuthProvider = ({ children }) => {
       console.warn('Logout request failed:', error);
     } finally {
       localStorage.removeItem('authToken');
+      localStorage.removeItem('userData');
       setUser(null);
       setIsAuthenticated(false);
     }

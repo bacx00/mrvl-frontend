@@ -7,9 +7,10 @@ import AdminEvents from './AdminEvents';
 import AdminUsers from './AdminUsers';
 import AdminStats from './AdminStats';
 import AdminNews from './AdminNews';
+import LiveScoringDashboard from './LiveScoringDashboard';
 import BulkOperationsPanel from './BulkOperationsPanel';
 import AdvancedAnalytics from './AdvancedAnalytics';
-import ModerationCenter from './ModerationCenter';
+import SimpleUserProfile from '../pages/SimpleUserProfile';
 
 function AdminDashboard({ navigateTo }) {
   const [activeSection, setActiveSection] = useState('overview');
@@ -50,17 +51,17 @@ function AdminDashboard({ navigateTo }) {
 
   // CRITICAL FIX: Remove tournaments that breaks the website
   const sections = [
-    { id: 'overview', name: 'Overview', icon: '📊' },
-    { id: 'teams', name: 'Teams', icon: '👥' },
-    { id: 'players', name: 'Players', icon: '🎮' },
-    { id: 'matches', name: 'Matches', icon: '⚔️' },
-    { id: 'events', name: 'Events', icon: '🏆' },
-    { id: 'users', name: 'Users', icon: '👤' },
-    { id: 'news', name: 'News', icon: '📰' },
+    { id: 'overview', name: 'Overview' },
+    { id: 'teams', name: 'Teams' },
+    { id: 'players', name: 'Players' },
+    { id: 'matches', name: 'Matches' },
+    { id: 'events', name: 'Events' },
+    { id: 'users', name: 'Users' },
+    { id: 'news', name: 'News' },
     // PHASE 7: ADVANCED ADMIN FEATURES (removed tournaments)
-    { id: 'bulk-operations', name: 'Bulk Ops', icon: '⚡' },
-    { id: 'analytics', name: 'Analytics', icon: '📈' },
-    { id: 'moderation', name: 'Moderation', icon: '🛡️' }
+    { id: 'bulk-operations', name: 'Bulk Ops' },
+    { id: 'analytics', name: 'Analytics' },
+    { id: 'profile', name: 'Profile' }
   ];
 
   const renderContent = () => {
@@ -85,8 +86,8 @@ function AdminDashboard({ navigateTo }) {
         return <BulkOperationsPanel api={api} />;
       case 'analytics':
         return <AdvancedAnalytics api={api} />;
-      case 'moderation':
-        return <ModerationCenter api={api} navigateTo={navigateTo} />;
+      case 'profile':
+        return <SimpleUserProfile navigateTo={navigateTo} />;
         
       default:
         return <AdminStats stats={stats} />;
@@ -101,7 +102,7 @@ function AdminDashboard({ navigateTo }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                🛡️ Admin Dashboard
+                Admin Dashboard
               </h1>
               <span className="px-3 py-1 bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 text-sm font-medium rounded-full">
                 Super Admin
@@ -113,13 +114,13 @@ function AdminDashboard({ navigateTo }) {
                 onClick={() => navigateTo('home')}
                 className="btn btn-secondary"
               >
-                🏠 Back to Site
+                Back to Site
               </button>
               <button 
                 onClick={logout}
                 className="btn btn-ghost"
               >
-                🚪 Logout
+                Logout
               </button>
             </div>
           </div>
@@ -141,7 +142,6 @@ function AdminDashboard({ navigateTo }) {
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
-                  <span className="text-xl">{section.icon}</span>
                   <span className="font-medium">{section.name}</span>
                 </button>
               ))}

@@ -76,31 +76,22 @@ function AdminNews({ navigateTo }) {
     }
   };
 
-  // CRITICAL FIX: Feature/unfeature functionality with complete article data
+  // Feature/unfeature functionality using dedicated endpoints
   const toggleFeatured = async (newsId, article) => {
     try {
-      console.log('🔄 Toggling featured status for article:', newsId);
+      console.log('Toggling featured status for article:', newsId);
       
-      // Send complete article data to avoid validation errors
-      const updateData = {
-        title: article.title,
-        content: article.content,
-        excerpt: article.excerpt || article.content?.substring(0, 150) + '...' || 'No excerpt available',
-        category: article.category,
-        status: article.status,
-        featured: !article.featured
-      };
+      // Use dedicated endpoints for feature/unfeature
+      const endpoint = article.featured ? 
+        `/moderator/news/${newsId}/unfeature` : 
+        `/moderator/news/${newsId}/feature`;
       
-      await api.put(`/admin/news/${newsId}`, updateData);
+      await api.put(endpoint);
       await fetchNews(); // Refresh the list
       alert(`News article ${!article.featured ? 'featured' : 'unfeatured'} successfully!`);
     } catch (error) {
       console.error('Error updating featured status:', error);
-      if (error.message.includes('422') || error.message.includes('Validation')) {
-        alert('Error: Missing required fields. Please edit the article first to ensure all fields are complete.');
-      } else {
-        alert('Error updating featured status. Please try again.');
-      }
+      alert('Error updating featured status. Please try again.');
     }
   };
 
@@ -142,7 +133,7 @@ function AdminNews({ navigateTo }) {
   if (!canManageNews) {
     return (
       <div className="card p-12 text-center">
-        <div className="text-6xl mb-4">🚫</div>
+        <div className="text-6xl mb-4"></div>
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Access Denied</h3>
         <p className="text-gray-600 dark:text-gray-400">
           You don't have permission to manage news articles.
@@ -177,35 +168,35 @@ function AdminNews({ navigateTo }) {
           onClick={() => navigateTo('admin-news-create')}
           className="btn btn-primary whitespace-nowrap"
         >
-          📰 Create News Article
+          Create News Article
         </button>
       </div>
 
       {/* News Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="card p-4 text-center">
-          <div className="text-2xl mb-2">📰</div>
+          <div className="text-2xl mb-2"></div>
           <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
             {news.length}
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">Total Articles</div>
         </div>
         <div className="card p-4 text-center">
-          <div className="text-2xl mb-2">✅</div>
+          <div className="text-2xl mb-2"></div>
           <div className="text-xl font-bold text-green-600 dark:text-green-400">
             {news.filter(n => n.status === 'published').length}
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">Published</div>
         </div>
         <div className="card p-4 text-center">
-          <div className="text-2xl mb-2">📝</div>
+          <div className="text-2xl mb-2"></div>
           <div className="text-xl font-bold text-gray-600 dark:text-gray-400">
             {news.filter(n => n.status === 'draft').length}
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">Drafts</div>
         </div>
         <div className="card p-4 text-center">
-          <div className="text-2xl mb-2">⭐</div>
+          <div className="text-2xl mb-2"></div>
           <div className="text-xl font-bold text-yellow-600 dark:text-yellow-400">
             {news.filter(n => n.featured).length}
           </div>
@@ -288,7 +279,7 @@ function AdminNews({ navigateTo }) {
                     </span>
                     {article.featured && (
                       <span className="px-2 py-1 text-xs font-bold rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200">
-                        ⭐ FEATURED
+                        FEATURED
                       </span>
                     )}
                   </div>
@@ -304,9 +295,9 @@ function AdminNews({ navigateTo }) {
               {/* Article Meta */}
               <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-500 mb-4">
                 <div className="flex items-center space-x-3">
-                  <span>{article.author?.avatar || '👤'} {article.author?.name || 'MRVL Team'}</span>
-                  <span>👁 {article.views?.toLocaleString() || 0}</span>
-                  <span>💬 {article.comments_count || 0}</span>
+                  <span>{article.author?.avatar || ''} {article.author?.name || 'MRVL Team'}</span>
+                  <span>Views: {article.views?.toLocaleString() || 0}</span>
+                  <span>Comments: {article.comments_count || 0}</span>
                 </div>
                 <span>{formatDate(article.published_at || article.created_at)}</span>
               </div>
@@ -317,7 +308,7 @@ function AdminNews({ navigateTo }) {
                   onClick={() => navigateTo('admin-news-edit', { id: article.id })}
                   className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                 >
-                  ✏️ Edit
+                  Edit
                 </button>
                 
                 {article.status === 'draft' && (
@@ -325,7 +316,7 @@ function AdminNews({ navigateTo }) {
                     onClick={() => updateNewsStatus(article.id, 'published')}
                     className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
                   >
-                    📤 Publish
+                    Publish
                   </button>
                 )}
                 
@@ -334,7 +325,7 @@ function AdminNews({ navigateTo }) {
                     onClick={() => updateNewsStatus(article.id, 'draft')}
                     className="px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
                   >
-                    📥 Unpublish
+                    Unpublish
                   </button>
                 )}
                 
@@ -346,14 +337,14 @@ function AdminNews({ navigateTo }) {
                       : 'bg-gray-600 text-white hover:bg-gray-700'
                   }`}
                 >
-                  {article.featured ? '⭐ Unfeature' : '⭐ Feature'}
+                  {article.featured ? 'Unfeature' : 'Feature'}
                 </button>
                 
                 <button
                   onClick={() => handleDelete(article.id, article.title)}
                   className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
                 >
-                  🗑️ Delete
+                  Delete
                 </button>
               </div>
             </div>
@@ -364,7 +355,7 @@ function AdminNews({ navigateTo }) {
       {/* No Results */}
       {news.length === 0 && (
         <div className="card p-8 text-center">
-          <div className="text-4xl mb-4">📰</div>
+          <div className="text-4xl mb-4"></div>
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No News Articles Found</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             {filters.search || filters.category !== 'all' || filters.status !== 'all'
@@ -375,7 +366,7 @@ function AdminNews({ navigateTo }) {
             onClick={() => navigateTo('admin-news-create')}
             className="btn btn-primary"
           >
-            📰 Create First Article
+            Create First Article
           </button>
         </div>
       )}

@@ -40,7 +40,7 @@ function AdminEvents({ navigateTo }) {
           organizer: "Marvel Esports",
           format: "Double Elimination",
           description: "The ultimate Marvel Rivals championship featuring the world's best teams competing for glory and the largest prize pool in the game's history.",
-          image: "🏆",
+          image: "",
           registration_open: true
         },
         {
@@ -66,7 +66,7 @@ function AdminEvents({ navigateTo }) {
   };
 
   const handleDelete = async (eventId, eventName) => {
-    const confirmMessage = `Are you sure you want to delete "${eventName}"?\n\n⚠️ This event has associated matches. Choose your option:`;
+    const confirmMessage = `Are you sure you want to delete "${eventName}"?\n\nThis event has associated matches. Choose your option:`;
     const forceDelete = window.confirm(`${confirmMessage}\n\nOK = Force Delete (removes matches too)\nCancel = Cancel deletion`);
     
     if (forceDelete) {
@@ -75,7 +75,7 @@ function AdminEvents({ navigateTo }) {
         // First try force delete
         await api.delete(`/admin/events/${eventId}?force=true`);
         await fetchEvents(); // Refresh the list
-        alert('✅ Event and all associated matches deleted successfully!');
+        alert('Event and all associated matches deleted successfully!');
       } catch (error) {
         console.error('Error force deleting event:', error);
         
@@ -84,13 +84,13 @@ function AdminEvents({ navigateTo }) {
           try {
             await api.delete(`/admin/events/${eventId}/force`);
             await fetchEvents(); // Refresh the list
-            alert('✅ Event force deleted successfully!');
+            alert('Event force deleted successfully!');
           } catch (forceError) {
             console.error('Error with force delete endpoint:', forceError);
-            alert(`❌ Error deleting event: ${forceError.message}\n\nPlease try deleting associated matches first.`);
+            alert(`Error deleting event: ${forceError.message}\n\nPlease try deleting associated matches first.`);
           }
         } else {
-          alert(`❌ Error deleting event: ${error.message}\n\nThe event has ${error.data?.match_count || 'some'} associated matches. Please try deleting them first.`);
+          alert(` Error deleting event: ${error.message}\n\nThe event has ${error.data?.match_count || 'some'} associated matches. Please try deleting them first.`);
         }
       }
     }
@@ -100,11 +100,11 @@ function AdminEvents({ navigateTo }) {
   const updateEventStatus = async (eventId, newStatus) => {
     try {
       // FIXED: Fetch the full event first, then update only the status
-      console.log('🔄 Fetching full event data before update...');
+      console.log(' Fetching full event data before update...');
       const eventResponse = await api.get(`/admin/events/${eventId}`);
       const eventData = eventResponse.data || eventResponse;
       
-      console.log('✅ Full event data fetched:', eventData);
+      console.log(' Full event data fetched:', eventData);
       
       // Update only the status in the complete event object
       const updateData = {
@@ -115,16 +115,16 @@ function AdminEvents({ navigateTo }) {
       console.log('📤 Sending complete update data:', updateData);
       await api.put(`/admin/events/${eventId}`, updateData);
       await fetchEvents(); // Refresh the list
-      alert(`✅ Event status updated to ${newStatus}!`);
+      alert(` Event status updated to ${newStatus}!`);
     } catch (error) {
       console.error('Error updating event status:', error);
       
       if (error.message.includes('422')) {
-        alert(`❌ Validation Error: ${error.message}\n\nMissing required fields. Please edit the event with complete information first.`);
+        alert(` Validation Error: ${error.message}\n\nMissing required fields. Please edit the event with complete information first.`);
       } else if (error.message.includes('404')) {
-        alert('❌ Event not found. It may have been deleted.');
+        alert(' Event not found. It may have been deleted.');
       } else {
-        alert(`❌ Error updating event status: ${error.message}`);
+        alert(` Error updating event status: ${error.message}`);
       }
     }
   };
@@ -174,28 +174,28 @@ function AdminEvents({ navigateTo }) {
           onClick={() => navigateTo('admin-event-create')}
           className="btn btn-primary"
         >
-          🏆 Create New Event
+           Create New Event
         </button>
       </div>
 
       {/* Event Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="card p-6 text-center">
-          <div className="text-3xl mb-2">🔴</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-red-600 dark:text-red-400">
             {events.filter(e => e.status === 'live').length}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Live Events</div>
         </div>
         <div className="card p-6 text-center">
-          <div className="text-3xl mb-2">📅</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
             {events.filter(e => e.status === 'upcoming').length}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Upcoming</div>
         </div>
         <div className="card p-6 text-center">
-          <div className="text-3xl mb-2">💰</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-green-600 dark:text-green-400">
             ${events.reduce((acc, e) => {
               const prizePool = parseInt(e.prize_pool?.replace(/[$,]/g, '') || '0');
@@ -205,7 +205,7 @@ function AdminEvents({ navigateTo }) {
           <div className="text-sm text-gray-600 dark:text-gray-400">Total Prize Pool</div>
         </div>
         <div className="card p-6 text-center">
-          <div className="text-3xl mb-2">👥</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
             {events.reduce((acc, e) => acc + (e.team_count || 0), 0)}
           </div>
@@ -327,7 +327,7 @@ function AdminEvents({ navigateTo }) {
                     onClick={() => updateEventStatus(event.id, 'live')}
                     className="btn bg-red-600 hover:bg-red-700 text-white"
                   >
-                    🔴 Start Event
+                     Start Event
                   </button>
                 )}
                 {event.status === 'live' && (
@@ -335,26 +335,26 @@ function AdminEvents({ navigateTo }) {
                     onClick={() => updateEventStatus(event.id, 'completed')}
                     className="btn bg-green-600 hover:bg-green-700 text-white"
                   >
-                    ✅ Complete Event
+                     Complete Event
                   </button>
                 )}
                 <button 
                   onClick={() => navigateTo('event-detail', { id: event.id })}
                   className="btn btn-secondary"
                 >
-                  👁️ View Details
+                   View Details
                 </button>
                 <button 
                   onClick={() => navigateTo('admin-event-edit', { id: event.id })}
                   className="btn btn-secondary"
                 >
-                  ✏️ Edit Event
+                   Edit Event
                 </button>
                 <button
                   onClick={() => handleDelete(event.id, event.name)}
                   className="btn bg-red-600 hover:bg-red-700 text-white"
                 >
-                  🗑️ Delete
+                   Delete
                 </button>
               </div>
             </div>
@@ -365,7 +365,7 @@ function AdminEvents({ navigateTo }) {
       {/* No Results */}
       {events.length === 0 && (
         <div className="card p-12 text-center">
-          <div className="text-6xl mb-4">🏆</div>
+          <div className="text-6xl mb-4"></div>
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Events Found</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             {filters.type !== 'all' || filters.status !== 'all'
@@ -376,7 +376,7 @@ function AdminEvents({ navigateTo }) {
             onClick={() => navigateTo('admin-event-create')}
             className="btn btn-primary"
           >
-            🏆 Create First Event
+             Create First Event
           </button>
         </div>
       )}

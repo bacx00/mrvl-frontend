@@ -31,8 +31,8 @@ function MatchAnalytics({ matchId, onClose }) {
   const generateMockAnalytics = () => ({
     match: {
       id: matchId,
-      team1: { name: 'Team A', short_name: 'TA', logo: '🔥' },
-      team2: { name: 'Team B', short_name: 'TB', logo: '⚡' },
+      team1: { name: 'Team A', short_name: 'TA', logo: '' },
+      team2: { name: 'Team B', short_name: 'TB', logo: '' },
       status: 'completed',
       format: 'BO3'
     },
@@ -70,7 +70,7 @@ function MatchAnalytics({ matchId, onClose }) {
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white dark:bg-gray-800 rounded-lg p-8">
           <div className="text-center">
-            <div className="text-2xl mb-4">📊</div>
+            <div className="text-2xl mb-4"></div>
             <div className="text-gray-600 dark:text-gray-400">Loading match analytics...</div>
           </div>
         </div>
@@ -83,7 +83,7 @@ function MatchAnalytics({ matchId, onClose }) {
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white dark:bg-gray-800 rounded-lg p-8">
           <div className="text-center">
-            <div className="text-4xl mb-4">❌</div>
+            <div className="text-4xl mb-4"></div>
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Analytics Data</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
               No comprehensive statistics found for this match.
@@ -137,14 +137,14 @@ function MatchAnalytics({ matchId, onClose }) {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center space-x-3">
-                <span>📈</span>
+                <span></span>
                 <span>Match Analytics Dashboard</span>
               </h2>
               <div className="mt-2 text-gray-600 dark:text-gray-400">
                 {matchData.match.team1?.name} vs {matchData.match.team2?.name} • {matchData.match.format}
               </div>
             </div>
-            <button onClick={onClose} className="text-2xl text-gray-400 hover:text-gray-600">✕</button>
+            <button onClick={onClose} className="text-2xl text-gray-400 hover:text-gray-600">×</button>
           </div>
         </div>
 
@@ -152,10 +152,10 @@ function MatchAnalytics({ matchId, onClose }) {
           {/* Navigation Tabs */}
           <div className="flex space-x-1 mb-6">
             {[
-              { id: 'overview', label: 'Match Overview', icon: '📊' },
-              { id: 'maps', label: 'Map Breakdown', icon: '🗺️' },
-              { id: 'players', label: 'Player Stats', icon: '🎮' },
-              { id: 'heroes', label: 'Hero Analysis', icon: '🦸' }
+              { id: 'overview', label: 'Match Overview', icon: '' },
+              { id: 'maps', label: 'Map Breakdown', icon: '' },
+              { id: 'players', label: 'Player Stats', icon: '' },
+              { id: 'heroes', label: 'Hero Analysis', icon: '' }
             ].map(tab => (
               <button
                 key={tab.id}
@@ -166,7 +166,7 @@ function MatchAnalytics({ matchId, onClose }) {
                     : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
-                <span className="mr-2">{tab.icon}</span>
+                {tab.icon && <span className="mr-2">{tab.icon}</span>}
                 {tab.label}
               </button>
             ))}
@@ -265,7 +265,7 @@ function MatchAnalytics({ matchId, onClose }) {
                 <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-xl font-bold text-gray-900 dark:text-white flex items-center space-x-2">
-                      <span className="text-2xl">🗺️</span>
+                      <span className="text-2xl"></span>
                       <span>{map.mapName}</span>
                       <span className="text-sm font-normal text-gray-600 dark:text-gray-400">({map.mode})</span>
                     </h4>
@@ -330,7 +330,7 @@ function MatchAnalytics({ matchId, onClose }) {
           {/* Player Stats and Hero Analysis views would go here */}
           {activeView === 'players' && (
             <div className="text-center py-12">
-              <div className="text-4xl mb-4">🎮</div>
+              <div className="text-4xl mb-4"></div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Detailed Player Statistics</h3>
               <p className="text-gray-600 dark:text-gray-400">
                 Comprehensive per-player performance metrics across all maps.
@@ -340,7 +340,7 @@ function MatchAnalytics({ matchId, onClose }) {
 
           {activeView === 'heroes' && (
             <div className="text-center py-12">
-              <div className="text-4xl mb-4">🦸</div>
+              <div className="text-4xl mb-4"></div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Hero Meta Analysis</h3>
               <p className="text-gray-600 dark:text-gray-400">
                 Hero pick rates, win rates, and effectiveness analysis for this match.

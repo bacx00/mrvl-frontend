@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
-import { getHeroImageSync, getHeroRole } from '../../utils/imageUtils';
+import { getHeroImageSync, getHeroRole, getCountryFlag } from '../../utils/imageUtils';
+import UserDisplay from '../shared/UserDisplay';
+import VotingButtons from '../shared/VotingButtons';
+import ComprehensiveMatchControl from '../admin/ComprehensiveMatchControl';
+import {
+  GAME_MODES,
+  PLAYER_STATS,
+  MATCH_STATUSES,
+  HEROES
+} from '../../constants/marvelRivalsData';
+import { subscribeMatchUpdates, subscribeLiveScoring } from '../../lib/pusher.ts';
 
 function MatchDetailPage({ matchId, navigateTo }) {
   const [match, setMatch] = useState(null);
@@ -17,8 +27,9 @@ function MatchDetailPage({ matchId, navigateTo }) {
   const [isPreparationPhase, setIsPreparationPhase] = useState(false);
   const [preparationTimer, setPreparationTimer] = useState(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [timerInterval, setTimerInterval] = useState(null);
   
-  // 🔥 LIVE UPDATES STATE - IMMEDIATE LIKE TIMER (no complex data structures)
+  // 🔥 COMPREHENSIVE MATCH STATE - REAL-TIME SYNCHRONIZED
   const [liveScores, setLiveScores] = useState({ team1: null, team2: null });
   const [liveSeriesScores, setLiveSeriesScores] = useState({ team1: 0, team2: 0 });
   const [lastHeroChange, setLastHeroChange] = useState(null);
@@ -26,67 +37,144 @@ function MatchDetailPage({ matchId, navigateTo }) {
   const [lastScoreUpdate, setLastScoreUpdate] = useState(null);
   const [lastProcessedEventId, setLastProcessedEventId] = useState(null);
   const [liveUpdateIndicator, setLiveUpdateIndicator] = useState(null);
+  const [showLiveScoring, setShowLiveScoring] = useState(false);
+  
+  // Enhanced match data state
+  const [matchData, setMatchData] = useState({
+    teams: { team1: null, team2: null },
+    event: null,
+    schedule: null,
+    format: 'BO3',
+    status: 'upcoming',
+    scores: { series: { team1: 0, team2: 0 }, maps: [] },
+    urls: { streams: [], betting: [], vods: [] },
+    live_data: { current_map: 1, timer: null, overtime: false, viewers: 0, hero_picks: [], live_updates: [] },
+    player_stats: {},
+    tournament: { round: null, bracket_position: null }
+  });
+  
+  // ENHANCED: Timeline and event tracking
+  const [matchTimeline, setMatchTimeline] = useState([]);
+  const [killFeed, setKillFeed] = useState([]);
+  const [objectiveUpdates, setObjectiveUpdates] = useState([]);
+  const [headToHeadData, setHeadToHeadData] = useState(null);
+  
+  // Live update tracking
+  const [heroSelections, setHeroSelections] = useState({});
+  const [mapScores, setMapScores] = useState([]);
+  const [currentMapTimer, setCurrentMapTimer] = useState({ minutes: 0, seconds: 0, phase: 'preparation' });
+  const [liveEventStream, setLiveEventStream] = useState([]);
+  const [playerPerformance, setPlayerPerformance] = useState({});
   
   const { user, isAuthenticated, api } = useAuth();
+  
+  // Auto-increment timer for live matches
+  useEffect(() => {
+    if (match?.status === 'live' && !isPreparationPhase) {
+      const interval = setInterval(() => {
+        setMatchTimer(prevTimer => {
+          const [mins, secs] = prevTimer.split(':').map(Number);
+          const totalSecs = mins * 60 + secs + 1;
+          const newMins = Math.floor(totalSecs / 60);
+          const newSecs = totalSecs % 60;
+          return `${String(newMins).padStart(2, '0')}:${String(newSecs).padStart(2, '0')}`;
+        });
+      }, 1000);
+      
+      setTimerInterval(interval);
+      return () => clearInterval(interval);
+    } else {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        setTimerInterval(null);
+      }
+    }
+  }, [match?.status, isPreparationPhase]);
   
   // 🔥 CRITICAL: FIXED BACKEND URL LOADING
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://staging.mrvl.net/api';
 
   console.log('🔍 MatchDetailPage: Using backend URL:', BACKEND_URL);
-
-  // 🎮 COMPLETE MARVEL RIVALS GAME MODES
-  const gameModesData = {
-    'Convoy': { 
-      duration: 18 * 60, 
-      displayName: 'Convoy', 
-      color: 'blue', 
-      description: 'Escort the payload to victory',
-      icon: '🚚'
-    },
-    'Domination': { 
-      duration: 12 * 60, 
-      displayName: 'Domination', 
-      color: 'red', 
-      description: 'Control strategic points',
-      icon: '🏁'
-    },
-    'Convergence': { 
-      duration: 15 * 60, 
-      displayName: 'Convergence', 
-      color: 'purple', 
-      description: 'Converge on objectives',
-      icon: '⚡'
-    },
-    'Conquest': { 
-      duration: 20 * 60, 
-      displayName: 'Conquest', 
-      color: 'green', 
-      description: 'Capture and hold territory',
-      icon: '💎'
-    },
-    'Doom Match': { 
-      duration: 10 * 60, 
-      displayName: 'Doom Match', 
-      color: 'orange', 
-      description: 'Eliminate all opponents',
-      icon: '💀'
-    },
-    'Escort': { 
-      duration: 16 * 60, 
-      displayName: 'Escort', 
-      color: 'yellow', 
-      description: 'Guide the target safely',
-      icon: '🛡️'
+  
+  // Load match timeline
+  const loadMatchTimeline = async () => {
+    try {
+      const response = await api.get(`/matches/${matchId}/timeline`);
+      if (response?.data?.success) {
+        setMatchTimeline(response.data.data || []);
+        
+        // Separate events by type
+        const kills = response.data.data.filter(e => e.type === 'kill');
+        const objectives = response.data.data.filter(e => e.type === 'objective');
+        
+        setKillFeed(kills.slice(0, 10)); // Last 10 kills
+        setObjectiveUpdates(objectives);
+      }
+    } catch (error) {
+      console.error('Error loading match timeline:', error);
+    }
+  };
+  
+  // Load head-to-head data
+  const loadHeadToHead = async (team1Id, team2Id) => {
+    if (!team1Id || !team2Id) return;
+    
+    try {
+      const response = await api.get(`/matches/head-to-head/${team1Id}/${team2Id}`);
+      if (response?.data?.success) {
+        setHeadToHeadData(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error loading head-to-head data:', error);
     }
   };
 
+  // Format time ago utility (VLR.gg style)
+  const formatTimeAgo = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h`;
+    if (diffInHours < 48) return 'Yesterday';
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 30) return `${diffInDays}d`;
+    
+    const diffInMonths = Math.floor(diffInDays / 30);
+    if (diffInMonths < 12) return `${diffInMonths}mo`;
+    
+    return `${Math.floor(diffInMonths / 12)}y`;
+  };
+
+  // 🎮 SEASON 2.5 GAME MODES
+  const gameModesData = GAME_MODES;
+
   const getGameModeTimer = (mode) => {
-    return gameModesData[mode] || { 
-      duration: 15 * 60, 
-      displayName: mode || 'Unknown', 
+    const modeData = gameModesData[mode];
+    if (!modeData) return { 
+      timer: { preparation: 30 },
+      name: mode || 'Unknown', 
       color: 'gray', 
       description: 'Unknown mode',
       icon: '❓'
+    };
+    
+    // Calculate total duration based on mode type
+    let duration = 900; // Default 15 minutes
+    if (mode === 'Convoy') {
+      duration = modeData.timer.baseTime + modeData.timer.checkpoint1 + modeData.timer.checkpoint2;
+    } else if (mode === 'Convergence') {
+      duration = modeData.timer.capturePhase + modeData.timer.escortPhase;
+    } else if (mode === 'Domination') {
+      duration = 12 * 60; // Average for best of 3
+    }
+    
+    return {
+      ...modeData,
+      duration,
+      color: mode === 'Convoy' ? 'blue' : mode === 'Domination' ? 'red' : 'purple'
     };
   };
 
@@ -172,12 +260,100 @@ function MatchDetailPage({ matchId, navigateTo }) {
           throw new Error('Backend URL is not configured properly');
         }
         
-        // 🚨 CRITICAL FIX: Use correct API endpoint
-        const apiResponse = await api.get(`/matches/${realMatchId}/live-scoreboard`);
-        console.log('📥 Live scoreboard response:', apiResponse);
+        // 🚨 ENHANCED: Use comprehensive match endpoint
+        const apiResponse = await api.get(`/matches/${realMatchId}`);
+        console.log('📥 Enhanced match response:', apiResponse);
         
         if (apiResponse?.success && apiResponse.data) {
-          const matchData = apiResponse.data;
+          const responseData = apiResponse.data;
+          
+          // Update comprehensive match state
+          setMatchData({
+            teams: responseData.teams || { team1: null, team2: null },
+            event: responseData.event || null,
+            schedule: responseData.schedule || null,
+            format: responseData.format || 'BO3',
+            status: responseData.status || 'upcoming',
+            scores: responseData.scores || { series: { team1: 0, team2: 0 }, maps: [] },
+            // 🔥 ENHANCED: Handle URLs from comprehensive endpoint
+            urls: {
+              streams: responseData.stream_urls || (responseData.stream_url ? [responseData.stream_url] : []),
+              betting: responseData.betting_urls || (responseData.betting_url ? [responseData.betting_url] : []),
+              vods: responseData.vod_urls || []
+            },
+            live_data: responseData.live_data || { current_map: 1, timer: null, overtime: false, viewers: 0, hero_picks: [], live_updates: [] },
+            player_stats: responseData.player_stats || {},
+            tournament: { 
+              round: responseData.round || null, 
+              bracket_position: responseData.bracket_position || null 
+            },
+            meta: responseData.meta || {}
+          });
+          
+          // Update legacy state for compatibility
+          setMatch(responseData);
+          
+          // Update live state variables
+          if (responseData.scores?.series) {
+            setLiveSeriesScores({
+              team1: responseData.scores.series.team1 || 0,
+              team2: responseData.scores.series.team2 || 0
+            });
+          }
+          
+          // Update map scores
+          if (responseData.scores?.maps) {
+            setMapScores(responseData.scores.maps);
+          }
+          
+          // Update hero selections
+          if (responseData.live_data?.hero_picks) {
+            setHeroSelections(responseData.live_data.hero_picks);
+          }
+          
+          // Update timer - handle both new and legacy formats
+          if (responseData.live_data?.timer) {
+            setCurrentMapTimer(responseData.live_data.timer);
+            const minutes = responseData.live_data.timer.minutes || 0;
+            const seconds = responseData.live_data.timer.seconds || 0;
+            setMatchTimer(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+          } else if (responseData.timer) {
+            // Legacy format support
+            setMatchTimer(responseData.timer);
+          } else if (responseData.match_timer) {
+            // Alternative format
+            setMatchTimer(responseData.match_timer);
+          }
+          
+          // Update player stats
+          if (responseData.player_stats) {
+            setPlayerPerformance(responseData.player_stats);
+          }
+          
+          // ENHANCED: Load timeline for live/completed matches
+          if (responseData.status === 'live' || responseData.status === 'completed') {
+            loadMatchTimeline();
+          }
+          
+          // ENHANCED: Load head-to-head data
+          if (responseData.team1?.id && responseData.team2?.id) {
+            loadHeadToHead(responseData.team1.id, responseData.team2.id);
+          }
+          
+          console.log('✅ Enhanced match data loaded:', {
+            matchId: realMatchId,
+            format: responseData.format,
+            status: responseData.status,
+            seriesScore: responseData.scores?.series,
+            mapCount: responseData.scores?.maps?.length || 0,
+            currentMap: responseData.live_data?.current_map,
+            hasTimer: !!responseData.live_data?.timer,
+            heroPicksCount: Object.keys(responseData.live_data?.hero_picks || {}).length,
+            playerStatsCount: Object.keys(responseData.player_stats || {}).length
+          });
+          
+          // For backward compatibility, extract team compositions
+          const matchData = responseData;
           let team1Players = [];
           let team2Players = [];
           
@@ -225,7 +401,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
           
           // 🚨 ENHANCED FALLBACK: If maps_data failed, try root level compositions
           if (!team1Players.length || !team2Players.length) {
-            console.log('⚠️ Maps_data failed, trying root level compositions...');
+            console.log('Maps_data failed, trying root level compositions...');
             team1Players = matchData.team1_composition || [];
             team2Players = matchData.team2_composition || [];
             
@@ -239,7 +415,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
           
           // 🚨 ENHANCED FALLBACK: If maps_data failed, try other sources
           if (!team1Players.length || !team2Players.length) {
-            console.log('⚠️ Maps_data failed, trying fallback sources...');
+            console.log('Maps_data failed, trying fallback sources...');
             
             // Try root level team compositions
             if (matchData.team1_composition && matchData.team2_composition) {
@@ -252,8 +428,8 @@ function MatchDetailPage({ matchId, navigateTo }) {
             }
             // Try teams structure
             else if (matchData.teams) {
-              team1Players = matchData.teams.team1?.players || [];
-              team2Players = matchData.teams.team2?.players || [];
+              team1Players = matchData.teams.team1?.roster || matchData.teams.team1?.players || [];
+              team2Players = matchData.teams.team2?.roster || matchData.teams.team2?.players || [];
               console.log('✅ Using teams structure players:', {
                 team1Count: team1Players.length,
                 team2Count: team2Players.length
@@ -261,8 +437,8 @@ function MatchDetailPage({ matchId, navigateTo }) {
             }
             // Try scoreboard structure
             else if (matchData.scoreboard) {
-              team1Players = matchData.scoreboard.team1?.players || [];
-              team2Players = matchData.scoreboard.team2?.players || [];
+              team1Players = matchData.scoreboard.team1?.roster || matchData.scoreboard.team1?.players || [];
+              team2Players = matchData.scoreboard.team2?.roster || matchData.scoreboard.team2?.players || [];
               console.log('✅ Using scoreboard structure players:', {
                 team1Count: team1Players.length,
                 team2Count: team2Players.length
@@ -278,17 +454,21 @@ function MatchDetailPage({ matchId, navigateTo }) {
           if (parsedMapsData && parsedMapsData[matchData.current_map_index || 0]) {
             const currentMapData = parsedMapsData[matchData.current_map_index || 0];
             currentGameMode = currentMapData.mode || currentMapData.game_mode || currentGameMode;
-            console.log('🎮 Game mode from parsed maps_data:', currentGameMode);
+            console.log('Game mode from parsed maps_data:', currentGameMode);
           } else if (matchData.current_mode) {
             currentGameMode = matchData.current_mode;
-            console.log('🎮 Game mode from current_mode field:', currentGameMode);
+            console.log('Game mode from current_mode field:', currentGameMode);
           }
           
-          console.log('🎮 Final game mode detected:', currentGameMode);
+          console.log('Final game mode detected:', currentGameMode);
           
-          // Update live timer state
+          // Update live timer state - handle multiple formats
           if (matchData.live_timer) {
             setMatchTimer(matchData.live_timer);
+          } else if (matchData.timer) {
+            setMatchTimer(matchData.timer);
+          } else if (matchData.match_timer) {
+            setMatchTimer(matchData.match_timer);
           }
           
           // Update preparation phase state
@@ -318,23 +498,27 @@ function MatchDetailPage({ matchId, navigateTo }) {
             gameMode: currentGameMode,
             viewers: matchData.viewer_count || 0,
             totalMaps: totalMaps,
-            stream_url: matchData.stream_url,
-            betting_url: matchData.betting_url,
+            // 🔥 ENHANCED: Multiple URLs support - use comprehensive data if available
+            stream_urls: matchData.stream_urls || (matchData.stream_url ? [matchData.stream_url] : []),
+            betting_urls: matchData.betting_urls || (matchData.betting_url ? [matchData.betting_url] : []),
+            vod_urls: matchData.vod_urls || [],
+            round: matchData.round || null,
+            bracket_position: matchData.bracket_position || null,
             timer: matchData.timer || '00:00',
             timer_running: matchData.timer_running || false,
             
             // Teams from live-scoreboard response with better field mapping
             team1: {
-              id: matchData.team1_id,
-              name: matchData.team1_name || 'Team 1',
-              logo: matchData.teams?.team1?.logo || '',
-              players: team1Players
+              id: matchData.team1?.id || matchData.team1_id,
+              name: matchData.team1?.name || matchData.team1_name || 'Team 1',
+              logo: matchData.team1?.logo || matchData.teams?.team1?.logo || '',
+              players: matchData.team1?.roster || team1Players
             },
             team2: {
-              id: matchData.team2_id, 
-              name: matchData.team2_name || 'Team 2',
-              logo: matchData.teams?.team2?.logo || '',
-              players: team2Players
+              id: matchData.team2?.id || matchData.team2_id, 
+              name: matchData.team2?.name || matchData.team2_name || 'Team 2',
+              logo: matchData.team2?.logo || matchData.teams?.team2?.logo || '',
+              players: matchData.team2?.roster || team2Players
             },
             
             // Enhanced maps structure for BO1/BO3/BO5 - Use parsed data
@@ -358,6 +542,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
                     hero: player.hero || player.current_hero || player.main_hero || 'Captain America',
                     role: convertRoleToFrontend(player.role),
                     country: player.country || player.nationality || 'US',
+                    country_flag: player.country_flag || player.flag,
                     avatar: player.avatar,
                     eliminations: player.eliminations || 0,
                     deaths: player.deaths || 0,
@@ -372,6 +557,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
                     hero: player.hero || player.current_hero || player.main_hero || 'Hulk',
                     role: convertRoleToFrontend(player.role),
                     country: player.country || player.nationality || 'US',
+                    country_flag: player.country_flag || player.flag,
                     avatar: player.avatar,
                     eliminations: player.eliminations || 0,
                     deaths: player.deaths || 0,
@@ -439,7 +625,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
       const { detail } = event;
       const currentMatchId = getMatchId();
       
-      console.log('🔥 MatchDetailPage: Sync event received:', {
+      console.log('MatchDetailPage: Sync event received:', {
         eventType: event.type,
         detailType: detail.type,
         eventMatchId: detail.matchId,
@@ -465,7 +651,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
         }
         setLastProcessedEventId(eventId);
         
-        console.log('🔥 MatchDetailPage: Processing real-time update:', {
+        console.log('MatchDetailPage: Processing real-time update:', {
           type: detail.type,
           hasMatchData: !!detail.matchData,
           timestamp: detail.timestamp,
@@ -475,35 +661,26 @@ function MatchDetailPage({ matchId, navigateTo }) {
         
         // Handle different types of updates with IMMEDIATE RESPONSE and ERROR HANDLING
         try {
-          console.log('🔥 ENTERING SWITCH STATEMENT for type:', detail.type);
+          console.log('ENTERING SWITCH STATEMENT for type:', detail.type);
           
-          // 🚨 SHOW LIVE UPDATE INDICATOR
-          setLiveUpdateIndicator({
-            type: detail.type,
-            timestamp: Date.now(),
-            message: getUpdateMessage(detail.type)
-          });
-          
-          // Clear indicator after 3 seconds
-          setTimeout(() => setLiveUpdateIndicator(null), 3000);
           
           switch (detail.type) {
             case 'SCORE_UPDATE':
-              console.log('🏆 Score update received - IMMEDIATE UPDATE', detail);
+              console.log('Score update received - IMMEDIATE UPDATE', detail);
               
               // 🔥 IMMEDIATE LIVE SCORES UPDATE (like timer)
               if (detail.overallScores) {
                 const team1Score = detail.overallScores.team1 || detail.overallScores[0] || 0;
                 const team2Score = detail.overallScores.team2 || detail.overallScores[1] || 0;
                 
-                console.log(`🏆 IMMEDIATE: Setting live scores to Team1=${team1Score}, Team2=${team2Score}`);
-                console.log(`🏆 BEFORE UPDATE: liveScores was:`, liveScores);
+                console.log(`IMMEDIATE: Setting live scores to Team1=${team1Score}, Team2=${team2Score}`);
+                console.log(`BEFORE UPDATE: liveScores was:`, liveScores);
                 
                 // 🔥 FORCE STATE UPDATE AND RE-RENDER
                 setLiveScores({ team1: team1Score, team2: team2Score });
                 setRefreshTrigger(prev => prev + 1); // Force re-render
                 
-                console.log(`🏆 AFTER UPDATE: liveScores should be Team1=${team1Score}, Team2=${team2Score}`);
+                console.log(`AFTER UPDATE: liveScores should be Team1=${team1Score}, Team2=${team2Score}`);
                 
                 setLastScoreUpdate({ 
                   team1: team1Score, 
@@ -518,7 +695,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
                 const team1Score = detail.matchData.team1_score || detail.matchData.team1Score || 0;
                 const team2Score = detail.matchData.team2_score || detail.matchData.team2Score || 0;
                 
-                console.log(`🏆 FALLBACK: Setting live scores from matchData Team1=${team1Score}, Team2=${team2Score}`);
+                console.log(`FALLBACK: Setting live scores from matchData Team1=${team1Score}, Team2=${team2Score}`);
                 setLiveScores({ team1: team1Score, team2: team2Score });
                 setRefreshTrigger(prev => prev + 1); // Force re-render
               }
@@ -533,14 +710,14 @@ function MatchDetailPage({ matchId, navigateTo }) {
               
               // PRIORITY 1: Update match data immediately if provided
               if (detail.matchData) {
-                console.log('🏆 Setting match data from SCORE_UPDATE:', detail.matchData);
+                console.log('Setting match data from SCORE_UPDATE:', detail.matchData);
                 setMatch(detail.matchData);
                 setRefreshTrigger(prev => prev + 1); // Force re-render
               }
               
               // PRIORITY 2: Update overall scores immediately
               if (detail.overallScores) {
-                console.log('🏆 Updating overall scores:', detail.overallScores);
+                console.log('Updating overall scores:', detail.overallScores);
                 // Handle different score data structures
                 const team1Score = detail.overallScores.team1 || detail.overallScores[0] || 0;
                 const team2Score = detail.overallScores.team2 || detail.overallScores[1] || 0;
@@ -552,12 +729,12 @@ function MatchDetailPage({ matchId, navigateTo }) {
                   lastUpdated: Date.now()
                 } : prev);
                 
-                console.log(`🏆 Scores updated to: Team1=${team1Score}, Team2=${team2Score}`);
+                console.log(`Scores updated to: Team1=${team1Score}, Team2=${team2Score}`);
               }
               
               // PRIORITY 3: Handle map-level score updates for immediate feedback
               if (detail.mapScore !== undefined && detail.teamNumber && detail.mapIndex !== undefined) {
-                console.log(`🗺️ Map score update: Team ${detail.teamNumber} = ${detail.mapScore} on map ${detail.mapIndex + 1}`);
+                console.log(`Map score update: Team ${detail.teamNumber} = ${detail.mapScore} on map ${detail.mapIndex + 1}`);
                 setMatch(prev => {
                   if (!prev || !prev.maps || !prev.maps[detail.mapIndex]) return prev;
                   
@@ -579,7 +756,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
                   };
                 });
               }
-              console.log('🏆 SCORE_UPDATE processing completed');
+              console.log('SCORE_UPDATE processing completed');
               break;
               
             case 'HERO_CHANGE':
@@ -666,24 +843,24 @@ function MatchDetailPage({ matchId, navigateTo }) {
             case 'TIMER_PAUSE':
             case 'TIMER_RESET':
             case 'TIMER_UPDATE':
-              console.log('⏱️ Timer update received - IMMEDIATE UPDATE:', detail);
+              console.log('Timer update received - IMMEDIATE UPDATE:', detail);
               if (detail.timer !== undefined) {
                 setMatchTimer(detail.timer);
               }
               if (detail.isRunning !== undefined) {
                 // Update visual timer state immediately
-                console.log('⏱️ Timer running state:', detail.isRunning);
+                console.log('Timer running state:', detail.isRunning);
               }
               // NO BACKEND FETCH for timer updates - use event data only
-              console.log('⏱️ TIMER update processing completed - returning early');
+              console.log('TIMER update processing completed - returning early');
               return; // Don't fetch backend data for timer updates
               
             case 'MAP_ADVANCE':
-              console.log('🗺️ Map advance received - IMMEDIATE UPDATE');
+              console.log('Map advance received - IMMEDIATE UPDATE');
               if (detail.newMapIndex !== undefined) {
                 setCurrentMapIndex(detail.newMapIndex);
               }
-              console.log('🗺️ MAP_ADVANCE processing completed');
+              console.log('MAP_ADVANCE processing completed');
               break;
               
             case 'PREPARATION_PHASE':
@@ -721,7 +898,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
               console.log('🔄 DEFAULT case processing completed');
           }
           
-          console.log('🔥 SWITCH STATEMENT completed, proceeding to background refresh check');
+          console.log('SWITCH STATEMENT completed, proceeding to background refresh check');
           
           // For non-timer updates, also fetch fresh data for consistency (silently)
           // BUT for SCORE_UPDATE, delay the refresh to let real-time update show first
@@ -762,9 +939,9 @@ function MatchDetailPage({ matchId, navigateTo }) {
     
     // 🔥 FIX: Ensure handleMatchUpdate is properly called for CustomEvents
     const customEventHandler = (event) => {
-      console.log(`🎧 MatchDetailPage: CustomEvent ${event.type} received, calling handleMatchUpdate`);
-      console.log(`🎧 Event detail:`, event.detail);
-      console.log(`🎧 Current match ID:`, getMatchId());
+      console.log(`MatchDetailPage: CustomEvent ${event.type} received, calling handleMatchUpdate`);
+      console.log(`Event detail:`, event.detail);
+      console.log(`Current match ID:`, getMatchId());
       
       // 🔥 CRITICAL: Verify the event has the proper structure
       if (!event.detail) {
@@ -782,17 +959,17 @@ function MatchDetailPage({ matchId, navigateTo }) {
         return;
       }
       
-      console.log(`🎧 Event validation passed, calling handleMatchUpdate`);
+      console.log(`Event validation passed, calling handleMatchUpdate`);
       handleMatchUpdate(event);
-      console.log(`🎧 handleMatchUpdate call completed for ${event.type}`);
+      console.log(`handleMatchUpdate call completed for ${event.type}`);
     };
     
     eventTypes.forEach(eventType => {
-      console.log(`🎧 MatchDetailPage: Registering listener for ${eventType}`);
+      console.log(`MatchDetailPage: Registering listener for ${eventType}`);
       window.addEventListener(eventType, customEventHandler);
     });
     
-    console.log('🎧 MatchDetailPage: All event listeners registered for match:', getMatchId());
+    console.log('MatchDetailPage: All event listeners registered for match:', getMatchId());
     
     // 🧪 TEST: Dispatch a test event to verify listener setup
     setTimeout(() => {
@@ -980,10 +1157,90 @@ function MatchDetailPage({ matchId, navigateTo }) {
       setTimeout(() => localStorage.removeItem(testKey), 5000);
     }, 3000);
 
+    // 🔥 PUSHER REAL-TIME SUBSCRIPTIONS
+    let matchChannel = null;
+    let scoringChannel = null;
+    
+    if (matchId) {
+      console.log('📡 Setting up Pusher subscriptions for match:', matchId);
+      
+      // Subscribe to match-specific updates
+      matchChannel = subscribeMatchUpdates(String(matchId), (data) => {
+        console.log('📡 Pusher match update:', data);
+        
+        // Handle different event types
+        if (data.type === 'score-updated') {
+          setLiveScores({ team1: data.team1_score, team2: data.team2_score });
+          setRefreshTrigger(prev => prev + 1);
+        } else if (data.type === 'map-started' || data.type === 'map-ended') {
+          fetchMatchData(false); // Refresh match data
+        } else if (data.type === 'player-stats-updated') {
+          setLastStatUpdate(data);
+        } else if (data.type === 'hero-swap') {
+          setLastHeroChange(data);
+        } else if (data.type === 'match.map.transition') {
+          // Handle map transition
+          console.log('🗺️ Map transition:', data);
+          setCurrentMapIndex(data.map_number - 1);
+          fetchMatchData(false); // Refresh match data to get new map info
+        } else if (data.type === 'match.started') {
+          // Handle match start
+          console.log('🏁 Match started:', data);
+          fetchMatchData(false);
+        }
+        
+      });
+      
+      // Subscribe to live scoring updates
+      scoringChannel = subscribeLiveScoring(String(matchId), {
+        onScoreUpdate: (data) => {
+          console.log('📡 Live score update:', data);
+          setLiveScores({ team1: data.team1_score, team2: data.team2_score });
+          if (data.series_scores) {
+            setLiveSeriesScores(data.series_scores);
+          }
+        },
+        onPlayerStatUpdate: (data) => {
+          console.log('📡 Player stat update:', data);
+          setLastStatUpdate(data);
+        },
+        onMapUpdate: (data) => {
+          console.log('📡 Map update:', data);
+          if (data.current_map_index !== undefined) {
+            setCurrentMapIndex(data.current_map_index);
+          }
+        },
+        onEventLog: (data) => {
+          console.log('📡 Event log:', data);
+          setLiveEventStream(prev => [...prev.slice(-50), data]); // Keep last 50 events
+          
+          // ENHANCED: Update timeline in real-time
+          if (data.type === 'kill') {
+            setKillFeed(prev => [data, ...prev].slice(0, 10));
+          } else if (data.type === 'objective') {
+            setObjectiveUpdates(prev => [data, ...prev].slice(0, 5));
+          }
+          
+          // Add to overall timeline
+          setMatchTimeline(prev => [data, ...prev].slice(0, 100));
+        }
+      });
+    }
+    
     return () => {
       // Cleanup polling interval
       if (pollInterval) {
         clearInterval(pollInterval);
+      }
+      
+      // Cleanup Pusher subscriptions
+      if (matchChannel) {
+        matchChannel.unbind_all();
+        matchChannel.unsubscribe();
+      }
+      if (scoringChannel) {
+        scoringChannel.unbind_all();
+        scoringChannel.unsubscribe();
       }
       
       eventTypes.forEach(eventType => {
@@ -1065,6 +1322,168 @@ function MatchDetailPage({ matchId, navigateTo }) {
     }
   };
 
+  // Render comment function (VLR.gg style)
+  const renderComment = (comment, isReply = false, depth = 0) => {
+    const maxDepth = 3; // Limit nesting depth for readability
+    const shouldShowReplies = comment.replies && comment.replies.length > 0 && depth < maxDepth;
+    
+    return (
+      <div 
+        key={comment.id}
+        className={`${
+          isReply ? `ml-${Math.min(depth * 4 + 4, 16)} pl-4 border-l-2 border-gray-200 dark:border-gray-700` : ''
+        } py-4 ${depth > 0 ? 'bg-gray-50/50 dark:bg-gray-800/50 rounded-r-lg' : ''}`}
+      >
+        <div className="flex space-x-4">
+          {/* Voting */}
+          <div className="flex-shrink-0">
+            <VotingButtons
+              itemType="match_comment"
+              itemId={comment.id}
+              parentId={getMatchId()}
+              initialUpvotes={comment.votes?.upvotes || comment.upvotes || 0}
+              initialDownvotes={comment.votes?.downvotes || comment.downvotes || 0}
+              userVote={comment.user_vote}
+              direction="vertical"
+              size="sm"
+            />
+          </div>
+
+          {/* Comment Content */}
+          <div className="flex-1 min-w-0">
+            {/* User Info Header */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-3">
+                <UserDisplay
+                  user={comment.user}
+                  showAvatar={true}
+                  showHeroFlair={true}
+                  showTeamFlair={true}
+                  size="sm"
+                  clickable={true}
+                  navigateTo={navigateTo}
+                />
+                <span className="text-sm text-gray-500 dark:text-gray-500">
+                  {formatTimeAgo(comment.created_at)}
+                </span>
+                {comment.is_edited && (
+                  <span className="text-xs text-gray-400 dark:text-gray-600">
+                    (edited {formatTimeAgo(comment.updated_at)})
+                  </span>
+                )}
+              </div>
+
+              {/* Comment Actions */}
+              <div className="flex items-center space-x-2">
+                {isAuthenticated && (
+                  <button
+                    onClick={() => setReplyingTo(comment)}
+                    className="text-xs text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                  >
+                    Reply
+                  </button>
+                )}
+                {(comment.user?.id === user?.id) && (
+                  <button
+                    className="text-xs text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Comment Content */}
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              {comment.content.split('\n').map((paragraph, index) => (
+                <p key={index} className="mb-2 last:mb-0">
+                  {paragraph.split(/(@\w+)/).map((part, partIndex) => 
+                    part.startsWith('@') ? (
+                      <span key={partIndex} className="text-red-600 dark:text-red-400 font-medium cursor-pointer hover:underline">
+                        {part}
+                      </span>
+                    ) : (
+                      part
+                    )
+                  )}
+                </p>
+              ))}
+            </div>
+
+            {/* Reply Form */}
+            {replyingTo?.id === comment.id && (
+              <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded">
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  // TODO: Implement reply submission
+                  console.log('Reply to comment:', comment.id, replyText);
+                  setReplyingTo(null);
+                  setReplyText('');
+                }}>
+                  <div className="mb-2">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Replying to @{comment.user?.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setReplyingTo(null)}
+                      className="ml-2 text-xs text-red-600 dark:text-red-400 hover:underline"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  <textarea
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder="Write your reply..."
+                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-white resize-none"
+                    rows="3"
+                    required
+                  />
+                  <div className="flex justify-end space-x-2 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setReplyingTo(null)}
+                      className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={!replyText.trim()}
+                      className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Reply
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Nested Replies */}
+            {shouldShowReplies && (
+              <div className="mt-4">
+                <div className="text-xs text-gray-500 dark:text-gray-500 mb-2 border-l-2 border-gray-200 dark:border-gray-700 pl-2">
+                  {comment.replies.length} {comment.replies.length === 1 ? 'reply' : 'replies'}
+                </div>
+                {comment.replies.map(reply => renderComment(reply, true, depth + 1))}
+              </div>
+            )}
+            
+            {/* Show collapsed replies indicator if max depth reached */}
+            {comment.replies && comment.replies.length > 0 && depth >= maxDepth && (
+              <div className="mt-3 ml-4">
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                  View {comment.replies.length} more {comment.replies.length === 1 ? 'reply' : 'replies'}...
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto p-6">
@@ -1102,16 +1521,16 @@ function MatchDetailPage({ matchId, navigateTo }) {
     map_name: currentMap.mapName || match?.currentMap || 'Unknown Map',
     mode: currentMap.mode || match?.gameMode || 'Unknown Mode',
     timer: currentMap.timer || getGameModeTimer(currentMap.mode || match?.gameMode || 'Domination'),
-    team1Players: (currentMap.team1Composition || match?.team1?.players || []).map(p => ({
+    team1Players: (currentMap.team1Composition || match?.team1?.roster || match?.team1?.players || []).map(p => ({
       ...p,
-      name: p.name || p.player_name || p.username || `Player ${p.player_id || p.id}`,
+      name: p.name || p.real_name || p.player_name || p.username || `Player ${p.player_id || p.id}`,
       id: p.playerId || p.player_id || p.id,
       country: p.country || p.nationality || 'US',
       hero: p.hero || p.current_hero || p.main_hero || 'Unknown Hero'
     })),
-    team2Players: (currentMap.team2Composition || match?.team2?.players || []).map(p => ({
+    team2Players: (currentMap.team2Composition || match?.team2?.roster || match?.team2?.players || []).map(p => ({
       ...p,
-      name: p.name || p.player_name || p.username || `Player ${p.player_id || p.id}`, 
+      name: p.name || p.real_name || p.player_name || p.username || `Player ${p.player_id || p.id}`, 
       id: p.playerId || p.player_id || p.id,
       country: p.country || p.nationality || 'US',
       hero: p.hero || p.current_hero || p.main_hero || 'Unknown Hero'
@@ -1120,16 +1539,16 @@ function MatchDetailPage({ matchId, navigateTo }) {
     map_name: match?.currentMap || 'Unknown Map',
     mode: match?.gameMode || 'Unknown Mode',
     timer: getGameModeTimer(match?.gameMode || 'Domination'),
-    team1Players: (match?.team1?.players || []).map(p => ({
+    team1Players: (match?.team1?.roster || match?.team1?.players || []).map(p => ({
       ...p,
-      name: p.name || p.player_name || p.username || `Player ${p.player_id || p.id}`,
+      name: p.name || p.real_name || p.player_name || p.username || `Player ${p.player_id || p.id}`,
       id: p.playerId || p.player_id || p.id,
       country: p.country || p.nationality || 'US',
       hero: p.hero || p.current_hero || p.main_hero || 'Unknown Hero'
     })),
-    team2Players: (match?.team2?.players || []).map(p => ({
+    team2Players: (match?.team2?.roster || match?.team2?.players || []).map(p => ({
       ...p,
-      name: p.name || p.player_name || p.username || `Player ${p.player_id || p.id}`,
+      name: p.name || p.real_name || p.player_name || p.username || `Player ${p.player_id || p.id}`,
       id: p.playerId || p.player_id || p.id,
       country: p.country || p.nationality || 'US',
       hero: p.hero || p.current_hero || p.main_hero || 'Unknown Hero'
@@ -1164,8 +1583,24 @@ function MatchDetailPage({ matchId, navigateTo }) {
         <div className="text-lg text-gray-600 dark:text-gray-400">
           {match.format === 'BO1' ? 'Best of 1' : 
            match.format === 'BO3' ? 'Best of 3' :
-           match.format === 'BO5' ? 'Best of 5' : 'Best of 1'} • {match.currentMap || match.maps?.[currentMapIndex]?.mapName || 'Current Map'}
+           match.format === 'BO5' ? 'Best of 5' :
+           match.format === 'BO7' ? 'Best of 7' :
+           match.format === 'BO9' ? 'Best of 9' : 'Best of 1'} • {match.currentMap || match.maps?.[currentMapIndex]?.mapName || 'Current Map'}
         </div>
+        
+        {/* 🔥 ENHANCED: Tournament Context */}
+        {(match.round || match.bracket_position) && (
+          <div className="mt-2 text-center">
+            <div className="inline-flex items-center space-x-2 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-sm font-medium">
+              <span>🏆</span>
+              <span>
+                {match.round && match.bracket_position 
+                  ? `${match.round} - ${match.bracket_position}`
+                  : match.round || match.bracket_position}
+              </span>
+            </div>
+          </div>
+        )}
         
         {/* GAME MODE & TIMER INFO */}
         <div className="mt-2 flex justify-center items-center space-x-4">
@@ -1195,52 +1630,70 @@ function MatchDetailPage({ matchId, navigateTo }) {
           </div>
         )}
         
-        {/* LIVE UPDATE INDICATOR */}
-        {liveUpdateIndicator && (
-          <div className="mt-4 flex justify-center">
-            <div className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold animate-bounce shadow-lg">
-              {liveUpdateIndicator.message}
-            </div>
-          </div>
-        )}
         
-        {/* ACTION BUTTONS - Stream, Betting, V/D */}
-        <div className="mt-6 flex justify-center space-x-4">
-          {/* Stream Button */}
-          {match.stream_url && (
-            <a
-              href={match.stream_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center space-x-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
-            >
-              <span>📺</span>
-              <span>Watch Stream</span>
-            </a>
+        {/* 🔥 ENHANCED: Multiple URLs Action Buttons */}
+        <div className="mt-6 space-y-4">
+          {/* Stream URLs - Show even if only single URL field exists */}
+          {((match.stream_urls && match.stream_urls.length > 0 && match.stream_urls.some(url => url)) || match.stream_url) && (
+            <div className="text-center">
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">📺 Live Streams</div>
+              <div className="flex justify-center flex-wrap gap-2">
+                {(match.stream_urls || (match.stream_url ? [match.stream_url] : [])).filter(url => url).map((url, index) => (
+                  <a
+                    key={index}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors text-sm"
+                  >
+                    <span>📺</span>
+                    <span>Stream {index + 1}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
           )}
-          
-          {/* V/D Button */}
-          <button
-            onClick={() => {
-              alert('Victory/Defeat tracking enabled');
-            }}
-            className="flex items-center space-x-2 px-4 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
-          >
-            <span>📊</span>
-            <span>V/D Stats</span>
-          </button>
-          
-          {/* Betting Button */}
-          {match.betting_url && (
-            <a
-              href={match.betting_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center space-x-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
-            >
-              <span>💰</span>
-              <span>Place Bets</span>
-            </a>
+
+          {/* Betting URLs - Show even if only single URL field exists */}
+          {((match.betting_urls && match.betting_urls.length > 0 && match.betting_urls.some(url => url)) || match.betting_url) && (
+            <div className="text-center">
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">💰 Betting Sites</div>
+              <div className="flex justify-center flex-wrap gap-2">
+                {(match.betting_urls || (match.betting_url ? [match.betting_url] : [])).filter(url => url).map((url, index) => (
+                  <a
+                    key={index}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors text-sm"
+                  >
+                    <span>💰</span>
+                    <span>Betting {index + 1}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* VOD URLs - Show even if only single URL field exists */}
+          {((match.vod_urls && match.vod_urls.length > 0 && match.vod_urls.some(url => url)) || match.vod_url) && (
+            <div className="text-center">
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">🎬 Video on Demand</div>
+              <div className="flex justify-center flex-wrap gap-2">
+                {(match.vod_urls || (match.vod_url ? [match.vod_url] : [])).filter(url => url).map((url, index) => (
+                  <a
+                    key={index}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm"
+                  >
+                    <span>🎬</span>
+                    <span>VOD {index + 1}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </div>
@@ -1253,7 +1706,12 @@ function MatchDetailPage({ matchId, navigateTo }) {
           </h3>
           <div className="flex items-center justify-center space-x-8 mb-4">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-2">{match.team1?.name}</h2>
+              <h2 
+                className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-2 cursor-pointer hover:underline"
+                onClick={() => navigateTo && navigateTo('team-detail', match.team1?.id)}
+              >
+                {match.team1?.name}
+              </h2>
               <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">
                 {liveScores.team1 !== null ? liveScores.team1 : (match.team1_score || 0)}
               </div>
@@ -1269,7 +1727,12 @@ function MatchDetailPage({ matchId, navigateTo }) {
             </div>
             
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">{match.team2?.name}</h2>
+              <h2 
+                className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2 cursor-pointer hover:underline"
+                onClick={() => navigateTo && navigateTo('team-detail', match.team2?.id)}
+              >
+                {match.team2?.name}
+              </h2>
               <div className="text-4xl font-bold text-red-600 dark:text-red-400">
                 {liveScores.team2 !== null ? liveScores.team2 : (match.team2_score || 0)}
               </div>
@@ -1281,15 +1744,16 @@ function MatchDetailPage({ matchId, navigateTo }) {
             </div>
           </div>
           
-          {/* Map Status Indicators */}
+          {/* Map Status Indicators - Clickable */}
           <div className="flex justify-center space-x-2">
             {match.maps.map((map, index) => (
-              <div 
+              <button
                 key={index}
-                className={`px-3 py-1 rounded text-sm ${
-                  index === currentMapIndex ? 'bg-yellow-600 text-white' :
-                  map.status === 'completed' ? 'bg-green-600 text-white' :
-                  'bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-300'
+                onClick={() => setCurrentMapIndex(index)}
+                className={`px-3 py-1 rounded text-sm cursor-pointer transition-all ${
+                  index === currentMapIndex ? 'bg-yellow-600 text-white ring-2 ring-yellow-400' :
+                  map.status === 'completed' ? 'bg-green-600 text-white hover:bg-green-700' :
+                  'bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-300 hover:bg-gray-400 dark:hover:bg-gray-500'
                 }`}
               >
                 Map {index + 1}
@@ -1298,7 +1762,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
                     {map.team1Score > map.team2Score ? '(T1)' : '(T2)'}
                   </span>
                 )}
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -1309,7 +1773,12 @@ function MatchDetailPage({ matchId, navigateTo }) {
         <div className="bg-gradient-to-r from-blue-50 to-red-50 dark:from-blue-900/20 dark:to-red-900/20 rounded-lg p-8">
           <div className="flex items-center justify-center space-x-8">
             <div className="text-center">
-              <h2 className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">{match.team1?.name}</h2>
+              <h2 
+                className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2 cursor-pointer hover:underline"
+                onClick={() => navigateTo && navigateTo('team-detail', match.team1?.id)}
+              >
+                {match.team1?.name}
+              </h2>
               <div className="text-6xl font-bold text-blue-600 dark:text-blue-400">
                 {liveScores.team1 !== null ? liveScores.team1 : (match.maps?.[0]?.team1Score || match.team1_score || 0)}
               </div>
@@ -1333,7 +1802,12 @@ function MatchDetailPage({ matchId, navigateTo }) {
             </div>
             
             <div className="text-center">
-              <h2 className="text-3xl font-bold text-red-600 dark:text-red-400 mb-2">{match.team2?.name}</h2>
+              <h2 
+                className="text-3xl font-bold text-red-600 dark:text-red-400 mb-2 cursor-pointer hover:underline"
+                onClick={() => navigateTo && navigateTo('team-detail', match.team2?.id)}
+              >
+                {match.team2?.name}
+              </h2>
               <div className="text-6xl font-bold text-red-600 dark:text-red-400">
                 {liveScores.team2 !== null ? liveScores.team2 : (match.maps?.[0]?.team2Score || match.team2_score || 0)}
               </div>
@@ -1368,23 +1842,20 @@ function MatchDetailPage({ matchId, navigateTo }) {
               </div>
             )}
             
-            {/* Admin Link */}
+            {/* Live Scoring Button for Admins */}
             {user && (user.role === 'admin' || user.role === 'moderator') && (
-              <a
-                href={`#admin-live-scoring/${match.id}`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  console.log('🛠️ Navigating to admin scoring interface');
-                  navigateTo && navigateTo('admin-live-scoring', { id: match.id });
-                }}
+              <button
+                onClick={() => setShowLiveScoring(!showLiveScoring)}
                 className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
               >
-                <span className="text-lg mr-2">🛠️</span>
-                <span className="font-semibold">Admin Edit</span>
-              </a>
+                <span className="text-lg mr-2">{showLiveScoring ? '❌' : '🎮'}</span>
+                <span className="font-semibold">{showLiveScoring ? 'Close Live Scoring' : 'Live Scoring'}</span>
+              </button>
             )}
           </div>
         </div>
+
+        {/* Live Scoring Interface - Render as modal outside of page content */}
 
         {/* Stats Table Header */}
         <div className="grid grid-cols-9 gap-4 py-3 border-b border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300 text-sm">
@@ -1404,68 +1875,55 @@ function MatchDetailPage({ matchId, navigateTo }) {
           {/* Team 1 Box */}
           <div className="border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-800/50">
             <div className="px-3 py-2 bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-              <div className="text-sm font-semibold text-blue-600 dark:text-blue-400">{match.team1?.name || 'Team 1'}</div>
+              <div 
+                className="text-sm font-semibold text-blue-600 dark:text-blue-400 cursor-pointer hover:underline"
+                onClick={() => navigateTo && navigateTo('team-detail', match.team1?.id)}
+              >
+                {match.team1?.name || 'Team 1'}
+              </div>
             </div>
             <div className="space-y-1">
               {currentMapData.team1Players.map((player, index) => (
                 <div key={player.id || index} className="grid grid-cols-9 gap-2 items-center px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                   {/* Player Info */}
                   <div className="flex items-center space-x-2">
-                    <div className="w-6 h-6 flex items-center justify-center" title={`Country: ${player.country}`}>
-                      <img 
-                        src={`https://flagcdn.com/24x18/${(player.country || 'us').toLowerCase().slice(0, 2)}.png`}
-                        alt={`${player.country} flag`}
-                        className="w-6 h-4 object-cover rounded-sm shadow-sm"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextElementSibling.style.display = 'flex';
-                        }}
-                      />
-                      <div 
-                        className="w-6 h-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-sm flex items-center justify-center text-xs font-bold text-white shadow-sm"
-                        style={{ display: 'none' }}
-                        title={`${player.country || 'Unknown'} - Flag not available`}
-                      >
-                        {(player.country || 'US').slice(0, 2).toUpperCase()}
-                      </div>
+                    <div className="w-6 h-6 flex items-center justify-center" title={`Country: ${player.country || player.nationality || 'Unknown'}`}>
+                      <span className="text-lg">{player.country_flag || getCountryFlag(player.country || player.nationality || 'Unknown')}</span>
                     </div>
-                    <div className="font-medium text-blue-600 dark:text-blue-400 text-sm">
+                    <div 
+                      className="font-medium text-blue-600 dark:text-blue-400 text-sm cursor-pointer hover:underline"
+                      onClick={() => navigateTo && navigateTo('player-detail', player.id || player.player_id)}
+                    >
                       {player.name}
                     </div>
                   </div>
                   
-                  {/* Hero with Enhanced Image System */}
+                  {/* Hero Image */}
                   <div className="flex justify-center">
-                    <div className="relative w-10 h-10">
-                      {getHeroImageWithFallback(player.hero || player.current_hero || player.main_hero) ? (
-                        <img 
-                          src={getHeroImageWithFallback(player.hero || player.current_hero || player.main_hero)}
-                          alt={player.hero || player.current_hero || player.main_hero}
-                          className="w-10 h-10 object-cover rounded border-2 border-gray-300 dark:border-gray-600"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextElementSibling.style.display = 'flex';
-                          }}
-                        />
-                      ) : null}
+                    {(() => {
+                      // Try multiple possible hero name fields
+                      const heroName = player.hero || player.current_hero || player.main_hero || player.heroName || player.hero_name;
+                      const heroImage = heroName ? getHeroImageWithFallback(heroName) : null;
                       
-                      {/* Enhanced Text Fallback */}
-                      <div 
-                        className="w-10 h-10 flex items-center justify-center text-xs font-bold text-center leading-tight text-white bg-gradient-to-br from-gray-600 to-gray-800 rounded border-2 border-gray-300 dark:border-gray-600 shadow-md"
-                        style={{ display: getHeroImageWithFallback(player.hero || player.current_hero || player.main_hero) ? 'none' : 'flex' }}
-                        title={`${player.hero || player.current_hero || player.main_hero || 'Unknown'} (${player.role}) - Image not available`}
-                      >
-                        <span className="text-center">
-                          {(player.hero || player.current_hero || player.main_hero || 'Hero')
-                            .replace(/[^a-zA-Z\s]/g, '')
-                            .split(' ')
-                            .map(word => word.charAt(0))
-                            .join('')
-                            .slice(0, 2)
-                            .toUpperCase() || 'HE'}
-                        </span>
-                      </div>
-                    </div>
+                      if (heroImage) {
+                        return (
+                          <img 
+                            src={heroImage}
+                            alt={heroName}
+                            className="w-10 h-10 object-contain"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.parentNode.innerHTML = `<div class="text-xs text-gray-600 dark:text-gray-400 text-center">${heroName || 'Unknown'}</div>`;
+                            }}
+                          />
+                        );
+                      }
+                      return (
+                        <div className="text-xs text-gray-600 dark:text-gray-400 text-center">
+                          {heroName || 'Unknown'}
+                        </div>
+                      );
+                    })()}
                   </div>
                   
                   {/* Stats */}
@@ -1499,60 +1957,55 @@ function MatchDetailPage({ matchId, navigateTo }) {
           {/* Team 2 Box */}
           <div className="border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-800/50">
             <div className="px-3 py-2 bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-              <div className="text-sm font-semibold text-red-600 dark:text-red-400">{match.team2?.name || 'Team 2'}</div>
+              <div 
+                className="text-sm font-semibold text-red-600 dark:text-red-400 cursor-pointer hover:underline"
+                onClick={() => navigateTo && navigateTo('team-detail', match.team2?.id)}
+              >
+                {match.team2?.name || 'Team 2'}
+              </div>
             </div>
             <div className="space-y-1">
               {currentMapData.team2Players.map((player, index) => (
                 <div key={player.id || index} className="grid grid-cols-9 gap-2 items-center px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                   {/* Player Info */}
                   <div className="flex items-center space-x-2">
-                    <div className="w-6 h-6 flex items-center justify-center" title={`Country: ${player.country}`}>
-                      <img 
-                        src={`https://flagcdn.com/24x18/${(player.country || 'us').toLowerCase().slice(0, 2)}.png`}
-                        alt={`${player.country} flag`}
-                        className="w-6 h-4 object-cover rounded-sm shadow-sm"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextElementSibling.style.display = 'flex';
-                        }}
-                      />
-                      <div 
-                        className="w-6 h-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-sm flex items-center justify-center text-xs font-bold text-white shadow-sm"
-                        style={{ display: 'none' }}
-                        title={`${player.country || 'Unknown'} - Flag not available`}
-                      >
-                        {(player.country || 'US').slice(0, 2).toUpperCase()}
-                      </div>
+                    <div className="w-6 h-6 flex items-center justify-center" title={`Country: ${player.country || player.nationality || 'Unknown'}`}>
+                      <span className="text-lg">{player.country_flag || getCountryFlag(player.country || player.nationality || 'Unknown')}</span>
                     </div>
-                    <div className="font-medium text-blue-600 dark:text-blue-400 text-sm">
+                    <div 
+                      className="font-medium text-blue-600 dark:text-blue-400 text-sm cursor-pointer hover:underline"
+                      onClick={() => navigateTo && navigateTo('player-detail', player.id || player.player_id)}
+                    >
                       {player.name}
                     </div>
                   </div>
                   
-                  {/* Hero with Enhanced Image System */}
+                  {/* Hero Image */}
                   <div className="flex justify-center">
-                    <div className="relative w-10 h-10">
-                      {getHeroImageWithFallback(player.hero || player.current_hero || player.main_hero) ? (
-                        <img 
-                          src={getHeroImageWithFallback(player.hero || player.current_hero || player.main_hero)}
-                          alt={player.hero || player.current_hero || player.main_hero}
-                          className="w-10 h-10 object-cover rounded border-2 border-gray-300 dark:border-gray-600"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextElementSibling.style.display = 'flex';
-                          }}
-                        />
-                      ) : null}
+                    {(() => {
+                      // Try multiple possible hero name fields
+                      const heroName = player.hero || player.current_hero || player.main_hero || player.heroName || player.hero_name;
+                      const heroImage = heroName ? getHeroImageWithFallback(heroName) : null;
                       
-                      {/* Enhanced Text Fallback */}
-                      <div 
-                        className="w-10 h-10 flex items-center justify-center text-xs font-bold text-center leading-tight text-white bg-gradient-to-br from-red-500 to-orange-600 rounded border-2 border-gray-300 dark:border-gray-600 shadow-md"
-                        style={{ display: getHeroImageWithFallback(player.hero) ? 'none' : 'flex' }}
-                        title={`${player.hero} (${player.role}) - Image not available`}
-                      >
-                        {(player.hero || 'Hero').split(' ').map(word => word.charAt(0)).join('').slice(0, 2).toUpperCase()}
-                      </div>
-                    </div>
+                      if (heroImage) {
+                        return (
+                          <img 
+                            src={heroImage}
+                            alt={heroName}
+                            className="w-10 h-10 object-contain"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.parentNode.innerHTML = `<div class="text-xs text-gray-600 dark:text-gray-400 text-center">${heroName || 'Unknown'}</div>`;
+                            }}
+                          />
+                        );
+                      }
+                      return (
+                        <div className="text-xs text-gray-600 dark:text-gray-400 text-center">
+                          {heroName || 'Unknown'}
+                        </div>
+                      );
+                    })()}
                   </div>
                   
                   {/* Stats */}
@@ -1584,6 +2037,128 @@ function MatchDetailPage({ matchId, navigateTo }) {
           </div>
         </div>
       </div>
+
+      {/* ENHANCED: Match Timeline Section */}
+      {(match.status === 'live' || match.status === 'completed') && matchTimeline.length > 0 && (
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
+            <span>📊</span>
+            <span>Match Timeline</span>
+          </h3>
+          
+          <div className="space-y-4">
+            {/* Kill Feed */}
+            {killFeed.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recent Eliminations</h4>
+                <div className="space-y-2">
+                  {killFeed.map((kill, index) => {
+                    const killData = kill.data || {};
+                    return (
+                      <div key={kill.id || index} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                            {killData.killer?.hero || 'Unknown'} 
+                          </span>
+                          <span className="text-gray-500">eliminated</span>
+                          <span className="text-sm font-medium text-red-600 dark:text-red-400">
+                            {killData.victim?.hero || 'Unknown'}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {kill.game_time ? `${Math.floor(kill.game_time / 60)}:${(kill.game_time % 60).toString().padStart(2, '0')}` : ''}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            
+            {/* Objective Updates */}
+            {objectiveUpdates.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Objective Progress</h4>
+                <div className="space-y-2">
+                  {objectiveUpdates.map((objective, index) => (
+                    <div key={objective.id || index} className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                      <div className="text-sm">
+                        <span className="font-medium">{objective.data?.type || 'Objective'}</span>
+                        {objective.data?.progress && (
+                          <span className="ml-2 text-blue-600 dark:text-blue-400">
+                            {objective.data.progress}% captured
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
+      {/* ENHANCED: Head-to-Head History */}
+      {headToHeadData && (
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
+            <span>📈</span>
+            <span>Head-to-Head History</span>
+          </h3>
+          
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {headToHeadData.team1_wins || 0}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {match.team1?.name} Wins
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-500">
+                {headToHeadData.total_matches || 0}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Total Matches
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                {headToHeadData.team2_wins || 0}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {match.team2?.name} Wins
+              </div>
+            </div>
+          </div>
+          
+          {headToHeadData.recent_matches && headToHeadData.recent_matches.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recent Matches</h4>
+              <div className="space-y-2">
+                {headToHeadData.recent_matches.slice(0, 3).map((match, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm">
+                    <div className="flex items-center space-x-2">
+                      <span className={match.winner_id === match.team1_id ? 'font-bold text-green-600' : 'text-gray-600'}>
+                        {match.score.team1}
+                      </span>
+                      <span className="text-gray-500">-</span>
+                      <span className={match.winner_id === match.team2_id ? 'font-bold text-green-600' : 'text-gray-600'}>
+                        {match.score.team2}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {formatTimeAgo(match.date)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* MATCH COMMENTS SECTION */}
       <div className="card p-6">
@@ -1632,85 +2207,44 @@ function MatchDetailPage({ matchId, navigateTo }) {
           </div>
         )}
 
-        {/* Comments List */}
-        <div className="space-y-4">
-          {commentsLoading ? (
-            <div className="text-center py-8">
-              <div className="text-gray-600 dark:text-gray-400">Loading comments...</div>
-            </div>
-          ) : comments.length > 0 ? (
-            comments.map(comment => (
-              <div key={comment.id} className="flex items-start space-x-3 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                <div className="text-xl">{comment.user_avatar || "👤"}</div>
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <span className="font-medium text-gray-900 dark:text-white">
-                      {comment.user_name}
-                    </span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(comment.created_at).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </span>
-                  </div>
-                  <p className="text-gray-700 dark:text-gray-300">{comment.content}</p>
-                  
-                  {/* Voting System */}
-                  <div className="flex items-center space-x-4 mt-3">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => {
-                          // TODO: Implement upvote functionality
-                          console.log('Upvote comment:', comment.id);
-                        }}
-                        className="flex items-center space-x-1 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                      >
-                        <span className="text-green-600">👍</span>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">{comment.upvotes || 0}</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          // TODO: Implement downvote functionality
-                          console.log('Downvote comment:', comment.id);
-                        }}
-                        className="flex items-center space-x-1 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                      >
-                        <span className="text-red-600">👎</span>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">{comment.downvotes || 0}</span>
-                      </button>
-                    </div>
-                    
-                    {/* Reply Button */}
-                    <button
-                      onClick={() => {
-                        // TODO: Implement reply functionality
-                        console.log('Reply to comment:', comment.id);
-                      }}
-                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                    >
-                      Reply
-                    </button>
-                  </div>
-                </div>
+        {/* Comments List - VLR.gg Style */}
+        {commentsLoading ? (
+          <div className="text-center py-8">
+            <div className="text-gray-600 dark:text-gray-400">Loading comments...</div>
+          </div>
+        ) : comments.length > 0 ? (
+          <div className="space-y-0">
+            {comments.map(comment => (
+              <div key={comment.id} className="card border-t-0 first:border-t">
+                {renderComment(comment, false, 0)}
               </div>
-            ))
-          ) : (
-            <div className="text-center py-8">
-              <div className="text-4xl mb-4">💬</div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No comments yet</h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                {isAuthenticated 
-                  ? 'Be the first to share your thoughts about this match!'
-                  : 'Sign in to be the first to comment on this match!'
-                }
-              </p>
-            </div>
-          )}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <div className="text-4xl mb-4">💬</div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No comments yet</h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              {isAuthenticated 
+                ? 'Be the first to share your thoughts about this match!'
+                : 'Sign in to be the first to comment on this match!'
+              }
+            </p>
+          </div>
+        )}
       </div>
+      
+      {/* Comprehensive Match Control Center - Render outside of page content */}
+      {showLiveScoring && (
+        <ComprehensiveMatchControl
+          isOpen={showLiveScoring}
+          match={match}
+          onClose={() => setShowLiveScoring(false)}
+          onUpdate={() => {
+            setRefreshTrigger(prev => prev + 1);
+          }}
+        />
+      )}
     </div>
   );
 }

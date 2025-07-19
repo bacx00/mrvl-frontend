@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks';
 function RankingsPage({ navigateTo }) {
   const [selectedRegion, setSelectedRegion] = useState('World');
   const [rankings, setRankings] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [rankingsType, setRankingsType] = useState('teams'); // 'teams' or 'players'
   const { api } = useAuth();
 
   useEffect(() => {
@@ -13,61 +13,82 @@ function RankingsPage({ navigateTo }) {
   }, [selectedRegion]);
 
   const fetchRankings = async () => {
-    setLoading(true);
     try {
-      console.log('🔍 RankingsPage: Fetching REAL LIVE BACKEND RANKINGS...');
+      console.log('RankingsPage: Fetching REAL LIVE BACKEND RANKINGS...');
       
-      // ✅ FIXED: ONLY USE REAL BACKEND DATA - NO MOCK FALLBACK
+      // Fetch teams with proper ELO ratings
       const response = await api.get('/teams');
-      const teamsData = response?.data || response || [];
+      const teamsData = response?.data?.data || response?.data || [];
       
       if (Array.isArray(teamsData) && teamsData.length > 0) {
-        // Transform real backend data for rankings display
-        let filteredTeams = teamsData
-          .filter(team => team.rating && team.rank) // Only teams with rating data
-          .sort((a, b) => a.rank - b.rank); // Sort by rank
+        // Sort by ELO rating (highest first)
+        let sortedTeams = [...teamsData].sort((a, b) => (b.rating || 1000) - (a.rating || 1000));
         
-        // Apply regional filtering
+        // Add rank numbers after sorting
+        sortedTeams = sortedTeams.map((team, index) => ({
+          ...team,
+          rank: index + 1
+        }));
+        
+        // Apply regional filtering - Marvel Rivals Official Tournament Structure
         if (selectedRegion !== 'World') {
           const regionMap = {
-            'North America': ['NA', 'US', 'CA'],
-            'Europe': ['EU', 'UK', 'DE', 'FR', 'SE'],
-            'Asia-Pacific': ['APAC', 'KR', 'JP', 'AU']
+            'Americas': ['NA', 'US', 'CA', 'MX', 'BR', 'AR', 'CL', 'CO', 'PE', 'Americas'],
+            'EMEA': ['EU', 'UK', 'DE', 'FR', 'SE', 'ES', 'IT', 'PL', 'TR', 'RU', 'SA', 'AE', 'ZA', 'EMEA'],
+            'China': ['CN', 'China'],
+            'Asia': ['KR', 'JP', 'TH', 'VN', 'SG', 'MY', 'ID', 'PH', 'TW', 'HK', 'IN', 'Asia'],
+            'Oceania': ['AU', 'NZ', 'FJ', 'PG', 'NC', 'Oceania']
           };
           const regionCodes = regionMap[selectedRegion] || [];
-          filteredTeams = filteredTeams.filter(team => 
+          sortedTeams = sortedTeams.filter(team => 
             regionCodes.includes(team.region) || regionCodes.includes(team.country)
           );
           
           // Re-rank for regional display
-          filteredTeams = filteredTeams.map((team, index) => ({
+          sortedTeams = sortedTeams.map((team, index) => ({
             ...team,
             rank: index + 1
           }));
         }
         
-        setRankings(filteredTeams);
-        console.log('✅ RankingsPage: Using REAL backend rankings:', filteredTeams.length);
+        
+        setRankings(sortedTeams);
+        console.log('RankingsPage: Using REAL backend ELO rankings:', sortedTeams.length);
       } else {
-        console.error('❌ RankingsPage: No backend data available');
+        console.error('RankingsPage: No backend data available');
         setRankings([]);
       }
     } catch (error) {
-      console.error('❌ RankingsPage: Backend API failed:', error);
-      setRankings([]); // ✅ NO MOCK DATA - Show empty state instead
-    } finally {
-      setLoading(false);
+      console.error('RankingsPage: Backend API failed:', error);
+      setRankings([]); // NO MOCK DATA - Show empty state instead
     }
   };
 
-  // Marvel Rivals Division System based on rating
+  // Marvel Rivals Division System based on ELO rating
   const getDivisionName = (rating) => {
+    if (!rating) return 'Unranked';
+    if (rating >= 2500) return 'One Above All';
     if (rating >= 2300) return 'Eternity';
-    if (rating >= 2000) return 'Celestial';
-    if (rating >= 1700) return 'Vibranium';
-    if (rating >= 1400) return 'Diamond';
-    if (rating >= 1200) return 'Platinum';
-    return 'Gold';
+    if (rating >= 2100) return 'Celestial';
+    if (rating >= 1900) return 'Grandmaster';
+    if (rating >= 1700) return 'Diamond';
+    if (rating >= 1500) return 'Platinum';
+    if (rating >= 1300) return 'Gold';
+    if (rating >= 1100) return 'Silver';
+    return 'Bronze';
+  };
+  
+  const getDivisionColor = (rating) => {
+    if (!rating) return 'text-gray-500';
+    if (rating >= 2500) return 'text-purple-600 dark:text-purple-400';
+    if (rating >= 2300) return 'text-pink-600 dark:text-pink-400';
+    if (rating >= 2100) return 'text-blue-600 dark:text-blue-400';
+    if (rating >= 1900) return 'text-red-600 dark:text-red-400';
+    if (rating >= 1700) return 'text-cyan-600 dark:text-cyan-400';
+    if (rating >= 1500) return 'text-emerald-600 dark:text-emerald-400';
+    if (rating >= 1300) return 'text-yellow-600 dark:text-yellow-400';
+    if (rating >= 1100) return 'text-gray-400 dark:text-gray-500';
+    return 'text-orange-600 dark:text-orange-400';
   };
 
   // Country flag helper function
@@ -75,13 +96,17 @@ function RankingsPage({ navigateTo }) {
     return `${countryCode}`;
   };
 
-  const regions = ['World', 'North America', 'Europe', 'Asia-Pacific'];
+  // Marvel Rivals Official Tournament Regions (2025)
+  const regions = ['World', 'Americas', 'EMEA', 'China', 'Asia', 'Oceania'];
 
   return (
     <div className="max-w-6xl mx-auto">
       {/* Header - VLR.gg Style */}
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Rankings</h1>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Marvel Rivals Rankings</h1>
+        <div className="text-sm text-gray-500 dark:text-gray-400">
+          Official Tournament Regions • ELO Ratings
+        </div>
       </div>
 
       {/* Region Tabs - VLR.gg Style */}
@@ -104,11 +129,7 @@ function RankingsPage({ navigateTo }) {
 
         {/* Rankings Table - VLR.gg style - Team name + logo, ELO only */}
         <div className="divide-y divide-gray-200 dark:divide-gray-600">
-          {loading ? (
-            <div className="p-8 text-center">
-              <div className="text-gray-600 dark:text-gray-400">Loading rankings...</div>
-            </div>
-          ) : rankings.length === 0 ? (
+          {rankings.length === 0 ? (
             <div className="p-8 text-center">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No rankings available</h3>
               <p className="text-gray-600 dark:text-gray-400">No team rankings data available at this time.</p>
@@ -119,7 +140,7 @@ function RankingsPage({ navigateTo }) {
                 key={team.id}
                 className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
                 onClick={() => {
-                  console.log('🔗 Navigating to team detail:', team.id);
+                  console.log('Navigating to team detail:', team.id);
                   navigateTo && navigateTo('team-detail', { id: team.id });
                 }}
               >
@@ -155,15 +176,13 @@ function RankingsPage({ navigateTo }) {
                         {team.name}
                       </div>
                     </div>
+                    
                   </div>
 
-                  {/* Right: Real Rating + Marvel Rivals Division */}
+                  {/* Right: ELO Rating & Division */}
                   <div className="text-right">
-                    <div className="font-bold text-lg text-red-600 dark:text-red-400">
-                      {team.rating || team.points}
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-500">
-                      {getDivisionName(team.rating || team.points)}
+                    <div className="font-bold text-lg text-gray-900 dark:text-white">
+                      {team.rating || 1000}
                     </div>
                   </div>
                 </div>
@@ -173,31 +192,6 @@ function RankingsPage({ navigateTo }) {
         </div>
       </div>
 
-      {/* Bottom Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="card p-4 text-center">
-          <div className="text-2xl font-bold text-red-600 dark:text-red-400 mb-1">
-            {rankings.length}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Ranked Teams</div>
-        </div>
-        <div className="card p-4 text-center">
-          <div className="text-2xl font-bold text-red-600 dark:text-red-400 mb-1">
-            {rankings.length > 0 ? Math.round(rankings.reduce((acc, team) => acc + (team.win_rate || team.winRate || 0), 0) / rankings.length) : 0}%
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Average Win Rate</div>
-        </div>
-        <div className="card p-4 text-center">
-          <div className="text-2xl font-bold text-red-600 dark:text-red-400 mb-1">
-            {rankings.reduce((acc, team) => {
-              const record = team.record || '0-0';
-              const parts = record.split('-');
-              return acc + parseInt(parts[0] || 0) + parseInt(parts[1] || 0);
-            }, 0)}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Total Matches</div>
-        </div>
-      </div>
     </div>
   );
 }

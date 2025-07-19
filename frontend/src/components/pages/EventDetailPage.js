@@ -1,14 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
-import { getEventById, getMatchesByEvent } from '../../data/matchesData';
-import { REAL_TEAMS, getTeamById } from '../../data/realTeams';
+import { TeamLogo, getCountryFlag, getImageUrl } from '../../utils/imageUtils';
+import MatchCard from '../MatchCard';
+import BracketVisualization from '../BracketVisualization';
+import { subscribeEventUpdates } from '../../lib/pusher.ts';
 
 function EventDetailPage({ params, navigateTo }) {
   const [event, setEvent] = useState(null);
   const [matches, setMatches] = useState([]);
   const [teams, setTeams] = useState([]);
+  const [bracket, setBracket] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
+  const [showAddTeamModal, setShowAddTeamModal] = useState(false);
+  const [availableTeams, setAvailableTeams] = useState([]);
+  const [selectedTeamId, setSelectedTeamId] = useState('');
+  const [isRealTimeConnected, setIsRealTimeConnected] = useState(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState(null);
   const { api, isAdmin, isModerator } = useAuth();
 
   const eventId = params?.id;
@@ -18,240 +26,188 @@ function EventDetailPage({ params, navigateTo }) {
   useEffect(() => {
     if (eventId) {
       fetchEventData();
+      fetchAvailableTeams();
     }
   }, [eventId]);
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    if (!event?.id) return;
+
+    const channel = subscribeEventUpdates(event.id.toString(), (data) => {
+      console.log('Real-time event update:', data);
+      setLastUpdateTime(new Date());
+      
+      if (data.type === 'bracket-updated' || data.type === 'match-scheduled' || data.type === 'match-updated' || data.type === 'event-updated') {
+        // Refresh event data which includes bracket, matches, and teams
+        fetchEventData();
+      }
+    });
+
+    if (channel) {
+      setIsRealTimeConnected(true);
+      channel.bind('pusher:subscription_succeeded', () => {
+        console.log('Connected to real-time updates for event:', event.id);
+      });
+      channel.bind('pusher:subscription_error', () => {
+        setIsRealTimeConnected(false);
+      });
+    }
+
+    return () => {
+      if (channel) {
+        channel.unbind_all();
+        setIsRealTimeConnected(false);
+      }
+    };
+  }, [event?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchEventData = async () => {
     try {
       setLoading(true);
       console.log('🔄 EventDetailPage: Fetching event data for ID:', eventId);
       
-      // First try centralized data
-      const centralEvent = getEventById(eventId);
+      // Fetch comprehensive event data from API
+      const response = await api.get(`/events/${eventId}`);
+      const eventData = response.data?.data || response.data || response;
       
-      if (centralEvent) {
-        console.log('✅ EventDetailPage: Using centralized event data:', centralEvent);
-        await processEventData(centralEvent);
-        return;
+      console.log('✅ Real event data received:', eventData);
+      
+      // Set event data
+      setEvent(eventData);
+      
+      // Set teams if included
+      if (eventData.teams && Array.isArray(eventData.teams)) {
+        setTeams(eventData.teams);
       }
-
-      // Try to fetch from backend API
-      try {
-        const response = await api.get(`/events/${eventId}`);
-        const eventData = response.data || response;
-        console.log('✅ Real event data received:', eventData);
-        
-        await processEventData(eventData);
-      } catch (error) {
-        console.error('❌ Error fetching event data from API - NO FALLBACK DATA:', error);
-        
-        // ✅ NO MOCK DATA - Set null/empty states only
-        setEvent(null);
-        setMatches([]);
-        setTeams([]);
-        
-        console.log('❌ EventDetailPage: No event data available for ID:', eventId);
+      
+      // Set matches if included
+      if (eventData.matches && Array.isArray(eventData.matches)) {
+        setMatches(eventData.matches);
       }
+      
+      // Set bracket if included
+      if (eventData.bracket) {
+        setBracket(eventData.bracket);
+      }
+      
     } catch (error) {
-      console.error('❌ Error in fetchEventData:', error);
+      console.error('❌ Error fetching event data:', error);
       setEvent(null);
+      setMatches([]);
+      setTeams([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const processEventData = async (eventData) => {
-    // Transform to consistent format
-    const transformedEvent = {
-      id: eventData.id,
-      name: eventData.name || 'Marvel Rivals Championship',
-      description: eventData.description || 'Premier Marvel Rivals esports competition featuring the world\'s best teams.',
-      startDate: eventData.startDate || eventData.start_date || '2025-01-20',
-      endDate: eventData.endDate || eventData.end_date || '2025-02-15',
-      location: eventData.location || 'Los Angeles, CA',
-      venue: eventData.venue || 'Los Angeles Convention Center',
-      prizePool: eventData.prizePool || eventData.prize_pool || '$500,000',
-      format: eventData.format || 'Double Elimination',
-      status: eventData.status || 'upcoming',
-      organizer: eventData.organizer || 'Marvel Rivals League',
-      region: eventData.region || 'International',
-      tier: eventData.tier || 'S',
-      teams: eventData.teams || 16,
-      stream: eventData.stream || 'https://twitch.tv/marvelrivals',
-      sponsors: eventData.sponsors || ['Marvel', 'NetEase', 'Intel', 'NVIDIA'],
-      stage: eventData.stage || 'Main Event',
-      onlineEvent: eventData.onlineEvent || false,
-      schedule: eventData.schedule || [
-        { phase: 'Group Stage', date: '2025-01-20 - 2025-01-27', status: 'completed' },
-        { phase: 'Playoffs', date: '2025-02-01 - 2025-02-08', status: 'upcoming' },
-        { phase: 'Grand Finals', date: '2025-02-15', status: 'upcoming' }
-      ]
-    };
-
-    setEvent(transformedEvent);
-
-    // ✅ FIXED: Get matches for this event using alternative approach
-    let realMatches = []; // Define in broader scope
+  const fetchAvailableTeams = async () => {
     try {
-      console.log('🔍 EventDetailPage: Fetching matches for event ID:', eventId);
-      
-      // Try the specific endpoint first, then fallback to filtering all matches
-      try {
-        const matchesResponse = await api.get(`/events/${eventId}/matches`);
-        realMatches = matchesResponse?.data?.data || matchesResponse?.data || [];
-      } catch (specificError) {
-        console.log('⚠️ Specific endpoint not available, trying all matches...');
-        
-        // FALLBACK: Get all matches and filter by event_id
-        try {
-          const allMatchesResponse = await api.get('/matches');
-          const allMatches = allMatchesResponse?.data?.data || allMatchesResponse?.data || [];
-          realMatches = allMatches.filter(match => match.event_id == eventId);
-          console.log(`✅ Filtered ${realMatches.length} matches for event ${eventId} from all matches`);
-        } catch (fallbackError) {
-          console.error('❌ Could not fetch matches from fallback:', fallbackError);
-        }
-      }
-      
-      if (Array.isArray(realMatches) && realMatches.length > 0) {
-        const transformedMatches = realMatches.map(match => ({
-          id: match.id, // REAL MATCH ID
-          team1: match.team1?.name || match.team1_name || 'Team 1',
-          team1Id: match.team1?.id || match.team1_id, // REAL TEAM ID
-          team2: match.team2?.name || match.team2_name || 'Team 2', 
-          team2Id: match.team2?.id || match.team2_id, // REAL TEAM ID
-          status: match.status,
-          score: {
-            team1: match.team1_score || match.team1?.score || 0,
-            team2: match.team2_score || match.team2?.score || 0
-          },
-          date: formatDate(match.match_date || match.scheduled_at || match.date),
-          time: match.match_time || match.time || '18:00',
-          stage: match.stage || 'Main Event',
-          format: match.format || 'BO3'
-        }));
-        setMatches(transformedMatches);
-        console.log('✅ EventDetailPage: Using REAL backend matches:', transformedMatches.length);
-      } else {
-        console.log('⚠️ EventDetailPage: No matches found for event');
-        setMatches([]);
-      }
+      const response = await api.get('/teams');
+      const allTeams = response.data?.data || response.data || [];
+      setAvailableTeams(allTeams);
     } catch (error) {
-      console.error('❌ EventDetailPage: Failed to fetch event matches:', error);
-      setMatches([]); // NO FALLBACK DATA
+      console.error('❌ Error fetching teams:', error);
     }
+  };
 
-    // ✅ FIXED: Get participating teams using alternative approach
+  const handleAddTeam = async () => {
+    if (!selectedTeamId) return;
+    
     try {
-      console.log('🔍 EventDetailPage: Fetching teams for event ID:', eventId);
+      await api.post(`/admin/events/${eventId}/teams/${selectedTeamId}`);
+      console.log('✅ Team added successfully');
       
-      let realTeams = [];
-      try {
-        const teamsResponse = await api.get(`/events/${eventId}/teams`);
-        realTeams = teamsResponse?.data?.data || teamsResponse?.data || [];
-      } catch (specificError) {
-        console.log('⚠️ Specific teams endpoint not available, deriving from matches...');
-        
-        // FALLBACK: Get teams from matches we already fetched
-        if (realMatches.length > 0) { // Use realMatches instead of matches
-          const teamIds = new Set();
-          realMatches.forEach(match => {
-            if (match.team1Id) teamIds.add(match.team1Id);
-            if (match.team2Id) teamIds.add(match.team2Id);
-          });
-          
-          // Fetch individual teams
-          try {
-            const allTeamsResponse = await api.get('/teams');
-            const allTeams = allTeamsResponse?.data?.data || allTeamsResponse?.data || [];
-            realTeams = allTeams.filter(team => teamIds.has(team.id));
-            console.log(`✅ Derived ${realTeams.length} teams from matches for event ${eventId}`);
-          } catch (teamsError) {
-            console.error('❌ Could not fetch teams from fallback:', teamsError);
-          }
-        }
-      }
-      
-      if (Array.isArray(realTeams) && realTeams.length > 0) {
-        const transformedTeams = realTeams.map((team, index) => ({
-          id: team.id, // REAL TEAM ID
-          name: team.name,
-          shortName: team.short_name || team.shortName,
-          region: team.region,
-          rating: team.rating,
-          seed: team.seed || index + 1,
-          logo: team.logo
-        }));
-        setTeams(transformedTeams);
-        console.log('✅ EventDetailPage: Using REAL backend teams:', transformedTeams.length);
-      } else {
-        console.log('⚠️ EventDetailPage: No teams found for event');
-        setTeams([]);
-      }
+      // Refresh event data
+      await fetchEventData();
+      setShowAddTeamModal(false);
+      setSelectedTeamId('');
     } catch (error) {
-      console.error('❌ EventDetailPage: Failed to fetch event teams:', error);
-      setTeams([]); // NO FALLBACK DATA
+      console.error('❌ Error adding team:', error);
+      alert('Failed to add team: ' + (error.response?.data?.message || error.message));
     }
   };
 
-  // ✅ NO MORE MOCK DATA FUNCTIONS - DELETED FOR PRODUCTION
-
-  const getCountryFlag = (region) => {
-    const flagMap = {
-      'North America': '🇺🇸', 'Europe': '🇪🇺', 'Asia Pacific': '🌏', 'International': '🌍',
-      'US': '🇺🇸', 'CA': '🇨🇦', 'UK': '🇬🇧', 'DE': '🇩🇪', 'FR': '🇫🇷', 'KR': '🇰🇷'
-    };
-    return flagMap[region] || '🌍';
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'live': return 'bg-red-600 text-white';
-      case 'upcoming': return 'bg-blue-600 text-white';
-      case 'completed': return 'bg-green-600 text-white';
-      default: return 'bg-gray-600 text-white';
+  const handleRemoveTeam = async (teamId) => {
+    if (!window.confirm('Are you sure you want to remove this team from the event?')) return;
+    
+    try {
+      await api.delete(`/admin/events/${eventId}/teams/${teamId}`);
+      console.log('✅ Team removed successfully');
+      
+      // Refresh event data
+      await fetchEventData();
+    } catch (error) {
+      console.error('❌ Error removing team:', error);
+      alert('Failed to remove team: ' + (error.response?.data?.message || error.message));
     }
   };
 
-  const getTierBadge = (tier) => {
+  const generateBracket = async () => {
+    try {
+      console.log('🏆 Generating bracket for event:', eventId);
+      const response = await api.post(`/admin/events/${eventId}/generate-bracket`);
+      console.log('✅ Bracket generated successfully');
+      
+      // Refresh event data to get the new bracket
+      await fetchEventData();
+    } catch (error) {
+      console.error('❌ Error generating bracket:', error);
+      alert('Failed to generate bracket: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  const handleBracketMatchUpdate = async (matchId, updates) => {
+    try {
+      await api.put(`/admin/matches/${matchId}`, updates);
+      console.log('✅ Match updated successfully');
+      
+      // Refresh event data
+      await fetchEventData();
+    } catch (error) {
+      console.error('❌ Error updating match:', error);
+      alert('Failed to update match: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'TBD';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
+
+  const formatCurrency = (amount, currency = 'USD') => {
+    if (!amount || amount === 0) return 'TBD';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency
+    }).format(amount);
+  };
+
+  const getStatusBadge = (status) => {
     const colors = {
-      'S': 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 border-yellow-300',
-      'A': 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 border-red-300',
-      'B': 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 border-blue-300'
+      'upcoming': 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200',
+      'ongoing': 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200',
+      'completed': 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-200',
+      'cancelled': 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200'
     };
+    
     return (
-      <span className={`px-3 py-1 text-sm font-bold rounded border ${colors[tier] || colors.A}`}>
-        {tier}-Tier Tournament
+      <span className={`px-3 py-1 rounded-full text-sm font-medium ${colors[status] || colors.upcoming}`}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
   };
 
-  // CRITICAL FIX: Navigation handlers that use ONLY real backend IDs
-  const handleMatchClick = (matchId) => {
-    console.log('🔗 EventDetailPage: Navigating to match with REAL ID:', matchId);
-    navigateTo && navigateTo('match-detail', { id: matchId });
-  };
-
-  const handleTeamClick = (teamId) => {
-    console.log('🔗 EventDetailPage: Navigating to team with REAL ID:', teamId);
-    navigateTo && navigateTo('team-detail', { id: teamId });
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', { 
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
   const tabs = [
-    { id: 'overview', name: 'Overview', icon: '📊' },
-    { id: 'matches', name: 'Matches', icon: '⚔️' },
-    { id: 'teams', name: 'Teams', icon: '👥' },
-    { id: 'bracket', name: 'Bracket', icon: '🏆' },
-    { id: 'schedule', name: 'Schedule', icon: '📅' }
+    { id: 'overview', name: 'Overview' },
+    { id: 'teams', name: `Teams (${teams.length})` },
+    { id: 'matches', name: `Matches (${matches.length})` },
+    { id: 'bracket', name: 'Bracket' }
   ];
 
   if (loading) {
@@ -268,12 +224,15 @@ function EventDetailPage({ params, navigateTo }) {
   if (!event) {
     return (
       <div className="card p-12 text-center">
-        <div className="text-6xl mb-4">🔍</div>
+        <div className="text-6xl mb-4">🏆</div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Event Not Found</h2>
         <p className="text-gray-600 dark:text-gray-400 mb-6">
           The event you're looking for doesn't exist or may have been removed.
         </p>
-        <button onClick={() => navigateTo('events')} className="btn btn-primary">
+        <button 
+          onClick={() => navigateTo && navigateTo('events')} 
+          className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+        >
           ← Back to Events
         </button>
       </div>
@@ -281,18 +240,18 @@ function EventDetailPage({ params, navigateTo }) {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       {/* Breadcrumb */}
       <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-500">
         <button 
-          onClick={() => navigateTo('home')}
+          onClick={() => navigateTo && navigateTo('home')}
           className="hover:text-red-600 dark:hover:text-red-400 transition-colors"
         >
           Home
         </button>
         <span>›</span>
         <button 
-          onClick={() => navigateTo('events')}
+          onClick={() => navigateTo && navigateTo('events')}
           className="hover:text-red-600 dark:hover:text-red-400 transition-colors"
         >
           Events
@@ -301,362 +260,315 @@ function EventDetailPage({ params, navigateTo }) {
         <span className="text-gray-900 dark:text-white">{event.name}</span>
       </div>
 
-      {/* Event Header - HLTV.org Style */}
-      <div className="card">
-        <div 
-          className="p-6 border-b border-gray-200 dark:border-gray-600 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/10 dark:to-red-800/10 relative overflow-hidden"
-          style={{
-            backgroundImage: (event.featured_image || event.image)
-              ? `linear-gradient(rgba(239, 68, 68, 0.85), rgba(239, 68, 68, 0.85)), url('${event.featured_image || event.image}')`
-              : undefined,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center'
-          }}
-        >
-          <div className="flex flex-col lg:flex-row items-start lg:items-center space-y-6 lg:space-y-0 lg:space-x-8">
-            <div className="text-6xl">{getCountryFlag(event.region)}</div>
-            
-            <div className="flex-1">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mb-4">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{event.name}</h1>
-                <div className="flex items-center space-x-2">
-                  {getTierBadge(event.tier)}
-                  <span className={`px-3 py-1 rounded text-sm font-medium ${getStatusColor(event.status)}`}>
-                    {event.status.toUpperCase()}
+      {/* Event Header with Background Banner */}
+      <div className="card overflow-hidden">
+        {/* Banner Background */}
+        {event.banner && (
+          <div 
+            className="h-48 bg-cover bg-center relative"
+            style={{ backgroundImage: `url(${getImageUrl(event.banner, 'event-banner')})` }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+          </div>
+        )}
+        
+        <div className={`p-6 ${event.banner ? '-mt-24 relative z-10' : ''}`}>
+          <div className="flex items-start justify-between">
+            <div className="flex items-center space-x-6">
+              {/* Event Logo */}
+              {event.logo && (
+                <img 
+                  src={getImageUrl(event.logo, 'event-logo')} 
+                  alt={event.name}
+                  className="w-24 h-24 rounded-lg shadow-lg border-2 border-white dark:border-gray-800"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.parentNode.innerHTML = '<div class="w-24 h-24 rounded-lg shadow-lg border-2 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-2xl font-bold text-gray-500 dark:text-gray-400">EVT</div>';
+                  }}
+                />
+              )}
+              
+              <div>
+                <div className="flex items-center gap-4 mb-2">
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{event.name}</h1>
+                  {isRealTimeConnected && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      <span className="text-green-600 dark:text-green-400">Live Updates</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center space-x-4">
+                  {getStatusBadge(event.status)}
+                  <span className="text-gray-600 dark:text-gray-400">
+                    {event.details?.region || event.region} • {event.details?.type || event.type}
                   </span>
                 </div>
               </div>
-              
-              <p className="text-gray-600 dark:text-gray-400 mb-4 text-lg">{event.description}</p>
-              
-              {/* Key Event Info Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-3 bg-white dark:bg-gray-800 rounded">
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">{event.prizePool}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-500">Prize Pool</div>
-                </div>
-                <div className="text-center p-3 bg-white dark:bg-gray-800 rounded">
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{teams.length}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-500">Teams</div>
-                </div>
-                <div className="text-center p-3 bg-white dark:bg-gray-800 rounded">
-                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{matches.length}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-500">Matches</div>
-                </div>
-                <div className="text-center p-3 bg-white dark:bg-gray-800 rounded">
-                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{event.format}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-500">Format</div>
-                </div>
-              </div>
             </div>
-
-            {/* Admin Controls */}
+            
             {(isAdmin() || isModerator()) && (
-              <div className="flex flex-col space-y-2">
-                <button 
-                  onClick={() => navigateTo('admin-event-edit', { id: event.id })}
-                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-                >
-                  ✏️ Edit Event
-                </button>
-                <button 
-                  onClick={() => navigateTo('admin-match-create', { eventId: event.id })}
-                  className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
-                >
-                  ➕ Add Match
-                </button>
-              </div>
+              <button 
+                onClick={() => navigateTo && navigateTo('admin-event-edit', { id: event.id })}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              >
+                Edit Event
+              </button>
             )}
           </div>
-
-          {/* Live Stream Banner */}
-          {event.status === 'live' && (
-            <div className="mt-6 p-4 bg-red-600 text-white rounded-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="animate-pulse">🔴</div>
-                  <span className="font-bold text-lg">LIVE NOW</span>
-                  <span>Event is currently streaming</span>
-                </div>
-                <a
-                  href={event.stream}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-2 bg-white text-red-600 rounded font-bold hover:bg-gray-100 transition-colors"
-                >
-                  📺 Watch Stream
-                </a>
+          
+          {/* Event Info Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6">
+            <div>
+              <div className="text-gray-500 dark:text-gray-500 text-sm">Prize Pool</div>
+              <div className="font-bold text-xl text-green-600 dark:text-green-400">
+                {formatCurrency(event.details?.prize_pool || event.prize_pool, event.details?.currency)}
               </div>
             </div>
-          )}
+            <div>
+              <div className="text-gray-500 dark:text-gray-500 text-sm">Start Date</div>
+              <div className="font-medium text-gray-900 dark:text-white">
+                {formatDate(event.schedule?.start_date || event.start_date)}
+              </div>
+            </div>
+            <div>
+              <div className="text-gray-500 dark:text-gray-500 text-sm">End Date</div>
+              <div className="font-medium text-gray-900 dark:text-white">
+                {formatDate(event.schedule?.end_date || event.end_date)}
+              </div>
+            </div>
+            <div>
+              <div className="text-gray-500 dark:text-gray-500 text-sm">Format</div>
+              <div className="font-medium text-gray-900 dark:text-white">
+                {event.details?.format || event.format}
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+      {/* Navigation Tabs */}
+      <div className="card">
+        <div className="flex border-b border-gray-200 dark:border-gray-700">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-shrink-0 px-6 py-4 text-sm font-medium transition-colors flex items-center space-x-2 ${
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
                 activeTab === tab.id
                   ? 'text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400 bg-red-50 dark:bg-red-900/10'
                   : 'text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
               }`}
             >
-              <span>{tab.icon}</span>
-              <span>{tab.name}</span>
+              {tab.name}
             </button>
           ))}
         </div>
-      </div>
 
-      {/* Tab Content */}
-      <div className="space-y-6">
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              {/* Recent Matches */}
-              <div className="card p-6">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">🏆 Recent Matches</h3>
-                <div className="space-y-3">
-                  {matches.slice(0, 5).map((match) => (
-                    <div 
-                      key={match.id} 
-                      className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-                      onClick={() => handleMatchClick(match.id)}
-                    >
-                      <div className="flex items-center space-x-4">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(match.status)}`}>
-                          {match.status.toUpperCase()}
+        <div className="p-6">
+          {/* Overview Tab */}
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-3">About</h3>
+                <p className="text-gray-700 dark:text-gray-300">
+                  {event.description}
+                </p>
+              </div>
+
+              {event.rules && (
+                <div>
+                  <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-3">Rules</h3>
+                  <div className="prose dark:prose-invert max-w-none">
+                    {event.rules}
+                  </div>
+                </div>
+              )}
+
+              {event.details?.prize_distribution && (
+                <div>
+                  <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-3">Prize Distribution</h3>
+                  <div className="space-y-2">
+                    {Object.entries(event.details.prize_distribution).map(([place, amount]) => (
+                      <div key={place} className="flex justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded">
+                        <span className="font-medium text-gray-900 dark:text-white">{place}</span>
+                        <span className="text-green-600 dark:text-green-400">
+                          {formatCurrency(amount, event.details?.currency)}
                         </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Teams Tab */}
+          {activeTab === 'teams' && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-red-600 dark:text-red-400">
+                  Participating Teams ({teams.length}/{event.participation?.max_teams || event.max_teams})
+                </h3>
+                {(isAdmin() || isModerator()) && (
+                  <button 
+                    onClick={() => setShowAddTeamModal(true)}
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                  >
+                    Add Team
+                  </button>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {teams.map((team) => (
+                  <div 
+                    key={team.id}
+                    className="border border-gray-200 dark:border-gray-700 rounded p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3 cursor-pointer"
+                        onClick={() => navigateTo && navigateTo('team-detail', { id: team.id })}
+                      >
+                        <TeamLogo team={team} size="w-12 h-12" />
                         <div>
-                          <div className="font-medium text-gray-900 dark:text-white">
-                            <span 
-                              className="hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleTeamClick(match.team1Id);
-                              }}
-                            >
-                              {match.team1}
-                            </span>
-                            {' vs '}
-                            <span 
-                              className="hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleTeamClick(match.team2Id);
-                              }}
-                            >
-                              {match.team2}
-                            </span>
-                          </div>
-                          <div className="text-gray-500 dark:text-gray-500 text-sm">
-                            {match.stage} • {match.format} • {match.date} {match.time}
+                          <div className="font-semibold text-gray-900 dark:text-white">{team.name}</div>
+                          <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-500">
+                            <span>{getCountryFlag(team.country)}</span>
+                            <span>{team.region}</span>
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-xl font-bold text-gray-900 dark:text-white">
-                          {match.score.team1} - {match.score.team2}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-500">Click for details</div>
-                      </div>
+                      
+                      {(isAdmin() || isModerator()) && (
+                        <button
+                          onClick={() => handleRemoveTeam(team.id)}
+                          className="text-red-600 hover:text-red-700 transition-colors"
+                          title="Remove team"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-
-              {/* Event Schedule */}
-              <div className="card p-6">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">📅 Event Schedule</h3>
-                <div className="space-y-3">
-                  {event.schedule?.map((phase, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-3 h-3 rounded-full ${
-                          phase.status === 'completed' ? 'bg-green-500' : 
-                          phase.status === 'live' ? 'bg-red-500' : 'bg-gray-400'
-                        }`}></div>
-                        <span className="font-medium text-gray-900 dark:text-white">{phase.phase}</span>
-                      </div>
-                      <span className="text-gray-600 dark:text-gray-400">{phase.date}</span>
-                    </div>
-                  ))}
+              
+              {teams.length === 0 && (
+                <div className="text-center py-8">
+                  <div className="text-gray-500 dark:text-gray-500">No teams registered yet</div>
                 </div>
-              </div>
+              )}
             </div>
+          )}
 
-            <div className="space-y-6">
-              {/* Event Information */}
-              <div className="card p-6">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">ℹ️ Event Information</h3>
-                <div className="space-y-3">
-                  {[
-                    { label: 'Organizer', value: event.organizer },
-                    { label: 'Venue', value: event.venue },
-                    { label: 'Location', value: event.location },
-                    { label: 'Start Date', value: formatDate(event.startDate) },
-                    { label: 'End Date', value: formatDate(event.endDate) },
-                    { label: 'Format', value: event.format },
-                    { label: 'Region', value: event.region }
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">{item.label}:</span>
-                      <span className="font-medium text-gray-900 dark:text-white text-right">{item.value}</span>
-                    </div>
+          {/* Matches Tab */}
+          {activeTab === 'matches' && (
+            <div>
+              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Event Matches</h3>
+              {matches.length > 0 ? (
+                <div className="space-y-4">
+                  {matches.map(match => (
+                    <MatchCard 
+                      key={match.id}
+                      match={match}
+                      navigateTo={navigateTo}
+                    />
                   ))}
                 </div>
-              </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-gray-500 dark:text-gray-500">No matches scheduled yet</div>
+                </div>
+              )}
+            </div>
+          )}
 
-              {/* Sponsors */}
-              <div className="card p-6">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">🤝 Sponsors</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {event.sponsors?.map((sponsor, index) => (
-                    <div 
-                      key={index}
-                      className="p-3 bg-gray-50 dark:bg-gray-800 rounded text-center font-medium text-gray-900 dark:text-white"
+          {/* Bracket Tab */}
+          {activeTab === 'bracket' && (
+            <div>
+              {bracket ? (
+                <BracketVisualization 
+                  bracket={bracket} 
+                  navigateTo={navigateTo}
+                  isAdmin={isAdmin() || isModerator()}
+                  onMatchUpdate={handleBracketMatchUpdate}
+                />
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-4xl mb-4">🏆</div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    Bracket not generated yet
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    {teams.length < 2 
+                      ? `Need at least 2 teams to generate bracket (currently ${teams.length})`
+                      : 'Click below to generate the tournament bracket'
+                    }
+                  </p>
+                  {(isAdmin() || isModerator()) && teams.length >= 2 && (
+                    <button 
+                      onClick={generateBracket}
+                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
                     >
-                      {sponsor}
-                    </div>
-                  ))}
+                      Generate Bracket
+                    </button>
+                  )}
                 </div>
-              </div>
+              )}
             </div>
-          </div>
-        )}
-
-        {/* Matches Tab */}
-        {activeTab === 'matches' && (
-          <div className="card p-6">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">⚔️ All Matches</h3>
-            <div className="space-y-4">
-              {matches.map((match) => (
-                <div 
-                  key={match.id} 
-                  className="border-2 border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:border-red-300 dark:hover:border-red-600 cursor-pointer transition-all"
-                  onClick={() => handleMatchClick(match.id)}
-                >
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-                    <div className="flex items-center space-x-4">
-                      <span className={`px-3 py-1 rounded font-medium ${getStatusColor(match.status)}`}>
-                        {match.status.toUpperCase()}
-                      </span>
-                      <div>
-                        <div className="text-lg font-bold text-gray-900 dark:text-white">
-                          <span 
-                            className="hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleTeamClick(match.team1Id);
-                            }}
-                          >
-                            {match.team1}
-                          </span>
-                          {' vs '}
-                          <span 
-                            className="hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleTeamClick(match.team2Id);
-                            }}
-                          >
-                            {match.team2}
-                          </span>
-                        </div>
-                        <div className="text-gray-600 dark:text-gray-400">
-                          {match.stage} • {match.format} • {match.date} at {match.time}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                        {match.score.team1} - {match.score.team2}
-                      </div>
-                      <div className="text-sm text-red-600 dark:text-red-400 font-medium">
-                        View Match Details →
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Teams Tab */}
-        {activeTab === 'teams' && (
-          <div className="card p-6">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">👥 Participating Teams</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {teams.map((team) => (
-                <div
-                  key={team.id}
-                  className="border-2 border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-red-300 dark:hover:border-red-600 cursor-pointer transition-all hover:scale-105"
-                  onClick={() => handleTeamClick(team.id)}
-                >
-                  <div className="text-center">
-                    <div className="text-3xl mb-3">{getCountryFlag(team.region)}</div>
-                    <h4 className="font-bold text-gray-900 dark:text-white mb-1">{team.shortName}</h4>
-                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">{team.name}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-500 mb-3">{team.region}</div>
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded p-2">
-                      <div className="text-xs text-gray-500 dark:text-gray-500">Seed #{team.seed}</div>
-                      <div className="text-sm font-bold text-red-600 dark:text-red-400">Rating: {team.rating}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Bracket Tab */}
-        {activeTab === 'bracket' && (
-          <div className="card p-8 text-center">
-            <div className="text-6xl mb-4">🏗️</div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Tournament Bracket</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Interactive tournament bracket is coming soon. View individual matches in the Matches tab.
-            </p>
-            <button 
-              onClick={() => setActiveTab('matches')}
-              className="px-6 py-3 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-            >
-              View All Matches
-            </button>
-          </div>
-        )}
-
-        {/* Schedule Tab */}
-        {activeTab === 'schedule' && (
-          <div className="card p-6">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">📅 Detailed Schedule</h3>
-            <div className="space-y-6">
-              {event.schedule?.map((phase, index) => (
-                <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{phase.phase}</h4>
-                    <span className={`px-3 py-1 rounded text-sm font-medium ${
-                      phase.status === 'completed' ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400' :
-                      phase.status === 'live' ? 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400' :
-                      'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400'
-                    }`}>
-                      {phase.status?.toUpperCase() || 'SCHEDULED'}
-                    </span>
-                  </div>
-                  <div className="text-gray-600 dark:text-gray-400">{phase.date}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      {/* Add Team Modal */}
+      {showAddTeamModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Add Team to Event</h3>
+            
+            <select
+              value={selectedTeamId}
+              onChange={(e) => setSelectedTeamId(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white mb-4"
+            >
+              <option value="">Select a team</option>
+              {availableTeams
+                .filter(team => !teams.some(t => t.id === team.id))
+                .map(team => (
+                  <option key={team.id} value={team.id}>
+                    {team.name} ({team.region})
+                  </option>
+                ))
+              }
+            </select>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowAddTeamModal(false);
+                  setSelectedTeamId('');
+                }}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddTeam}
+                disabled={!selectedTeamId}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Add Team
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 
 export default EventDetailPage;

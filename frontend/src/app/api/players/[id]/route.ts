@@ -1,0 +1,377 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+// Type for route params
+interface RouteParams {
+  params: Promise<{ id: string }>;
+}
+
+// Mock data for detailed player information
+const playerDetails = {
+  "101": {
+    id: "101",
+    name: "TenZ",
+    fullName: "Tyson Ngo",
+    team: {
+      id: "1",
+      name: "Sentinels",
+      logo: "/teams/sentinels-logo.png"
+    },
+    role: "DPS",
+    country: "Canada",
+    age: 23,
+    avatar: "/players/tenz.png",
+    bio: "TenZ is widely regarded as one of the most mechanically gifted players in Marvel Rivals. Known for his exceptional aim and aggressive playstyle, he primarily plays heroes that require precise targeting and quick reflexes. Before Marvel Rivals, he was a professional Counter-Strike player and later transitioned to VALORANT where he became one of the most recognizable esports personalities.",
+    heroPool: ["Iron Man", "Spider-Man", "Black Panther"],
+    stats: {
+      matches: 32,
+      winRate: 81.2,
+      averageDamage: 184,
+      eliminations: 22.7,
+      deaths: 12.6,
+      kd: 1.8,
+      assists: 6.8,
+      firstElimRate: 28.4,
+      heroPlaytime: [
+        { hero: "Iron Man", playTime: 186, winRate: 85.2 },
+        { hero: "Spider-Man", playTime: 124, winRate: 79.3 },
+        { hero: "Black Panther", playTime: 98, winRate: 76.5 },
+        { hero: "Captain America", playTime: 42, winRate: 71.2 },
+        { hero: "Hulk", playTime: 28, winRate: 64.8 }
+      ],
+      mapStats: [
+        { map: "Asgard", matches: 12, winRate: 83.3 },
+        { map: "Wakanda", matches: 8, winRate: 75.0 },
+        { map: "New York", matches: 6, winRate: 66.7 },
+        { map: "Tokyo", matches: 4, winRate: 75.0 },
+        { map: "Sakaar", matches: 2, winRate: 100.0 }
+      ]
+    },
+    ranking: 1,
+    achievements: [
+      { title: "Marvel Rivals Championship 2025 Spring - MVP", date: "April 2025" },
+      { title: "Most eliminations in a single map (42)", date: "March 2025" },
+      { title: "Highest damage per round average (198.5)", date: "April 2025" },
+      { title: "Champions Tour Americas - All-Star Team", date: "May 2025" }
+    ],
+    social: {
+      twitter: "https://twitter.com/TenZOfficial",
+      twitch: "https://twitch.tv/TenZ",
+      instagram: "https://instagram.com/TenZOfficial"
+    },
+    highlights: [
+      {
+        title: "Ace vs Cloud9",
+        thumbnail: "/highlights/tenz-1.jpg",
+        url: "https://example.com/videos/tenz-ace-c9",
+        views: 256000,
+        date: "2025-04-18"
+      },
+      {
+        title: "42 kill game on Asgard",
+        thumbnail: "/highlights/tenz-2.jpg",
+        url: "https://example.com/videos/tenz-42k",
+        views: 189000,
+        date: "2025-03-22"
+      },
+      {
+        title: "Clutch 1v4 vs FNATIC",
+        thumbnail: "/highlights/tenz-3.jpg",
+        url: "https://example.com/videos/tenz-clutch-fnatic",
+        views: 204000,
+        date: "2025-04-26"
+      }
+    ],
+    recentMatches: [
+      { 
+        id: "1001", 
+        opponent: "Cloud9", 
+        result: "win", 
+        score: "2-0", 
+        date: "2025-05-10", 
+        event: "Champions Tour 2025",
+        heroesPlayed: ["Iron Man", "Spider-Man"],
+        individualStats: {
+          kills: 48,
+          deaths: 24,
+          assists: 12,
+          damage: 32450
+        }
+      },
+      { 
+        id: "1002", 
+        opponent: "100 Thieves", 
+        result: "win", 
+        score: "2-1", 
+        date: "2025-05-03", 
+        event: "Champions Tour 2025",
+        heroesPlayed: ["Iron Man", "Black Panther", "Spider-Man"],
+        individualStats: {
+          kills: 64,
+          deaths: 36,
+          assists: 18,
+          damage: 45320
+        }
+      },
+      { 
+        id: "1003", 
+        opponent: "FNATIC", 
+        result: "win", 
+        score: "2-1", 
+        date: "2025-04-26", 
+        event: "Marvel Rivals Championship",
+        heroesPlayed: ["Iron Man", "Spider-Man", "Captain America"],
+        individualStats: {
+          kills: 58,
+          deaths: 32,
+          assists: 21,
+          damage: 39840
+        }
+      }
+    ]
+  },
+  "201": {
+    id: "201",
+    name: "Boaster",
+    fullName: "Jake Howlett",
+    team: {
+      id: "2",
+      name: "FNATIC",
+      logo: "/teams/fnatic-logo.png"
+    },
+    role: "Support",
+    country: "United Kingdom",
+    age: 25,
+    avatar: "/players/boaster.png",
+    bio: "Boaster is known for his innovative strategies and in-game leadership. As the team captain, he coordinates FNATIC's gameplay and often makes unexpected tactical decisions that catch opponents off-guard. His deep understanding of the game and ability to adapt to different situations has made him one of the most respected in-game leaders in Marvel Rivals.",
+    heroPool: ["Doctor Strange", "Luna Snow", "Storm"],
+    stats: {
+      matches: 34,
+      winRate: 79.4,
+      averageDamage: 126,
+      eliminations: 14.2,
+      deaths: 10.9,
+      kd: 1.3,
+      assists: 12.6,
+      firstElimRate: 12.8,
+      heroPlaytime: [
+        { hero: "Doctor Strange", playTime: 156, winRate: 77.4 },
+        { hero: "Luna Snow", playTime: 138, winRate: 73.2 },
+        { hero: "Storm", playTime: 112, winRate: 71.6 },
+        { hero: "Rocket Raccoon", playTime: 68, winRate: 70.1 },
+        { hero: "Magneto", playTime: 42, winRate: 66.7 }
+      ],
+      mapStats: [
+        { map: "Wakanda", matches: 13, winRate: 84.6 },
+        { map: "Tokyo", matches: 10, winRate: 80.0 },
+        { map: "Asgard", matches: 7, winRate: 71.4 },
+        { map: "New York", matches: 4, winRate: 75.0 },
+        { map: "Sakaar", matches: 0, winRate: 0 }
+      ]
+    },
+    ranking: 8,
+    achievements: [
+      { title: "Champions Tour 2025 EMEA - Best Support", date: "May 2025" },
+      { title: "Highest assist average in a tournament (14.8)", date: "March 2025" },
+      { title: "Most diverse hero pool (10 heroes with significant playtime)", date: "April 2025" },
+      { title: "MRVL EMEA Masters - MVP", date: "March 2025" }
+    ],
+    social: {
+      twitter: "https://twitter.com/boaster",
+      twitch: "https://twitch.tv/boaster",
+      instagram: "https://instagram.com/boastergg"
+    },
+    highlights: [
+      {
+        title: "14 assists vs Team Liquid",
+        thumbnail: "/highlights/boaster-1.jpg",
+        url: "https://example.com/videos/boaster-assists",
+        views: 118000,
+        date: "2025-05-15"
+      },
+      {
+        title: "Triple assist clutch vs G2",
+        thumbnail: "/highlights/boaster-2.jpg",
+        url: "https://example.com/videos/boaster-triple",
+        views: 86000,
+        date: "2025-05-08"
+      }
+    ],
+    recentMatches: [
+      { 
+        id: "2001", 
+        opponent: "Team Liquid", 
+        result: "win", 
+        score: "2-0", 
+        date: "2025-05-15", 
+        event: "Champions Tour 2025: EMEA",
+        heroesPlayed: ["Doctor Strange", "Luna Snow"],
+        individualStats: {
+          kills: 28,
+          deaths: 14,
+          assists: 38,
+          damage: 24680
+        }
+      },
+      { 
+        id: "2002", 
+        opponent: "G2 Esports", 
+        result: "win", 
+        score: "2-1", 
+        date: "2025-05-08", 
+        event: "Champions Tour 2025: EMEA",
+        heroesPlayed: ["Doctor Strange", "Storm", "Luna Snow"],
+        individualStats: {
+          kills: 35,
+          deaths: 26,
+          assists: 52,
+          damage: 32460
+        }
+      },
+      { 
+        id: "2003", 
+        opponent: "Karmine Corp", 
+        result: "win", 
+        score: "2-0", 
+        date: "2025-04-30", 
+        event: "Champions Tour 2025: EMEA",
+        heroesPlayed: ["Luna Snow", "Doctor Strange"],
+        individualStats: {
+          kills: 22,
+          deaths: 12,
+          assists: 31,
+          damage: 18940
+        }
+      }
+    ]
+  },
+  "301": {
+    id: "301",
+    name: "Meteor",
+    fullName: "Park Min-Seok",
+    team: {
+      id: "3",
+      name: "Gen.G",
+      logo: "/teams/geng-logo.png"
+    },
+    role: "DPS",
+    country: "South Korea",
+    age: 22,
+    avatar: "/players/meteor.png",
+    bio: "Meteor is Gen.G's star DPS player, known for his exceptional aim and quick decision making. He specializes in heroes that require precise tracking and has developed unique playstyles for several characters that have since been widely adopted by other professional players.",
+    heroPool: ["Iron Man", "Luna Snow", "Captain America"],
+    stats: {
+      matches: 29,
+      winRate: 79.3,
+      averageDamage: 176,
+      eliminations: 21.3,
+      deaths: 12.5,
+      kd: 1.7,
+      assists: 5.9,
+      firstElimRate: 26.1,
+      heroPlaytime: [
+        { hero: "Iron Man", playTime: 168, winRate: 81.3 },
+        { hero: "Luna Snow", playTime: 146, winRate: 76.8 },
+        { hero: "Captain America", playTime: 84, winRate: 73.4 },
+        { hero: "Storm", playTime: 52, winRate: 68.5 },
+        { hero: "Rocket Raccoon", playTime: 38, winRate: 65.2 }
+      ],
+      mapStats: [
+        { map: "Tokyo", matches: 11, winRate: 90.9 },
+        { map: "Wakanda", matches: 9, winRate: 77.8 },
+        { map: "Asgard", matches: 6, winRate: 66.7 },
+        { map: "Sakaar", matches: 2, winRate: 100.0 },
+        { map: "New York", matches: 1, winRate: 0.0 }
+      ]
+    },
+    ranking: 3,
+    achievements: [
+      { title: "Champions Tour 2025 APAC - MVP", date: "May 2025" },
+      { title: "Highest elimination record in APAC (38 in a single map)", date: "April 2025" },
+      { title: "Most improved player award - MRVL APAC", date: "February 2025" }
+    ],
+    social: {
+      twitter: "https://twitter.com/Meteor_GG",
+      twitch: "https://twitch.tv/MeteorGG",
+      instagram: "https://instagram.com/meteor_official"
+    },
+    highlights: [
+      {
+        title: "38 kills on Wakanda",
+        thumbnail: "/highlights/meteor-1.jpg",
+        url: "https://example.com/videos/meteor-38k",
+        views: 156000,
+        date: "2025-05-08"
+      },
+      {
+        title: "Triple kill to clutch vs BOOM",
+        thumbnail: "/highlights/meteor-2.jpg",
+        url: "https://example.com/videos/meteor-triple",
+        views: 124000,
+        date: "2025-04-30"
+      }
+    ],
+    recentMatches: [
+      { 
+        id: "3001", 
+        opponent: "DRX", 
+        result: "win", 
+        score: "2-1", 
+        date: "2025-05-15", 
+        event: "Champions Tour 2025: APAC",
+        heroesPlayed: ["Iron Man", "Luna Snow", "Captain America"],
+        individualStats: {
+          kills: 55,
+          deaths: 28,
+          assists: 16,
+          damage: 42680
+        }
+      },
+      { 
+        id: "3002", 
+        opponent: "Paper Rex", 
+        result: "win", 
+        score: "2-0", 
+        date: "2025-05-08", 
+        event: "Champions Tour 2025: APAC",
+        heroesPlayed: ["Iron Man", "Luna Snow"],
+        individualStats: {
+          kills: 38,
+          deaths: 16,
+          assists: 12,
+          damage: 28450
+        }
+      },
+      { 
+        id: "3003", 
+        opponent: "BOOM Esports", 
+        result: "win", 
+        score: "2-0", 
+        date: "2025-04-30", 
+        event: "Champions Tour 2025: APAC",
+        heroesPlayed: ["Iron Man", "Captain America"],
+        individualStats: {
+          kills: 42,
+          deaths: 22,
+          assists: 8,
+          damage: 32840
+        }
+      }
+    ]
+  }
+};
+
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  // Get player ID from URL parameters
+  const { id: playerId } = await params;
+  
+  // Find the player with the matching ID
+  const player = playerDetails[playerId as keyof typeof playerDetails];
+  
+  // If no player is found, return 404 error
+  if (!player) {
+    return NextResponse.json({ error: 'Player not found' }, { status: 404 });
+  }
+  
+  // Return the player data
+  return NextResponse.json(player);
+}

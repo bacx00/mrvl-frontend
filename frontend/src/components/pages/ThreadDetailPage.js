@@ -1,395 +1,511 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
+import UserDisplay from '../shared/UserDisplay';
+import VotingButtons from '../shared/VotingButtons';
+import MentionAutocomplete from '../shared/MentionAutocomplete';
+import MentionLink from '../shared/MentionLink';
 
 function ThreadDetailPage({ params, navigateTo }) {
-  const { user, isAuthenticated, api } = useAuth();
+  const threadId = params?.id;
+  const { isAuthenticated, isAdmin, isModerator, api, user } = useAuth();
   const [thread, setThread] = useState(null);
-  const [newPost, setNewPost] = useState('');
-  const [posting, setPosting] = useState(false);
+  const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [replyingTo, setReplyingTo] = useState(null);
-  const [expandedReplies, setExpandedReplies] = useState({});
-  const [userReactions, setUserReactions] = useState({}); // CRITICAL FIX: Track user reactions
+  const [replyContent, setReplyContent] = useState('');
+  const [replyToPost, setReplyToPost] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [editingPost, setEditingPost] = useState(null);
+  const [editContent, setEditContent] = useState('');
 
-  const fetchThreadData = async () => {
-    setLoading(true);
+  const fetchThreadData = useCallback(async () => {
     try {
-      console.log('🔍 ThreadDetailPage: Fetching REAL thread data for ID:', params.id);
+      setLoading(true);
       
-      // ✅ FIXED: ONLY USE REAL BACKEND DATA - NO MOCK FALLBACK
-      try {
-        const threadResponse = await api.get(`/forums/threads/${params.id}`);
-        const realThread = threadResponse?.data?.data || threadResponse?.data;
-        
-        if (realThread && realThread.id) {
-          // Transform backend thread data to frontend format
-          const transformedThread = {
-            id: realThread.id,
-            title: realThread.title,
-            author: {
-              id: realThread.user_id || realThread.author?.id || 1,
-              name: realThread.user_name || realThread.author?.name || 'Anonymous',
-              avatar: realThread.author?.avatar || "🎮",
-              posts: realThread.author?.posts_count || 1,
-              joined: realThread.author?.created_at || "2024-01-01",
-              rank: realThread.author?.rank || "User"
-            },
-            content: realThread.content || "No content available",
-            createdAt: realThread.created_at || new Date().toISOString(),
-            views: realThread.views || realThread.views_count || 0,
-            replies: realThread.replies || realThread.replies_count || 0,
-            locked: realThread.locked || false,
-            pinned: realThread.pinned || false,
-            reactions: [
-              { type: '👍', count: realThread.likes || 0, userReacted: false },
-              { type: '👎', count: realThread.dislikes || 0, userReacted: false }
-            ],
-            posts: [] // Comments will be fetched separately if available
-          };
-          
-          console.log('✅ ThreadDetailPage: Using REAL backend thread data');
-          setThread(transformedThread);
-          
-          // Initialize expanded state and user reactions
-          setExpandedReplies({});
-          setUserReactions({});
-          
-          setLoading(false);
-          return;
-        }
-      } catch (backendError) {
-        console.error('❌ ThreadDetailPage: Backend thread not found:', backendError);
-        
-        // ✅ CRITICAL FIX: Handle 404 gracefully - don't show error alerts
-        if (backendError.message.includes('404') || backendError.message.includes('Thread not found')) {
-          setThread(null); // Show "not found" UI instead of error
-          setError(`Thread #${params.id} was not found. It may have been deleted or moved.`);
-        } else {
-          setError('Unable to load thread. Please try again later.');
-        }
-      }
+      // Fetch thread details (includes posts)
+      const threadResponse = await api.get(`/forums/threads/${threadId}`);
+      
+      const threadData = threadResponse.data?.data || threadResponse.data;
+      const postsData = threadData.posts || [];
+      
+      console.log('✅ Thread loaded:', threadData);
+      console.log('✅ Thread posts loaded:', postsData.length);
+      
+      setThread(threadData);
+      setPosts(postsData);
       
     } catch (error) {
-      console.error('❌ ThreadDetailPage: Error fetching thread:', error);
-      setThread(null); // ✅ NO MOCK DATA - Show error instead
+      console.error('❌ ThreadDetailPage: Backend API failed:', error);
+      setThread(null);
+      setPosts([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  };
+  }, [api, threadId]);
 
   useEffect(() => {
-    if (params.id) {
-      fetchThreadData();
-    }
-  }, [params.id]);
+    fetchThreadData();
+  }, [threadId, fetchThreadData]);
 
-  // Enhanced reaction handling with 1 reaction per user limit
-  const handleReaction = async (postId, type) => {
-    if (!isAuthenticated) {
-      window.dispatchEvent(new CustomEvent('mrvl-show-auth-modal'));
-      return;
-    }
+  const formatTimeAgo = (dateString) => {
+    if (!dateString) return 'Unknown';
+    
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Unknown';
+    
+    const now = new Date();
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h`;
+    if (diffInHours < 48) return 'Yesterday';
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 30) return `${diffInDays}d`;
+    
+    const diffInMonths = Math.floor(diffInDays / 30);
+    if (diffInMonths < 12) return `${diffInMonths}mo`;
+    
+    const years = Math.floor(diffInMonths / 12);
+    return `${years}y`;
+  };
 
-    console.log(`🔗 ThreadDetailPage: Reacting to post ${postId} with ${type}`);
+  const renderContentWithMentions = (content, mentions = []) => {
+    if (!content) return null;
     
-    const reactionKey = `${postId}-${type}`;
-    const hasReacted = userReactions[reactionKey];
-    
-    // Update user reactions tracking
-    const newUserReactions = { ...userReactions };
-    
-    // Clear all reactions for this post
-    Object.keys(newUserReactions).forEach(key => {
-      if (key.startsWith(`${postId}-`)) {
-        delete newUserReactions[key];
-      }
+    // Create a map of mention texts to their data
+    const mentionMap = {};
+    mentions.forEach(mention => {
+      mentionMap[mention.mention_text] = mention;
     });
     
-    // Set new reaction if not removing
-    if (!hasReacted) {
-      newUserReactions[reactionKey] = true;
-    }
+    // Split content by mentions pattern
+    const mentionPattern = /(@\w+|@team:\w+|@player:\w+)/g;
+    const parts = content.split(mentionPattern);
     
-    setUserReactions(newUserReactions);
-
-    if (postId === 'main') {
-      setThread(prev => ({
-        ...prev,
-        reactions: prev.reactions.map(reaction => {
-          if (reaction.type === type) {
-            const newCount = hasReacted ? reaction.count - 1 : reaction.count + 1;
-            return { ...reaction, count: Math.max(0, newCount), userReacted: !hasReacted };
-          } else {
-            // Clear other reactions for main post
-            const otherReactionKey = `main-${reaction.type}`;
-            const hadOtherReaction = userReactions[otherReactionKey];
-            if (hadOtherReaction) {
-              return { ...reaction, count: Math.max(0, reaction.count - 1), userReacted: false };
-            }
-            return reaction;
-          }
-        })
-      }));
-    }
+    return parts.map((part, index) => {
+      const mentionData = mentionMap[part];
+      
+      if (mentionData) {
+        return (
+          <MentionLink
+            key={index}
+            mention={mentionData}
+            onClick={(mention) => {
+              const nav = {
+                player: () => navigateTo('player-detail', { id: mention.id }),
+                team: () => navigateTo('team-detail', { id: mention.id }),
+                user: () => navigateTo('user-profile', { id: mention.id })
+              };
+              
+              if (nav[mention.type]) {
+                nav[mention.type]();
+              }
+            }}
+          />
+        );
+      }
+      
+      // For unlinked mentions, still style them
+      if (part.match(mentionPattern)) {
+        return (
+          <span key={index} className="text-red-600 dark:text-red-400 font-medium">
+            {part}
+          </span>
+        );
+      }
+      
+      return part;
+    });
   };
 
-  // Enhanced post submission with nested reply support
-  const handlePostSubmit = async (e) => {
+  const handleSubmitReply = async (e) => {
     e.preventDefault();
-    if (!newPost.trim() || posting) return;
+    if (!replyContent.trim() || submitting) return;
 
-    setPosting(true);
     try {
-      console.log(`Submitting ${replyingTo ? 'nested reply' : 'post'}:`, newPost);
+      setSubmitting(true);
       
-      const newPostObj = {
-        id: Date.now(),
-        parentId: replyingTo,
-        author: {
-          id: user?.id || 999,
-          name: user?.name || 'Anonymous',
-          avatar: user?.avatar || "👤",
-          posts: 1,
-          joined: "2024-12-01",
-          rank: "Rookie"
-        },
-        content: newPost,
-        createdAt: new Date().toISOString(),
-        reactions: [
-          { type: '👍', count: 0, userReacted: false },
-          { type: '👎', count: 0, userReacted: false }
-        ],
-        replies: []
+      const payload = {
+        content: replyContent.trim(),
+        parent_id: replyToPost?.id || null
+      };
+      
+      // Optimistic update - add the reply immediately
+      const tempReply = {
+        id: `temp-${Date.now()}`, // Temporary ID
+        content: replyContent.trim(),
+        author: user,
+        stats: { score: 0, upvotes: 0, downvotes: 0 },
+        meta: { created_at: new Date().toISOString(), edited: false },
+        mentions: [],
+        user_vote: null,
+        replies: [],
+        is_temp: true // Mark as temporary
       };
 
-      if (replyingTo) {
-        // Add nested reply
-        const addNestedReply = (posts) => {
-          return posts.map(post => {
-            if (post.id === replyingTo) {
+      // Add to appropriate location
+      if (replyToPost?.id) {
+        // Add as nested reply
+        setPosts(prevPosts => 
+          prevPosts.map(post => {
+            if (post.id === replyToPost.id) {
               return {
                 ...post,
-                replies: [...(post.replies || []), newPostObj]
+                replies: [...(post.replies || []), tempReply]
               };
             }
-            if (post.replies) {
-              return { ...post, replies: addNestedReply(post.replies) };
-            }
             return post;
-          });
-        };
-
-        setThread(prev => ({
-          ...prev,
-          posts: addNestedReply(prev.posts),
-          replies: prev.replies + 1
-        }));
-
-        // Auto-expand the parent comment to show new reply
-        setExpandedReplies(prev => ({
-          ...prev,
-          [replyingTo]: true
-        }));
+          })
+        );
       } else {
-        // Add top-level comment
-        setThread(prev => ({
-          ...prev,
-          posts: [...prev.posts, newPostObj],
-          replies: prev.replies + 1
-        }));
+        // Add as top-level post
+        setPosts(prevPosts => [...prevPosts, tempReply]);
       }
 
-      setNewPost('');
-      setReplyingTo(null);
+      const response = await api.post(`/user/forums/threads/${threadId}/posts`, payload);
+      
+      if (response.data?.success) {
+        setReplyContent('');
+        setReplyToPost(null);
+        
+        // Always refresh to get the complete post data and updated counts
+        await fetchThreadData();
+      } else {
+        // Remove optimistic update on failure
+        if (replyToPost?.id) {
+          setPosts(prevPosts => 
+            prevPosts.map(post => {
+              if (post.id === replyToPost.id) {
+                return {
+                  ...post,
+                  replies: (post.replies || []).filter(r => r.id !== tempReply.id)
+                };
+              }
+              return post;
+            })
+          );
+        } else {
+          setPosts(prevPosts => prevPosts.filter(p => p.id !== tempReply.id));
+        }
+      }
+      
     } catch (error) {
-      console.error('Error posting reply:', error);
+      console.error('❌ Failed to submit reply:', error);
+      alert('Failed to submit reply. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
-    setPosting(false);
   };
 
-  // Toggle nested replies visibility
-  const toggleReplies = (postId) => {
-    setExpandedReplies(prev => ({
-      ...prev,
-      [postId]: !prev[postId]
-    }));
+  const handleEditPost = (post) => {
+    setEditingPost(post);
+    setEditContent(post.content);
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
+  const handleSaveEdit = async (postId) => {
+    if (!editContent.trim()) return;
 
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return `${diffDays}d ago`;
+    try {
+      setSubmitting(true);
+      
+      // Optimistic update
+      setPosts(prevPosts => 
+        prevPosts.map(post => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              content: editContent.trim(),
+              meta: { ...post.meta, edited: true, updated_at: new Date().toISOString() }
+            };
+          }
+          return post;
+        })
+      );
+
+      const response = await api.put(`/user/forums/posts/${postId}`, {
+        content: editContent.trim()
+      });
+
+      if (response.data?.success) {
+        setEditingPost(null);
+        setEditContent('');
+        // Refresh to get server data
+        await fetchThreadData();
+      } else {
+        // Revert optimistic update on failure
+        await fetchThreadData();
+      }
+    } catch (error) {
+      console.error('❌ Failed to edit post:', error);
+      alert('Failed to edit post. Please try again.');
+      // Revert optimistic update on error
+      await fetchThreadData();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const ReactionButton = ({ reaction, postId }) => {
-    const reactionKey = `${postId}-${reaction.type}`;
-    const hasUserReacted = userReactions[reactionKey] || reaction.userReacted;
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm('Are you sure you want to delete this post?')) return;
+
+    try {
+      setSubmitting(true);
+      
+      // Optimistic update - hide the post immediately
+      setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+
+      const response = await api.delete(`/user/forums/posts/${postId}`);
+
+      if (response.data?.success) {
+        // Post successfully deleted - keep it hidden
+        await fetchThreadData(); // Refresh to update counts
+      } else {
+        // Revert optimistic update on failure
+        await fetchThreadData();
+      }
+    } catch (error) {
+      console.error('❌ Failed to delete post:', error);
+      alert('Failed to delete post. Please try again.');
+      // Revert optimistic update on error
+      await fetchThreadData();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handlePinThread = async () => {
+    try {
+      const endpoint = thread.pinned 
+        ? `/admin/forums/threads/${threadId}/unpin`
+        : `/admin/forums/threads/${threadId}/pin`;
+      
+      const response = await api.post(endpoint);
+      
+      if (response.data?.success) {
+        setThread(prev => ({ ...prev, pinned: !prev.pinned }));
+      } else {
+        alert('Failed to update thread pin status');
+      }
+    } catch (error) {
+      console.error('❌ Failed to pin/unpin thread:', error);
+      alert('Failed to update thread pin status');
+    }
+  };
+
+  const handleLockThread = async () => {
+    try {
+      const endpoint = thread.locked 
+        ? `/admin/forums/threads/${threadId}/unlock`
+        : `/admin/forums/threads/${threadId}/lock`;
+      
+      const response = await api.post(endpoint);
+      
+      if (response.data?.success) {
+        setThread(prev => ({ ...prev, locked: !prev.locked }));
+      } else {
+        alert('Failed to update thread lock status');
+      }
+    } catch (error) {
+      console.error('❌ Failed to lock/unlock thread:', error);
+      alert('Failed to update thread lock status');
+    }
+  };
+
+  const renderPost = (post, isReply = false, depth = 0) => {
+    const maxDepth = 3; // Limit nesting depth for readability
+    const shouldShowReplies = post.replies && post.replies.length > 0 && depth < maxDepth;
+    
+    // Use inline style for dynamic margin instead of class
+    const marginStyle = isReply ? { marginLeft: `${Math.min(depth * 2, 6)}rem` } : {};
     
     return (
-      <button
-        onClick={() => handleReaction(postId, reaction.type)}
-        className={`flex items-center space-x-1 px-2 py-1 rounded text-xs transition-colors ${
-          hasUserReacted
-            ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-300 dark:border-red-600'
-            : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-        }`}
-        disabled={!isAuthenticated}
+      <div 
+        key={post.id}
+        className={`${
+          isReply ? 'pl-4 border-l-2 border-gray-200 dark:border-gray-700' : ''
+        } py-4 ${depth > 0 ? 'bg-gray-50/50 dark:bg-gray-800/50 rounded-lg' : ''}`}
+        style={marginStyle}
       >
-        <span>{reaction.type}</span>
-        <span className="font-medium">{reaction.count}</span>
-      </button>
-    );
-  };
-
-  // Enhanced PostCard with nested comment support
-  const PostCard = ({ post, isMainPost = false, depth = 0 }) => {
-    const hasReplies = post.replies && post.replies.length > 0;
-    const isExpanded = expandedReplies[post.id];
-    const maxDepth = 3;
-
-    return (
-      <div className={`${isMainPost ? '' : depth > 0 ? 'ml-8 border-l-2 border-gray-200 dark:border-gray-600 pl-4' : ''}`}>
-        <div className={`flex space-x-3 ${isMainPost ? 'pb-4' : 'py-3'}`}>
-          {/* Avatar Column */}
-          <div className="flex-shrink-0">
-            <div className="w-8 h-8 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-sm">
-              {post.author.avatar}
-            </div>
+        <div className="w-full">
+          {/* User Info Header */}
+          <div className="flex items-center space-x-3 mb-3">
+            <UserDisplay
+              user={post.author}
+              showAvatar={true}
+              showHeroFlair={true}
+              showTeamFlair={true}
+              size="sm"
+              clickable={false}
+            />
+            <span className="text-sm text-gray-500 dark:text-gray-500">
+              {formatTimeAgo(post.meta?.created_at || post.created_at)}
+            </span>
+            {post.is_edited && (
+              <span className="text-xs text-gray-400 dark:text-gray-600">
+                (edited {formatTimeAgo(post.meta?.updated_at || post.edited_at)})
+              </span>
+            )}
+            {/* Voting buttons right after username info */}
+            <VotingButtons
+              itemType="forum_post"
+              itemId={post.id}
+              parentId={threadId}
+              initialUpvotes={post.stats?.upvotes || post.upvotes || 0}
+              initialDownvotes={post.stats?.downvotes || post.downvotes || 0}
+              userVote={post.user_vote}
+              direction="horizontal"
+              size="xs"
+            />
           </div>
 
-          {/* Content Column */}
-          <div className="flex-1 min-w-0">
-            {/* Header */}
-            <div className="flex items-center space-x-2 mb-2">
-              <span className="font-medium text-gray-900 dark:text-white text-sm">
-                {post.author.name}
-              </span>
-              <span className="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
-                {post.author.rank}
-              </span>
-              <span className="text-xs text-gray-500 dark:text-gray-500">
-                {formatDate(post.createdAt)}
-              </span>
-            </div>
-
-            {/* Content */}
-            <div className="text-sm text-gray-900 dark:text-white mb-3 leading-relaxed">
-              {post.content}
-            </div>
-
-            {/* Actions Row */}
-            <div className="flex items-center space-x-3">
-              {/* Reactions */}
-              <div className="flex items-center space-x-2">
-                {post.reactions.map((reaction, index) => (
-                  <ReactionButton
-                    key={index}
-                    reaction={reaction}
-                    postId={isMainPost ? 'main' : post.id}
-                  />
-                ))}
-              </div>
-
-              {/* Reply button for nested comments */}
-              {!isMainPost && depth < maxDepth && (
-                <button
-                  onClick={() => {
-                    if (!isAuthenticated) {
-                      window.dispatchEvent(new CustomEvent('mrvl-show-auth-modal'));
-                      return;
-                    }
-                    setReplyingTo(post.id);
-                  }}
-                  className="text-xs text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                >
-                  Reply
-                </button>
-              )}
-
-              {/* Toggle replies button */}
-              {hasReplies && (
-                <button
-                  onClick={() => toggleReplies(post.id)}
-                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  {isExpanded ? 'Hide' : 'Show'} {post.replies.length} {post.replies.length === 1 ? 'reply' : 'replies'}
-                </button>
-              )}
-            </div>
+          {/* Post Content */}
+          <div className="prose prose-sm dark:prose-invert max-w-none mb-4">
+            {post.content.split('\n').map((paragraph, index) => (
+              <p key={index} className="mb-2 last:mb-0">
+                {renderContentWithMentions(paragraph, post.mentions || [])}
+              </p>
+            ))}
           </div>
 
-          {/* Stats Column (for main post only) */}
-          {isMainPost && (
-            <div className="flex-shrink-0 text-right">
-              <div className="text-xs text-gray-500 dark:text-gray-500 space-y-1">
-                <div>{post.author.posts} posts</div>
-                <div>Joined {new Date(post.author.joined).toLocaleDateString()}</div>
-              </div>
+          {/* Post Actions */}
+          <div className="flex items-center space-x-4 mb-3">
+            {/* Reply Button */}
+            {isAuthenticated && (
+              <button
+                onClick={() => setReplyToPost(post)}
+                className="text-xs text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              >
+                Reply
+              </button>
+            )}
+            
+            {/* Edit Button */}
+            {(post.author?.id === user?.id || isAdmin() || isModerator()) && (
+              <button
+                onClick={() => handleEditPost(post)}
+                className="text-xs text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              >
+                Edit
+              </button>
+            )}
+
+            {/* Delete Button */}
+            {(post.author?.id === user?.id || isAdmin() || isModerator()) && (
+              <button
+                onClick={() => handleDeletePost(post.id)}
+                className="text-xs text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              >
+                Delete
+              </button>
+            )}
+          </div>
+
+          {/* Reply Form */}
+          {replyToPost?.id === post.id && (
+            <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded">
+              <form onSubmit={handleSubmitReply}>
+                <div className="mb-2">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Replying to @{post.author?.username || post.author?.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setReplyToPost(null)}
+                    className="ml-2 text-xs text-red-600 dark:text-red-400 hover:underline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <MentionAutocomplete
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
+                  placeholder="Write your reply..."
+                  rows={3}
+                  className="p-2"
+                />
+                <div className="flex justify-end space-x-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setReplyToPost(null)}
+                    className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!replyContent.trim() || submitting}
+                    className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {submitting ? 'Posting...' : 'Reply'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Edit Form */}
+          {editingPost?.id === post.id && (
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-700">
+              <form onSubmit={(e) => { e.preventDefault(); handleSaveEdit(post.id); }}>
+                <div className="mb-2">
+                  <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                    Editing post
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => { setEditingPost(null); setEditContent(''); }}
+                    className="ml-2 text-xs text-red-600 dark:text-red-400 hover:underline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  placeholder="Edit your post..."
+                  rows={4}
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent"
+                />
+                <div className="flex justify-end space-x-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => { setEditingPost(null); setEditContent(''); }}
+                    className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!editContent.trim() || submitting}
+                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {submitting ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Nested Replies */}
+          {shouldShowReplies && (
+            <div className="mt-4 space-y-2">
+              {post.replies.map(reply => renderPost(reply, true, depth + 1))}
+            </div>
+          )}
+          
+          {/* Show collapsed replies indicator if max depth reached */}
+          {post.replies && post.replies.length > 0 && depth >= maxDepth && (
+            <div className="mt-3 ml-4">
+              <button className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                View {post.replies.length} more {post.replies.length === 1 ? 'reply' : 'replies'}...
+              </button>
             </div>
           )}
         </div>
-
-        {/* Nested Replies */}
-        {hasReplies && isExpanded && (
-          <div className="mt-2">
-            {post.replies.map(reply => (
-              <PostCard
-                key={reply.id}
-                post={reply}
-                isMainPost={false}
-                depth={depth + 1}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Inline Reply Form */}
-        {replyingTo === post.id && isAuthenticated && (
-          <div className="mt-3 ml-11 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded p-3">
-            <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-              Replying to @{post.author.name}
-            </div>
-            <form onSubmit={handlePostSubmit} className="space-y-2">
-              <textarea
-                value={newPost}
-                onChange={(e) => setNewPost(e.target.value)}
-                placeholder={`Reply to ${post.author.name}...`}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                required
-              />
-              <div className="flex items-center justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setReplyingTo(null);
-                    setNewPost('');
-                  }}
-                  className="px-3 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={posting || !newPost.trim()}
-                  className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {posting ? 'Posting...' : 'Reply'}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
       </div>
     );
   };
+
 
   if (loading) {
     return (
@@ -404,124 +520,216 @@ function ThreadDetailPage({ params, navigateTo }) {
 
   if (!thread) {
     return (
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center py-8">
-          <div className="text-4xl mb-4">❌</div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Thread not found</h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            {error || `Thread #${params.id} could not be found or may have been deleted.`}
-          </p>
-          <button
-            onClick={() => navigateTo && navigateTo('forums')}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-          >
-            ← Back to Forums
-          </button>
-        </div>
+      <div className="card p-12 text-center">
+        <div className="text-4xl mb-4">❌</div>
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Thread Not Found</h3>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
+          The requested thread could not be found or has been deleted.
+        </p>
+        <button
+          onClick={() => navigateTo && navigateTo('forums')}
+          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+        >
+          Back to Forums
+        </button>
       </div>
     );
   }
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => navigateTo && navigateTo('forums')}
-            className="text-red-600 dark:text-red-400 hover:underline text-sm"
-          >
-            ← Back to Forums
-          </button>
-          <div className="text-sm text-gray-500 dark:text-gray-500">
-            {thread.views.toLocaleString()} views • {thread.replies} replies
+      {/* Breadcrumb */}
+      <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <button
+          onClick={() => navigateTo && navigateTo('forums')}
+          className="hover:text-red-600 dark:hover:text-red-400 transition-colors"
+        >
+          Forums
+        </button>
+        <span>/</span>
+        <span 
+          className="px-2 py-0.5 text-xs font-bold rounded-full text-white"
+          style={{ backgroundColor: thread.category?.color || '#6b7280' }}
+        >
+          {thread.category?.icon} {thread.category?.name}
+        </span>
+        <span>/</span>
+        <span className="text-gray-900 dark:text-white font-medium truncate">
+          {thread.title}
+        </span>
+      </div>
+
+      {/* Thread Header */}
+      <div className="card p-6 mb-6">
+        <div className="flex space-x-4">
+          <div className="flex-1 min-w-0">
+            {/* Thread badges */}
+            <div className="flex items-center space-x-2 mb-3">
+              {thread.pinned && (
+                <span className="px-2 py-1 text-xs font-bold rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
+                  📌 PINNED
+                </span>
+              )}
+              {thread.locked && (
+                <span className="px-2 py-1 text-xs font-bold rounded bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300">
+                  🔒 LOCKED
+                </span>
+              )}
+            </div>
+
+            {/* Title */}
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+              {thread.title}
+            </h1>
+
+            {/* Author & Stats */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-500 dark:text-gray-500">Started by</span>
+                <UserDisplay
+                  user={thread.author}
+                  showAvatar={true}
+                  showHeroFlair={true}
+                  showTeamFlair={true}
+                  size="sm"
+                  clickable={false}
+                />
+                <span className="text-sm text-gray-500 dark:text-gray-500">
+                  {formatTimeAgo(thread.meta?.created_at || thread.created_at)}
+                </span>
+                {/* Thread voting buttons below username */}
+                <VotingButtons
+                  itemType="forum_thread"
+                  itemId={thread.id}
+                  initialUpvotes={thread.stats?.upvotes || 0}
+                  initialDownvotes={thread.stats?.downvotes || 0}
+                  userVote={thread.user_vote}
+                  direction="horizontal"
+                  size="xs"
+                />
+              </div>
+
+              <div className="flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center space-x-1">
+                  <span className="font-medium">{posts.length}</span>
+                  <span>replies</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Original Content */}
+            {thread.content && (
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="prose prose-sm dark:prose-invert max-w-none">
+                  {thread.content.split('\n').map((paragraph, index) => (
+                    <p key={index} className="mb-2 last:mb-0">
+                      {renderContentWithMentions(paragraph, thread.mentions || [])}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Admin Controls */}
+            {(isAdmin() || isModerator()) && (
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Admin:</span>
+                  <button
+                    onClick={() => handlePinThread()}
+                    className={`px-3 py-1 text-xs rounded ${
+                      thread.pinned 
+                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300' 
+                        : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                    } hover:opacity-80 transition-opacity`}
+                  >
+                    {thread.pinned ? '📌 Unpin' : '📌 Pin'}
+                  </button>
+                  <button
+                    onClick={() => handleLockThread()}
+                    className={`px-3 py-1 text-xs rounded ${
+                      thread.locked 
+                        ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300' 
+                        : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                    } hover:opacity-80 transition-opacity`}
+                  >
+                    {thread.locked ? '🔒 Unlock' : '🔒 Lock'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Thread Content - VLR.gg Style */}
-      <div className="card">
-        {/* Thread Title */}
-        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-600">
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {thread.title}
-          </h1>
-          <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500 dark:text-gray-500">
-            {thread.pinned && (
-              <span className="text-red-600 dark:text-red-400">📌 Pinned</span>
-            )}
-            {thread.locked && (
-              <span className="text-yellow-600 dark:text-yellow-400">🔒 Locked</span>
-            )}
-          </div>
-        </div>
-
-        {/* Posts */}
-        <div className="divide-y divide-gray-200 dark:divide-gray-600">
-          {/* Main Post */}
-          <div className="p-4">
-            <PostCard post={{ ...thread, author: thread.author }} isMainPost={true} />
-          </div>
-
-          {/* Comments with Nested Replies */}
-          {thread.posts.map(post => (
-            <div key={post.id} className="p-4">
-              <PostCard post={post} depth={0} />
+      {/* Posts */}
+      {posts.length > 0 && (
+        <div className="space-y-4">
+          {posts.map(post => (
+            <div key={post.id} className="card p-6">
+              {renderPost(post, false, 0)}
             </div>
           ))}
         </div>
-      </div>
+      )}
 
-      {/* Main Reply Form (only for top-level comments) */}
-      {isAuthenticated && !thread.locked && !replyingTo ? (
-        <div className="mt-4 card p-4">
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Reply to Post</h3>
-          <form onSubmit={handlePostSubmit} className="space-y-3">
-            <textarea
-              value={newPost}
-              onChange={(e) => setNewPost(e.target.value)}
-              placeholder="Share your thoughts..."
+      {/* Reply Form */}
+      {isAuthenticated && !thread.locked && !replyToPost && (
+        <div className="card p-6 mt-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Post Reply</h3>
+          <form onSubmit={handleSubmitReply}>
+            <MentionAutocomplete
+              value={replyContent}
+              onChange={(e) => setReplyContent(e.target.value)}
+              placeholder="Write your reply..."
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              required
+              className="p-3"
             />
-            <div className="flex items-center justify-between">
-              <div className="text-xs text-gray-600 dark:text-gray-400">
-                Posting as {user?.name || 'Anonymous'}
+            <div className="flex justify-between items-center mt-3">
+              <div className="text-sm text-gray-500 dark:text-gray-500">
+                Use @username to mention someone
               </div>
               <button
                 type="submit"
-                disabled={posting || !newPost.trim()}
-                className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!replyContent.trim() || submitting}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {posting ? 'Posting...' : 'Post Reply'}
+                {submitting ? 'Posting...' : 'Post Reply'}
               </button>
             </div>
           </form>
         </div>
-      ) : !isAuthenticated ? (
-        /* Sign-in prompt for non-authenticated users */
-        <div className="mt-4 card p-4 text-center">
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Join the Discussion</h3>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-            Sign in to reply to this post and share your thoughts with the community.
+      )}
+
+      {/* Login Prompt for Unauthenticated Users */}
+      {!isAuthenticated && !thread.locked && (
+        <div className="card p-6 mt-6 text-center">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Join the Discussion</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Sign in to reply to this thread and join the conversation.
           </p>
           <button
-            onClick={() => {
-              window.dispatchEvent(new CustomEvent('mrvl-show-auth-modal'));
-            }}
-            className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+            onClick={() => window.dispatchEvent(new CustomEvent('mrvl-show-auth-modal'))}
+            className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
           >
             Sign In to Reply
           </button>
         </div>
-      ) : thread.locked ? (
-        <div className="mt-4 card p-4 text-center">
-          <p className="text-xs text-gray-600 dark:text-gray-400">
-            This post is locked and no longer accepting replies.
+      )}
+
+      {/* Locked Notice */}
+      {thread.locked && (
+        <div className="card p-6 mt-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+          <div className="flex items-center space-x-2 text-red-800 dark:text-red-300">
+            <span className="text-lg">🔒</span>
+            <span className="font-medium">This thread is locked</span>
+          </div>
+          <p className="text-sm text-red-700 dark:text-red-400 mt-1">
+            No new replies can be posted to this thread.
           </p>
         </div>
-      ) : null}
+      )}
+
     </div>
   );
 }

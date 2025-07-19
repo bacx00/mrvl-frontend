@@ -180,10 +180,10 @@ body {
   @apply px-2 py-1 bg-green-500 text-white text-xs font-bold rounded-full;
 }
 
-/* Loading animations - PERFECTED */
-.loading-spinner {
+/* Loading animations - REMOVED */
+/* .loading-spinner {
   @apply w-6 h-6 border-2 border-red-300 border-t-red-600 rounded-full animate-spin;
-}
+} */
 
 /* Responsive design utilities - PERFECTED */
 .responsive-grid {

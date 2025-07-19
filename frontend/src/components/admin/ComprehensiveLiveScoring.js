@@ -1,12 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
 import { TeamLogo } from '../../utils/imageUtils';
-import { getHeroImageSync, getHeroRole } from '../../utils/imageUtils';
+import { getHeroImageSync, getHeroRole, getCountryFlag } from '../../utils/imageUtils';
+import {
+  HEROES,
+  GAME_MODES,
+  PLAYER_STATS,
+  MATCH_STATUSES
+} from '../../constants/marvelRivalsData';
+import { subscribeMatchUpdates, subscribeLiveScoring } from '../../lib/pusher.ts';
 
 /**
- * 🎮 COMPREHENSIVE LIVE SCORING - COMPLETE MARVEL RIVALS SYSTEM
- * Backend URL: https://staging.mrvl.net/api
- * Features: BO1/BO3/BO5, Map Progression, Preparation Phases, Real-time Sync
+ *  COMPREHENSIVE LIVE SCORING - SEASON 2.5 MARVEL RIVALS
+ * Synchronized with MatchForm and MatchDetailPage
+ * Features: All formats (BO1-BO9), Player Stats, Real-time Sync
  */
 const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
   const { api } = useAuth();
@@ -28,11 +35,20 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     return saved ? parseInt(saved) : null;
   });
   const [saveLoading, setSaveLoading] = useState(false);
+  
+  // ENHANCED: Kill feed and objective tracking
+  const [killFeed, setKillFeed] = useState([]);
+  const [objectiveProgress, setObjectiveProgress] = useState({
+    team1: 0,
+    team2: 0,
+    capturingTeam: null
+  });
+  const [isPaused, setIsPaused] = useState(false);
 
-  // 🔥 CRITICAL: FIXED BACKEND URL LOADING
+  //  CRITICAL: FIXED BACKEND URL LOADING
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://staging.mrvl.net/api';
 
-  // 🔄 PERSISTENT STATE MANAGEMENT - Preserve live match state across page refresh/navigation
+  //  PERSISTENT STATE MANAGEMENT - Preserve live match state across page refresh/navigation
   const STORAGE_KEYS = {
     matchStats: `match-stats-${match?.id}`,
     currentMapIndex: `match-map-index-${match?.id}`,
@@ -54,21 +70,21 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       if (savedMatchStats) {
         const parsed = JSON.parse(savedMatchStats);
         setMatchStats(parsed);
-        console.log('🔄 Restored match stats from session storage');
+        console.log(' Restored match stats from session storage');
       }
       
       // Restore current map index
       const savedMapIndex = sessionStorage.getItem(STORAGE_KEYS.currentMapIndex);
       if (savedMapIndex !== null) {
         setCurrentMapIndex(parseInt(savedMapIndex));
-        console.log('🔄 Restored map index:', savedMapIndex);
+        console.log(' Restored map index:', savedMapIndex);
       }
       
       // Restore match status
       const savedStatus = sessionStorage.getItem(STORAGE_KEYS.matchStatus);
       if (savedStatus) {
         setMatchStatus(savedStatus);
-        console.log('🔄 Restored match status:', savedStatus);
+        console.log(' Restored match status:', savedStatus);
       }
       
       // Restore timer state
@@ -87,9 +103,9 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       if (savedPrepPhase) setIsPreparationPhase(savedPrepPhase === 'true');
       if (savedPrepTimer) setPreparationTimer(parseInt(savedPrepTimer));
       
-      console.log('✅ Live match state restored from session storage');
+      console.log('Live match state restored from session storage');
     } catch (error) {
-      console.error('❌ Error restoring match state:', error);
+      console.error(' Error restoring match state:', error);
     }
   }, [match?.id]);
 
@@ -124,49 +140,49 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     sessionStorage.setItem(STORAGE_KEYS.preparationTimer, preparationTimer.toString());
   }, [isPreparationPhase, preparationTimer, match?.id]);
 
-  // 🎮 COMPLETE MARVEL RIVALS GAME MODES WITH ACCURATE TIMERS
+  //  COMPLETE MARVEL RIVALS GAME MODES WITH ACCURATE TIMERS
   const gameModesData = {
     'Convoy': { 
       duration: 18 * 60, // 18 minutes
       displayName: 'Convoy', 
       color: 'blue', 
       description: 'Escort the payload to victory',
-      icon: '🚚'
+      icon: ''
     },
     'Domination': { 
       duration: 12 * 60, // 12 minutes
       displayName: 'Domination', 
       color: 'red', 
       description: 'Control strategic points',
-      icon: '🏁'
+      icon: ''
     },
     'Convergence': { 
       duration: 15 * 60, // 15 minutes
       displayName: 'Convergence', 
       color: 'purple', 
       description: 'Converge on objectives',
-      icon: '⚡'
+      icon: ''
     },
     'Conquest': { 
       duration: 20 * 60, // 20 minutes
       displayName: 'Conquest', 
       color: 'green', 
       description: 'Capture and hold territory',
-      icon: '💎'
+      icon: ''
     },
     'Doom Match': { 
       duration: 10 * 60, // 10 minutes
       displayName: 'Doom Match', 
       color: 'orange', 
       description: 'Eliminate all opponents',
-      icon: '💀'
+      icon: ''
     },
     'Escort': { 
       duration: 16 * 60, // 16 minutes
       displayName: 'Escort', 
       color: 'yellow', 
       description: 'Guide the target safely',
-      icon: '🛡️'
+      icon: ''
     }
   };
 
@@ -176,34 +192,34 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       displayName: mode || 'Unknown', 
       color: 'gray', 
       description: 'Unknown mode',
-      icon: '❓'
+      icon: ''
     };
   };
 
-  // 🗺️ COMPLETE MARVEL RIVALS MAPS WITH MODES
+  //  COMPLETE MARVEL RIVALS MAPS WITH MODES
   const [marvelRivalsMaps, setMarvelRivalsMaps] = useState([
-    { name: 'Tokyo 2099: Shibuya Sky', mode: 'Convoy', icon: '🏙️' },
-    { name: 'Tokyo 2099: Shin-Shibuya Station', mode: 'Convoy', icon: '🚅' },
-    { name: 'Midtown Manhattan: Oscorp Tower', mode: 'Convoy', icon: '🏢' },
-    { name: 'Sanctum Sanctorum: Astral Plane', mode: 'Convoy', icon: '🔮' },
-    { name: 'Klyntar: Symbiote Planet', mode: 'Domination', icon: '🖤' },
-    { name: 'Wakanda: Golden City', mode: 'Domination', icon: '💎' },
-    { name: 'Asgard: Royal Palace', mode: 'Convergence', icon: '⚡' },
-    { name: 'Yggsgard: Yggdrasil', mode: 'Convergence', icon: '🌳' },
-    { name: 'Intergalactic Empire of Wakanda', mode: 'Conquest', icon: '🌌' },
-    { name: 'Moon Base: Lunar Colony', mode: 'Conquest', icon: '🌙' },
-    { name: 'Hell\'s Kitchen: Daredevil Territory', mode: 'Doom Match', icon: '🔥' },
-    { name: 'X-Mansion: Training Grounds', mode: 'Escort', icon: '🎓' }
+    { name: 'Tokyo 2099: Shibuya Sky', mode: 'Convoy', icon: '' },
+    { name: 'Tokyo 2099: Shin-Shibuya Station', mode: 'Convoy', icon: '' },
+    { name: 'Midtown Manhattan: Oscorp Tower', mode: 'Convoy', icon: '' },
+    { name: 'Sanctum Sanctorum: Astral Plane', mode: 'Convoy', icon: '' },
+    { name: 'Klyntar: Symbiote Planet', mode: 'Domination', icon: '' },
+    { name: 'Wakanda: Golden City', mode: 'Domination', icon: '' },
+    { name: 'Asgard: Royal Palace', mode: 'Convergence', icon: '' },
+    { name: 'Yggsgard: Yggdrasil', mode: 'Convergence', icon: '' },
+    { name: 'Intergalactic Empire of Wakanda', mode: 'Conquest', icon: '' },
+    { name: 'Moon Base: Lunar Colony', mode: 'Conquest', icon: '' },
+    { name: 'Hell\'s Kitchen: Daredevil Territory', mode: 'Doom Match', icon: '' },
+    { name: 'X-Mansion: Training Grounds', mode: 'Escort', icon: '' }
   ]);
 
-  // ✅ COMPLETE MARVEL RIVALS HEROES BY ROLE (ALL 39 HEROES)
+  //  COMPLETE MARVEL RIVALS HEROES BY ROLE (ALL 39 HEROES)
   const [marvelRivalsHeroes, setMarvelRivalsHeroes] = useState({
     Vanguard: ['Captain America', 'Doctor Strange', 'Groot', 'Hulk', 'Magneto', 'Peni Parker', 'Thor', 'Venom'],
     Duelist: ['Black Panther', 'Black Widow', 'Hawkeye', 'Hela', 'Iron Man', 'Magik', 'Namor', 'Psylocke', 'Punisher', 'Scarlet Witch', 'Spider-Man', 'Squirrel Girl', 'Star-Lord', 'Storm', 'Winter Soldier', 'Wolverine'],
     Strategist: ['Adam Warlock', 'Cloak & Dagger', 'Jeff the Land Shark', 'Loki', 'Luna Snow', 'Mantis', 'Rocket Raccoon']
   });
 
-  // 🦸 HERO IMAGE SYSTEM WITH FALLBACKS
+  //  HERO IMAGE SYSTEM WITH FALLBACKS
   const getHeroImageWithFallback = (heroName) => {
     if (!heroName) return null;
     
@@ -241,9 +257,9 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
   // Get all heroes in a flat array
   const allHeroes = Object.values(marvelRivalsHeroes).flat();
 
-  // 🔍 DEBUG: Log what data we receive
+  //  DEBUG: Log what data we receive
   useEffect(() => {
-    console.log('🎯 ComprehensiveLiveScoring MOUNTED with:', {
+    console.log('ComprehensiveLiveScoring MOUNTED with:', {
       isOpen,
       match: match ? {
         id: match.id,
@@ -256,11 +272,80 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     });
   }, [match?.id]);
 
-  // 🚨 INITIALIZATION WITH PROPER MAP COUNT FOR BO1/BO3/BO5
+  //  PUSHER REAL-TIME SUBSCRIPTIONS
+  useEffect(() => {
+    if (!match?.id || !isOpen) return;
+    
+    let matchChannel = null;
+    let scoringChannel = null;
+    
+    console.log(' Setting up Pusher subscriptions for live scoring:', match.id);
+    
+    // Subscribe to match updates
+    matchChannel = subscribeMatchUpdates(String(match.id), (data) => {
+      console.log(' Live scoring match update:', data);
+      
+      // Handle score updates from other sources
+      if (data.type === 'score-updated' && data.source !== 'live-scoring') {
+        // Update our local state to match
+        if (data.map_index !== undefined && matchStats?.maps?.[data.map_index]) {
+          setMatchStats(prev => {
+            const updatedMaps = [...prev.maps];
+            updatedMaps[data.map_index] = {
+              ...updatedMaps[data.map_index],
+              team1Score: data.team1_score || updatedMaps[data.map_index].team1Score,
+              team2Score: data.team2_score || updatedMaps[data.map_index].team2Score
+            };
+            return { ...prev, maps: updatedMaps };
+          });
+        }
+      }
+    });
+    
+    // Subscribe to live scoring specific channel
+    scoringChannel = subscribeLiveScoring(String(match.id), {
+      onScoreUpdate: (data) => {
+        console.log(' Received score update:', data);
+        // Only update if it's from another source
+        if (data.source !== 'live-scoring-component') {
+          if (data.map_index !== undefined) {
+            updateMapScore(1, data.team1_score, data.map_index);
+            updateMapScore(2, data.team2_score, data.map_index);
+          }
+        }
+      },
+      onPlayerStatUpdate: (data) => {
+        console.log(' Received player stat update:', data);
+        if (data.source !== 'live-scoring-component') {
+          updatePlayerStat(data.mapIndex, data.team, data.playerIndex, data.statName, data.value);
+        }
+      },
+      onMapUpdate: (data) => {
+        console.log(' Received map update:', data);
+        if (data.current_map_index !== undefined) {
+          setCurrentMapIndex(data.current_map_index);
+        }
+      }
+    });
+    
+    return () => {
+      // Cleanup subscriptions
+      if (matchChannel) {
+        matchChannel.unbind_all();
+        matchChannel.unsubscribe();
+      }
+      if (scoringChannel) {
+        scoringChannel.unbind_all();
+        scoringChannel.unsubscribe();
+      }
+    };
+  }, [match?.id, isOpen]);
+
+  //  INITIALIZATION WITH PROPER MAP COUNT FOR BO1/BO3/BO5
   const initializeMatchStats = useCallback((format = 'BO1') => {
     const mapCount = format === 'BO1' ? 1 : format === 'BO3' ? 3 : format === 'BO5' ? 5 : 1;
     
-    console.log('🔍 INITIALIZING ComprehensiveLiveScoring with format:', {
+    console.log(' INITIALIZING ComprehensiveLiveScoring with format:', {
       id: match?.id,
       format: format,
       mapCount: mapCount,
@@ -321,18 +406,18 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     };
   }, [match, marvelRivalsMaps]);
 
-  // 🔥 CRITICAL: LOAD PRODUCTION SCOREBOARD DATA
+  //  CRITICAL: LOAD PRODUCTION SCOREBOARD DATA
   useEffect(() => {
     const loadProductionScoreboard = async () => {
       if (!match || !isOpen) {
-        console.log('❌ ADMIN: Not loading - no match or not open');
+        console.log('ADMIN: Not loading - no match or not open');
         return;
       }
 
-      console.log('🔍 ADMIN: Loading PRODUCTION scoreboard...');
+      console.log(' ADMIN: Loading PRODUCTION scoreboard...');
       
       try {
-        console.log(`🔗 Full URL: ${BACKEND_URL}/matches/${match.id}/live-scoreboard`);
+        console.log(` Full URL: ${BACKEND_URL}/matches/${match.id}/live-scoreboard`);
         
         if (!BACKEND_URL || BACKEND_URL === 'undefined') {
           throw new Error('Backend URL is not configured properly');
@@ -351,7 +436,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         }
         
         const apiResponse = await response.json();
-        console.log('📥 ADMIN: Live scoreboard response:', apiResponse);
+        console.log(' ADMIN: Live scoreboard response:', apiResponse);
         
         if (apiResponse.success && apiResponse.data) {
           const data = apiResponse.data;
@@ -369,11 +454,11 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                 team2Players = mapData.team2_composition || [];
               }
             } catch (error) {
-              console.error('❌ ADMIN: Error parsing maps_data:', error);
+              console.error(' ADMIN: Error parsing maps_data:', error);
             }
           }
           
-          // 🎮 IMPROVED GAME MODE DETECTION FOR ADMIN
+          //  IMPROVED GAME MODE DETECTION FOR ADMIN
           let currentGameMode = 'Domination'; // Default fallback
           if (data.live_data?.current_mode) {
             currentGameMode = data.live_data.current_mode;
@@ -393,9 +478,9 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
             }
           }
           
-          console.log('🎮 ADMIN: Game mode detected:', currentGameMode);
+          console.log('ADMIN: Game mode detected:', currentGameMode);
           
-          console.log('✅ ADMIN: Using PRODUCTION data structure:', {
+          console.log('ADMIN: Using PRODUCTION data structure:', {
             matchData: !!matchData,
             team1PlayersCount: team1Players.length,
             team2PlayersCount: team2Players.length,
@@ -463,16 +548,16 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
             });
             
             setMatchStatus(matchData.status);
-            console.log('✅ ADMIN: PRODUCTION data loaded successfully!');
+            console.log('ADMIN: PRODUCTION data loaded successfully!');
             return;
           }
         }
       } catch (error) {
-        console.log('⚠️ ADMIN: PRODUCTION API failed, using fallback:', error.message);
+        console.log('ADMIN: PRODUCTION API failed, using fallback:', error.message);
       }
 
       // Fallback: Initialize with format-based structure
-      console.log('🔧 ADMIN: Initializing fallback data structure...');
+      console.log(' ADMIN: Initializing fallback data structure...');
       const fallbackStats = initializeMatchStats(match.format || 'BO1');
       setMatchStats(fallbackStats);
     };
@@ -493,7 +578,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     return roleMapping[backendRole] || 'Vanguard';
   };
 
-  // 🔥 ENHANCED CROSS-TAB SYNC SYSTEM
+  //  ENHANCED CROSS-TAB SYNC SYSTEM
   const triggerRealTimeSync = (type, data = {}) => {
     const syncData = {
       matchId: match.id,
@@ -502,14 +587,14 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       ...data
     };
     
-    console.log('🚀 ADMIN: Preparing sync data:', {
+    console.log('ADMIN: Preparing sync data:', {
       matchId: match.id,
       type: type,
       dataKeys: Object.keys(data),
       hasMatchData: !!data.matchData
     });
     
-    // 🔥 USE EVENT-SPECIFIC KEYS TO PREVENT TIMER OVERWRITES
+    //  USE EVENT-SPECIFIC KEYS TO PREVENT TIMER OVERWRITES
     const keyMap = {
       'TIMER_UPDATE': 'mrvl-timer-sync',
       'HERO_CHANGE': 'mrvl-hero-sync', 
@@ -529,7 +614,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     localStorage.setItem(`mrvl-match-${match.id}`, JSON.stringify(syncData));
     localStorage.setItem(uniqueKey, JSON.stringify(syncData)); // Unique key for each event
     
-    console.log('🔥 ADMIN: Setting localStorage with keys:', {
+    console.log('ADMIN: Setting localStorage with keys:', {
       'mrvl-match-sync': 'main key',
       [specificKey]: `event-specific (${type})`,
       [`mrvl-match-${match.id}`]: 'match-specific', 
@@ -567,14 +652,14 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     // Dispatch multiple event types with debug logging
     const eventTypes = ['mrvl-match-updated', 'mrvl-hero-updated', 'mrvl-stats-updated', 'mrvl-score-updated', 'mrvl-data-refresh'];
     eventTypes.forEach(eventType => {
-      console.log(`🎯 ADMIN: Dispatching ${eventType} for match ${match.id}`);
+      console.log(`ADMIN: Dispatching ${eventType} for match ${match.id}`);
       window.dispatchEvent(new CustomEvent(eventType, { detail: syncData }));
     });
     
-    console.log('🔥 ADMIN: Multi-channel sync completed:', { type, matchId: match.id, timestamp: syncData.timestamp, specificKey });
+    console.log('ADMIN: Multi-channel sync completed:', { type, matchId: match.id, timestamp: syncData.timestamp, specificKey });
   };
 
-  // 🏆 ENHANCED SCORE UPDATE WITH BACKEND API INTEGRATION
+  //  ENHANCED SCORE UPDATE WITH BACKEND API INTEGRATION
   const updateMapScore = async (teamNumber, increment = true) => {
     if (!matchStats) return;
     
@@ -619,7 +704,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           }
         }
         
-        // 🚨 CRITICAL FIX: Send score update to backend API immediately
+        //  CRITICAL FIX: Send score update to backend API immediately
         const sendScoreToBackend = async () => {
           try {
             await api.put(`/admin/matches/${match.id}/live-control`, {
@@ -628,16 +713,16 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
               team2_score: currentMapData.team2Score || 0,
               current_map: currentMapData.map_name || 'Tokyo 2099: Shibuya Sky'
             });
-            console.log('✅ Score sent to backend API');
+            console.log('Score sent to backend API');
           } catch (error) {
-            console.error('❌ Error sending score to backend:', error);
+            console.error(' Error sending score to backend:', error);
           }
         };
         
         // Send to backend asynchronously
         sendScoreToBackend();
         
-        // 🔥 CREATE COMPLETE MATCH DATA FOR SCORE SYNC
+        //  CREATE COMPLETE MATCH DATA FOR SCORE SYNC
         const completeMatchData = {
           id: match.id,
           status: matchStatus,
@@ -668,7 +753,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           lastUpdated: Date.now()
         };
         
-        // 🔥 IMMEDIATE REAL-TIME SYNC WITH COMPLETE DATA
+        //  IMMEDIATE REAL-TIME SYNC WITH COMPLETE DATA
         triggerRealTimeSync('SCORE_UPDATE', {
           mapIndex: currentMap,
           teamNumber,
@@ -690,16 +775,16 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         return newStats;
       });
       
-      console.log(`🎯 SCORE UPDATE: Team ${teamNumber} ${increment ? '+1' : '-1'} on map ${currentMap + 1}`);
+      console.log(`SCORE UPDATE: Team ${teamNumber} ${increment ? '+1' : '-1'} on map ${currentMap + 1}`);
       
     } catch (error) {
-      console.error('❌ Error updating score:', error);
+      console.error(' Error updating score:', error);
     }
   };
 
-  // 🦸 ENHANCED HERO CHANGE WITH REAL-TIME SYNC
+  //  ENHANCED HERO CHANGE WITH REAL-TIME SYNC
   const changePlayerHero = (mapIndex, team, playerIndex, hero, role) => {
-    console.log(`🦸 Changing ${team} player ${playerIndex} to hero ${hero} (${role})`);
+    console.log(` Changing ${team} player ${playerIndex} to hero ${hero} (${role})`);
     
     setMatchStats(prev => {
       if (!prev || !prev.maps || !prev.maps[mapIndex]) return prev;
@@ -719,11 +804,11 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         currentMap[playersKey] = players;
         updatedMaps[mapIndex] = currentMap;
         
-        console.log(`✅ Hero changed: Player ${players[playerIndex].name} is now ${hero}`);
+        console.log(`Hero changed: Player ${players[playerIndex].name} is now ${hero}`);
         
         const newStats = { ...prev, maps: updatedMaps };
         
-        // 🔥 CREATE COMPLETE MATCH DATA FOR HERO SYNC
+        //  CREATE COMPLETE MATCH DATA FOR HERO SYNC
         const completeMatchData = {
           id: match.id,
           status: matchStatus,
@@ -754,7 +839,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           lastUpdated: Date.now()
         };
         
-        // 🔥 IMMEDIATE REAL-TIME SYNC WITH COMPLETE DATA
+        //  IMMEDIATE REAL-TIME SYNC WITH COMPLETE DATA
         triggerRealTimeSync('HERO_CHANGE', {
           mapIndex, 
           team, 
@@ -772,9 +857,9 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     });
   };
 
-  // 📊 ENHANCED STAT UPDATE WITH REAL-TIME SYNC
+  //  ENHANCED STAT UPDATE WITH REAL-TIME SYNC
   const updatePlayerStat = (mapIndex, team, playerIndex, statName, value) => {
-    console.log(`📊 Updating ${team} player ${playerIndex} ${statName} to ${value}`);
+    console.log(`Updating ${team} player ${playerIndex} ${statName} to ${value}`);
     
     setMatchStats(prev => {
       if (!prev || !prev.maps || !prev.maps[mapIndex]) return prev;
@@ -795,7 +880,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         
         const newStats = { ...prev, maps: updatedMaps };
         
-        // 🔥 CREATE COMPLETE MATCH DATA FOR SYNC
+        //  CREATE COMPLETE MATCH DATA FOR SYNC
         const completeMatchData = {
           id: match.id,
           status: matchStatus,
@@ -826,7 +911,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           lastUpdated: Date.now()
         };
         
-        // 🔥 IMMEDIATE REAL-TIME SYNC WITH COMPLETE DATA
+        //  IMMEDIATE REAL-TIME SYNC WITH COMPLETE DATA
         triggerRealTimeSync('STAT_UPDATE', {
           mapIndex,
           team,
@@ -844,7 +929,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     });
   };
 
-  // 🗺️ MAP PROGRESSION WITH PREPARATION PHASE
+  //  MAP PROGRESSION WITH PREPARATION PHASE
   const advanceToNextMap = () => {
     if (currentMapIndex + 1 < matchStats.totalMaps) {
       setCurrentMapIndex(prev => prev + 1);
@@ -861,11 +946,11 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         mapName: matchStats.maps[currentMapIndex + 1]?.map_name
       });
       
-      console.log(`🗺️ Advanced to map ${currentMapIndex + 2}`);
+      console.log(`Advanced to map ${currentMapIndex + 2}`);
     }
   };
 
-  // ⏱️ PREPARATION PHASE TIMER
+  //  PREPARATION PHASE TIMER
   useEffect(() => {
     let interval;
     if (isPreparationPhase && preparationTimer > 0) {
@@ -883,6 +968,93 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     return () => clearInterval(interval);
   }, [isPreparationPhase, preparationTimer]);
 
+  // ENHANCED: Add kill event
+  const addKillEvent = async (killerId, victimId, killerHero, victimHero) => {
+    const killEvent = {
+      id: Date.now(),
+      killer_id: killerId,
+      victim_id: victimId,
+      hero_killer: killerHero,
+      hero_victim: victimHero,
+      timestamp: new Date().toISOString(),
+      game_time: matchTimer,
+      map_number: currentMapIndex + 1
+    };
+    
+    // Update local state
+    setKillFeed(prev => [killEvent, ...prev].slice(0, 10));
+    
+    // Send to backend
+    try {
+      await api.post(`/admin/matches/${match.id}/kill-event`, {
+        ...killEvent,
+        weapon: 'Primary',
+        headshot: false
+      });
+    } catch (error) {
+      console.error('Error adding kill event:', error);
+    }
+    
+    // Trigger real-time sync
+    triggerRealTimeSync('KILL_EVENT', killEvent);
+  };
+  
+  // ENHANCED: Update objective progress
+  const updateObjectiveProgress = async (progress, capturingTeam = null) => {
+    setObjectiveProgress({
+      team1: capturingTeam === 'team1' ? progress : objectiveProgress.team1,
+      team2: capturingTeam === 'team2' ? progress : objectiveProgress.team2,
+      capturingTeam
+    });
+    
+    // Send to backend
+    try {
+      await api.put(`/admin/matches/${match.id}/maps/${currentMapIndex + 1}/objective`, {
+        objective_type: currentMapData?.mode === 'Domination' ? 'capture' : 'payload',
+        progress,
+        capturing_team: capturingTeam === 'team1' ? match.team1?.id : match.team2?.id,
+        time_remaining: null
+      });
+    } catch (error) {
+      console.error('Error updating objective:', error);
+    }
+    
+    // Trigger real-time sync
+    triggerRealTimeSync('OBJECTIVE_UPDATE', {
+      progress,
+      capturingTeam,
+      mapIndex: currentMapIndex
+    });
+  };
+  
+  // ENHANCED: Pause/Resume match
+  const togglePauseMatch = async () => {
+    const newPausedState = !isPaused;
+    setIsPaused(newPausedState);
+    
+    if (newPausedState) {
+      pauseTimer();
+      
+      try {
+        await api.post(`/admin/matches/${match.id}/pause`, {
+          reason: 'Admin pause'
+        });
+      } catch (error) {
+        console.error('Error pausing match:', error);
+      }
+    } else {
+      startTimer();
+      
+      try {
+        await api.post(`/admin/matches/${match.id}/resume`);
+      } catch (error) {
+        console.error('Error resuming match:', error);
+      }
+    }
+    
+    triggerRealTimeSync('MATCH_PAUSE', { isPaused: newPausedState });
+  };
+
   // Timer controls with enhanced sync
   const startTimer = async () => {
     const startTime = Date.now();
@@ -899,7 +1071,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         current_map_index: currentMapIndex
       });
     } catch (error) {
-      console.error('❌ Error updating timer on backend:', error);
+      console.error(' Error updating timer on backend:', error);
     }
     
     triggerRealTimeSync('TIMER_START', {
@@ -907,7 +1079,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       isRunning: true
     });
     
-    console.log('🎮 Timer started with enhanced sync');
+    console.log('Timer started with enhanced sync');
   };
 
   const pauseTimer = () => {
@@ -919,7 +1091,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       isRunning: false
     });
     
-    console.log('⏸️ Timer paused with enhanced sync');
+    console.log('Timer paused with enhanced sync');
   };
 
   const resetTimer = () => {
@@ -935,10 +1107,10 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       isRunning: false
     });
     
-    console.log('🔄 Timer reset with enhanced sync');
+    console.log(' Timer reset with enhanced sync');
   };
 
-  // ⏱️ ENHANCED TIMER SYNC WITH IMMEDIATE DISPATCH
+  //  ENHANCED TIMER SYNC WITH IMMEDIATE DISPATCH
   useEffect(() => {
     let interval;
     if (isTimerRunning && matchStatus === 'live') {
@@ -954,7 +1126,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         setMatchTimer(timeString);
         localStorage.setItem(`match-timer-${match.id}`, timeString);
         
-        // 🔥 IMMEDIATE SYNC EVERY SECOND FOR REAL-TIME UPDATES
+        //  IMMEDIATE SYNC EVERY SECOND FOR REAL-TIME UPDATES
         triggerRealTimeSync('TIMER_UPDATE', {
           timer: timeString,
           isRunning: true,
@@ -968,24 +1140,24 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
             action: 'update_timer',
             timer: timeString,
             current_map_index: currentMapIndex
-          }).catch(error => console.error('❌ Error syncing timer to backend:', error));
+          }).catch(error => console.error(' Error syncing timer to backend:', error));
         }
       }, 1000);
     }
     return () => clearInterval(interval);
   }, [isTimerRunning, matchStatus, timerStartTime, match.id]);
 
-  // 🔄 PRODUCTION SAVE FUNCTION - FIXED FOR BACKEND API
+  //  PRODUCTION SAVE FUNCTION - FIXED FOR BACKEND API
   const handleSaveStats = async () => {
     if (!matchStats || !match) {
-      console.log('❌ Cannot save: Missing matchStats or match');
+      console.log('Cannot save: Missing matchStats or match');
       return;
     }
 
     setSaveLoading(true);
     
     try {
-      console.log('🔄 SAVING TO PRODUCTION API - FIXED FORMAT');
+      console.log(' SAVING TO PRODUCTION API - FIXED FORMAT');
       
       const currentMapData = matchStats.maps[currentMapIndex] || matchStats.maps[0];
       
@@ -993,7 +1165,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         throw new Error('No map data available for save');
       }
 
-      // 🚨 CRITICAL FIX 1: Update scores with CORRECT API format using POST
+      //  CRITICAL FIX 1: Update scores with CORRECT API format using POST
       const liveControlResponse = await api.post(`/admin/matches/${match.id}/live-control`, {
         action: "update_scores",
         team_scores: {
@@ -1007,9 +1179,9 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
         preparation_timer: preparationTimer
       });
       
-      console.log('✅ Live control updated:', liveControlResponse);
+      console.log('Live control updated:', liveControlResponse);
 
-      // 🚨 CRITICAL FIX 2: Update player stats with bulk endpoint
+      //  CRITICAL FIX 2: Update player stats with bulk endpoint
       const allPlayers = [
         ...(currentMapData.team1Players || []).map(player => ({
           ...player,
@@ -1037,10 +1209,10 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           }))
         });
         
-        console.log('✅ Player compositions and stats updated via live-control:', compositionResponse);
+        console.log('Player compositions and stats updated via live-control:', compositionResponse);
       }
       
-      console.log('✅ ALL DATA SAVED TO PRODUCTION API VIA CORRECT ENDPOINTS');
+      console.log('ALL DATA SAVED TO PRODUCTION API VIA CORRECT ENDPOINTS');
       
       // Final comprehensive sync with correct data structure
       triggerRealTimeSync('PRODUCTION_SAVE', {
@@ -1059,8 +1231,8 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
       });
       
     } catch (error) {
-      console.error('❌ Error saving to PRODUCTION API:', error);
-      alert(`❌ Error saving: ${error.response?.data?.message || error.message || 'Unknown error'}`);
+      console.error(' Error saving to PRODUCTION API:', error);
+      alert(` Error saving: ${error.response?.data?.message || error.message || 'Unknown error'}`);
     } finally {
       setSaveLoading(false);
     }
@@ -1080,7 +1252,11 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center space-x-4">
               <h2 className="text-2xl font-bold text-white">
-                🎮 Live Match Control - {matchStats.totalMaps === 1 ? 'BO1' : matchStats.totalMaps === 3 ? 'BO3' : 'BO5'}
+                 Live Match Control - {matchStats.totalMaps === 1 ? 'BO1' : 
+                                          matchStats.totalMaps === 3 ? 'BO3' : 
+                                          matchStats.totalMaps === 5 ? 'BO5' : 
+                                          matchStats.totalMaps === 7 ? 'BO7' : 
+                                          matchStats.totalMaps === 9 ? 'BO9' : 'Custom'}
               </h2>
               <div className="flex items-center space-x-2">
                 <TeamLogo team={match.team1} size="sm" />
@@ -1102,7 +1278,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           {matchStats.totalMaps > 1 && (
             <div className="bg-gray-800 rounded-lg p-4 mb-6">
               <h3 className="text-white font-bold text-center mb-3">
-                🏆 Series Progress (First to {Math.ceil(matchStats.totalMaps / 2)})
+                 Series Progress (First to {Math.ceil(matchStats.totalMaps / 2)})
               </h3>
               <div className="flex justify-center space-x-8">
                 <div className="text-center">
@@ -1141,7 +1317,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           {/* Preparation Phase */}
           {isPreparationPhase && (
             <div className="bg-orange-600 text-white rounded-lg p-4 mb-6 text-center">
-              <h3 className="text-xl font-bold mb-2">⏳ Preparation Phase</h3>
+              <h3 className="text-xl font-bold mb-2"> Preparation Phase</h3>
               <div className="text-3xl font-mono font-bold">{preparationTimer}s</div>
               <p className="text-sm opacity-90">Get ready for the next map!</p>
             </div>
@@ -1156,11 +1332,11 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                   onChange={(e) => setMatchStatus(e.target.value)}
                   className="bg-gray-700 text-white px-3 py-1 rounded border border-gray-600"
                 >
-                  <option value="upcoming">📅 Upcoming</option>
-                  <option value="live">🔴 Live</option>
-                  <option value="paused">⏸️ Paused</option>
-                  <option value="completed">✅ Completed</option>
-                  <option value="cancelled">❌ Cancelled</option>
+                  <option value="upcoming"> Upcoming</option>
+                  <option value="live"> Live</option>
+                  <option value="paused"> Paused</option>
+                  <option value="completed"> Completed</option>
+                  <option value="cancelled"> Cancelled</option>
                 </select>
                 
                 <div className="text-2xl font-mono text-green-400">
@@ -1173,20 +1349,20 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                     disabled={isTimerRunning}
                     className="px-3 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded text-sm"
                   >
-                    ▶️ Start
+                     Start
                   </button>
                   <button
                     onClick={pauseTimer}
                     disabled={!isTimerRunning}
                     className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 text-white rounded text-sm"
                   >
-                    ⏸️ Pause
+                     Pause
                   </button>
                   <button
                     onClick={resetTimer}
                     className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
                   >
-                    🔄 Reset
+                     Reset
                   </button>
                 </div>
               </div>
@@ -1222,7 +1398,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
 
               {/* SCOREBOARD CONTROLS */}
               <div className="bg-gray-700 rounded-lg p-4 mb-6">
-                <h3 className="text-lg font-bold text-white text-center mb-4">🏆 LIVE SCOREBOARD</h3>
+                <h3 className="text-lg font-bold text-white text-center mb-4"> LIVE SCOREBOARD</h3>
                 
                 <div className="text-center text-gray-300 text-sm mb-2">Map {currentMapIndex + 1} Score (First to 3 wins)</div>
                 <div className="flex items-center justify-center space-x-6">
@@ -1266,6 +1442,258 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                 </div>
               </div>
 
+              {/* Kill Feed & Objective Controls */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+                {/* Kill Feed */}
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h3 className="text-lg font-bold text-white mb-3 flex items-center">
+                    <span className="mr-2">💀</span> Kill Feed
+                  </h3>
+                  
+                  {/* Add Kill Event Form */}
+                  <div className="mb-4 p-3 bg-gray-800 rounded">
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <select
+                        id="killTeam"
+                        className="bg-gray-600 text-white px-2 py-1 rounded text-sm"
+                        defaultValue=""
+                        onChange={(e) => {
+                          const killerSelect = document.getElementById('killerPlayer');
+                          killerSelect.innerHTML = '<option value="" disabled selected>Select Killer</option>';
+                          if (e.target.value) {
+                            const players = e.target.value === 'team1' 
+                              ? currentMapData.team1Players 
+                              : currentMapData.team2Players;
+                            players?.forEach((player, idx) => {
+                              const option = document.createElement('option');
+                              option.value = JSON.stringify({
+                                playerId: player.playerId || player.id || idx,
+                                hero: player.hero,
+                                name: player.name
+                              });
+                              option.textContent = `${player.name} (${player.hero})`;
+                              killerSelect.appendChild(option);
+                            });
+                          }
+                        }}
+                      >
+                        <option value="" disabled>Select Killer Team</option>
+                        <option value="team1">{match.team1?.name || 'Team 1'}</option>
+                        <option value="team2">{match.team2?.name || 'Team 2'}</option>
+                      </select>
+                      <select
+                        id="victimTeam"
+                        className="bg-gray-600 text-white px-2 py-1 rounded text-sm"
+                        defaultValue=""
+                        onChange={(e) => {
+                          const victimSelect = document.getElementById('victimPlayer');
+                          victimSelect.innerHTML = '<option value="" disabled selected>Select Victim</option>';
+                          if (e.target.value) {
+                            const players = e.target.value === 'team1' 
+                              ? currentMapData.team1Players 
+                              : currentMapData.team2Players;
+                            players?.forEach((player, idx) => {
+                              const option = document.createElement('option');
+                              option.value = JSON.stringify({
+                                playerId: player.playerId || player.id || idx,
+                                hero: player.hero,
+                                name: player.name
+                              });
+                              option.textContent = `${player.name} (${player.hero})`;
+                              victimSelect.appendChild(option);
+                            });
+                          }
+                        }}
+                      >
+                        <option value="" disabled>Select Victim Team</option>
+                        <option value="team1">{match.team1?.name || 'Team 1'}</option>
+                        <option value="team2">{match.team2?.name || 'Team 2'}</option>
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <select
+                        id="killerPlayer"
+                        className="bg-gray-600 text-white px-2 py-1 rounded text-sm"
+                        defaultValue=""
+                      >
+                        <option value="" disabled>Select Killer</option>
+                      </select>
+                      <select
+                        id="victimPlayer"
+                        className="bg-gray-600 text-white px-2 py-1 rounded text-sm"
+                        defaultValue=""
+                      >
+                        <option value="" disabled>Select Victim</option>
+                      </select>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const killerSelect = document.getElementById('killerPlayer');
+                        const victimSelect = document.getElementById('victimPlayer');
+                        const killTeamSelect = document.getElementById('killTeam');
+                        const victimTeamSelect = document.getElementById('victimTeam');
+                        
+                        if (killerSelect.value && victimSelect.value) {
+                          const killerData = JSON.parse(killerSelect.value);
+                          const victimData = JSON.parse(victimSelect.value);
+                          
+                          addKillEvent(
+                            killerData.playerId,
+                            victimData.playerId,
+                            killerData.hero,
+                            victimData.hero
+                          );
+                          
+                          // Reset selections
+                          killerSelect.value = '';
+                          victimSelect.value = '';
+                          killTeamSelect.value = '';
+                          victimTeamSelect.value = '';
+                        }
+                      }}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium"
+                    >
+                      Add Kill Event
+                    </button>
+                  </div>
+                  
+                  {/* Kill Feed Display */}
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {killFeed.length === 0 ? (
+                      <div className="text-gray-400 text-sm text-center py-4">
+                        No kills yet
+                      </div>
+                    ) : (
+                      killFeed.map((kill, index) => (
+                        <div key={kill.id} className="flex items-center space-x-2 text-sm">
+                          <span className="text-gray-400">{kill.game_time}</span>
+                          <span className="text-green-400">{kill.hero_killer}</span>
+                          <span className="text-red-400">eliminated</span>
+                          <span className="text-gray-300">{kill.hero_victim}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Objective Progress */}
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h3 className="text-lg font-bold text-white mb-3 flex items-center">
+                    <span className="mr-2">🎯</span> Objective Progress
+                  </h3>
+                  
+                  {/* Pause/Resume Match */}
+                  <div className="mb-4">
+                    <button
+                      onClick={togglePauseMatch}
+                      className={`w-full px-4 py-2 rounded font-medium transition-colors ${
+                        isPaused 
+                          ? 'bg-green-600 hover:bg-green-700 text-white' 
+                          : 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                      }`}
+                    >
+                      {isPaused ? '▶️ Resume Match' : '⏸️ Pause Match'}
+                    </button>
+                  </div>
+                  
+                  {/* Objective Controls based on Game Mode */}
+                  {currentMapData?.mode && (
+                    <div className="space-y-3">
+                      {currentMapData.mode === 'Domination' && (
+                        <div>
+                          <h4 className="text-sm text-gray-300 mb-2">Control Point Progress</h4>
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-blue-400 w-20">{match.team1?.name}</span>
+                              <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={objectiveProgress.team1}
+                                onChange={(e) => updateObjectiveProgress(parseInt(e.target.value), 'team1')}
+                                className="flex-1"
+                              />
+                              <span className="text-white w-12 text-right">{objectiveProgress.team1}%</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-red-400 w-20">{match.team2?.name}</span>
+                              <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={objectiveProgress.team2}
+                                onChange={(e) => updateObjectiveProgress(parseInt(e.target.value), 'team2')}
+                                className="flex-1"
+                              />
+                              <span className="text-white w-12 text-right">{objectiveProgress.team2}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {(currentMapData.mode === 'Convoy' || currentMapData.mode === 'Escort') && (
+                        <div>
+                          <h4 className="text-sm text-gray-300 mb-2">Payload Progress</h4>
+                          <div className="space-y-2">
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={objectiveProgress.team1}
+                              onChange={(e) => updateObjectiveProgress(parseInt(e.target.value))}
+                              className="w-full"
+                            />
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-400">Start</span>
+                              <span className="text-white font-bold">{objectiveProgress.team1}%</span>
+                              <span className="text-gray-400">End</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {currentMapData.mode === 'Convergence' && (
+                        <div>
+                          <h4 className="text-sm text-gray-300 mb-2">Convergence Status</h4>
+                          <div className="grid grid-cols-3 gap-2">
+                            <button
+                              onClick={() => updateObjectiveProgress(33, 'team1')}
+                              className={`px-2 py-1 rounded text-xs ${
+                                objectiveProgress.capturingTeam === 'team1' 
+                                  ? 'bg-blue-600 text-white' 
+                                  : 'bg-gray-600 text-gray-300'
+                              }`}
+                            >
+                              Point A
+                            </button>
+                            <button
+                              onClick={() => updateObjectiveProgress(66, null)}
+                              className={`px-2 py-1 rounded text-xs ${
+                                !objectiveProgress.capturingTeam && objectiveProgress.team1 === 66
+                                  ? 'bg-purple-600 text-white' 
+                                  : 'bg-gray-600 text-gray-300'
+                              }`}
+                            >
+                              Contested
+                            </button>
+                            <button
+                              onClick={() => updateObjectiveProgress(100, 'team2')}
+                              className={`px-2 py-1 rounded text-xs ${
+                                objectiveProgress.capturingTeam === 'team2' 
+                                  ? 'bg-red-600 text-white' 
+                                  : 'bg-gray-600 text-gray-300'
+                              }`}
+                            >
+                              Point B
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Teams & Players */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Team 1 Players */}
@@ -1299,12 +1727,9 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                             </div>
                           </div>
                           
-                          <img 
-                            src={`https://flagcdn.com/16x12/${(player.country || 'us').toLowerCase().slice(0, 2)}.png`}
-                            alt={`${player.country || 'US'} flag`}
-                            className="absolute -bottom-1 -right-1 w-4 h-3 rounded-sm border border-white shadow-sm"
-                            onError={(e) => e.target.style.display = 'none'}
-                          />
+                          <div className="absolute -bottom-1 -right-1 text-xs leading-none">
+                            <span>{player.country_flag || getCountryFlag(player.country)}</span>
+                          </div>
                         </div>
                         <div className="flex-1">
                           <div className="font-semibold text-white">{player.name}</div>
@@ -1379,12 +1804,9 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                             </div>
                           </div>
                           
-                          <img 
-                            src={`https://flagcdn.com/16x12/${(player.country || 'us').toLowerCase().slice(0, 2)}.png`}
-                            alt={`${player.country || 'US'} flag`}
-                            className="absolute -bottom-1 -right-1 w-4 h-3 rounded-sm border border-white shadow-sm"
-                            onError={(e) => e.target.style.display = 'none'}
-                          />
+                          <div className="absolute -bottom-1 -right-1 text-xs leading-none">
+                            <span>{player.country_flag || getCountryFlag(player.country)}</span>
+                          </div>
                         </div>
                         <div className="flex-1">
                           <div className="font-semibold text-white">{player.name}</div>
@@ -1445,7 +1867,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                 </>
               ) : (
                 <>
-                  <span>💾</span>
+                  <span></span>
                   <span>Save All Data</span>
                 </>
               )}
@@ -1471,7 +1893,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                 }}
                 className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm"
               >
-                🏆 +1 Team 1
+                 +1 Team 1
               </button>
               
               <button
@@ -1490,7 +1912,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                 }}
                 className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm"
               >
-                🏆 +1 Team 2
+                 +1 Team 2
               </button>
               
               {/* Hero Change Test */}
@@ -1508,7 +1930,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                 }}
                 className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm"
               >
-                🦸 Random Hero
+                 Random Hero
               </button>
               
               {/* Timer Test */}
@@ -1525,7 +1947,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                 }}
                 className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded text-sm"
               >
-                ⏱️ Random Timer
+                 Random Timer
               </button>
               
               {/* All Game Modes Test */}
@@ -1545,7 +1967,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                 }}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm"
               >
-                🎮 Random Mode
+                 Random Mode
               </button>
               
               {/* Full Match Sync Test */}
@@ -1567,7 +1989,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                 }}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded text-sm"
               >
-                💾 Full Sync Test
+                 Full Sync Test
               </button>
             </div>
             
@@ -1579,7 +2001,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                 }}
                 className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-semibold text-lg flex items-center space-x-2"
               >
-                <span>⏭️</span>
+                <span></span>
                 <span>Next Map</span>
               </button>
             )}

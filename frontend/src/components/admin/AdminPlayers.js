@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
-import { PlayerAvatar, getImageUrl } from '../../utils/imageUtils';
+import { PlayerAvatar, getImageUrl, getCountryFlag } from '../../utils/imageUtils';
 
 function AdminPlayers({ navigateTo }) {
   const [players, setPlayers] = useState([]);
@@ -17,7 +17,7 @@ function AdminPlayers({ navigateTo }) {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('🔍 AdminPlayers: Fetching players from real API...');
+      console.log(' AdminPlayers: Fetching players from real API...');
       
       // Fetch players and teams
       const [playersResponse, teamsResponse] = await Promise.all([
@@ -29,9 +29,9 @@ function AdminPlayers({ navigateTo }) {
       let playersData = playersResponse?.data?.data || playersResponse?.data || playersResponse || [];
       const teamsData = teamsResponse?.data?.data || teamsResponse?.data || teamsResponse || [];
 
-      console.log('✅ AdminPlayers: Real players data received:', playersData.length, 'players');
-      console.log('🔍 AdminPlayers: Sample player data:', playersData[0]);
-      console.log('✅ AdminPlayers: Real teams data received:', teamsData.length, 'teams');
+      console.log(' AdminPlayers: Real players data received:', playersData.length, 'players');
+      console.log(' AdminPlayers: Sample player data:', playersData[0]);
+      console.log(' AdminPlayers: Real teams data received:', teamsData.length, 'teams');
 
       // Apply filters
       if (filters.search) {
@@ -55,9 +55,9 @@ function AdminPlayers({ navigateTo }) {
 
       setPlayers(playersData);
       setTeams(teamsData);
-      console.log('✅ AdminPlayers: Players and teams loaded successfully');
+      console.log(' AdminPlayers: Players and teams loaded successfully');
     } catch (error) {
-      console.error('❌ AdminPlayers: Error fetching data:', error);
+      console.error(' AdminPlayers: Error fetching data:', error);
       // Set fallback data with REAL backend structure
       setPlayers([
         {
@@ -99,7 +99,7 @@ function AdminPlayers({ navigateTo }) {
   const handleDelete = async (playerId, playerName) => {
     if (window.confirm(`Are you sure you want to delete "${playerName}"? This action cannot be undone.`)) {
       try {
-        console.log('🗑️ AdminPlayers: Deleting player with ID:', playerId);
+        console.log(' AdminPlayers: Deleting player with ID:', playerId);
         // FIXED: Use POST with method spoofing for Laravel backend deletes
         await api.post(`/admin/players/${playerId}`, { _method: 'DELETE' });
         await fetchData(); // Refresh the list
@@ -245,7 +245,7 @@ function AdminPlayers({ navigateTo }) {
                   Rating
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Main Hero
+                  Country
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Actions
@@ -283,7 +283,6 @@ function AdminPlayers({ navigateTo }) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
-                      <span>{player.country}</span>
                       <span className="text-sm text-gray-900 dark:text-white">
                         {player.team?.short_name || 'Free Agent'}
                       </span>
@@ -300,15 +299,16 @@ function AdminPlayers({ navigateTo }) {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 dark:text-white">
-                      {player.main_hero || 'N/A'}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-lg">{player.flag || getCountryFlag(player.country)}</span>
+                      <span className="text-sm text-gray-900 dark:text-white">{player.country}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       <button
                         onClick={() => {
-                          console.log('🔗 AdminPlayers: Navigating to player-detail with ID:', player.id);
+                          console.log(' AdminPlayers: Navigating to player-detail with ID:', player.id);
                           navigateTo('player-detail', { id: player.id });
                         }}
                         className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
@@ -317,7 +317,7 @@ function AdminPlayers({ navigateTo }) {
                       </button>
                       <button
                         onClick={() => {
-                          console.log('🔗 AdminPlayers: Navigating to admin-player-edit with ID:', player.id);
+                          console.log(' AdminPlayers: Navigating to admin-player-edit with ID:', player.id);
                           navigateTo('admin-player-edit', { id: player.id });
                         }}
                         className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
@@ -342,7 +342,7 @@ function AdminPlayers({ navigateTo }) {
       {/* No Results */}
       {players.length === 0 && (
         <div className="card p-12 text-center">
-          <div className="text-6xl mb-4">🎮</div>
+          <div className="text-6xl mb-4"></div>
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Players Found</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             {filters.search || filters.role !== 'all' || filters.team !== 'all' || filters.region !== 'all'
@@ -361,28 +361,28 @@ function AdminPlayers({ navigateTo }) {
       {/* Player Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="card p-6 text-center">
-          <div className="text-3xl mb-2">👥</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
             {players.length}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Total Players</div>
         </div>
         <div className="card p-6 text-center">
-          <div className="text-3xl mb-2">⚔️</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-red-600 dark:text-red-400">
             {players.filter(p => p.role === 'Duelist').length}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Duelists</div>
         </div>
         <div className="card p-6 text-center">
-          <div className="text-3xl mb-2">🛡️</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
             {players.filter(p => p.role === 'Tank').length}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Tanks</div>
         </div>
         <div className="card p-6 text-center">
-          <div className="text-3xl mb-2">💚</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-green-600 dark:text-green-400">
             {players.filter(p => p.role === 'Support').length}
           </div>

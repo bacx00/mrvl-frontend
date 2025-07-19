@@ -21,15 +21,15 @@ function AdvancedAnalytics({ api }) {
     try {
       setLoading(true);
       
-      // ✅ FIXED: Use real available endpoints instead of non-existent analytics endpoint
+      //  FIXED: Use real available endpoints instead of non-existent analytics endpoint
       try {
         const response = await api.get(`/admin/analytics?period=${timeRange}`);
         const analyticsData = response.data || response;
         setAnalytics(analyticsData);
-        console.log('✅ Analytics loaded from dedicated endpoint:', analyticsData);
+        console.log(' Analytics loaded from dedicated endpoint:', analyticsData);
         return;
       } catch (specificError) {
-        console.log('⚠️ Dedicated analytics endpoint not available, generating from real data...');
+        console.log(' Dedicated analytics endpoint not available, generating from real data...');
       }
       
       // FALLBACK: Generate analytics from real available data
@@ -45,7 +45,7 @@ function AdvancedAnalytics({ api }) {
       const players = playersResponse?.data?.data || playersResponse?.data || [];
       const matches = matchesResponse?.data?.data || matchesResponse?.data || [];
       
-      // ✅ Generate real analytics from backend data
+      //  Generate real analytics from backend data
       const realAnalytics = {
         overview: {
           totalUsers: stats.overview?.totalUsers || 1,
@@ -93,10 +93,10 @@ function AdvancedAnalytics({ api }) {
       };
       
       setAnalytics(realAnalytics);
-      console.log('✅ Analytics generated from REAL backend data:', realAnalytics);
+      console.log(' Analytics generated from REAL backend data:', realAnalytics);
       
     } catch (error) {
-      console.error('❌ Analytics error:', error);
+      console.error(' Analytics error:', error);
       setAnalytics(generateDemoAnalytics());
     } finally {
       setLoading(false);
@@ -192,18 +192,18 @@ function AdvancedAnalytics({ api }) {
   ];
 
   const chartSections = [
-    { id: 'overview', label: 'Overview', icon: '📊' },
-    { id: 'teams', label: 'Teams', icon: '👥' },
-    { id: 'players', label: 'Players', icon: '🎮' },
-    { id: 'matches', label: 'Matches', icon: '⚔️' },
-    { id: 'events', label: 'Events', icon: '🏆' },
-    { id: 'users', label: 'Users', icon: '👤' }
+    { id: 'overview', label: 'Overview', icon: '' },
+    { id: 'teams', label: 'Teams', icon: '' },
+    { id: 'players', label: 'Players', icon: '' },
+    { id: 'matches', label: 'Matches', icon: '' },
+    { id: 'events', label: 'Events', icon: '' },
+    { id: 'users', label: 'Users', icon: '' }
   ];
 
   const renderOverviewCharts = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <div className="card p-6 text-center bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30">
-        <div className="text-3xl mb-2">👥</div>
+        <div className="text-3xl mb-2"></div>
         <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
           {analytics?.overview?.totalUsers?.toLocaleString() || 0}
         </div>
@@ -214,7 +214,7 @@ function AdvancedAnalytics({ api }) {
       </div>
       
       <div className="card p-6 text-center bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30">
-        <div className="text-3xl mb-2">🔥</div>
+        <div className="text-3xl mb-2"></div>
         <div className="text-3xl font-bold text-green-600 dark:text-green-400">
           {analytics?.overview?.activeUsers?.toLocaleString() || 0}
         </div>
@@ -225,7 +225,7 @@ function AdvancedAnalytics({ api }) {
       </div>
       
       <div className="card p-6 text-center bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30">
-        <div className="text-3xl mb-2">👁️</div>
+        <div className="text-3xl mb-2"></div>
         <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
           {analytics?.overview?.pageViews?.toLocaleString() || 0}
         </div>
@@ -236,7 +236,7 @@ function AdvancedAnalytics({ api }) {
       </div>
       
       <div className="card p-6 text-center bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950/30 dark:to-red-900/30">
-        <div className="text-3xl mb-2">⏱️</div>
+        <div className="text-3xl mb-2"></div>
         <div className="text-3xl font-bold text-red-600 dark:text-red-400">
           {analytics?.overview?.avgSessionTime || '0:00'}
         </div>
@@ -316,7 +316,7 @@ function AdvancedAnalytics({ api }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">📈 Advanced Analytics</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white"> Advanced Analytics</h2>
           <p className="text-gray-600 dark:text-gray-400">Comprehensive platform insights and metrics</p>
         </div>
         
@@ -357,13 +357,13 @@ function AdvancedAnalytics({ api }) {
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Export Analytics</h3>
         <div className="flex flex-wrap gap-4">
           <button className="btn bg-blue-600 text-white hover:bg-blue-700">
-            📊 Export to Excel
+             Export to Excel
           </button>
           <button className="btn bg-green-600 text-white hover:bg-green-700">
-            📄 Generate Report
+             Generate Report
           </button>
           <button className="btn bg-purple-600 text-white hover:bg-purple-700">
-            📈 Custom Dashboard
+             Custom Dashboard
           </button>
         </div>
       </div>

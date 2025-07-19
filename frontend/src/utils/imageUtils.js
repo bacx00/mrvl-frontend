@@ -6,16 +6,16 @@ import { API_CONFIG } from '../config';
  */
 export const getImageUrl = (imagePath, type = 'general') => {
   if (!imagePath || imagePath === null || imagePath === undefined || imagePath === '') {
-    // Return appropriate placeholder based on type
+    // Return question mark placeholder - using data URIs for instant loading
     switch (type) {
       case 'team-logo':
-        return 'https://images.unsplash.com/photo-1635805737707-575885ab0820?w=80&h=80&fit=crop&crop=center';
+        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGM0Y0RjYiLz4KPHRleHQgeD0iMjAiIHk9IjI4IiBmb250LWZhbWlseT0ic3lzdGVtLXVpIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzZCNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+PzwvdGV4dD4KPC9zdmc+';
       case 'player-avatar':
-        return 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=center';
+        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGM0Y0RjYiLz4KPHRleHQgeD0iMjAiIHk9IjI4IiBmb250LWZhbWlseT0ic3lzdGVtLXVpIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzZCNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+PzwvdGV4dD4KPC9zdmc+';
       case 'news-featured':
-        return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=200&fit=crop';
+        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjE1MCIgeT0iMTEwIiBmb250LWZhbWlseT0ic3lzdGVtLXVpIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzZCNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+PzwvdGV4dD4KPC9zdmc+';
       default:
-        return 'https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=200&h=200&fit=crop&crop=center';
+        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGM0Y0RjYiLz4KPHRleHQgeD0iMjAiIHk9IjI4IiBmb250LWZhbWlseT0ic3lzdGVtLXVpIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzZCNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+PzwvdGV4dD4KPC9zdmc+';
     }
   }
 
@@ -67,26 +67,8 @@ export const getImageUrl = (imagePath, type = 'general') => {
 export const getTeamLogoUrl = (team) => {
   console.log('🖼️ getTeamLogoUrl - Team:', team?.name, 'Logo path:', team?.logo);
   
-  // Marvel Rivals team-specific fallbacks for real teams
-  const teamLogos = {
-    'Luminosity Gaming': 'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=80&h=80&fit=crop&crop=center',
-    'Fnatic': 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=80&h=80&fit=crop&crop=center',
-    'OG': 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=80&h=80&fit=crop&crop=center',
-    'Sentinels': 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=80&h=80&fit=crop&crop=center',
-    '100 Thieves': 'https://images.unsplash.com/photo-1635805737707-575885ab0820?w=80&h=80&fit=crop&crop=center',
-    'SHROUD-X': 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=80&h=80&fit=crop&crop=center',
-    'Team Nemesis': 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=80&h=80&fit=crop&crop=center',
-    'FlyQuest': 'https://images.unsplash.com/photo-1585238342024-78d387f4a707?w=80&h=80&fit=crop&crop=center',
-    'Rival Esports': 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=80&h=80&fit=crop&crop=center',
-    'CITADELGG': 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=80&h=80&fit=crop&crop=center',
-    'NTMR': 'https://images.unsplash.com/photo-1607734834519-d8576ae60ea6?w=80&h=80&fit=crop&crop=center',
-    'BRR BRR PATAPIM': 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=80&h=80&fit=crop&crop=center',
-    'TEAM1': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=80&h=80&fit=crop&crop=center',
-    'Al Qadsiah': 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=80&h=80&fit=crop&crop=center',
-    'Z10': 'https://images.unsplash.com/photo-1580134774403-d6e7aa4e08ee?w=80&h=80&fit=crop&crop=center',
-    'All Buisness': 'https://images.unsplash.com/photo-1590845947698-8924d7409b3b?w=80&h=80&fit=crop&crop=center',
-    'Yoinkada': 'https://images.unsplash.com/photo-1553481187-be93c21490a9?w=80&h=80&fit=crop&crop=center'
-  };
+  // Remove team-specific hardcoded fallbacks - use question mark placeholder for all
+  const teamLogos = {};
 
   // Check for specific team logo fallback first
   if (team?.name && teamLogos[team.name]) {
@@ -96,8 +78,13 @@ export const getTeamLogoUrl = (team) => {
 
   // Try to use the logo path from backend (if valid)
   if (team?.logo && typeof team.logo === 'string' && team.logo.length > 0) {
-    // ✅ FIXED: Prevent double /storage/ prefix issue
     let logoUrl = team.logo;
+    
+    // Skip blob URLs as they're invalid for our use case
+    if (logoUrl.startsWith('blob:')) {
+      console.log('🖼️ getTeamLogoUrl - Skipping blob URL:', logoUrl);
+      return getImageUrl(null, 'team-logo');
+    }
     
     // If it's already a full URL, use as is
     if (logoUrl.startsWith('http')) {
@@ -105,20 +92,25 @@ export const getTeamLogoUrl = (team) => {
       return logoUrl;
     }
     
-    // If it already has /storage/ prefix, construct URL properly
+    // Clean up the path to prevent double slashes
     if (logoUrl.startsWith('/storage/')) {
-      logoUrl = `https://staging.mrvl.net${logoUrl}`;
+      logoUrl = `${API_CONFIG.BASE_URL}${logoUrl}`;
+    } else if (logoUrl.startsWith('/teams/')) {
+      // Fix: team logos are in /storage/teams/logos/ directory
+      logoUrl = `${API_CONFIG.BASE_URL}/storage/teams/logos/${logoUrl.replace('/teams/', '')}`;
+    } else if (logoUrl.startsWith('/')) {
+      logoUrl = `${API_CONFIG.BASE_URL}/storage${logoUrl}`;
     } else {
-      logoUrl = `https://staging.mrvl.net/storage/${logoUrl}`;
+      logoUrl = `${API_CONFIG.BASE_URL}/storage/${logoUrl}`;
     }
     
     console.log('🖼️ getTeamLogoUrl - Final URL:', logoUrl);
     return logoUrl;
   }
 
-  // Generic Marvel Rivals themed fallback
+  // Generic fallback with question mark
   console.log('🖼️ getTeamLogoUrl - Using generic fallback for:', team?.name);
-  return 'https://images.unsplash.com/photo-1635805737707-575885ab0820?w=80&h=80&fit=crop&crop=center';
+  return getImageUrl(null, 'team-logo');
 };
 
 /**
@@ -133,6 +125,48 @@ export const getTeamFlagUrl = (team) => {
   
   const finalUrl = getImageUrl(flagPath, 'team-logo');
   console.log('🖼️ getTeamFlagUrl - Final URL:', finalUrl);
+  
+  return finalUrl;
+};
+
+/**
+ * Get event logo URL with proper fallback
+ * FIXED: Handle backend returning full URLs including domain
+ */
+export const getEventLogoUrl = (event) => {
+  if (!event) return getImageUrl(null, 'team-logo');
+  
+  // Check various possible logo fields
+  const logoPath = event.logo || event.logo_url || event.logoUrl;
+  console.log('🖼️ getEventLogoUrl - Event:', event.name || event.id, 'Logo path:', logoPath);
+  
+  if (!logoPath) {
+    return getImageUrl(null, 'team-logo');
+  }
+  
+  // If it's already a full URL, return as is
+  if (logoPath.startsWith('http://') || logoPath.startsWith('https://')) {
+    console.log('🖼️ getEventLogoUrl - Using full URL:', logoPath);
+    return logoPath;
+  }
+  
+  // If it starts with /storage/, build the full URL
+  if (logoPath.startsWith('/storage/')) {
+    const finalUrl = `${API_CONFIG.BASE_URL}${logoPath}`;
+    console.log('🖼️ getEventLogoUrl - Built URL from /storage/ path:', finalUrl);
+    return finalUrl;
+  }
+  
+  // If it's events/logos/ path, add /storage/ prefix
+  if (logoPath.startsWith('events/logos/')) {
+    const finalUrl = `${API_CONFIG.BASE_URL}/storage/${logoPath}`;
+    console.log('🖼️ getEventLogoUrl - Built URL from events/logos/ path:', finalUrl);
+    return finalUrl;
+  }
+  
+  // Default case - treat as storage path
+  const finalUrl = getImageUrl(logoPath, 'team-logo');
+  console.log('🖼️ getEventLogoUrl - Final URL:', finalUrl);
   
   return finalUrl;
 };
@@ -154,6 +188,27 @@ export const getPlayerAvatarUrl = (player) => {
 };
 
 /**
+ * Get user avatar URL with proper fallback
+ */
+export const getUserAvatarUrl = (user) => {
+  if (!user) return getImageUrl(null, 'player-avatar');
+  
+  // Check if user is using a hero as avatar
+  if (user.avatar && user.avatar.startsWith('/images/heroes/')) {
+    return `${API_CONFIG.BASE_URL}${user.avatar}`;
+  }
+  
+  // Check ALL possible avatar fields from backend response
+  const avatarPath = user.avatar_url || user.avatarUrl || user.avatar;
+  console.log('🖼️ getUserAvatarUrl - User:', user.name || user.username || user.id, 'Avatar path:', avatarPath);
+  
+  const finalUrl = getImageUrl(avatarPath, 'player-avatar');
+  console.log('🖼️ getUserAvatarUrl - Final URL:', finalUrl);
+  
+  return finalUrl;
+};
+
+/**
  * Get news featured image URL with fallback
  */
 export const getNewsFeaturedImageUrl = (article) => {
@@ -168,22 +223,136 @@ export const getNewsFeaturedImageUrl = (article) => {
  * Returns country flag emoji for consistent display across all pages
  */
 export const getCountryFlag = (countryCode) => {
+  if (!countryCode || typeof countryCode !== 'string') return '🌍';
+  
+  // Normalize the country code/name
+  const normalized = countryCode.trim();
+  
   const flagMap = {
+    // North America
     'US': '🇺🇸',
+    'UNITED STATES': '🇺🇸',
+    'USA': '🇺🇸',
     'CA': '🇨🇦', 
+    'CANADA': '🇨🇦',
+    'MX': '🇲🇽',
+    'MEXICO': '🇲🇽',
+    
+    // Europe
     'UK': '🇬🇧',
+    'UNITED KINGDOM': '🇬🇧',
+    'GB': '🇬🇧',
     'DE': '🇩🇪',
+    'GERMANY': '🇩🇪',
     'FR': '🇫🇷',
+    'FRANCE': '🇫🇷',
     'ES': '🇪🇸',
+    'SPAIN': '🇪🇸',
+    'IT': '🇮🇹',
+    'ITALY': '🇮🇹',
     'SE': '🇸🇪',
+    'SWEDEN': '🇸🇪',
+    'NO': '🇳🇴',
+    'NORWAY': '🇳🇴',
+    'DK': '🇩🇰',
+    'DENMARK': '🇩🇰',
+    'FI': '🇫🇮',
+    'FINLAND': '🇫🇮',
+    'NL': '🇳🇱',
+    'NETHERLANDS': '🇳🇱',
+    'BE': '🇧🇪',
+    'BELGIUM': '🇧🇪',
+    'PL': '🇵🇱',
+    'POLAND': '🇵🇱',
+    'CZ': '🇨🇿',
+    'CZECH REPUBLIC': '🇨🇿',
+    'PT': '🇵🇹',
+    'PORTUGAL': '🇵🇹',
+    'GR': '🇬🇷',
+    'GREECE': '🇬🇷',
+    'RU': '🇷🇺',
+    'RUSSIA': '🇷🇺',
+    'UA': '🇺🇦',
+    'UKRAINE': '🇺🇦',
+    'TR': '🇹🇷',
+    'TURKEY': '🇹🇷',
+    
+    // Asia
     'KR': '🇰🇷',
-    'AU': '🇦🇺',
-    'BR': '🇧🇷',
+    'SOUTH KOREA': '🇰🇷',
+    'KOREA': '🇰🇷',
     'JP': '🇯🇵',
+    'JAPAN': '🇯🇵',
     'CN': '🇨🇳',
-    'INTL': '🌍'
+    'CHINA': '🇨🇳',
+    'TW': '🇹🇼',
+    'TAIWAN': '🇹🇼',
+    'HK': '🇭🇰',
+    'HONG KONG': '🇭🇰',
+    'SG': '🇸🇬',
+    'SINGAPORE': '🇸🇬',
+    'MY': '🇲🇾',
+    'MALAYSIA': '🇲🇾',
+    'TH': '🇹🇭',
+    'THAILAND': '🇹🇭',
+    'VN': '🇻🇳',
+    'VIETNAM': '🇻🇳',
+    'PH': '🇵🇭',
+    'PHILIPPINES': '🇵🇭',
+    'ID': '🇮🇩',
+    'INDONESIA': '🇮🇩',
+    'IN': '🇮🇳',
+    'INDIA': '🇮🇳',
+    
+    // Oceania
+    'AU': '🇦🇺',
+    'AUSTRALIA': '🇦🇺',
+    'NZ': '🇳🇿',
+    'NEW ZEALAND': '🇳🇿',
+    
+    // South America
+    'BR': '🇧🇷',
+    'BRAZIL': '🇧🇷',
+    'AR': '🇦🇷',
+    'ARGENTINA': '🇦🇷',
+    'CL': '🇨🇱',
+    'CHILE': '🇨🇱',
+    'CO': '🇨🇴',
+    'COLOMBIA': '🇨🇴',
+    'PE': '🇵🇪',
+    'PERU': '🇵🇪',
+    
+    // Middle East
+    'AE': '🇦🇪',
+    'UAE': '🇦🇪',
+    'UNITED ARAB EMIRATES': '🇦🇪',
+    'SA': '🇸🇦',
+    'SAUDI ARABIA': '🇸🇦',
+    'IL': '🇮🇱',
+    'ISRAEL': '🇮🇱',
+    
+    // Africa
+    'ZA': '🇿🇦',
+    'SOUTH AFRICA': '🇿🇦',
+    'EG': '🇪🇬',
+    'EGYPT': '🇪🇬',
+    'MA': '🇲🇦',
+    'MOROCCO': '🇲🇦',
+    
+    // Special
+    'INTL': '🌍',
+    'INTERNATIONAL': '🌍',
+    'EU': '🇪🇺',
+    'EUROPE': '🇪🇺',
+    'NA': '🌎',
+    'NORTH AMERICA': '🌎',
+    'SOUTH_AMERICA': '🌎',
+    'ASIA': '🌏',
+    'APAC': '🌏'
   };
-  return flagMap[countryCode] || '🌍';
+  
+  // Try uppercase first, then as-is for mixed case matches
+  return flagMap[normalized.toUpperCase()] || flagMap[normalized] || '🌍';
 };
 
 /**
@@ -193,7 +362,7 @@ export const getCountryFlag = (countryCode) => {
 export const TeamLogo = ({ team, size = 'w-8 h-8', className = '' }) => {
   if (!team) {
     return (
-      <div className={`${size} rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-400 ${className}`}>
+      <div className={`${size} rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-400 ${className}`}>
         TEAM
       </div>
     );
@@ -204,18 +373,15 @@ export const TeamLogo = ({ team, size = 'w-8 h-8', className = '' }) => {
   const teamInitials = (team.short_name || team.shortName || teamName).substring(0, 4).toUpperCase();
   
   return (
-    <div className={`${size} rounded bg-gray-100 dark:bg-gray-700 overflow-hidden ${className}`}>
+    <div className={`${size} rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden ${className}`}>
       <img 
         src={imageUrl}
         alt={teamName}
         className="w-full h-full object-cover"
         onError={(e) => {
           console.log('🖼️ TeamLogo - Image failed to load:', imageUrl, 'for team:', teamName);
-          // Fallback to text placeholder
-          e.target.style.display = 'none';
-          if (e.target.parentNode) {
-            e.target.parentNode.innerHTML = `<div class="w-full h-full flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-400">${teamInitials}</div>`;
-          }
+          // Fallback to question mark placeholder
+          e.target.src = getImageUrl(null, 'team-logo');
         }}
         onLoad={() => {
           console.log('🖼️ TeamLogo - Image loaded successfully:', imageUrl, 'for team:', teamName);
@@ -232,7 +398,7 @@ export const TeamLogo = ({ team, size = 'w-8 h-8', className = '' }) => {
 export const PlayerAvatar = ({ player, size = 'w-8 h-8', className = '' }) => {
   if (!player) {
     return (
-      <div className={`${size} rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-400 ${className}`}>
+      <div className={`${size} rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-400 ${className}`}>
         P
       </div>
     );
@@ -243,7 +409,7 @@ export const PlayerAvatar = ({ player, size = 'w-8 h-8', className = '' }) => {
   const playerInitials = (player.username || player.name || 'P').substring(0, 2).toUpperCase();
   
   return (
-    <div className={`${size} rounded bg-gray-100 dark:bg-gray-700 overflow-hidden ${className}`}>
+    <div className={`${size} rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden ${className}`}>
       <img 
         src={imageUrl}
         alt={playerName}
@@ -255,11 +421,8 @@ export const PlayerAvatar = ({ player, size = 'w-8 h-8', className = '' }) => {
           } else {
             console.log('🖼️ PlayerAvatar - Image failed to load:', imageUrl, '(no player name)');
           }
-          // Fallback to text placeholder
-          e.target.style.display = 'none';
-          if (e.target.parentNode) {
-            e.target.parentNode.innerHTML = `<div class="w-full h-full flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-400">${playerInitials}</div>`;
-          }
+          // Fallback to question mark placeholder
+          e.target.src = getImageUrl(null, 'player-avatar');
         }}
         onLoad={() => {
           console.log('🖼️ PlayerAvatar - Image loaded successfully:', imageUrl, 'for player:', playerName);
@@ -276,36 +439,62 @@ export const PlayerAvatar = ({ player, size = 'w-8 h-8', className = '' }) => {
 export const getHeroImageSync = (heroName) => {
   if (!heroName || typeof heroName !== 'string') return null;
   
-  // ✅ PRODUCTION HERO IMAGES - These work and are live
-  const heroesWithImages = {
-    'Black Widow': 'black_widow.webp',
-    'Hawkeye': 'hawkeye.webp', 
-    'Star-Lord': 'star_lord.webp',
-    'Punisher': 'punisher.webp',
-    'Winter Soldier': 'winter_soldier.webp',
-    'Squirrel Girl': 'squirrel_girl.webp',
-    'Hulk': 'hulk.webp',
-    'Groot': 'groot.webp',
-    'Doctor Strange': 'doctor_strange.webp',
-    'Magneto': 'magneto.webp',
-    'Captain America': 'captain_america.webp',
-    'Venom': 'venom.webp',
-    'Mantis': 'mantis.webp',
-    'Luna Snow': 'luna_snow.webp',
-    'Adam Warlock': 'adam_warlock.webp',
-    'Cloak & Dagger': 'cloak_dagger.webp',
-    'Jeff the Land Shark': 'jeff_the_land_shark.webp'
+  // ✅ Map hero names to backend image files
+  const heroImageMap = {
+    // Duelists
+    'Black Widow': 'black-widow-headbig.webp',
+    'Hawkeye': 'hawkeye-headbig.webp',
+    'Star-Lord': 'star-lord-headbig.webp',
+    'Punisher': 'the-punisher-headbig.webp',
+    'The Punisher': 'the-punisher-headbig.webp',
+    'Winter Soldier': 'winter-soldier-headbig.webp',
+    'Squirrel Girl': 'squirrel-girl-headbig.webp',
+    'Iron Man': 'iron-man-headbig.webp',
+    'Spider-Man': 'spider-man-headbig.webp',
+    'Storm': 'storm-headbig.webp',
+    'Scarlet Witch': 'scarlet-witch-headbig.webp',
+    'Moon Knight': 'moon-knight-headbig.webp',
+    'Psylocke': 'psylocke-headbig.webp',
+    'Black Panther': 'black-panther-headbig.webp',
+    'Iron Fist': 'iron-fist-headbig.webp',
+    'Magik': 'magik-headbig.webp',
+    'Namor': 'namor-headbig.webp',
+    'Wolverine': 'wolverine-headbig.webp',
+    'Hela': 'hela-headbig.webp',
+    // Vanguards
+    'Hulk': 'bruce-banner-headbig.webp',
+    'Bruce Banner': 'bruce-banner-headbig.webp',
+    'Groot': 'groot-headbig.webp',
+    'Doctor Strange': 'doctor-strange-headbig.webp',
+    'Magneto': 'magneto-headbig.webp',
+    'Captain America': 'captain-america-headbig.webp',
+    'Venom': 'venom-headbig.webp',
+    'Thor': 'thor-headbig.webp',
+    'Peni Parker': 'peni-parker-headbig.webp',
+    // Strategists
+    'Mantis': 'mantis-headbig.webp',
+    'Luna Snow': 'luna-snow-headbig.webp',
+    'Adam Warlock': 'adam-warlock-headbig.webp',
+    'Cloak & Dagger': 'cloak-dagger-headbig.webp',
+    'C&D': 'cloak-dagger-headbig.webp',
+    'Jeff the Land Shark': 'jeff-the-land-shark-headbig.webp',
+    'Jeff': 'jeff-the-land-shark-headbig.webp',
+    'Rocket Raccoon': 'rocket-raccoon-headbig.webp',
+    'Loki': 'loki-headbig.webp',
+    'Invisible Woman': 'invisible-woman-headbig.webp',
+    // Additional heroes found in backend
+    'Mister Fantastic': 'mister-fantastic-headbig.webp',
+    'Mr. Fantastic': 'mister-fantastic-headbig.webp',
+    'Human Torch': 'human-torch-headbig.webp',
+    'The Thing': 'the-thing-headbig.webp',
+    'Thing': 'the-thing-headbig.webp',
+    'Ultron': 'ultron-headbig.webp',
+    'Emma Frost': 'emma-frost-headbig.webp'
   };
   
-  // ✅ Return production image URL if available
-  if (heroesWithImages[heroName]) {
-    return `https://staging.mrvl.net/storage/heroes/${heroesWithImages[heroName]}`;
-  }
-  
-  // ✅ These 5 heroes show clean text fallbacks (no images available)
-  const textFallbackHeroes = ['Iron Man', 'Spider-Man', 'Thor', 'Storm', 'Rocket Raccoon'];
-  if (textFallbackHeroes.includes(heroName)) {
-    return null; // This triggers clean text display
+  // Return backend image URL if available
+  if (heroImageMap[heroName]) {
+    return `${API_CONFIG.BASE_URL}/images/heroes/${heroImageMap[heroName]}`;
   }
   
   return null; // Default to text fallback for unknown heroes
@@ -316,19 +505,25 @@ export const getHeroImageSync = (heroName) => {
  */
 export const getHeroRole = (heroName) => {
   const roleMap = {
-    // Tank
-    'Captain America': 'Tank', 'Doctor Strange': 'Tank', 'Groot': 'Tank', 
-    'Hulk': 'Tank', 'Magneto': 'Tank', 'Thor': 'Tank', 'Venom': 'Tank',
+    // Vanguards (8 heroes) - Marvel Rivals uses "Vanguard" not "Tank"
+    'Captain America': 'Vanguard', 'Doctor Strange': 'Vanguard', 'Groot': 'Vanguard', 
+    'Hulk': 'Vanguard', 'Magneto': 'Vanguard', 'Thor': 'Vanguard', 'Venom': 'Vanguard',
+    'Peni Parker': 'Vanguard',
     
-    // Duelist  
+    // Duelists (18 heroes)
     'Black Widow': 'Duelist', 'Hawkeye': 'Duelist', 'Iron Man': 'Duelist',
     'Punisher': 'Duelist', 'Spider-Man': 'Duelist', 'Squirrel Girl': 'Duelist',
-    'Star-Lord': 'Duelist', 'Winter Soldier': 'Duelist',
+    'Star-Lord': 'Duelist', 'Winter Soldier': 'Duelist', 'Storm': 'Duelist',
+    'Scarlet Witch': 'Duelist', 'Moon Knight': 'Duelist', 'Psylocke': 'Duelist',
+    'Black Panther': 'Duelist', 'Iron Fist': 'Duelist', 'Magik': 'Duelist',
+    'Namor': 'Duelist', 'Wolverine': 'Duelist', 'Hela': 'Duelist',
     
-    // Support
-    'Adam Warlock': 'Support', 'Cloak & Dagger': 'Support', 
-    'Jeff the Land Shark': 'Support', 'Luna Snow': 'Support',
-    'Mantis': 'Support', 'Rocket Raccoon': 'Support', 'Storm': 'Support'
+    // Strategists (13 heroes) - Marvel Rivals uses "Strategist" not "Support"
+    'Adam Warlock': 'Strategist', 'Cloak & Dagger': 'Strategist', 
+    'Jeff the Land Shark': 'Strategist', 'Luna Snow': 'Strategist',
+    'Mantis': 'Strategist', 'Rocket Raccoon': 'Strategist', 
+    'Loki': 'Strategist', 'Invisible Woman': 'Strategist', 'Juno': 'Strategist',
+    'Mercy': 'Strategist', 'Zenyatta': 'Strategist', 'C&D': 'Strategist', 'Jeff': 'Strategist'
   };
   
   return roleMap[heroName] || 'Duelist';
@@ -337,7 +532,10 @@ export const getHeroRole = (heroName) => {
 export default {
   getImageUrl,
   getTeamLogoUrl,
+  getEventLogoUrl,
+  getTeamFlagUrl,
   getPlayerAvatarUrl,
+  getUserAvatarUrl,
   getNewsFeaturedImageUrl,
   TeamLogo,
   PlayerAvatar

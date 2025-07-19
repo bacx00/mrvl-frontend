@@ -1,565 +1,442 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
+import UserDisplay from '../shared/UserDisplay';
+import VotingButtons from '../shared/VotingButtons';
 
 function ForumsPage({ navigateTo }) {
-  const { isAuthenticated, isAdmin, isModerator, api } = useAuth();
+  const { isAuthenticated, isAdmin, isModerator, api, user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [sortBy, setSortBy] = useState('latest');
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('recent'); 
   const [threads, setThreads] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const fetchForumData = useCallback(async () => {
     try {
       setLoading(true);
       
-      // CRITICAL FIX: Fetch REAL forum threads from backend first
-      let threadsData = [];
-      let categoriesData = [];
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (selectedCategory !== 'all') params.append('category', selectedCategory);
+      if (sortBy) params.append('sort', sortBy);
+      if (searchQuery.trim()) params.append('search', searchQuery.trim());
       
-      try {
-        console.log('🔍 ForumsPage: Fetching REAL forum data from backend...');
-        
-        // Get real threads from backend
-        const threadsResponse = await api.get('/forums/threads');
-        const rawThreads = threadsResponse?.data?.data || threadsResponse?.data || [];
-        
-        if (Array.isArray(rawThreads) && rawThreads.length > 0) {
-          threadsData = rawThreads.map(thread => ({
-            id: thread.id, // ✅ CRITICAL FIX: Use REAL thread ID from backend
-            title: thread.title,
-            author: {
-              name: thread.user_name || thread.author?.name || 'Anonymous',
-              role: thread.author?.role || 'user',
-              country: thread.author?.country || 'US',
-              teamFlair: thread.author?.team_flair || null
-            },
-            category: thread.category || 'general',
-            replies: thread.replies || thread.replies_count || 0,
-            views: thread.views || thread.views_count || 0,
-            lastReply: {
-              user: thread.last_reply?.user || thread.user_name || 'No replies',
-              timestamp: formatTimeAgo(thread.updated_at || thread.created_at)
-            },
-            created: thread.created_at,
-            pinned: thread.pinned || false,
-            locked: thread.locked || false,
-            trending: thread.trending || false,
-            excerpt: thread.content ? thread.content.substring(0, 150) + '...' : 'No preview available'
-          }));
-          console.log('✅ ForumsPage: Using REAL backend threads:', threadsData.length);
-        } else {
-          throw new Error('No real threads found');
-        }
-        
-        // Try to get real categories from backend
-        try {
-          const categoriesResponse = await api.get('/forums/categories');
-          const rawCategories = categoriesResponse?.data?.data || categoriesResponse?.data || [];
-          
-          if (Array.isArray(rawCategories) && rawCategories.length > 0) {
-            categoriesData = [
-              { id: 'all', name: 'All Categories', count: threadsData.length },
-              ...rawCategories.map(cat => ({
-                id: cat.id || cat.slug,
-                name: cat.name,
-                count: cat.threads_count || 0
-              }))
-            ];
-            console.log('✅ ForumsPage: Using REAL backend categories:', categoriesData.length);
-          } else {
-            throw new Error('Empty categories response');
-          }
-        } catch (categoriesError) {
-          console.log('⚠️ ForumsPage: Categories API unavailable, using enhanced fallback categories');
-          categoriesData = [
-            { id: 'all', name: 'All Categories', count: threadsData.length },
-            { id: 'general-discussion', name: 'General Discussion', count: Math.floor(threadsData.length * 0.3) },
-            { id: 'strategy', name: 'Strategy & Tactics', count: Math.floor(threadsData.length * 0.15) },
-            { id: 'hero-discussion', name: 'Hero Discussion', count: Math.floor(threadsData.length * 0.25) },
-            { id: 'esports', name: 'Esports & Competitive', count: Math.floor(threadsData.length * 0.1) },
-            { id: 'guides', name: 'Guides & Tutorials', count: Math.floor(threadsData.length * 0.05) },
-            { id: 'team-recruitment', name: 'Team Recruitment', count: Math.floor(threadsData.length * 0.05) },
-            { id: 'meta-discussion', name: 'Meta Analysis', count: Math.floor(threadsData.length * 0.05) },
-            { id: 'feedback', name: 'Feedback & Suggestions', count: Math.floor(threadsData.length * 0.03) },
-            { id: 'bugs', name: 'Bug Reports', count: Math.floor(threadsData.length * 0.02) }
-          ];
-        }
-        
-      } catch (error) {
-        console.error('❌ ForumsPage: Unable to load forum data from backend');
-        // Remove fallback data generation - dynamic from backend only
-        // Remove fallback data generation - dynamic from backend only
-        setThreads([]); // Show empty state instead of mock data
-        
-        // Set basic categories without mock data - MATCH CreateThreadPage categories exactly  
-        categoriesData = [
-          { id: 'all', name: 'All Categories', count: 0 },
-          { id: 'general', name: 'General Discussion', count: 0 },
-          { id: 'strategy', name: 'Strategy & Tactics', count: 0 },
-          { id: 'guides', name: 'Guides & Tutorials', count: 0 },
-          { id: 'feedback', name: 'Feedback & Suggestions', count: 0 }
-        ];
-      }
-
+      // Fetch threads and categories in parallel
+      const [threadsResponse, categoriesResponse] = await Promise.all([
+        api.get(`/forums/threads?${params.toString()}`),
+        api.get('/forums/categories')
+      ]);
+      
+      const threadsData = threadsResponse.data?.data || threadsResponse.data || [];
+      const categoriesData = categoriesResponse.data?.data || categoriesResponse.data || [];
+      
+      console.log('Forum threads loaded:', threadsData.length);
+      console.log('Forum categories loaded:', categoriesData.length);
+      
+      setThreads(threadsData);
       setCategories(categoriesData);
       
-      // Filter and sort threads
-      let filteredThreads = threadsData;
-      
-      if (selectedCategory !== 'all') {
-        filteredThreads = filteredThreads.filter(thread => thread.category === selectedCategory);
-      }
-      
-      if (searchQuery) {
-        filteredThreads = filteredThreads.filter(thread =>
-          thread.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          thread.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-      }
-      
-      // Apply sorting
-      switch (sortBy) {
-        case 'recent':
-          filteredThreads.sort((a, b) => new Date(b.created) - new Date(a.created));
-          break;
-        case 'popular':
-          filteredThreads.sort((a, b) => b.replies - a.replies);
-          break;
-        case 'replies':
-          filteredThreads.sort((a, b) => b.replies - a.replies);
-          break;
-        case 'views':
-          filteredThreads.sort((a, b) => b.views - a.views);
-          break;
-        default:
-          break;
-      }
-      
-      // Always put pinned posts first
-      const pinnedThreads = filteredThreads.filter(t => t.pinned);
-      const regularThreads = filteredThreads.filter(t => !t.pinned);
-      filteredThreads = [...pinnedThreads, ...regularThreads];
-      
-      setThreads(filteredThreads);
     } catch (error) {
-      console.error('Error fetching forum data:', error);
-      setThreads([]); // NO MOCK DATA - REAL BACKEND ONLY
+      console.error('ForumsPage: Backend API failed:', error);
+      setThreads([]);
+      setCategories([]);
     } finally {
       setLoading(false);
     }
-  }, [selectedCategory, searchQuery, sortBy, api]);
+  }, [api, selectedCategory, sortBy]);
 
-  // 🔄 Listen for category updates from CreateThreadPage and other components
   useEffect(() => {
-    const handleCategoryUpdate = () => {
-      console.log('🔄 ForumsPage: Category update detected, refreshing forum data...');
+    const timeoutId = setTimeout(() => {
       fetchForumData();
-    };
+    }, searchQuery ? 500 : 0); // Debounce search queries
 
-    const handleThreadCreated = () => {
-      console.log('🔄 ForumsPage: New thread created, refreshing forum data...');
+    return () => clearTimeout(timeoutId);
+  }, [selectedCategory, sortBy, searchQuery, fetchForumData]);
+
+  const handlePinThread = async (threadId, shouldPin) => {
+    try {
+      const endpoint = shouldPin ? `/admin/forums/threads/${threadId}/pin` : `/admin/forums/threads/${threadId}/unpin`;
+      await api.post(endpoint);
+      // Refresh threads
       fetchForumData();
-    };
+    } catch (error) {
+      console.error('Error pinning/unpinning thread:', error);
+      alert('Failed to ' + (shouldPin ? 'pin' : 'unpin') + ' thread');
+    }
+  };
 
-    // Listen for category and thread updates
-    window.addEventListener('forum-category-updated', handleCategoryUpdate);
-    window.addEventListener('forum-thread-created', handleThreadCreated);
-    
-    return () => {
-      window.removeEventListener('forum-category-updated', handleCategoryUpdate);
-      window.removeEventListener('forum-thread-created', handleThreadCreated);
-    };
-  }, [fetchForumData]);
+  const handleLockThread = async (threadId, shouldLock) => {
+    try {
+      const endpoint = shouldLock ? `/admin/forums/threads/${threadId}/lock` : `/admin/forums/threads/${threadId}/unlock`;
+      await api.post(endpoint);
+      // Refresh threads
+      fetchForumData();
+    } catch (error) {
+      console.error('Error locking/unlocking thread:', error);
+      alert('Failed to ' + (shouldLock ? 'lock' : 'unlock') + ' thread');
+    }
+  };
 
-  // ✅ ENHANCED: More realistic time formatting
+  const handleDeleteThread = async (threadId) => {
+    if (window.confirm('Are you sure you want to delete this thread? This action cannot be undone.')) {
+      try {
+        await api.post(`/admin/forums/threads/${threadId}/delete`);
+        // Refresh threads
+        fetchForumData();
+      } catch (error) {
+        console.error('Error deleting thread:', error);
+        alert('Failed to delete thread');
+      }
+    }
+  };
+
   const formatTimeAgo = (dateString) => {
-    if (!dateString) return 'Just now';
+    if (!dateString) return 'Unknown';
     
     const date = new Date(dateString);
-    
-    // ✅ FIXED: Handle invalid dates from backend
-    if (isNaN(date.getTime())) {
-      console.warn('Invalid date format:', dateString);
-      return 'Just now';
-    }
+    if (isNaN(date.getTime())) return 'Unknown';
     
     const now = new Date();
-    const diffMs = now - date;
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
     
-    // ✅ FIXED: Handle negative differences (future dates)
-    if (diffMs < 0) {
-      return 'Just now';
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h`;
+    if (diffInHours < 48) return 'Yesterday';
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 30) return `${diffInDays}d`;
+    
+    const diffInMonths = Math.floor(diffInDays / 30);
+    if (diffInMonths < 12) return `${diffInMonths}mo`;
+    
+    const years = Math.floor(diffInMonths / 12);
+    return `${years}y`;
+  };
+
+  const getSortIcon = (type) => {
+    if (sortBy === type) {
+      return <span className="text-red-600 dark:text-red-400">▼</span>;
     }
-    
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-    const diffWeeks = Math.floor(diffDays / 7);
-    const diffMonths = Math.floor(diffDays / 30);
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    if (diffWeeks < 4) return `${diffWeeks}w ago`;
-    if (diffMonths < 12) return `${diffMonths}mo ago`;
-    
-    // ✅ ENHANCED: For old dates, show actual date
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
-    });
+    return null;
   };
 
-
-
-  useEffect(() => {
-    fetchForumData();
-    
-    // ✅ FIXED: Listen for category changes and refresh data
-    const handleCategoryUpdate = () => {
-      console.log('📢 ForumsPage: Category update detected, refreshing data...');
-      fetchForumData();
-    };
-    
-    // Listen for custom events from AdminForums
-    window.addEventListener('mrvl-category-updated', handleCategoryUpdate);
-    
-    // Refresh categories periodically to catch updates
-    const refreshInterval = setInterval(() => {
-      fetchForumData();
-    }, 30000); // Refresh every 30 seconds
-    
-    return () => {
-      window.removeEventListener('mrvl-category-updated', handleCategoryUpdate);
-      clearInterval(refreshInterval);
-    };
-  }, [fetchForumData]);
-
-  // CRITICAL FIX: Listen for new thread creation to refresh forum list
-  useEffect(() => {
-    const handleNewThreadCreated = () => {
-      console.log('🔄 ForumsPage: New thread created, refreshing forum list...');
-      fetchForumData();
-    };
-
-    window.addEventListener('mrvl-thread-created', handleNewThreadCreated);
-    
-    return () => {
-      window.removeEventListener('mrvl-thread-created', handleNewThreadCreated);
-    };
-  }, [fetchForumData]);
-
-  // FIXED: Properly handle sign-in by setting up the main auth modal
-  const handleSignInClick = () => {
-    console.log('🔑 ForumsPage: Sign in button clicked');
-    setShowAuthModal(true);
+  const getCategoryColor = (categorySlug) => {
+    const category = categories.find(c => c.slug === categorySlug);
+    return category?.color || '#6b7280';
   };
 
-  // CRITICAL FIX: Use REAL thread ID for navigation
-  const handleThreadClick = (threadId) => {
-    console.log('🔗 ForumsPage: Navigating to thread with REAL ID:', threadId);
-    if (navigateTo && typeof navigateTo === 'function') {
-      navigateTo('thread-detail', { id: threadId });
-    }
+  const getCategoryIcon = (categorySlug) => {
+    const category = categories.find(c => c.slug === categorySlug);
+    return category?.icon || '';
   };
 
-  const handleCreateThread = () => {
-    if (isAuthenticated) {
-      if (navigateTo && typeof navigateTo === 'function') {
-        navigateTo('create-thread');
-      }
-    } else {
-      handleSignInClick();
-    }
-  };
-
-  const getRoleColor = (role) => {
-    switch (role) {
-      case 'admin': return 'text-red-600 dark:text-red-400';
-      case 'moderator': return 'text-yellow-600 dark:text-yellow-400';
-      default: return 'text-gray-600 dark:text-gray-400';
-    }
-  };
-
-  const getRoleDisplay = (role) => {
-    switch (role) {
-      case 'admin': return 'DEV';
-      case 'moderator': return 'MOD';
-      default: return '';
-    }
-  };
-
-  // Country flag helper function
-  const getCountryFlag = (countryCode) => {
-    const flagMap = {
-      'US': '🇺🇸',
-      'CA': '🇨🇦', 
-      'UK': '🇬🇧',
-      'DE': '🇩🇪',
-      'FR': '🇫🇷',
-      'BR': '🇧🇷',
-      'KR': '🇰🇷',
-      'JP': '🇯🇵'
-    };
-    return flagMap[countryCode] || '🌍';
-  };
-
-  // FIXED: Inline Auth Modal Component - triggers main App.js AuthModal
-  const InlineAuthModal = () => {
-    if (!showAuthModal) return null;
-
+  if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div 
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-          onClick={() => setShowAuthModal(false)}
-        />
-        <div className="relative card w-full max-w-md">
-          <div className="p-6">
-            <div className="text-center">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                🔑 Sign In Required
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Please sign in to participate in forum discussions and create posts.
-              </p>
-              
-              <div className="space-y-3">
-                <button 
-                  onClick={() => {
-                    setShowAuthModal(false);
-                    window.dispatchEvent(new CustomEvent('mrvl-show-auth-modal'));
-                  }}
-                  className="w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                >
-                  🚀 Sign In / Sign Up
-                </button>
-                
-                <button 
-                  onClick={() => setShowAuthModal(false)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  Continue Browsing
-                </button>
-              </div>
-              
-              <div className="mt-4 text-xs text-gray-500 dark:text-gray-500">
-                Sign in to reply to posts and join the conversation!
-              </div>
-            </div>
-          </div>
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="loading-spinner mx-auto mb-4"></div>
+          <div className="text-gray-600 dark:text-gray-400">Loading forums...</div>
         </div>
       </div>
     );
-  };
+  }
 
   return (
-    <div className="forum-layout max-w-6xl mx-auto">
-      <InlineAuthModal />
-
-      {/* Compact header */}
+    <div className="max-w-6xl mx-auto">
+      {/* Header - VLR.gg Style */}
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold text-red-600 dark:text-red-400">Forums</h1>
-        
-        {/* FIXED: Show different buttons based on user role */}
-        <div className="flex items-center space-x-2">
-          <button 
-            onClick={handleCreateThread}
-            className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
-          >
-            {isAuthenticated ? 'New Post' : 'Sign In to Post'}
-          </button>
-          
-          {/* Only show Admin Panel for admins and moderators */}
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Forums</h1>
+        <div className="flex space-x-2">
           {(isAdmin() || isModerator()) && (
             <button 
-              onClick={() => navigateTo && navigateTo('admin-forums')}
-              className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+              onClick={() => navigateTo && navigateTo('admin-forum-categories')}
+              className="px-3 py-1.5 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors"
             >
-              Moderate
+              Manage Categories
+            </button>
+          )}
+          {isAuthenticated && (
+            <button 
+              onClick={() => navigateTo && navigateTo('create-thread')}
+              className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+            >
+              New Thread
             </button>
           )}
         </div>
       </div>
 
-      {/* ✅ CATEGORY HEADER BAR - All categories as tabs (SINGLE, NOT DUPLICATED) */}
-      <div className="card mb-4">
-        <div className="p-2">
-          <div className="flex flex-wrap gap-1">
-            {categories.map(category => (
+      {/* Filters and Sorting - VLR.gg Style */}
+      <div className="card p-3 mb-4">
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+          {/* Search */}
+          <div className="flex items-center space-x-2 flex-1">
+            <span className="text-sm text-gray-600 dark:text-gray-400">Search</span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search threads..."
+              className="text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-1 text-gray-900 dark:text-white flex-1 md:max-w-xs"
+            />
+            {searchQuery && (
               <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-                  selectedCategory === category.id
-                    ? 'bg-red-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
+                onClick={() => setSearchQuery('')}
+                className="text-xs text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                title="Clear search"
               >
-                {category.name}
-                <span className="ml-1 text-xs opacity-75">({category.count || 0})</span>
+                ✕
               </button>
-            ))}
+            )}
+          </div>
+
+          {/* Category Filter */}
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600 dark:text-gray-400">Category:</span>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-gray-900 dark:text-white"
+            >
+              <option value="all">All Categories</option>
+              {categories.map(category => (
+                <option key={category.id} value={category.slug}>
+                  {category.icon} {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sort Options */}
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-600 dark:text-gray-400">Sort by:</span>
+            <button
+              onClick={() => setSortBy('latest')}
+              className={`text-sm font-medium transition-colors ${
+                sortBy === 'latest' 
+                  ? 'text-red-600 dark:text-red-400' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400'
+              }`}
+            >
+              Latest {getSortIcon('latest')}
+            </button>
+            <button
+              onClick={() => setSortBy('popular')}
+              className={`text-sm font-medium transition-colors ${
+                sortBy === 'popular' 
+                  ? 'text-red-600 dark:text-red-400' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400'
+              }`}
+            >
+              Popular {getSortIcon('popular')}
+            </button>
+            <button
+              onClick={() => setSortBy('hot')}
+              className={`text-sm font-medium transition-colors ${
+                sortBy === 'hot' 
+                  ? 'text-red-600 dark:text-red-400' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400'
+              }`}
+            >
+              Hot {getSortIcon('hot')}
+            </button>
           </div>
         </div>
       </div>
 
-{/* Responsive card layout */}
-      <div className="card">
-        {/* Added sorting controls */}
-        <div className="p-3 border-b border-gray-200 dark:border-gray-600">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="Search posts..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-              />
-            </div>
-            
-            {/* Added sorting dropdown */}
-            <div className="flex items-center space-x-2">
-              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Sort by:</label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              >
-                <option value="recent">Recent</option>
-                <option value="popular">Popular</option>
-                <option value="replies">Most Replies</option>
-                <option value="views">Most Views</option>
-              </select>
-            </div>
+      {/* Threads List - VLR.gg Clean Style */}
+      {threads.length > 0 ? (
+        <div className="space-y-1">
+          {/* Header Row */}
+          <div className="hidden md:grid md:grid-cols-10 gap-4 px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-500 bg-gray-50 dark:bg-gray-800 rounded">
+            <div className="col-span-6">THREAD</div>
+            <div className="col-span-2 text-center">REPLIES</div>
+            <div className="col-span-2 text-center">LAST REPLY</div>
           </div>
-        </div>
 
-        {/* Posts List - VLR.gg style with user flags and team flairs */}
-        <div className="divide-y divide-gray-200 dark:divide-gray-600">
-          {loading ? (
-            <div className="text-center py-8">
-              <div className="text-gray-600 dark:text-gray-400">Loading posts...</div>
-            </div>
-          ) : threads.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="text-xl mb-2">💬</div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">No posts found</h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                {searchQuery ? 'Try adjusting your search criteria' : 'Be the first to start a discussion!'}
-              </p>
-              <button 
-                onClick={handleCreateThread}
-                className="px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
-              >
-                {isAuthenticated ? 'Create First Post' : 'Sign In to Create Post'}
-              </button>
-            </div>
-          ) : (
-            threads.map(thread => (
-              <div 
-                key={thread.id} 
-                className="forum-thread cursor-pointer p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                onClick={() => handleThreadClick(thread.id)}
-              >
-                <div className="flex flex-col md:flex-row md:items-start space-y-2 md:space-y-0 md:space-x-3">
-                  <div className="flex-1 min-w-0">
-                    {/* Post badges */}
-                    <div className="flex items-center flex-wrap space-x-2 mb-1">
-                      {thread.pinned && (
-                        <span className="px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 text-xs font-bold rounded">
-                          PINNED
+          {threads.map(thread => (
+            <div 
+              key={thread.id}
+              className="card p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer border-l-4 border-transparent hover:border-red-600"
+              onClick={() => navigateTo && navigateTo('thread-detail', { id: thread.id })}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-10 gap-4 items-center">
+                {/* Thread Info */}
+                <div className="md:col-span-6">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-1 min-w-0">
+                      {/* Thread badges */}
+                      <div className="flex items-center space-x-2 mb-1">
+                        {thread.pinned && (
+                          <span className="px-1.5 py-0.5 text-xs font-bold rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
+                            📌 PINNED
+                          </span>
+                        )}
+                        {thread.locked && (
+                          <span className="px-1.5 py-0.5 text-xs font-bold rounded bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300">
+                            🔒 LOCKED
+                          </span>
+                        )}
+                        
+                        {/* Category badge */}
+                        <span 
+                          className="px-2 py-0.5 text-xs font-bold rounded-full text-white"
+                          style={{ backgroundColor: thread.category?.color || getCategoryColor(thread.category_slug) }}
+                        >
+                          {getCategoryIcon(thread.category?.slug || thread.category_slug)} {thread.category?.name || thread.category_name || 'General'}
                         </span>
-                      )}
-                      {thread.trending && (
-                        <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 text-xs font-bold rounded">
-                          TRENDING
-                        </span>
-                      )}
-                      {thread.locked && (
-                        <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs font-bold rounded">
-                          LOCKED
-                        </span>
-                      )}
-                    </div>
+                      </div>
 
-                    {/* Title - responsive text sizing */}
-                    <h3 className="text-sm md:text-base font-semibold text-gray-900 dark:text-white mb-1 hover:text-red-600 dark:hover:text-red-400 transition-colors line-clamp-2">
-                      {thread.title}
-                    </h3>
+                      {/* Title */}
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-1 hover:text-red-600 dark:hover:text-red-400 transition-colors line-clamp-1">
+                        {thread.title}
+                      </h3>
 
-                    {/* Excerpt - hidden on mobile */}
-                    <p className="hidden md:block text-xs text-gray-600 dark:text-gray-400 mb-2 line-clamp-1">
-                      {thread.excerpt}
-                    </p>
-
-                    {/* Meta info with VLR.gg style flags and team flairs */}
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-gray-500 dark:text-gray-500 space-y-1 sm:space-y-0">
+                      {/* Author */}
                       <div className="flex items-center space-x-2">
-                        {/* Country Flag */}
-                        <span className="text-sm">{getCountryFlag(thread.author.country)}</span>
-                        
-                        {/* Username */}
-                        <span className="font-medium text-gray-900 dark:text-gray-100">{thread.author.name}</span>
-                        
-                        {/* Role badge */}
-                        {thread.author.role !== 'user' && (
-                          <span className={`font-bold ${getRoleColor(thread.author.role)}`}>
-                            {getRoleDisplay(thread.author.role)}
-                          </span>
-                        )}
-                        
-                        {/* Team Flair */}
-                        {thread.author.teamFlair && (
-                          <span className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded">
-                            {thread.author.teamFlair.name}
-                          </span>
-                        )}
-                        
-                        <span>•</span>
-                        <span>{formatTimeAgo(thread.created)}</span>
-                      </div>
-                      
-                      <div className="flex items-center space-x-3">
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">{thread.replies} replies</span>
-                        <span className="hidden sm:inline">{thread.views.toLocaleString()} views</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-500">by</span>
+                        <UserDisplay
+                          user={thread.author}
+                          showAvatar={true}
+                          showHeroFlair={true}
+                          showTeamFlair={true}
+                          size="xs"
+                          clickable={false}
+                        />
+                        <span className="text-xs text-gray-500 dark:text-gray-500">
+                          {formatTimeAgo(thread.meta?.created_at || thread.created_at)}
+                        </span>
                       </div>
                     </div>
-
-                    {/* Last Reply */}
-                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-500">
-                      Last reply by <span className="font-medium text-gray-700 dark:text-gray-300">{thread.lastReply.user}</span> • {thread.lastReply.timestamp}
-                    </div>
-                  </div>
-
-                  {/* Reply Button */}
-                  <div className="pt-1 self-start md:self-center">
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (!isAuthenticated) {
-                          handleSignInClick();
-                        } else {
-                          handleThreadClick(thread.id);
-                        }
-                      }}
-                      className="px-3 py-1 text-xs border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      Reply
-                    </button>
                   </div>
                 </div>
+
+                {/* Replies */}
+                <div className="md:col-span-2 md:text-center">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                    {thread.stats?.replies || thread.posts_count || thread.replies_count || thread.replies || 0}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-500 md:hidden">replies</div>
+                </div>
+
+                {/* Last Reply */}
+                <div className="md:col-span-2 md:text-center">
+                  {(thread.stats?.replies > 0 || thread.meta?.last_reply_at) ? (
+                    <div className="text-xs text-gray-500 dark:text-gray-500">
+                      {formatTimeAgo(thread.meta?.last_reply_at || thread.last_reply_at || thread.last_post_at || thread.updated_at)}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-gray-500 dark:text-gray-500">
+                      No replies
+                    </div>
+                  )}
+                </div>
+                
+                {/* Moderation Actions */}
+                {(isAdmin() || isModerator()) && (
+                  <div className="md:col-span-10 mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 flex items-center space-x-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePinThread(thread.id, !thread.pinned);
+                      }}
+                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                        thread.pinned 
+                          ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/30' 
+                          : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {thread.pinned ? '📌 Unpin' : '📌 Pin'}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLockThread(thread.id, !thread.locked);
+                      }}
+                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                        thread.locked 
+                          ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/30' 
+                          : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {thread.locked ? '🔓 Unlock' : '🔒 Lock'}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteThread(thread.id);
+                      }}
+                      className="px-2 py-1 text-xs bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors"
+                    >
+                      🗑️ Delete
+                    </button>
+                  </div>
+                )}
               </div>
-            ))
-          )}
+            </div>
+          ))}
         </div>
-      </div>
+      ) : (
+        <div className="card p-12 text-center">
+          <div className="text-4xl mb-4">
+            {searchQuery ? 'No Results' : 'No Threads'}
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            {searchQuery ? 'No Search Results' : 'No Threads Found'}
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            {searchQuery 
+              ? `No threads found matching "${searchQuery}". Try different keywords or browse categories.`
+              : selectedCategory !== 'all' 
+                ? `No threads found in the selected category.`
+                : 'No forum threads available. Be the first to start a discussion!'}
+          </p>
+          <div className="flex justify-center space-x-4">
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              >
+                Clear Search
+              </button>
+            )}
+            {selectedCategory !== 'all' && !searchQuery && (
+              <button
+                onClick={() => setSelectedCategory('all')}
+                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+              >
+                View All Categories
+              </button>
+            )}
+            {isAuthenticated && (
+              <button
+                onClick={() => navigateTo && navigateTo('create-thread')}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              >
+                Start New Thread
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Login Prompt for Unauthenticated Users */}
+      {!isAuthenticated && (
+        <div className="card p-6 mt-6 text-center">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Join the Community</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Sign in to create threads, reply to posts, and participate in discussions.
+          </p>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('mrvl-show-auth-modal'))}
+            className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+          >
+            Sign In to Participate
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }

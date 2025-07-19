@@ -234,29 +234,11 @@ function StatsPage({ navigateTo }) {
     setHeroStats(getFallbackHeroStats());
   };
 
-  const getFallbackTeams = () => [
-    { id: 1, name: "Sentinels", short_name: "SEN", rating: 2458, region: "NA", country: "US" },
-    { id: 2, name: "SHROUD-X", short_name: "SDX", rating: 2387, region: "NA", country: "US" },
-    { id: 3, name: "Fnatic", short_name: "FNC", rating: 2342, region: "EU", country: "UK" },
-    { id: 4, name: "Gen.G", short_name: "GEN", rating: 2298, region: "APAC", country: "KR" },
-    { id: 5, name: "Team Liquid", short_name: "TL", rating: 2245, region: "EU", country: "NL" }
-  ];
+  const getFallbackTeams = () => [];
 
-  const getFallbackPlayers = () => [
-    { id: 1, username: "TenZ", team: { short_name: "SEN" }, role: "Duelist", rating: 2687.5, country: "CA" },
-    { id: 2, username: "Aspas", team: { short_name: "LOUD" }, role: "Duelist", rating: 2634.2, country: "BR" },
-    { id: 3, username: "Chronicle", team: { short_name: "FNC" }, role: "Flex", rating: 2589.7, country: "RU" },
-    { id: 4, username: "Less", team: { short_name: "LOUD" }, role: "Sentinel", rating: 2567.3, country: "BR" },
-    { id: 5, username: "Alfajer", team: { short_name: "FNC" }, role: "Sentinel", rating: 2534.8, country: "TR" }
-  ];
+  const getFallbackPlayers = () => [];
 
-  const getFallbackHeroStats = () => [
-    { name: 'Iron Man', role: 'Duelist', pickRate: 78.4, winRate: 67.8, banRate: 45.2, tier: 'S' },
-    { name: 'Hulk', role: 'Vanguard', pickRate: 85.3, winRate: 71.5, banRate: 52.8, tier: 'S' },
-    { name: 'Doctor Strange', role: 'Strategist', pickRate: 79.2, winRate: 66.1, banRate: 42.3, tier: 'S' },
-    { name: 'Spider-Man', role: 'Duelist', pickRate: 72.1, winRate: 64.2, banRate: 38.7, tier: 'A' },
-    { name: 'Captain America', role: 'Vanguard', pickRate: 68.9, winRate: 69.3, banRate: 31.4, tier: 'A' }
-  ];
+  const getFallbackHeroStats = () => [];
 
   const getTierColor = (tier) => {
     switch (tier) {

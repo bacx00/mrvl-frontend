@@ -24,7 +24,7 @@ function TournamentBrackets({ api, navigateTo }) {
         fetchBracket(tournamentsData[0].id);
       }
     } catch (error) {
-      console.error('❌ Error fetching tournaments:', error);
+      console.error(' Error fetching tournaments:', error);
       const demoTournaments = [
         {
           id: 1,
@@ -61,22 +61,27 @@ function TournamentBrackets({ api, navigateTo }) {
       const response = await api.get(`/admin/tournaments/${tournamentId}/bracket`);
       setBracket(response.data || response);
     } catch (error) {
-      console.error('❌ Error fetching bracket:', error);
+      console.error(' Error fetching bracket:', error);
       generateDemoBracket(selectedTournament);
     }
   };
 
-  const generateDemoBracket = (tournament) => {
-    const teams = [
-      'Sentinels', 'SHROUD-X', 'Team Liquid', 'Fnatic',
-      'Gen.G', 'NAVI', '100 Thieves', 'Cloud9',
-      'TSM', 'G2 Esports', 'FPX', 'LOUD',
-      'DRX', 'Paper Rex', 'OpTic Gaming', 'XSET'
-    ];
+  const generateDemoBracket = async (tournament) => {
+    // Fetch real teams from the API
+    try {
+      const response = await api.get('/teams');
+      const realTeams = response?.data?.data || response?.data || [];
+      
+      if (realTeams.length < 2) {
+        alert('Not enough teams available to generate bracket');
+        return;
+      }
+      
+      const teams = realTeams.slice(0, 16).map(team => team.name);
 
-    const rounds = [];
-    let currentTeams = [...teams];
-    let roundNum = 1;
+      const rounds = [];
+      let currentTeams = [...teams];
+      let roundNum = 1;
 
     while (currentTeams.length > 1) {
       const matches = [];
@@ -113,11 +118,15 @@ function TournamentBrackets({ api, navigateTo }) {
       roundNum++;
     }
 
-    setBracket({
-      tournament: tournament,
-      format: tournament?.format || 'single-elimination',
-      rounds
-    });
+      setBracket({
+        tournament: tournament,
+        format: tournament?.format || 'single-elimination',
+        rounds
+      });
+    } catch (error) {
+      console.error('Error generating bracket:', error);
+      alert('Failed to generate bracket. Please try again.');
+    }
   };
 
   const getRoundName = (roundNum, teamCount) => {
@@ -145,10 +154,10 @@ function TournamentBrackets({ api, navigateTo }) {
       setTournaments(prev => [...prev, newTournament]);
       setSelectedTournament(newTournament);
       
-      alert('✅ Tournament created successfully!');
+      alert(' Tournament created successfully!');
     } catch (error) {
-      console.error('❌ Error creating tournament:', error);
-      alert('❌ Failed to create tournament. Please try again.');
+      console.error(' Error creating tournament:', error);
+      alert(' Failed to create tournament. Please try again.');
     } finally {
       setCreating(false);
     }
@@ -163,10 +172,10 @@ function TournamentBrackets({ api, navigateTo }) {
       });
       
       fetchBracket(selectedTournament.id);
-      alert('✅ Match result updated!');
+      alert(' Match result updated!');
     } catch (error) {
-      console.error('❌ Error updating match:', error);
-      alert('❌ Failed to update match. Please try again.');
+      console.error(' Error updating match:', error);
+      alert(' Failed to update match. Please try again.');
     }
   };
 
@@ -185,7 +194,7 @@ function TournamentBrackets({ api, navigateTo }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">🏆 Tournament Brackets</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white"> Tournament Brackets</h2>
           <p className="text-gray-600 dark:text-gray-400">Manage tournament brackets and match results</p>
         </div>
         <button
@@ -193,7 +202,7 @@ function TournamentBrackets({ api, navigateTo }) {
           disabled={creating}
           className="btn bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
         >
-          {creating ? 'Creating...' : '🏆 New Tournament'}
+          {creating ? 'Creating...' : ' New Tournament'}
         </button>
       </div>
 
@@ -325,16 +334,16 @@ function TournamentBrackets({ api, navigateTo }) {
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Tournament Management</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <button className="btn bg-blue-600 text-white hover:bg-blue-700">
-            📊 Generate Bracket
+             Generate Bracket
           </button>
           <button className="btn bg-green-600 text-white hover:bg-green-700">
-            ⚡ Auto-Advance
+             Auto-Advance
           </button>
           <button className="btn bg-purple-600 text-white hover:bg-purple-700">
-            📄 Export Results
+             Export Results
           </button>
           <button className="btn bg-red-600 text-white hover:bg-red-700">
-            🔄 Reset Bracket
+             Reset Bracket
           </button>
         </div>
       </div>

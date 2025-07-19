@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useAuth } from '../hooks';
 
 function AuthModal({ isOpen, onClose }) {
-  const { login, register } = useAuth();
+  const { login, register, api } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -119,9 +120,40 @@ function AuthModal({ isOpen, onClose }) {
 
   const switchMode = () => {
     setIsLogin(!isLogin);
+    setShowForgotPassword(false);
     setError('');
     setSuccess('');
     setFormData({ name: '', email: '', password: '', password_confirmation: '' });
+  };
+
+  const handleForgotPassword = async () => {
+    if (!formData.email) {
+      setError('Please enter your email address');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await api.post('/auth/forgot-password', {
+        email: formData.email
+      });
+
+      if (response.success) {
+        setSuccess('Password reset link sent to your email address');
+        setShowForgotPassword(false);
+      } else {
+        setError(response.message || 'Failed to send reset link');
+      }
+    } catch (err) {
+      console.error('Forgot password error:', err);
+      const errorMessage = err.response?.data?.message || 'Failed to send reset link. Please try again.';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -144,7 +176,7 @@ function AuthModal({ isOpen, onClose }) {
                 MRVL
               </div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                {isLogin ? 'Welcome Back' : 'Join MRVL'}
+                {showForgotPassword ? 'Reset Password' : isLogin ? 'Welcome Back' : 'Join MRVL'}
               </h2>
             </div>
             <button
@@ -155,9 +187,11 @@ function AuthModal({ isOpen, onClose }) {
             </button>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-            {isLogin 
-              ? 'Sign in to access your dashboard and join discussions' 
-              : 'Create your account to join the Marvel Rivals community'
+            {showForgotPassword 
+              ? 'Enter your email address to receive a password reset link'
+              : isLogin 
+                ? 'Sign in to access your dashboard and join discussions' 
+                : 'Create your account to join the Marvel Rivals community'
             }
           </p>
         </div>
@@ -185,7 +219,7 @@ function AuthModal({ isOpen, onClose }) {
           )}
 
           {/* Name Field - Only for Registration */}
-          {!isLogin && (
+          {!isLogin && !showForgotPassword && (
             <div>
               <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                 Display Name *
@@ -195,7 +229,7 @@ function AuthModal({ isOpen, onClose }) {
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                required={!isLogin}
+                required={!isLogin && !showForgotPassword}
                 disabled={loading}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="Enter your display name"
@@ -220,7 +254,8 @@ function AuthModal({ isOpen, onClose }) {
             />
           </div>
 
-          {/* Password Field */}
+          {/* Password Field - Not for Forgot Password */}
+          {!showForgotPassword && (
           <div>
             <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
               Password *
@@ -232,13 +267,15 @@ function AuthModal({ isOpen, onClose }) {
               onChange={handleInputChange}
               required
               disabled={loading}
+              autoComplete={isLogin ? "current-password" : "new-password"}
               className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder={isLogin ? "Enter your password" : "Create a password (min 8 characters)"}
             />
           </div>
+          )}
 
           {/* Confirm Password Field - Only for Registration */}
-          {!isLogin && (
+          {!isLogin && !showForgotPassword && (
             <div>
               <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                 Confirm Password *
@@ -248,8 +285,9 @@ function AuthModal({ isOpen, onClose }) {
                 name="password_confirmation"
                 value={formData.password_confirmation}
                 onChange={handleInputChange}
-                required={!isLogin}
+                required={!isLogin && !showForgotPassword}
                 disabled={loading}
+                autoComplete="new-password"
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="Confirm your password"
               />
@@ -258,7 +296,8 @@ function AuthModal({ isOpen, onClose }) {
 
           {/* Submit Button */}
           <button
-            type="submit"
+            type={showForgotPassword ? "button" : "submit"}
+            onClick={showForgotPassword ? handleForgotPassword : undefined}
             disabled={loading}
             className="w-full px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold rounded-xl shadow-lg shadow-red-500/30 transition-all duration-300 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
           >
@@ -269,8 +308,14 @@ function AuthModal({ isOpen, onClose }) {
               </>
             ) : (
               <>
-                <span>{isLogin ? '🔑' : '🚀'}</span>
-                <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
+                <span>
+                  {showForgotPassword 
+                    ? 'Send Reset Link' 
+                    : isLogin 
+                      ? 'Sign In' 
+                      : 'Create Account'
+                  }
+                </span>
               </>
             )}
           </button>
@@ -278,19 +323,50 @@ function AuthModal({ isOpen, onClose }) {
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 rounded-b-2xl">
-          <div className="text-center">
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              {isLogin ? "Don't have an account?" : "Already have an account?"}
-            </span>
-            <button
-              type="button"
-              onClick={switchMode}
-              disabled={loading}
-              className="ml-2 text-sm font-semibold text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLogin ? 'Sign up here' : 'Sign in instead'}
-            </button>
-          </div>
+          {!showForgotPassword ? (
+            <>
+              <div className="text-center">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  {isLogin ? "Don't have an account?" : "Already have an account?"}
+                </span>
+                <button
+                  type="button"
+                  onClick={switchMode}
+                  disabled={loading}
+                  className="ml-2 text-sm font-semibold text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLogin ? 'Sign up here' : 'Sign in instead'}
+                </button>
+              </div>
+              
+              {isLogin && (
+                <div className="text-center mt-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    disabled={loading}
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Forgot your password?
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Remember your password?
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(false)}
+                disabled={loading}
+                className="ml-2 text-sm font-semibold text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Sign in instead
+              </button>
+            </div>
+          )}
           
           <div className="mt-4 text-center">
             <p className="text-xs text-gray-500 dark:text-gray-500">

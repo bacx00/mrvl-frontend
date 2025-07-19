@@ -1,20 +1,78 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
-import { PlayerAvatar, getCountryFlag } from '../../utils/imageUtils';
-import { REAL_TEAMS, getTeamById } from '../../data/realTeams';
-import { getPlayerById, getAllPlayers } from '../../data/realPlayersMapping';
+import { PlayerAvatar, TeamLogo, getCountryFlag, getHeroImageSync } from '../../utils/imageUtils';
+import { parseTextWithMentions } from '../shared/UserDisplay';
+import MentionsSection from '../shared/MentionsSection';
+import { HEROES } from '../../constants/marvelRivalsData';
 
 function PlayerDetailPage({ params, navigateTo }) {
   const [player, setPlayer] = useState(null);
   const [stats, setStats] = useState({});
-  const [matches, setMatches] = useState([]);
+  const [matchHistory, setMatchHistory] = useState([]);
+  const [heroStats, setHeroStats] = useState([]);
+  const [performanceStats, setPerformanceStats] = useState(null);
+  const [mapStats, setMapStats] = useState([]);
+  const [eventStats, setEventStats] = useState([]);
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(false);
+  const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, per_page: 20, total: 0 });
+  const [filters, setFilters] = useState({ date_from: '', date_to: '', event_id: '', hero: '', map: '' });
   const { api } = useAuth();
 
   const playerId = params?.id;
 
-  console.log('🔍 PlayerDetailPage - Received player ID:', playerId);
+  // Country names mapping
+  const countryNames = {
+    'US': 'United States',
+    'CA': 'Canada',
+    'GB': 'United Kingdom',
+    'DE': 'Germany',
+    'FR': 'France',
+    'ES': 'Spain',
+    'IT': 'Italy',
+    'NL': 'Netherlands',
+    'SE': 'Sweden',
+    'NO': 'Norway',
+    'DK': 'Denmark',
+    'FI': 'Finland',
+    'AU': 'Australia',
+    'NZ': 'New Zealand',
+    'JP': 'Japan',
+    'KR': 'South Korea',
+    'CN': 'China',
+    'TW': 'Taiwan',
+    'SG': 'Singapore',
+    'TH': 'Thailand',
+    'VN': 'Vietnam',
+    'ID': 'Indonesia',
+    'MY': 'Malaysia',
+    'PH': 'Philippines',
+    'BR': 'Brazil',
+    'AR': 'Argentina',
+    'CL': 'Chile',
+    'CO': 'Colombia',
+    'PE': 'Peru',
+    'MX': 'Mexico',
+    'RU': 'Russia',
+    'PL': 'Poland',
+    'CZ': 'Czech Republic',
+    'HU': 'Hungary',
+    'RO': 'Romania',
+    'BG': 'Bulgaria',
+    'IN': 'India',
+    'PK': 'Pakistan',
+    'BD': 'Bangladesh',
+    'LK': 'Sri Lanka',
+    'NP': 'Nepal',
+    'ZA': 'South Africa',
+    'EG': 'Egypt',
+    'MA': 'Morocco',
+    'NG': 'Nigeria',
+    'KE': 'Kenya',
+    'GH': 'Ghana',
+    'TN': 'Tunisia'
+  };
 
   useEffect(() => {
     if (playerId) {
@@ -25,142 +83,170 @@ function PlayerDetailPage({ params, navigateTo }) {
   const fetchPlayerData = async () => {
     try {
       setLoading(true);
-      console.log('🔄 PlayerDetailPage: Fetching player data for ID:', playerId);
       
-      // CRITICAL FIX: Use direct player mapping instead of API
-      const directPlayer = getPlayerById(playerId);
+      // Fetch comprehensive player data from API
+      const response = await api.get(`/players/${playerId}`);
+      const playerData = response.data?.data || response.data || response;
       
-      if (directPlayer) {
-        console.log('✅ Found player directly:', directPlayer);
-        const playerTeam = getTeamById(directPlayer.team_id);
+      // Transform backend data to frontend format
+      const transformedPlayer = {
+        id: playerData.id,
+        username: playerData.username,
+        realName: playerData.real_name,
+        avatar: playerData.avatar,
+        country: playerData.country,
+        flag: playerData.flag || getCountryFlag(playerData.country),
+        age: playerData.age,
+        status: playerData.status,
+        biography: playerData.biography,
         
-        const transformedPlayer = {
-          id: directPlayer.id,
-          name: directPlayer.name,
-          gamer_tag: directPlayer.name,
-          role: directPlayer.role,
-          main_hero: directPlayer.main_hero,
-          country: directPlayer.country,
-          team: playerTeam,
-          team_id: directPlayer.team_id,
-          // Add enhanced stats
-          rating: 1500 + Math.floor(Math.random() * 800),
-          matches_played: Math.floor(Math.random() * 50) + 20,
-          wins: Math.floor(Math.random() * 35) + 15,
-          avg_eliminations: (Math.random() * 10 + 8).toFixed(1),
-          avg_deaths: (Math.random() * 5 + 3).toFixed(1),
-          avg_assists: (Math.random() * 8 + 5).toFixed(1),
-          avg_damage: Math.floor(Math.random() * 3000) + 6000,
-          avg_healing: directPlayer.role === 'Support' ? Math.floor(Math.random() * 5000) + 8000 : 0,
-          kd_ratio: ((Math.random() * 1.5) + 0.8).toFixed(2),
-          winrate: ((Math.random() * 0.3) + 0.6).toFixed(1),
-          achievements: [
-            'Marvel Rivals Champion',
-            'Top 500 Player',
-            `${directPlayer.main_hero} Specialist`
-          ],
-          social_media: {
-            twitch: `twitch.tv/${directPlayer.name.toLowerCase()}`,
-            twitter: `@${directPlayer.name}`,
-            youtube: `youtube.com/c/${directPlayer.name}`
-          }
-        };
+        // Role and heroes
+        role: playerData.role,
+        mainHero: playerData.main_hero,
+        altHeroes: playerData.alt_heroes || [],
         
-        setPlayer(transformedPlayer);
-        setLoading(false);
-        return;
+        // Team information
+        currentTeam: playerData.current_team,
+        teamHistory: playerData.team_history || playerData.past_teams || [],
+        
+        // Social media
+        socialMedia: playerData.social_media || {},
+        streaming: playerData.streaming || {},
+        
+        // Marvel Rivals specific
+        region: playerData.region,
+        lastActive: playerData.last_active,
+        totalEarnings: playerData.total_earnings || 0,
+        
+        // Event data
+        eventPlacements: playerData.event_placements || [],
+        heroStats: playerData.hero_stats || []
+      };
+      
+      // Set player data
+      setPlayer(transformedPlayer);
+      
+      // Set comprehensive stats from backend
+      if (playerData.stats) {
+        setStats(playerData.stats);
       }
       
-      // If not found in direct mapping, try API as fallback
-      try {
-        const response = await api.get(`/players/${playerId}`);
-        const apiPlayerData = response.data || response;
-        console.log('✅ Real player data received from API:', apiPlayerData);
-        
-        const playerTeam = getTeamById(apiPlayerData.team_id);
-        const transformedPlayer = {
-          ...apiPlayerData,
-          team: playerTeam
-        };
-        
-        setPlayer(transformedPlayer);
-      } catch (error) {
-        console.error('❌ Error fetching player data from API:', error);
-        console.error(`❌ Player ID ${playerId} not found in direct mapping or API`);
-        setPlayer(null);
-      }
+      // Load comprehensive player statistics using new API endpoints
+      await fetchPlayerStats();
+      
     } catch (error) {
-      console.error('❌ Error in fetchPlayerData:', error);
+      console.error('Error fetching player data:', error);
       setPlayer(null);
+      setStats({});
+      setMatchHistory([]);
+      setHeroStats([]);
+      setPerformanceStats(null);
+      setMapStats([]);
+      setEventStats([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const generateHeroStats = (mainHero, altHeroes) => {
-    const allHeroes = [mainHero, ...(altHeroes || [])].filter(Boolean);
-    return allHeroes.map((hero, index) => {
-      const isMain = index === 0;
-      return {
-        hero: hero,
-        matches: Math.floor(Math.random() * (isMain ? 25 : 15) + (isMain ? 15 : 5)),
-        winRate: (Math.random() * 20 + (isMain ? 70 : 60)).toFixed(1),
-        kd: (Math.random() * 0.6 + (isMain ? 1.2 : 0.9)).toFixed(2),
-        avgElims: (Math.random() * 8 + (isMain ? 18 : 14)).toFixed(1),
-        avgDamage: Math.floor(Math.random() * 3000 + (isMain ? 9000 : 7000))
-      };
-    });
-  };
-
-  const generateRecentMatches = (player) => {
-    const opponents = ['SHROUD-X', 'Fnatic', 'Gen.G', 'Team Liquid', 'NAVI', 'Cloud9', 'NRG', 'Team Secret'];
-    const maps = ['Asgard Throne Room', 'Wakanda', 'Sanctum Sanctorum', 'Tokyo 2099', 'Klyntar', 'Midtown'];
-    const heroes = [player.mainHero, ...(player.altHeroes || [])].filter(Boolean);
+  // Fetch comprehensive player statistics from new API endpoints
+  const fetchPlayerStats = async (page = 1, currentFilters = filters) => {
+    if (!playerId) return;
     
-    return Array.from({ length: 8 }, (_, i) => ({
-      id: i + 1,
-      date: new Date(Date.now() - (i + 1) * 24 * 60 * 60 * 1000 * Math.random() * 3).toISOString().split('T')[0],
-      opponent: {
-        name: opponents[Math.floor(Math.random() * opponents.length)],
-        short_name: opponents[Math.floor(Math.random() * opponents.length)].substring(0, 3).toUpperCase()
-      },
-      result: Math.random() > 0.4 ? 'W' : 'L',
-      score: Math.random() > 0.5 ? '2-1' : '1-2',
-      map: maps[Math.floor(Math.random() * maps.length)],
-      hero: heroes[Math.floor(Math.random() * heroes.length)] || player.mainHero,
-      eliminations: Math.floor(Math.random() * 12 + 8),
-      deaths: Math.floor(Math.random() * 8 + 5),
-      assists: Math.floor(Math.random() * 15 + 5),
-      damage: Math.floor(Math.random() * 5000 + 6000),
-      healing: player.role === 'Support' ? Math.floor(Math.random() * 8000 + 5000) : 0,
-      rating: (Math.random() * 0.8 + 0.8).toFixed(2)
-    }));
-  };
-
-  const getRoleColor = (role) => {
-    switch (role) {
-      case 'Duelist': return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800';
-      case 'Tank': return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800';
-      case 'Support': return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800';
-      case 'Coach': return 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800';
-      case 'IGL': return 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950 border-yellow-200 dark:border-yellow-800';
-      default: return 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-950 border-gray-200 dark:border-gray-800';
+    try {
+      setDataLoading(true);
+      
+      // Build query parameters
+      const params = new URLSearchParams({
+        page: page.toString(),
+        per_page: pagination.per_page.toString(),
+        ...Object.fromEntries(Object.entries(currentFilters).filter(([_, value]) => value))
+      });
+      
+      // Fetch all player statistics in parallel
+      const [matchHistoryResponse, heroStatsResponse, performanceResponse, mapStatsResponse, eventStatsResponse] = await Promise.all([
+        api.get(`/public/players/${playerId}/match-history?${params}`).catch(() => ({ data: { data: [], meta: {} } })),
+        api.get(`/public/players/${playerId}/hero-stats?${params}`).catch(() => ({ data: { data: [] } })),
+        api.get(`/public/players/${playerId}/performance-stats?${params}`).catch(() => ({ data: { data: {} } })),
+        api.get(`/public/players/${playerId}/map-stats?${params}`).catch(() => ({ data: { data: [] } })),
+        api.get(`/public/players/${playerId}/event-stats?${params}`).catch(() => ({ data: { data: [] } }))
+      ]);
+      
+      // Set match history with pagination
+      const matchData = matchHistoryResponse.data.data || [];
+      setMatchHistory(matchData);
+      if (matchHistoryResponse.data.meta) {
+        setPagination(matchHistoryResponse.data.meta);
+      }
+      
+      // Set hero statistics
+      const heroData = heroStatsResponse.data.data || [];
+      setHeroStats(heroData);
+      
+      // Set performance statistics (overall career stats)
+      const perfData = performanceResponse.data.data || {};
+      setPerformanceStats(perfData);
+      
+      // Set map statistics
+      const mapData = mapStatsResponse.data.data || [];
+      setMapStats(mapData);
+      
+      // Set event statistics
+      const eventData = eventStatsResponse.data.data || [];
+      setEventStats(eventData);
+      
+      console.log('Player stats loaded:', {
+        matches: matchData.length,
+        heroes: heroData.length,
+        maps: mapData.length,
+        events: eventData.length
+      });
+      
+    } catch (error) {
+      console.error('Error fetching player stats:', error);
+    } finally {
+      setDataLoading(false);
     }
   };
 
-  const tabs = [
-    { id: 'overview', name: 'Overview' },
-    { id: 'matches', name: 'Match History' },
-    { id: 'heroes', name: 'Hero Stats' },
-    { id: 'achievements', name: 'Achievements' }
-  ];
+  // Handle tab change and load data if needed
+  const handleTabChange = async (tab) => {
+    setActiveTab(tab);
+    if (tab !== 'overview' && matchHistory.length === 0) {
+      await fetchPlayerStats();
+    }
+  };
+
+  // Handle filter changes
+  const handleFilterChange = async (newFilters) => {
+    setFilters(newFilters);
+    await fetchPlayerStats(1, newFilters);
+  };
+
+  // Handle pagination
+  const handlePageChange = async (page) => {
+    await fetchPlayerStats(page);
+  };
+
+  const formatCurrency = (amount) => {
+    if (typeof amount === 'string' && amount.includes('$')) return amount;
+    return `$${(amount || 0).toLocaleString()}`;
+  };
+
+  const getRoleColor = (role) => {
+    switch(role) {
+      case 'Duelist': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 border-red-300 dark:border-red-700';
+      case 'Vanguard': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 border-blue-300 dark:border-blue-700';
+      case 'Strategist': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-green-300 dark:border-green-700';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600';
+    }
+  };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="loading-spinner mx-auto mb-4"></div>
-          <div className="text-gray-600 dark:text-gray-400">Loading player profile...</div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading player profile...</p>
         </div>
       </div>
     );
@@ -169,326 +255,878 @@ function PlayerDetailPage({ params, navigateTo }) {
   if (!player) {
     return (
       <div className="card p-12 text-center">
-        <div className="text-6xl mb-4">🔍</div>
+        <div className="text-4xl font-bold text-gray-300 dark:text-gray-700 mb-4">Not Found</div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Player Not Found</h2>
         <p className="text-gray-600 dark:text-gray-400 mb-6">
           The player you're looking for doesn't exist or may have been removed.
         </p>
-        <button onClick={() => navigateTo('players')} className="btn btn-primary">
-          ← Back to Players
+        <button
+          onClick={() => navigateTo('players')}
+          className="btn bg-red-600 text-white hover:bg-red-700"
+        >
+          View All Players
         </button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-500">
-        <button 
-          onClick={() => navigateTo('home')}
-          className="hover:text-red-600 dark:hover:text-red-400 transition-colors"
-        >
-          Home
-        </button>
-        <span>›</span>
-        <button 
-          onClick={() => navigateTo('players')}
-          className="hover:text-red-600 dark:hover:text-red-400 transition-colors"
-        >
-          Players
-        </button>
-        <span>›</span>
-        <span className="text-gray-900 dark:text-white">{player.username}</span>
-      </div>
-
+    <div className="animate-fade-in">
       {/* VLR.gg Style Player Header */}
-      <div className="card">
-        {/* Header Background */}
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-600 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/10 dark:to-red-800/10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <PlayerAvatar 
-                player={player} 
-                size="w-16 h-16" 
-                className="border-2 border-white dark:border-gray-800 shadow-lg"
-              />
+      <div className="card mb-8">
+        <div className="border border-white dark:border-gray-300 p-8 bg-gray-50 dark:bg-gray-800">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center space-x-6">
+              <PlayerAvatar player={player} size="w-24 h-24" className="ring-4 ring-white/20" />
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{player.username}</h1>
-                <div className="flex items-center space-x-3 mt-1">
-                  <span className="text-lg text-gray-600 dark:text-gray-400">{player.realName}</span>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getRoleColor(player.role)}`}>
+                <h1 className="text-4xl font-bold text-gray-900 dark:text-white">{player.username || player.realName}</h1>
+                <div className="text-xl text-gray-600 dark:text-gray-300 mb-2">{player.realName || player.username}</div>
+                <div className="flex items-center space-x-4 mb-3">
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(player.role)}`}>
                     {player.role}
                   </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-lg">{player.flag || getCountryFlag(player.country)}</span>
+                    <span className="text-gray-600 dark:text-gray-300">{countryNames[player.country] || player.country}</span>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold text-red-600 dark:text-red-400">{Math.floor(stats.rating)}</div>
-              <div className="text-sm text-gray-500 dark:text-gray-500">Overall Rating</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Player Info Grid */}
-        <div className="p-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-            <div>
-              <div className="text-gray-500 dark:text-gray-500 text-sm">Country</div>
-              <div className="flex items-center space-x-2 mt-1">
-                <span className="text-lg">{getCountryFlag(player.country)}</span>
-                <span className="font-medium text-gray-900 dark:text-white">{player.country}</span>
-              </div>
-            </div>
-            <div>
-              <div className="text-gray-500 dark:text-gray-500 text-sm">Age</div>
-              <div className="font-medium text-gray-900 dark:text-white mt-1">{player.age || 'N/A'}</div>
-            </div>
-            <div>
-              <div className="text-gray-500 dark:text-gray-500 text-sm">Team</div>
-              <div className="mt-1">
-                {player.team ? (
-                  <button 
-                    onClick={() => navigateTo('team-detail', { id: player.team.id })}
-                    className="font-medium text-red-600 dark:text-red-400 hover:underline"
-                  >
-                    {player.team.short_name}
-                  </button>
-                ) : (
-                  <span className="font-medium text-gray-500 dark:text-gray-500">Free Agent</span>
+                {/* Social Links - VLR.gg Style */}
+                {player.socialMedia && Object.keys(player.socialMedia).length > 0 && (
+                  <div className="flex items-center space-x-4">
+                    {player.socialMedia.twitter && (
+                      <a 
+                        href={`https://twitter.com/${player.socialMedia.twitter}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-white hover:text-red-200 transition-colors"
+                      >
+                        🐦 Twitter
+                      </a>
+                    )}
+                    {player.socialMedia.twitch && (
+                      <a 
+                        href={`https://twitch.tv/${player.socialMedia.twitch}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-white hover:text-red-200 transition-colors"
+                      >
+                        📺 Twitch
+                      </a>
+                    )}
+                    {player.socialMedia.youtube && (
+                      <a 
+                        href={`https://youtube.com/@${player.socialMedia.youtube}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-white hover:text-red-200 transition-colors"
+                      >
+                        🎥 YouTube
+                      </a>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
-            <div>
-              <div className="text-gray-500 dark:text-gray-500 text-sm">Main Hero</div>
-              <div className="font-medium text-gray-900 dark:text-white mt-1">{player.mainHero || 'N/A'}</div>
-            </div>
-            <div>
-              <div className="text-gray-500 dark:text-gray-500 text-sm">Matches</div>
-              <div className="font-medium text-gray-900 dark:text-white mt-1">{stats.matchesPlayed}</div>
-            </div>
-            <div>
-              <div className="text-gray-500 dark:text-gray-500 text-sm">Win Rate</div>
-              <div className="font-medium text-green-600 dark:text-green-400 mt-1">{stats.winRate}%</div>
+            <div className="text-right">
+              <div className="text-3xl font-bold text-white">{formatCurrency(player.totalEarnings)}</div>
+              <div className="text-sm text-red-100">Total Earnings</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="card">
-        <div className="flex border-b border-gray-200 dark:border-gray-700">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-                activeTab === tab.id
-                  ? 'text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400 bg-red-50 dark:bg-red-900/10'
-                  : 'text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-              }`}
-            >
-              {tab.name}
-            </button>
-          ))}
+      {/* Main Content Layout - VLR.gg Style */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Content Area */}
+        <div className="lg:col-span-2 space-y-8">
+
+          {/* Player Basic Info */}
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Player Information</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div>
+                <div className="text-gray-500 dark:text-gray-500 text-sm">Age</div>
+                <div className="font-medium text-gray-900 dark:text-white mt-1">{player.age || 'N/A'}</div>
+              </div>
+              <div>
+                <div className="text-gray-500 dark:text-gray-500 text-sm">Role</div>
+                <div className="font-medium text-gray-900 dark:text-white mt-1">{player.role}</div>
+              </div>
+              <div>
+                <div className="text-gray-500 dark:text-gray-500 text-sm">Region</div>
+                <div className="font-medium text-gray-900 dark:text-white mt-1">{player.region || 'N/A'}</div>
+              </div>
+              <div>
+                <div className="text-gray-500 dark:text-gray-500 text-sm">Rating</div>
+                <div className="font-medium text-yellow-600 dark:text-yellow-400 mt-1">{player.rating || 1500}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Current Team */}
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Current Team</h3>
+            {player.currentTeam ? (
+              <div className="flex items-center space-x-4">
+                <TeamLogo team={player.currentTeam} size="w-12 h-12" />
+                <div>
+                  <button
+                    onClick={() => navigateTo('team-detail', { id: player.currentTeam.id })}
+                    className="text-lg font-semibold text-gray-900 dark:text-white hover:text-red-600 dark:hover:text-red-400"
+                  >
+                    {player.currentTeam.name}
+                  </button>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {player.currentTeam.region}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-500 dark:text-gray-500">Free Agent</p>
+            )}
+          </div>
+
+          {/* Career Stats Overview (VLR.gg Style) */}
+          {performanceStats && (
+            <div className="card p-6 mb-6">
+              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Career Performance</h3>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{performanceStats.avg_rating?.toFixed(2) || '0.00'}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-500">Avg Rating</div>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{performanceStats.avg_kda?.toFixed(2) || '0.00'}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-500">K/D/A</div>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{performanceStats.win_rate?.toFixed(0) || '0'}%</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-500">Win Rate</div>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{Math.round(performanceStats.avg_damage || 0)}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-500">Avg DMG</div>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{performanceStats.avg_eliminations?.toFixed(1) || '0.0'}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-500">Avg Elims</div>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{Math.round(performanceStats.avg_healing || 0)}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-500">Avg Healing</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 gap-4 mt-4 text-center">
+                <div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">{performanceStats.total_matches || 0}</div>
+                  <div className="text-xs text-gray-500">Matches</div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">{performanceStats.total_wins || 0}</div>
+                  <div className="text-xs text-gray-500">Wins</div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">{performanceStats.maps_played || 0}</div>
+                  <div className="text-xs text-gray-500">Maps</div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">{performanceStats.best_performance_rating?.toFixed(2) || '0.00'}</div>
+                  <div className="text-xs text-gray-500">Best Rating</div>
+                </div>
+              </div>
+              <div className="text-center mt-4 text-sm text-gray-600 dark:text-gray-400">
+                Career totals: {performanceStats.total_eliminations || 0} elims • {performanceStats.total_deaths || 0} deaths • {performanceStats.total_assists || 0} assists
+              </div>
+            </div>
+          )}
+
+          {/* Tabs for Different Views */}
+          <div className="card mb-6">
+            <div className="flex border-b border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`px-6 py-3 text-sm font-medium transition-colors ${
+                  activeTab === 'overview'
+                    ? 'text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                Overview
+              </button>
+              <button
+                onClick={() => handleTabChange('heroes')}
+                className={`px-6 py-3 text-sm font-medium transition-colors flex items-center space-x-2 ${
+                  activeTab === 'heroes'
+                    ? 'text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400 bg-red-50 dark:bg-red-900/10'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                }`}
+              >
+                <span>Heroes</span>
+                {heroStats.length > 0 && (
+                  <span className="bg-gray-600 text-white text-xs px-2 py-1 rounded-full">
+                    {heroStats.length}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => handleTabChange('matches')}
+                className={`px-6 py-3 text-sm font-medium transition-colors flex items-center space-x-2 ${
+                  activeTab === 'matches'
+                    ? 'text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400 bg-red-50 dark:bg-red-900/10'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                }`}
+              >
+                <span>Match History</span>
+                {matchHistory.length > 0 && (
+                  <span className="bg-gray-600 text-white text-xs px-2 py-1 rounded-full">
+                    {matchHistory.length}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => handleTabChange('maps')}
+                className={`px-6 py-3 text-sm font-medium transition-colors flex items-center space-x-2 ${
+                  activeTab === 'maps'
+                    ? 'text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400 bg-red-50 dark:bg-red-900/10'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                }`}
+              >
+                <span>Maps</span>
+                {mapStats.length > 0 && (
+                  <span className="bg-gray-600 text-white text-xs px-2 py-1 rounded-full">
+                    {mapStats.length}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => handleTabChange('events')}
+                className={`px-6 py-3 text-sm font-medium transition-colors flex items-center space-x-2 ${
+                  activeTab === 'events'
+                    ? 'text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400 bg-red-50 dark:bg-red-900/10'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                }`}
+              >
+                <span>Events</span>
+                {eventStats.length > 0 && (
+                  <span className="bg-gray-600 text-white text-xs px-2 py-1 rounded-full">
+                    {eventStats.length}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Hero Performance Stats */}
+          {activeTab === 'heroes' && (
+            <div className="card p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-red-600 dark:text-red-400">Hero Performance</h3>
+                {dataLoading && (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Loading...</span>
+                  </div>
+                )}
+              </div>
+              {heroStats.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200 dark:border-gray-700">
+                        <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Hero</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Usage</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Rounds</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Rating</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">ACS</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">K:D</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">ADR</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">KAST</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">HS%</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">FK</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">FD</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {heroStats.map((hero, index) => {
+                        const totalRounds = heroStats.reduce((sum, h) => sum + (h.rounds_played || h.maps_played * 15 || 0), 0);
+                        const usagePercent = totalRounds > 0 ? ((hero.rounds_played || hero.maps_played * 15 || 0) / totalRounds * 100) : 0;
+                        const kd = hero.avg_deaths > 0 ? (hero.avg_eliminations / hero.avg_deaths) : hero.avg_eliminations;
+                        
+                        return (
+                          <tr 
+                            key={index}
+                            className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800"
+                          >
+                            <td className="px-4 py-3">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-10 h-10 rounded bg-gray-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center">
+                                  {getHeroImageSync(hero.hero_name) ? (
+                                    <img 
+                                      src={getHeroImageSync(hero.hero_name)} 
+                                      alt={hero.hero_name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                                      {hero.hero_name?.substring(0, 2).toUpperCase() || 'H'}
+                                    </span>
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="font-medium text-gray-900 dark:text-white">{hero.hero_name}</div>
+                                  <div className="text-xs text-gray-500">{hero.role || 'Flex'}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <div className="flex items-center justify-center space-x-2">
+                                <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                  <div 
+                                    className="bg-red-600 h-2 rounded-full"
+                                    style={{ width: `${Math.min(usagePercent, 100)}%` }}
+                                  />
+                                </div>
+                                <span className="text-sm text-gray-900 dark:text-white">
+                                  {usagePercent.toFixed(0)}%
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className="text-sm text-gray-900 dark:text-white">
+                                {hero.rounds_played || hero.maps_played * 15 || 0}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className={`text-sm font-medium ${
+                                hero.avg_performance_rating >= 1.2 ? 'text-green-600 dark:text-green-400' :
+                                hero.avg_performance_rating >= 0.9 ? 'text-gray-900 dark:text-white' :
+                                'text-red-600 dark:text-red-400'
+                              }`}>
+                                {(hero.avg_performance_rating || 0).toFixed(2)}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className="text-sm text-gray-900 dark:text-white">
+                                {Math.round(hero.avg_combat_score || hero.avg_damage * 0.5 || 0)}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className={`text-sm font-medium ${
+                                kd >= 1.2 ? 'text-green-600 dark:text-green-400' :
+                                kd >= 0.9 ? 'text-gray-900 dark:text-white' :
+                                'text-red-600 dark:text-red-400'
+                              }`}>
+                                {kd.toFixed(2)}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className="text-sm text-gray-900 dark:text-white">
+                                {Math.round(hero.avg_damage || 0)}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className="text-sm text-gray-900 dark:text-white">
+                                {hero.kast_percentage ? `${hero.kast_percentage.toFixed(0)}%` : '-'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className="text-sm text-gray-900 dark:text-white">
+                                {hero.headshot_percentage ? `${hero.headshot_percentage.toFixed(0)}%` : '-'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className="text-sm text-gray-900 dark:text-white">
+                                {hero.first_kills || '0'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className="text-sm text-gray-900 dark:text-white">
+                                {hero.first_deaths || '0'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-gray-500 dark:text-gray-500">
+                    {dataLoading ? 'Loading hero statistics...' : 'No hero statistics available'}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Match History Tab - VLR.gg Style */}
+          {activeTab === 'matches' && (
+            <div className="card">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200 dark:border-gray-700">
+                      <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Event</th>
+                      <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Opponent</th>
+                      <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Result</th>
+                      <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Hero</th>
+                      <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Rating</th>
+                      <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">ACS</th>
+                      <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">K/D/A</th>
+                      <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">K:D</th>
+                      <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">ADR</th>
+                      <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">KAST</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {matchHistory.map((match, index) => (
+                      <tr 
+                        key={index}
+                        onClick={() => navigateTo('match-detail', { id: match.match_id || match.id })}
+                        className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center space-x-2">
+                            {match.event_logo && (
+                              <img 
+                                src={match.event_logo} 
+                                alt={match.event_name}
+                                className="w-6 h-6 rounded"
+                              />
+                            )}
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              {match.event_name || 'Scrim'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center space-x-2">
+                            {match.opponent_logo && (
+                              <img 
+                                src={match.opponent_logo} 
+                                alt={match.opponent_name}
+                                className="w-6 h-6 rounded"
+                              />
+                            )}
+                            <span className="text-sm text-gray-900 dark:text-white">
+                              {match.opponent_name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <div className={`inline-flex items-center space-x-1 text-sm font-bold ${
+                            match.won ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                          }`}>
+                            <span>{match.won ? 'W' : 'L'}</span>
+                            <span className="text-xs">
+                              {match.team_score || match.score || '0'}-{match.opponent_score || '0'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center space-x-2">
+                            {getHeroImageSync(match.hero || match.hero_played) && (
+                              <img 
+                                src={getHeroImageSync(match.hero || match.hero_played)} 
+                                alt={match.hero || match.hero_played}
+                                className="w-6 h-6 rounded"
+                              />
+                            )}
+                            <span className="text-sm text-gray-900 dark:text-white">
+                              {match.hero || match.hero_played}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`text-sm font-medium ${
+                            match.performance_rating >= 1.2 ? 'text-green-600 dark:text-green-400' :
+                            match.performance_rating >= 0.9 ? 'text-gray-900 dark:text-white' :
+                            'text-red-600 dark:text-red-400'
+                          }`}>
+                            {match.performance_rating ? match.performance_rating.toFixed(2) : '-'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-sm text-gray-900 dark:text-white">
+                            {match.combat_score ? Math.round(match.combat_score) : '-'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-sm text-gray-900 dark:text-white">
+                            {match.eliminations || '0'}/{match.deaths || '0'}/{match.assists || '0'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`text-sm font-medium ${
+                            match.kda >= 2.0 ? 'text-green-600 dark:text-green-400' :
+                            match.kda >= 1.0 ? 'text-gray-900 dark:text-white' :
+                            'text-red-600 dark:text-red-400'
+                          }`}>
+                            {match.kda ? match.kda.toFixed(2) : '-'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-sm text-gray-900 dark:text-white">
+                            {match.damage_per_round ? Math.round(match.damage_per_round) : '-'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-sm text-gray-900 dark:text-white">
+                            {match.kast_percentage ? `${match.kast_percentage}%` : '-'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {matchHistory.length === 0 && (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-500">
+                    {dataLoading ? 'Loading match history...' : 'No match history available'}
+                  </div>
+                )}
+                
+                {/* Pagination */}
+                {pagination.last_page > 1 && (
+                  <div className="flex items-center justify-center space-x-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <button
+                      onClick={() => handlePageChange(pagination.current_page - 1)}
+                      disabled={pagination.current_page <= 1 || dataLoading}
+                      className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50 hover:bg-gray-300 dark:hover:bg-gray-600"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Page {pagination.current_page} of {pagination.last_page}
+                    </span>
+                    <button
+                      onClick={() => handlePageChange(pagination.current_page + 1)}
+                      disabled={pagination.current_page >= pagination.last_page || dataLoading}
+                      className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50 hover:bg-gray-300 dark:hover:bg-gray-600"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Overview Tab - Recent Matches */}
+          {activeTab === 'overview' && (
+            <div className="card p-6">
+              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Recent Matches</h3>
+              {matchHistory.length > 0 ? (
+                <div className="space-y-2">
+                  {matchHistory.slice(0, 10).map((match, index) => (
+                    <div 
+                      key={index}
+                      onClick={() => navigateTo('match-detail', { id: match.match_id || match.id })}
+                      className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center space-x-4">
+                        {/* Event Logo - VLR.gg Style */}
+                        {match.event_logo && (
+                          <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
+                            <img 
+                              src={match.event_logo} 
+                              alt={match.event_name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Result Badge */}
+                        <div className={`px-2 py-1 rounded text-xs font-bold ${
+                          match.won ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' 
+                                    : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+                        }`}>
+                          {match.won ? 'W' : 'L'}
+                        </div>
+                        
+                        {/* Teams Display - VLR.gg Style with Both Logos */}
+                        <div className="flex items-center space-x-3">
+                          {/* Player's Team Logo */}
+                          {match.team_logo && (
+                            <TeamLogo team={{ logo_url: match.team_logo }} size="w-8 h-8" />
+                          )}
+                          
+                          {/* Score */}
+                          <div className="text-center min-w-[60px]">
+                            <div className="font-bold text-gray-900 dark:text-white">
+                              <span className={match.won ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}>
+                                {match.team_score || '0'}
+                              </span>
+                              <span className="mx-1 text-gray-400">-</span>
+                              <span className={!match.won ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}>
+                                {match.opponent_score || '0'}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {/* Opponent Logo */}
+                          {match.opponent_logo && (
+                            <TeamLogo team={{ logo_url: match.opponent_logo }} size="w-8 h-8" />
+                          )}
+                          
+                          {/* Match Info */}
+                          <div>
+                            <div className="font-medium text-gray-900 dark:text-white">
+                              {match.opponent_name || 'TBD'}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-500">
+                              {match.event_name || 'Scrim'} • {match.format || 'BO3'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Right side - Date & Hero */}
+                      <div className="text-right">
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          {match.match_date ? new Date(match.match_date).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric' 
+                          }) : 'Recent'}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-500">
+                          {match.hero || match.most_played_hero || 'Various'}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-500">
+                  {dataLoading ? 'Loading recent matches...' : 'No recent matches available'}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Maps Tab */}
+          {activeTab === 'maps' && (
+            <div className="card p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-red-600 dark:text-red-400">Map Performance</h3>
+                {dataLoading && (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Loading...</span>
+                  </div>
+                )}
+              </div>
+              {mapStats.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {mapStats.map((map, index) => (
+                    <div key={index} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-gray-900 dark:text-white">{map.map_name}</h4>
+                        <div className={`text-lg font-bold ${
+                          (map.win_rate || 0) >= 60 ? 'text-green-600 dark:text-green-400' :
+                          (map.win_rate || 0) >= 40 ? 'text-gray-900 dark:text-white' :
+                          'text-red-600 dark:text-red-400'
+                        }`}>
+                          {(map.win_rate || 0).toFixed(0)}%
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 text-center text-sm">
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">{map.matches_played || 0}</div>
+                          <div className="text-xs text-gray-500">Matches</div>
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">{(map.avg_kda || 0).toFixed(2)}</div>
+                          <div className="text-xs text-gray-500">K/D/A</div>
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">{Math.round(map.avg_damage || 0)}</div>
+                          <div className="text-xs text-gray-500">Avg DMG</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-gray-500 dark:text-gray-500">
+                    {dataLoading ? 'Loading map statistics...' : 'No map statistics available'}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Events Tab */}
+          {activeTab === 'events' && (
+            <div className="card p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-red-600 dark:text-red-400">Event Performance</h3>
+                {dataLoading && (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Loading...</span>
+                  </div>
+                )}
+              </div>
+              {eventStats.length > 0 ? (
+                <div className="space-y-4">
+                  {eventStats.map((event, index) => (
+                    <div key={index} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-3">
+                          {event.event_logo && (
+                            <img src={event.event_logo} alt={event.event_name} className="w-10 h-10 rounded" />
+                          )}
+                          <div>
+                            <h4 className="font-semibold text-gray-900 dark:text-white">{event.event_name}</h4>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                              {event.matches_played || 0} matches • {event.maps_played || 0} maps
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`text-lg font-bold ${
+                            event.placement <= 3 ? 'text-yellow-500' :
+                            event.placement <= 8 ? 'text-gray-400' :
+                            'text-gray-600 dark:text-gray-400'
+                          }`}>
+                            #{event.placement || 'N/A'}
+                          </div>
+                          <div className="text-xs text-gray-500">Placement</div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-4 gap-3 text-center text-sm">
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">{(event.win_rate || 0).toFixed(0)}%</div>
+                          <div className="text-xs text-gray-500">Win Rate</div>
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">{(event.avg_kda || 0).toFixed(2)}</div>
+                          <div className="text-xs text-gray-500">K/D/A</div>
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">{Math.round(event.avg_damage || 0)}</div>
+                          <div className="text-xs text-gray-500">Avg DMG</div>
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">{(event.avg_rating || 0).toFixed(2)}</div>
+                          <div className="text-xs text-gray-500">Rating</div>
+                        </div>
+                      </div>
+                      {event.prize_money && (
+                        <div className="mt-2 text-center">
+                          <span className="text-green-600 dark:text-green-400 font-semibold">
+                            {formatCurrency(event.prize_money)}
+                          </span>
+                          <span className="text-xs text-gray-500 ml-1">earned</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-gray-500 dark:text-gray-500">
+                    {dataLoading ? 'Loading event statistics...' : 'No event statistics available'}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        <div className="p-6">
-          {/* Overview Tab */}
-          {activeTab === 'overview' && (
-            <div className="space-y-8">
-              {/* Performance Stats */}
-              <div>
-                <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Performance Statistics</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded">
-                    <div className="text-2xl font-bold text-red-600 dark:text-red-400 mb-1">{stats.kd}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-500">K/D Ratio</div>
-                  </div>
-                  <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded">
-                    <div className="text-2xl font-bold text-orange-600 dark:text-orange-400 mb-1">{stats.elimsPerMatch}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-500">Elims/Match</div>
-                  </div>
-                  <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded">
-                    <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-1">{(stats.dmgPerMatch || 0).toLocaleString()}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-500">Damage/Match</div>
-                  </div>
-                  {stats.healingPerMatch > 0 && (
-                    <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded">
-                      <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">{stats.healingPerMatch.toLocaleString()}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-500">Healing/Match</div>
-                    </div>
-                  )}
-                  {stats.damageBlocked > 0 && (
-                    <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded">
-                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">{stats.damageBlocked.toLocaleString()}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-500">DMG Blocked/Match</div>
-                    </div>
-                  )}
-                  <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded">
-                    <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mb-1">{stats.accuracy}%</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-500">Accuracy</div>
-                  </div>
-                </div>
-              </div>
+        {/* Right Sidebar - VLR.gg Style */}
+        <div className="space-y-6">
+          {/* Recent Mentions - VLR.gg Style */}
+          <div className="card p-6">
+            <MentionsSection 
+              entityType="player" 
+              entityId={player.id} 
+              title="Recent Mentions"
+            />
+          </div>
 
-              {/* Additional Stats */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div>
-                  <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Achievement Stats</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded">
-                      <span className="text-gray-600 dark:text-gray-400">MVP Awards</span>
-                      <span className="font-bold text-yellow-600 dark:text-yellow-400">{stats.mvpAwards}</span>
+          {/* Past Teams */}
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Past Teams</h3>
+            {player.teamHistory && player.teamHistory.length > 0 ? (
+              <div className="space-y-3">
+                {player.teamHistory.map((team, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <TeamLogo team={team} size="sm" />
+                      <button
+                        onClick={() => navigateTo('team-detail', { id: team.id })}
+                        className="font-medium text-gray-900 dark:text-white hover:text-red-600 dark:hover:text-red-400"
+                      >
+                        {team.name}
+                      </button>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded">
-                      <span className="text-gray-600 dark:text-gray-400">Clutch Wins</span>
-                      <span className="font-bold text-green-600 dark:text-green-400">{stats.clutchWins}</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded">
-                      <span className="text-gray-600 dark:text-gray-400">First Elimination Rate</span>
-                      <span className="font-bold text-red-600 dark:text-red-400">{stats.firstElims}</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded">
-                      <span className="text-gray-600 dark:text-gray-400">Total Earnings</span>
-                      <span className="font-bold text-green-600 dark:text-green-400">{player.earnings || 'N/A'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Career Information</h3>
-                  <div className="space-y-3">
-                    <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded">
-                      <div className="text-gray-600 dark:text-gray-400 text-sm">Biography</div>
-                      <div className="text-gray-900 dark:text-white mt-1">
-                        {player.biography || `Professional Marvel Rivals player specializing in ${player.role} role. Known for exceptional ${player.mainHero} gameplay and consistent performance in competitive matches.`}
+                    {(team.join_date || team.leave_date) && (
+                      <div className="text-sm text-gray-500 dark:text-gray-500">
+                        {team.join_date && new Date(team.join_date).getFullYear()}
+                        {team.leave_date && ` - ${new Date(team.leave_date).getFullYear()}`}
                       </div>
-                    </div>
-                    <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded">
-                      <div className="text-gray-600 dark:text-gray-400 text-sm">Joined Database</div>
-                      <div className="text-gray-900 dark:text-white mt-1">
-                        {player.created_at ? new Date(player.created_at).toLocaleDateString() : 'N/A'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Match History Tab */}
-          {activeTab === 'matches' && (
-            <div>
-              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Recent Match History</h3>
-              <div className="space-y-2">
-                {matches.map((match) => (
-                  <div key={match.id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-8 h-8 rounded flex items-center justify-center text-xs font-bold ${
-                        match.result === 'W' 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                      }`}>
-                        {match.result}
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900 dark:text-white">vs {match.opponent.short_name}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-500">{match.score} • {match.map}</div>
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">{match.hero}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
-                        {match.eliminations}/{match.deaths}/{match.assists}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-500">
-                        {match.damage.toLocaleString()} DMG
-                        {match.healing > 0 && ` • ${match.healing.toLocaleString()} Heal`}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-500">{match.date}</div>
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-gray-500 dark:text-gray-500">No previous teams</p>
+            )}
+          </div>
 
-          {/* Hero Stats Tab */}
-          {activeTab === 'heroes' && (
-            <div>
-              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Hero Performance</h3>
+          {/* Event Placements/Achievements */}
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Event Placements</h3>
+            {player.eventPlacements && player.eventPlacements.length > 0 ? (
               <div className="space-y-4">
-                {stats.heroStats?.map((hero, index) => (
-                  <div key={index} className="border border-gray-200 dark:border-gray-700 rounded p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h4 className="font-semibold text-gray-900 dark:text-white text-lg">{hero.hero}</h4>
-                        <span className="text-gray-600 dark:text-gray-400 text-sm">{hero.matches} matches played</span>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-green-600 dark:text-green-400">{hero.winRate}%</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-500">Win Rate</div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded">
-                        <div className="text-lg font-bold text-red-600 dark:text-red-400">{hero.kd}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-500">K/D</div>
-                      </div>
-                      <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded">
-                        <div className="text-lg font-bold text-orange-600 dark:text-orange-400">{hero.avgElims}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-500">Avg Elims</div>
-                      </div>
-                      <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded">
-                        <div className="text-lg font-bold text-purple-600 dark:text-purple-400">{hero.avgDamage.toLocaleString()}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-500">Avg DMG</div>
-                      </div>
-                      <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded">
-                        <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{((hero.matches / stats.matchesPlayed) * 100).toFixed(1)}%</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-500">Pick Rate</div>
+                {player.eventPlacements.map((placement, index) => (
+                  <div key={index} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="flex items-center space-x-3 mb-2">
+                      {placement.event_logo && (
+                        <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0">
+                          <img 
+                            src={placement.event_logo} 
+                            alt={placement.event_name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <div className={`text-lg font-bold ${
+                        placement.placement === 1 ? 'text-yellow-500' :
+                        placement.placement === 2 ? 'text-gray-400' :
+                        placement.placement === 3 ? 'text-orange-600' :
+                        'text-gray-600 dark:text-gray-400'
+                      }`}>
+                        #{placement.placement}
                       </div>
                     </div>
+                    <button
+                      onClick={() => navigateTo('event-detail', { id: placement.event_id })}
+                      className="font-semibold text-gray-900 dark:text-white hover:text-red-600 dark:hover:text-red-400 text-sm"
+                    >
+                      {placement.event_name}
+                    </button>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                      {placement.team_name} • {new Date(placement.date).toLocaleDateString()}
+                    </div>
+                    {placement.prize && (
+                      <div className="text-green-600 dark:text-green-400 font-semibold text-sm mt-1">
+                        {formatCurrency(placement.prize)}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Achievements Tab */}
-          {activeTab === 'achievements' && (
-            <div>
-              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Career Achievements</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 rounded p-6 text-center">
-                  <div className="text-4xl mb-3">🏆</div>
-                  <h4 className="font-bold text-gray-900 dark:text-white mb-2">MVP Awards</h4>
-                  <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mb-1">{stats.mvpAwards}</div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Tournament MVP performances</p>
-                </div>
-                <div className="border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 rounded p-6 text-center">
-                  <div className="text-4xl mb-3">⚡</div>
-                  <h4 className="font-bold text-gray-900 dark:text-white mb-2">Clutch Master</h4>
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">{stats.clutchWins}</div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Successful clutch rounds</p>
-                </div>
-                <div className="border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 rounded p-6 text-center">
-                  <div className="text-4xl mb-3">🎯</div>
-                  <h4 className="font-bold text-gray-900 dark:text-white mb-2">First Strike Specialist</h4>
-                  <div className="text-2xl font-bold text-red-600 dark:text-red-400 mb-1">{(stats.firstElims * 100).toFixed(0)}%</div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">First elimination rate</p>
-                </div>
-                <div className="border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 rounded p-6 text-center">
-                  <div className="text-4xl mb-3">⭐</div>
-                  <h4 className="font-bold text-gray-900 dark:text-white mb-2">Elite Rating</h4>
-                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-1">{Math.floor(stats.rating)}</div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Peak competitive rating</p>
-                </div>
-              </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-gray-500 dark:text-gray-500">No event placements yet</p>
+            )}
+          </div>
         </div>
       </div>
+
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
+import UserDisplay from '../shared/UserDisplay';
 
 function AdminUsers({ navigateTo }) {
   const [users, setUsers] = useState([]);
@@ -31,14 +32,14 @@ function AdminUsers({ navigateTo }) {
 
       if (filters.role !== 'all') {
         usersData = usersData.filter(user => 
-          user.roles?.includes(filters.role)
+          Array.isArray(user.roles) && user.roles.includes(filters.role)
         );
       }
 
       setUsers(usersData);
     } catch (error) {
-      console.error('❌ AdminUsers: Backend users API failed:', error);
-      // ✅ CRITICAL FIX: NO MOCK DATA - Show empty state instead
+      console.error('AdminUsers: Backend users API failed:', error);
+      // CRITICAL FIX: NO MOCK DATA - Show empty state instead
       setUsers([]);
     } finally {
       setLoading(false);
@@ -61,13 +62,13 @@ function AdminUsers({ navigateTo }) {
 
   const updateUserRole = async (userId, newRole) => {
     try {
-      // ✅ FIXED: Optimistic UI update for immediate feedback - handle both role formats
+      // FIXED: Optimistic UI update for immediate feedback - handle both role formats
       setUsers(prevUsers => 
         prevUsers.map(user => 
           user.id === userId 
             ? { 
                 ...user, 
-                roles: [{ name: newRole }] // Backend expects role objects with name property
+                roles: [newRole] // Backend returns array of role strings
               }
             : user
         )
@@ -82,12 +83,12 @@ function AdminUsers({ navigateTo }) {
       
       // Force refresh after successful update
       await fetchUsers();
-      alert(`✅ User role updated to ${newRole}!`);
+      alert(`User role updated to ${newRole}!`);
     } catch (error) {
-      console.error('❌ Error updating user role:', error);
+      console.error('Error updating user role:', error);
       // Revert optimistic update on error
       await fetchUsers();
-      alert('❌ Error updating user role. Please try again.');
+      alert('Error updating user role. Please try again.');
     }
   };
 
@@ -95,7 +96,7 @@ function AdminUsers({ navigateTo }) {
     try {
       // FIXED: Get current user data to preserve role
       const currentUser = users.find(u => u.id === userId);
-      const currentRole = currentUser.roles?.[0] || 'user';
+      const currentRole = Array.isArray(currentUser.roles) ? currentUser.roles[0] : (currentUser.roles || 'user');
       await api.put(`/admin/users/${userId}`, { 
         role: currentRole, 
         status: newStatus 
@@ -109,15 +110,17 @@ function AdminUsers({ navigateTo }) {
   };
 
   const getRoleColor = (roles) => {
-    if (roles?.includes('admin')) return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
-    if (roles?.includes('moderator')) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+    const roleList = Array.isArray(roles) ? roles : [];
+    if (roleList.includes('admin')) return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+    if (roleList.includes('moderator')) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
     return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
   };
 
   const getRoleDisplay = (roles) => {
-    if (roles?.includes('admin')) return '🛡️ Admin';
-    if (roles?.includes('moderator')) return '⭐ Moderator';
-    return '👤 User';
+    const roleList = Array.isArray(roles) ? roles : [];
+    if (roleList.includes('admin')) return 'Admin';
+    if (roleList.includes('moderator')) return 'Moderator';
+    return 'User';
   };
 
   const getStatusColor = (status) => {
@@ -170,35 +173,35 @@ function AdminUsers({ navigateTo }) {
           onClick={() => navigateTo('admin-user-create')}
           className="btn btn-primary"
         >
-          👤 Create New User
+          Create New User
         </button>
       </div>
 
       {/* User Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="card p-6 text-center">
-          <div className="text-3xl mb-2">👥</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
             {users.length}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Total Users</div>
         </div>
         <div className="card p-6 text-center">
-          <div className="text-3xl mb-2">🛡️</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-            {users.filter(u => u.roles?.includes('admin')).length}
+            {users.filter(u => Array.isArray(u.roles) && u.roles.includes('admin')).length}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Admins</div>
         </div>
         <div className="card p-6 text-center">
-          <div className="text-3xl mb-2">⭐</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-            {users.filter(u => u.roles?.includes('moderator')).length}
+            {users.filter(u => Array.isArray(u.roles) && u.roles.includes('moderator')).length}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Moderators</div>
         </div>
         <div className="card p-6 text-center">
-          <div className="text-3xl mb-2">✅</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-green-600 dark:text-green-400">
             {users.filter(u => u.status === 'active').length}
           </div>
@@ -294,15 +297,17 @@ function AdminUsers({ navigateTo }) {
               {users.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="text-2xl mr-3">{user.avatar}</div>
-                      <div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {user.name}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {user.email}
-                        </div>
+                    <div className="space-y-1">
+                      <UserDisplay 
+                        user={user} 
+                        size="sm"
+                        showAvatar={true}
+                        showHeroFlair={true}
+                        showTeamFlair={true}
+                        navigateTo={navigateTo}
+                      />
+                      <div className="text-sm text-gray-500 dark:text-gray-400 ml-8">
+                        {user.email}
                       </div>
                     </div>
                   </td>
@@ -325,7 +330,7 @@ function AdminUsers({ navigateTo }) {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       <select
-                        value={user.roles?.[0]?.name || user.roles?.[0] || 'user'}
+                        value={Array.isArray(user.roles) ? user.roles[0] : 'user'}
                         onChange={(e) => updateUserRole(user.id, e.target.value)}
                         className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800"
                       >
@@ -345,9 +350,9 @@ function AdminUsers({ navigateTo }) {
                       <button
                         onClick={() => handleDelete(user.id, user.name)}
                         className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                        disabled={user.roles?.includes('admin')} // Prevent deleting admins
+                        disabled={Array.isArray(user.roles) && user.roles.includes('admin')} // Prevent deleting admins
                       >
-                        🗑️
+                        Delete
                       </button>
                     </div>
                   </td>
@@ -361,7 +366,7 @@ function AdminUsers({ navigateTo }) {
       {/* No Results */}
       {users.length === 0 && (
         <div className="card p-12 text-center">
-          <div className="text-6xl mb-4">👤</div>
+          <div className="text-6xl mb-4"></div>
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Users Found</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             {filters.search || filters.role !== 'all' || filters.status !== 'all'
@@ -372,7 +377,7 @@ function AdminUsers({ navigateTo }) {
             onClick={() => navigateTo('admin-user-create')}
             className="btn btn-primary"
           >
-            👤 Create First User
+            Create First User
           </button>
         </div>
       )}

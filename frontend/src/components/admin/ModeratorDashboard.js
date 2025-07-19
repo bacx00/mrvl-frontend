@@ -33,12 +33,12 @@ function ModeratorDashboard({ navigateTo }) {
   };
 
   const sections = [
-    { id: 'overview', name: 'Overview', icon: '📊' },
-    { id: 'reports', name: 'Reports', icon: '🚨' },
-    { id: 'users', name: 'User Moderation', icon: '👥' },
-    { id: 'content', name: 'Content Moderation', icon: '📝' },
-    { id: 'forums', name: 'Forum Management', icon: '💬' },
-    { id: 'matches', name: 'Match Verification', icon: '⚔️' }
+    { id: 'overview', name: 'Overview', icon: '' },
+    { id: 'reports', name: 'Reports', icon: '' },
+    { id: 'users', name: 'User Moderation', icon: '' },
+    { id: 'content', name: 'Content Moderation', icon: '' },
+    { id: 'forums', name: 'Forum Management', icon: '' },
+    { id: 'matches', name: 'Match Verification', icon: '' }
   ];
 
   if (loading) {
@@ -60,7 +60,7 @@ function ModeratorDashboard({ navigateTo }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                ⭐ Moderator Dashboard
+                 Moderator Dashboard
               </h1>
               <span className="px-3 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 text-sm font-medium rounded-full">
                 Moderator
@@ -72,7 +72,7 @@ function ModeratorDashboard({ navigateTo }) {
                 onClick={() => navigateTo('home')}
                 className="btn btn-secondary"
               >
-                🏠 Back to Site
+                 Back to Site
               </button>
             </div>
           </div>
@@ -125,7 +125,7 @@ function ModeratorDashboard({ navigateTo }) {
                       <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Reports</p>
                       <p className="text-3xl font-bold text-red-600 dark:text-red-400">{stats.pendingReports}</p>
                     </div>
-                    <div className="text-4xl">🚨</div>
+                    <div className="text-4xl"></div>
                   </div>
                   <div className="mt-2">
                     <span className="text-sm text-red-600 dark:text-red-400">Requires attention</span>
@@ -138,7 +138,7 @@ function ModeratorDashboard({ navigateTo }) {
                       <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Resolved Today</p>
                       <p className="text-3xl font-bold text-green-600 dark:text-green-400">{stats.resolvedToday}</p>
                     </div>
-                    <div className="text-4xl">✅</div>
+                    <div className="text-4xl"></div>
                   </div>
                   <div className="mt-2">
                     <span className="text-sm text-green-600 dark:text-green-400">Great work!</span>
@@ -151,7 +151,7 @@ function ModeratorDashboard({ navigateTo }) {
                       <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Users</p>
                       <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{stats.activeUsers}</p>
                     </div>
-                    <div className="text-4xl">👥</div>
+                    <div className="text-4xl"></div>
                   </div>
                   <div className="mt-2">
                     <span className="text-sm text-blue-600 dark:text-blue-400">Online now</span>
@@ -164,7 +164,7 @@ function ModeratorDashboard({ navigateTo }) {
                       <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Flagged Posts</p>
                       <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{stats.flaggedPosts}</p>
                     </div>
-                    <div className="text-4xl">⚠️</div>
+                    <div className="text-4xl"></div>
                   </div>
                   <div className="mt-2">
                     <span className="text-sm text-yellow-600 dark:text-yellow-400">Needs review</span>
@@ -178,7 +178,7 @@ function ModeratorDashboard({ navigateTo }) {
                   onClick={() => setActiveSection('reports')}
                   className="card p-6 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
                 >
-                  <div className="text-2xl mb-2">🚨</div>
+                  <div className="text-2xl mb-2"></div>
                   <h3 className="font-semibold text-gray-900 dark:text-white">Review Reports</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Handle user reports and violations</p>
                 </button>
@@ -187,7 +187,7 @@ function ModeratorDashboard({ navigateTo }) {
                   onClick={() => setActiveSection('content')}
                   className="card p-6 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
                 >
-                  <div className="text-2xl mb-2">📝</div>
+                  <div className="text-2xl mb-2"></div>
                   <h3 className="font-semibold text-gray-900 dark:text-white">Moderate Content</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Review and moderate posts</p>
                 </button>
@@ -196,7 +196,7 @@ function ModeratorDashboard({ navigateTo }) {
                   onClick={() => setActiveSection('forums')}
                   className="card p-6 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
                 >
-                  <div className="text-2xl mb-2">💬</div>
+                  <div className="text-2xl mb-2"></div>
                   <h3 className="font-semibold text-gray-900 dark:text-white">Manage Forums</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Forum threads and discussions</p>
                 </button>
@@ -271,16 +271,16 @@ function ModeratorDashboard({ navigateTo }) {
                       </div>
                       <div className="flex space-x-2">
                         <button className="btn btn-sm bg-green-600 hover:bg-green-700 text-white">
-                          ✅ Resolve
+                           Resolve
                         </button>
                         <button className="btn btn-sm bg-yellow-600 hover:bg-yellow-700 text-white">
-                          ⚠️ Warn User
+                           Warn User
                         </button>
                         <button className="btn btn-sm bg-red-600 hover:bg-red-700 text-white">
-                          🚫 Ban User
+                           Ban User
                         </button>
                         <button className="btn btn-sm btn-secondary">
-                          👁️ View Details
+                           View Details
                         </button>
                       </div>
                     </div>
@@ -293,7 +293,7 @@ function ModeratorDashboard({ navigateTo }) {
           {/* Other sections would be implemented similarly */}
           {activeSection !== 'overview' && activeSection !== 'reports' && (
             <div className="card p-12 text-center">
-              <div className="text-6xl mb-4">🚧</div>
+              <div className="text-6xl mb-4"></div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 {sections.find(s => s.id === activeSection)?.name} Section
               </h3>

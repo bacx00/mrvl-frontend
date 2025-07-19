@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
 
-// 🎮 MARVEL RIVALS LIVE DATA SYNCHRONIZATION ENGINE
+//  MARVEL RIVALS LIVE DATA SYNCHRONIZATION ENGINE
 function LiveMatchDataSync({ match, onDataUpdate }) {
   const { api } = useAuth();
   const [syncStatus, setSyncStatus] = useState('idle');
@@ -123,7 +123,7 @@ function LiveMatchDataSync({ match, onDataUpdate }) {
       }
       
     } catch (error) {
-      console.error('❌ Failed to initialize live data:', error);
+      console.error(' Failed to initialize live data:', error);
       setSyncStatus('error');
     }
   };
@@ -144,7 +144,7 @@ function LiveMatchDataSync({ match, onDataUpdate }) {
       setLastSync(new Date());
       
     } catch (error) {
-      console.error('❌ Sync failed:', error);
+      console.error(' Sync failed:', error);
       setSyncStatus('error');
     }
   };
@@ -168,10 +168,10 @@ function LiveMatchDataSync({ match, onDataUpdate }) {
         syncVersion: prev.syncVersion + 1
       }));
       
-      console.log('✅ Live data pushed to backend successfully');
+      console.log(' Live data pushed to backend successfully');
       
     } catch (error) {
-      console.error('❌ Failed to push updates:', error);
+      console.error(' Failed to push updates:', error);
       throw error;
     }
   };
@@ -182,7 +182,7 @@ function LiveMatchDataSync({ match, onDataUpdate }) {
       const backendData = response.data || response;
       
       if (backendData.sync_version > liveMatchData.syncVersion) {
-        console.log('🔄 Backend has newer data, syncing...');
+        console.log(' Backend has newer data, syncing...');
         
         setLiveMatchData(prev => ({
           ...prev,
@@ -203,7 +203,7 @@ function LiveMatchDataSync({ match, onDataUpdate }) {
       }
       
     } catch (error) {
-      console.warn('⚠️ Failed to pull updates, continuing with local data:', error);
+      console.warn(' Failed to pull updates, continuing with local data:', error);
     }
   };
 
@@ -304,7 +304,7 @@ function LiveMatchDataSync({ match, onDataUpdate }) {
         onClick={() => syncWithBackend(true)}
         className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
       >
-        🔄 Sync Now
+         Sync Now
       </button>
     </div>
   );

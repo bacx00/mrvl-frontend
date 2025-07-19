@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ForumModerationPanel from './ForumModerationPanel';
 
 function ModerationCenter({ api, navigateTo }) {
   const [moderationData, setModerationData] = useState({
@@ -8,7 +9,7 @@ function ModerationCenter({ api, navigateTo }) {
     recentActions: []
   });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('reports');
+  const [activeTab, setActiveTab] = useState('forums');
 
   useEffect(() => {
     fetchModerationData();
@@ -18,7 +19,7 @@ function ModerationCenter({ api, navigateTo }) {
     try {
       setLoading(true);
       
-      // ✅ FIXED: Use only existing backend endpoints
+      // FIXED: Use only existing backend endpoints
       // Backend only has basic moderation endpoints, not comprehensive moderation center
       
       setModerationData({
@@ -29,7 +30,7 @@ function ModerationCenter({ api, navigateTo }) {
       });
       
     } catch (error) {
-      console.error('❌ Error fetching moderation data:', error);
+      console.error('Error fetching moderation data:', error);
       generateDemoModerationData();
     } finally {
       setLoading(false);
@@ -104,10 +105,10 @@ function ModerationCenter({ api, navigateTo }) {
       });
       
       await fetchModerationData();
-      alert(`✅ Report ${action}d successfully!`);
+      alert(`Report ${action}d successfully!`);
     } catch (error) {
-      console.error('❌ Error handling report:', error);
-      alert('❌ Failed to handle report. Please try again.');
+      console.error('Error handling report:', error);
+      alert('Failed to handle report. Please try again.');
     }
   };
 
@@ -120,18 +121,19 @@ function ModerationCenter({ api, navigateTo }) {
       }
       
       await fetchModerationData();
-      alert(`✅ Comment ${action}d successfully!`);
+      alert(` Comment ${action}d successfully!`);
     } catch (error) {
-      console.error('❌ Error moderating comment:', error);
-      alert('❌ Failed to moderate comment. Please try again.');
+      console.error(' Error moderating comment:', error);
+      alert(' Failed to moderate comment. Please try again.');
     }
   };
 
   const tabs = [
-    { id: 'reports', label: 'Reports', icon: '🚨', count: moderationData.pendingReports.length },
-    { id: 'comments', label: 'Flagged Comments', icon: '💬', count: moderationData.flaggedComments.length },
-    { id: 'users', label: 'Suspended Users', icon: '👤', count: moderationData.suspendedUsers.length },
-    { id: 'actions', label: 'Recent Actions', icon: '📋', count: moderationData.recentActions.length }
+    { id: 'forums', label: 'Forums', icon: '', count: 0 },
+    { id: 'reports', label: 'Reports', icon: '', count: moderationData.pendingReports.length },
+    { id: 'comments', label: 'Flagged Comments', icon: '', count: moderationData.flaggedComments.length },
+    { id: 'users', label: 'Suspended Users', icon: '', count: moderationData.suspendedUsers.length },
+    { id: 'actions', label: 'Recent Actions', icon: '', count: moderationData.recentActions.length }
   ];
 
   const getSeverityColor = (severity) => {
@@ -175,7 +177,7 @@ function ModerationCenter({ api, navigateTo }) {
               onClick={() => handleReport(report.id, 'dismiss', 'No violation found')}
               className="btn bg-gray-600 text-white hover:bg-gray-700"
             >
-              ❌ Dismiss
+               Dismiss
             </button>
             <button
               onClick={() => {
@@ -184,7 +186,7 @@ function ModerationCenter({ api, navigateTo }) {
               }}
               className="btn bg-red-600 text-white hover:bg-red-700"
             >
-              ✅ Take Action
+               Take Action
             </button>
           </div>
         </div>
@@ -223,13 +225,13 @@ function ModerationCenter({ api, navigateTo }) {
               onClick={() => moderateComment(comment.id, 'approve')}
               className="btn bg-green-600 text-white hover:bg-green-700"
             >
-              ✅ Approve
+               Approve
             </button>
             <button
               onClick={() => moderateComment(comment.id, 'delete')}
               className="btn bg-red-600 text-white hover:bg-red-700"
             >
-              🗑️ Delete
+               Delete
             </button>
           </div>
         </div>
@@ -262,10 +264,10 @@ function ModerationCenter({ api, navigateTo }) {
             
             <div className="flex flex-col space-y-2">
               <button className="btn bg-green-600 text-white hover:bg-green-700">
-                🔓 Unsuspend
+                 Unsuspend
               </button>
               <button className="btn bg-yellow-600 text-white hover:bg-yellow-700">
-                ⏰ Extend
+                 Extend
               </button>
             </div>
           </div>
@@ -281,9 +283,9 @@ function ModerationCenter({ api, navigateTo }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <span className="text-lg">
-                {action.action === 'comment_deleted' ? '🗑️' :
-                 action.action === 'user_warned' ? '⚠️' :
-                 action.action === 'user_suspended' ? '🔒' : '📝'}
+                {action.action === 'comment_deleted' ? '' :
+                 action.action === 'user_warned' ? '' :
+                 action.action === 'user_suspended' ? '' : ''}
               </span>
               <div>
                 <p className="font-medium text-gray-900 dark:text-white">
@@ -308,11 +310,12 @@ function ModerationCenter({ api, navigateTo }) {
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'forums': return <ForumModerationPanel />;
       case 'reports': return renderReports();
       case 'comments': return renderComments();
       case 'users': return renderUsers();
       case 'actions': return renderActions();
-      default: return renderReports();
+      default: return <ForumModerationPanel />;
     }
   };
 
@@ -331,14 +334,14 @@ function ModerationCenter({ api, navigateTo }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">🛡️ Moderation Center</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white"> Moderation Center</h2>
           <p className="text-gray-600 dark:text-gray-400">Manage reports, comments, and user moderation</p>
         </div>
         <button
           onClick={fetchModerationData}
           className="btn bg-blue-600 text-white hover:bg-blue-700"
         >
-          🔄 Refresh
+           Refresh
         </button>
       </div>
 
@@ -374,16 +377,16 @@ function ModerationCenter({ api, navigateTo }) {
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <button className="btn bg-red-600 text-white hover:bg-red-700">
-            🚨 Mass Report Review
+             Mass Report Review
           </button>
           <button className="btn bg-yellow-600 text-white hover:bg-yellow-700">
-            📊 Generate Report
+             Generate Report
           </button>
           <button className="btn bg-blue-600 text-white hover:bg-blue-700">
-            📋 Export Actions
+             Export Actions
           </button>
           <button className="btn bg-purple-600 text-white hover:bg-purple-700">
-            ⚙️ Moderation Settings
+             Moderation Settings
           </button>
         </div>
       </div>

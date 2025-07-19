@@ -33,19 +33,19 @@ function BulkOperationsPanel({ api }) {
         events: eventsRes.data || []
       });
     } catch (error) {
-      console.error('❌ Error fetching bulk data:', error);
+      console.error('Error fetching bulk data:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const bulkOperations = [
-    { id: 'delete', label: 'Delete Selected', icon: '🗑️', danger: true },
-    { id: 'export', label: 'Export to CSV', icon: '📊', safe: true },
-    { id: 'bulk-edit', label: 'Bulk Edit', icon: '✏️', safe: true },
-    { id: 'archive', label: 'Archive', icon: '📦', safe: true },
-    { id: 'activate', label: 'Activate', icon: '✅', safe: true },
-    { id: 'deactivate', label: 'Deactivate', icon: '❌', safe: true }
+    { id: 'delete', label: 'Delete Selected', icon: '', danger: true },
+    { id: 'export', label: 'Export to CSV', icon: '', safe: true },
+    { id: 'bulk-edit', label: 'Bulk Edit', icon: '', safe: true },
+    { id: 'archive', label: 'Archive', icon: '', safe: true },
+    { id: 'activate', label: 'Activate', icon: '', safe: true },
+    { id: 'deactivate', label: 'Deactivate', icon: '', safe: true }
   ];
 
   const executeBulkOperation = async () => {
@@ -63,44 +63,44 @@ function BulkOperationsPanel({ api }) {
     try {
       const totalItems = selectedItems.length;
       
-      for (let i = 0; i < selectedItems.length; i++) {
-        const item = selectedItems[i];
-        
-        try {
-          switch (operationType) {
-            case 'delete':
-              await api.delete(`/admin/${item.type}s/${item.id}`);
-              break;
-            case 'archive':
-              await api.put(`/admin/${item.type}s/${item.id}`, { status: 'archived' });
-              break;
-            case 'activate':
-              await api.put(`/admin/${item.type}s/${item.id}`, { status: 'active' });
-              break;
-            case 'deactivate':
-              await api.put(`/admin/${item.type}s/${item.id}`, { status: 'inactive' });
-              break;
-            case 'export':
-              exportToCSV(selectedItems);
-              break;
-            default:
-              console.log('Operation not implemented:', operationType);
+      try {
+          // Skip export - handle separately
+          if (operationType === 'export') {
+            exportToCSV(selectedItems);
+            setProgress(100);
+            return;
           }
           
-          setProgress(((i + 1) / totalItems) * 100);
-        } catch (itemError) {
-          console.error(`❌ Error processing item ${item.id}:`, itemError);
-        }
+          // Group items by type for bulk operations
+          const itemsByType = selectedItems.reduce((acc, item) => {
+            if (!acc[item.type]) acc[item.type] = [];
+            acc[item.type].push(item.id);
+            return acc;
+          }, {});
+          
+          // Execute bulk operation for each type
+          for (const [type, ids] of Object.entries(itemsByType)) {
+            try {
+              await api.post(`/admin/bulk/${type}s/${operationType}`, { ids });
+            } catch (error) {
+              console.error(`Error in bulk ${operationType} for ${type}:`, error);
+            }
+          }
+          
+          setProgress(100);
+      } catch (error) {
+        console.error('Bulk operation error:', error);
+        alert(`Bulk operation failed: ${error.message}`);
       }
 
-      alert(`✅ Bulk operation ${operationType} completed successfully!`);
+      alert(`Bulk operation ${operationType} completed successfully!`);
       setSelectedItems([]);
       setOperationType('');
       await fetchAllData();
       
     } catch (error) {
-      console.error('❌ Bulk operation error:', error);
-      alert(`❌ Bulk operation failed: ${error.message}`);
+      console.error('Bulk operation error:', error);
+      alert(`Bulk operation failed: ${error.message}`);
     } finally {
       setLoading(false);
       setProgress(0);
@@ -154,7 +154,7 @@ function BulkOperationsPanel({ api }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">⚡ Bulk Operations</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Bulk Operations</h2>
           <p className="text-gray-600 dark:text-gray-400">Manage multiple items efficiently</p>
         </div>
         <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -178,7 +178,7 @@ function BulkOperationsPanel({ api }) {
               <option value="">Choose operation...</option>
               {bulkOperations.map(op => (
                 <option key={op.id} value={op.id}>
-                  {op.icon} {op.label}
+                  {op.label}
                 </option>
               ))}
             </select>
@@ -280,20 +280,20 @@ function BulkOperationsPanel({ api }) {
             onClick={() => setSelectedItems([])}
             className="btn btn-ghost"
           >
-            🗑️ Clear Selection
+            Clear Selection
           </button>
           <button 
             onClick={() => exportToCSV(selectedItems)}
             disabled={selectedItems.length === 0}
             className="btn btn-ghost disabled:opacity-50"
           >
-            📊 Export Selected
+            Export Selected
           </button>
           <button 
             onClick={fetchAllData}
             className="btn btn-ghost"
           >
-            🔄 Refresh Data
+            Refresh Data
           </button>
           <button 
             onClick={() => {
@@ -304,7 +304,7 @@ function BulkOperationsPanel({ api }) {
             }}
             className="btn btn-ghost"
           >
-            ✅ Select All
+            Select All
           </button>
         </div>
       </div>

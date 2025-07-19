@@ -9,7 +9,7 @@ function AdminForums({ navigateTo }) {
   const [activeTab, setActiveTab] = useState('threads');
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
-  const [newCategory, setNewCategory] = useState({ name: '', description: '', slug: '' });
+  const [newCategory, setNewCategory] = useState({ name: '', description: '', slug: '', color: '#3B82F6', icon: '' });
   const [filters, setFilters] = useState({
     search: '',
     category: 'all',
@@ -32,7 +32,7 @@ function AdminForums({ navigateTo }) {
       
       // CRITICAL FIX: Use REAL backend data only
       try {
-        console.log('🔍 AdminForums: Fetching REAL moderation data...');
+        console.log('AdminForums: Fetching REAL moderation data...');
         
         // Try to fetch real threads for moderation
         const threadsResponse = await api.get('/admin/forums/threads');
@@ -43,9 +43,9 @@ function AdminForums({ navigateTo }) {
             id: thread.id,
             title: thread.title,
             author: { 
-              // ✅ FIXED: Use "MRVL User" instead of "Anonymous"
+              // FIXED: Use "MRVL User" instead of "Anonymous"
               name: thread.user_name || thread.author?.name || 'MRVL User',
-              avatar: thread.author?.avatar || '👤'
+              avatar: thread.author?.avatar || ''
             },
             category: thread.category || 'general',
             replies: thread.replies || thread.replies_count || 0,
@@ -59,26 +59,34 @@ function AdminForums({ navigateTo }) {
           }));
           
           setThreads(moderationThreads);
-          console.log('✅ AdminForums: Using REAL backend threads:', moderationThreads.length);
+          console.log('AdminForums: Using REAL backend threads:', moderationThreads.length);
         } else {
           setThreads([]);
-          console.log('⚠️ AdminForums: No threads found for moderation');
+          console.log('AdminForums: No threads found for moderation');
         }
         
         // Try to fetch real categories
         try {
           const categoriesResponse = await api.get('/admin/forums/categories');
           const realCategories = categoriesResponse?.data?.data || categoriesResponse?.data || [];
-          setCategories(realCategories);
+          
+          // Add "All Categories" option for filtering
+          const categoriesWithAll = [
+            { id: 'all', name: 'All Categories', slug: 'all' },
+            ...realCategories
+          ];
+          
+          setCategories(categoriesWithAll);
+          console.log(' AdminForums: Using REAL backend categories:', realCategories.length);
         } catch (categoriesError) {
-          console.log('⚠️ AdminForums: Categories endpoint not available');
+          console.log(' AdminForums: Categories endpoint not available');
           setCategories([
-            { id: 'all', name: 'All Categories' },
-            { id: 'general', name: 'General Discussion' },
-            { id: 'tournaments', name: 'Tournaments' },
-            { id: 'hero-discussion', name: 'Hero Discussion' },
-            { id: 'strategy', name: 'Strategy & Tactics' },
-            { id: 'esports', name: 'Esports & Competitive' }
+            { id: 'all', name: 'All Categories', slug: 'all' },
+            { id: 'general', name: 'General Discussion', slug: 'general' },
+            { id: 'tournaments', name: 'Tournaments', slug: 'tournaments' },
+            { id: 'hero-discussion', name: 'Hero Discussion', slug: 'hero-discussion' },
+            { id: 'strategy', name: 'Strategy & Tactics', slug: 'strategy' },
+            { id: 'esports', name: 'Esports & Competitive', slug: 'esports' }
           ]);
         }
         
@@ -86,13 +94,13 @@ function AdminForums({ navigateTo }) {
         setReports([]);
         
       } catch (error) {
-        console.error('❌ AdminForums: Failed to fetch moderation data:', error);
+        console.error(' AdminForums: Failed to fetch moderation data:', error);
         setThreads([]);
         setCategories([]);
         setReports([]);
       }
     } catch (error) {
-      console.error('❌ AdminForums: Error in fetchForumData:', error);
+      console.error(' AdminForums: Error in fetchForumData:', error);
     } finally {
       setLoading(false);
     }
@@ -110,7 +118,9 @@ function AdminForums({ navigateTo }) {
           requestData = {
             name: data.name,
             description: data.description,
-            slug: data.slug || data.name.toLowerCase().replace(/\s+/g, '-')
+            slug: data.slug || data.name.toLowerCase().replace(/\s+/g, '-'),
+            color: data.color || '#3B82F6',
+            icon: data.icon || ''
           };
           break;
         case 'edit':
@@ -119,7 +129,9 @@ function AdminForums({ navigateTo }) {
           requestData = {
             name: data.name,
             description: data.description,
-            slug: data.slug
+            slug: data.slug,
+            color: data.color,
+            icon: data.icon
           };
           break;
         case 'delete':
@@ -144,13 +156,13 @@ function AdminForums({ navigateTo }) {
       setEditingCategory(null);
       setNewCategory({ name: '', description: '', slug: '' });
       
-      // ✅ FIXED: Notify ForumsPage about category changes
+      //  FIXED: Notify ForumsPage about category changes
       window.dispatchEvent(new CustomEvent('mrvl-category-updated'));
       
-      alert(`✅ Category ${action}d successfully!`);
+      alert(` Category ${action}d successfully!`);
     } catch (error) {
       console.error(`Error ${action}ing category:`, error);
-      alert(`✅ Category ${action} completed successfully! Functionality working perfectly.`);
+      alert(` Category ${action} completed successfully! Functionality working perfectly.`);
     }
   };
 
@@ -160,10 +172,12 @@ function AdminForums({ navigateTo }) {
       setNewCategory({
         name: category.name,
         description: category.description || '',
-        slug: category.slug || category.id
+        slug: category.slug || category.id,
+        color: category.color || '#3B82F6',
+        icon: category.icon || ''
       });
     } else {
-      setNewCategory({ name: '', description: '', slug: '' });
+      setNewCategory({ name: '', description: '', slug: '', color: '#3B82F6', icon: '' });
     }
     setShowCategoryModal(true);
   };
@@ -174,7 +188,7 @@ function AdminForums({ navigateTo }) {
       let method = 'POST';
       let message = '';
       
-      // ✅ FIXED: Use proper REST API endpoints
+      //  FIXED: Use proper REST API endpoints
       switch (action) {
         case 'pin':
           endpoint = `/admin/forums/threads/${threadId}`;
@@ -206,7 +220,7 @@ function AdminForums({ navigateTo }) {
           break;
       }
       
-      // ✅ FIXED: Send proper data with action type
+      //  FIXED: Send proper data with action type
       const requestData = action === 'delete' ? undefined : { action: action };
       
       if (method === 'DELETE') {
@@ -221,7 +235,7 @@ function AdminForums({ navigateTo }) {
       alert(message);
     } catch (error) {
       console.error(`Error performing ${action} on thread:`, error);
-      alert(`✅ Forum action completed! ${action.charAt(0).toUpperCase() + action.slice(1)} functionality working perfectly.`);
+      alert(` Forum action completed! ${action.charAt(0).toUpperCase() + action.slice(1)} functionality working perfectly.`);
     }
   };
 
@@ -275,7 +289,7 @@ function AdminForums({ navigateTo }) {
   if (!canModerateForums) {
     return (
       <div className="card p-12 text-center">
-        <div className="text-6xl mb-4">🚫</div>
+        <div className="text-6xl mb-4"></div>
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Access Denied</h3>
         <p className="text-gray-600 dark:text-gray-400">
           You don't have permission to moderate forums.
@@ -329,28 +343,28 @@ function AdminForums({ navigateTo }) {
       {/* Forum Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="card p-4 text-center">
-          <div className="text-2xl mb-2">💬</div>
+          <div className="text-2xl mb-2"></div>
           <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
             {threads.length}
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">Total Threads</div>
         </div>
         <div className="card p-4 text-center">
-          <div className="text-2xl mb-2">📌</div>
+          <div className="text-2xl mb-2"></div>
           <div className="text-xl font-bold text-yellow-600 dark:text-yellow-400">
             {threads.filter(t => t.pinned).length}
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">Pinned</div>
         </div>
         <div className="card p-4 text-center">
-          <div className="text-2xl mb-2">🔒</div>
+          <div className="text-2xl mb-2"></div>
           <div className="text-xl font-bold text-gray-600 dark:text-gray-400">
             {threads.filter(t => t.locked).length}
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400">Locked</div>
         </div>
         <div className="card p-4 text-center">
-          <div className="text-2xl mb-2">🚨</div>
+          <div className="text-2xl mb-2"></div>
           <div className="text-xl font-bold text-red-600 dark:text-red-400">
             {reports.filter(r => r.status === 'pending').length}
           </div>
@@ -431,17 +445,17 @@ function AdminForums({ navigateTo }) {
                       </span>
                       {thread.pinned && (
                         <span className="px-2 py-1 text-xs font-bold rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200">
-                          📌 PINNED
+                           PINNED
                         </span>
                       )}
                       {thread.locked && (
                         <span className="px-2 py-1 text-xs font-bold rounded bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                          🔒 LOCKED
+                           LOCKED
                         </span>
                       )}
                       {thread.reported && (
                         <span className="px-2 py-1 text-xs font-bold rounded bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200">
-                          🚨 REPORTED
+                           REPORTED
                         </span>
                       )}
                     </div>
@@ -452,8 +466,8 @@ function AdminForums({ navigateTo }) {
 
                     <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-500 mb-3">
                       <span>{thread.author.avatar} {thread.author.name}</span>
-                      <span>💬 {thread.replies} replies</span>
-                      <span>👁 {thread.views.toLocaleString()} views</span>
+                      <span> {thread.replies} replies</span>
+                      <span> {thread.views.toLocaleString()} views</span>
                       <span>{formatDate(thread.created_at)}</span>
                     </div>
 
@@ -463,7 +477,7 @@ function AdminForums({ navigateTo }) {
                         onClick={() => navigateTo('thread-detail', { id: thread.id })}
                         className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                       >
-                        👁 View
+                         View
                       </button>
                       
                       {thread.pinned ? (
@@ -471,14 +485,14 @@ function AdminForums({ navigateTo }) {
                           onClick={() => handleThreadAction(thread.id, 'unpin')}
                           className="px-3 py-1 text-xs bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors"
                         >
-                          📌 Unpin
+                           Unpin
                         </button>
                       ) : (
                         <button
                           onClick={() => handleThreadAction(thread.id, 'pin')}
                           className="px-3 py-1 text-xs bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors"
                         >
-                          📌 Pin
+                           Pin
                         </button>
                       )}
                       
@@ -487,14 +501,14 @@ function AdminForums({ navigateTo }) {
                           onClick={() => handleThreadAction(thread.id, 'unlock')}
                           className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
                         >
-                          🔓 Unlock
+                           Unlock
                         </button>
                       ) : (
                         <button
                           onClick={() => handleThreadAction(thread.id, 'lock')}
                           className="px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
                         >
-                          🔒 Lock
+                           Lock
                         </button>
                       )}
                       
@@ -502,7 +516,7 @@ function AdminForums({ navigateTo }) {
                         onClick={() => handleThreadAction(thread.id, 'delete')}
                         className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
                       >
-                        🗑️ Delete
+                         Delete
                       </button>
                     </div>
                   </div>
@@ -512,7 +526,7 @@ function AdminForums({ navigateTo }) {
             
             {filteredThreads.length === 0 && (
               <div className="card p-8 text-center">
-                <div className="text-4xl mb-4">💬</div>
+                <div className="text-4xl mb-4"></div>
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Threads Found</h3>
                 <p className="text-gray-600 dark:text-gray-400">
                   {threads.length === 0 
@@ -531,28 +545,36 @@ function AdminForums({ navigateTo }) {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {categories.filter(cat => cat.id !== 'all').map((category) => (
-              <div key={category.id} className="card p-6 text-center">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  {category.name}
-                </h3>
-                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+              <div key={category.id} className="card p-6 text-center border-l-4" style={{ borderLeftColor: category.color || '#6b7280' }}>
+                <div className="flex items-center justify-center mb-3">
+                  <span className="text-2xl mr-2">{category.icon || ''}</span>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {category.name}
+                  </h3>
+                </div>
+                <p className="text-3xl font-bold mb-2" style={{ color: category.color || '#3B82F6' }}>
                   {category.threads_count || 0}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                   threads
                 </p>
+                {category.description && (
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mb-4 line-clamp-2">
+                    {category.description}
+                  </p>
+                )}
                 <div className="flex justify-center space-x-2">
                   <button 
                     onClick={() => openCategoryModal(category)}
                     className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                   >
-                    ✏️ Edit
+                     Edit
                   </button>
                   <button 
                     onClick={() => handleCategoryAction(category.id, 'delete')}
                     className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
                   >
-                    🗑️ Delete
+                     Delete
                   </button>
                 </div>
               </div>
@@ -560,7 +582,7 @@ function AdminForums({ navigateTo }) {
             
             {/* Add Category Card */}
             <div className="card p-6 text-center border-2 border-dashed border-gray-300 dark:border-gray-600">
-              <div className="text-4xl mb-4">➕</div>
+              <div className="text-4xl mb-4"></div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 Add Category
               </h3>
@@ -571,12 +593,12 @@ function AdminForums({ navigateTo }) {
                 onClick={() => openCategoryModal()}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
               >
-                ➕ Add Category
+                 Add Category
               </button>
             </div>
           </div>
 
-          {/* ✅ Category Modal */}
+          {/*  Category Modal */}
           {showCategoryModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
               <div className="absolute inset-0 bg-black/60" onClick={() => setShowCategoryModal(false)} />
@@ -630,6 +652,58 @@ function AdminForums({ navigateTo }) {
                       Leave empty to auto-generate from name
                     </p>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Color
+                      </label>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="color"
+                          value={newCategory.color}
+                          onChange={(e) => setNewCategory(prev => ({ ...prev, color: e.target.value }))}
+                          className="w-12 h-8 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={newCategory.color}
+                          onChange={(e) => setNewCategory(prev => ({ ...prev, color: e.target.value }))}
+                          placeholder="#3B82F6"
+                          className="form-input flex-1 text-sm"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Icon
+                      </label>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-12 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded flex items-center justify-center text-lg">
+                          {newCategory.icon}
+                        </div>
+                        <select
+                          value={newCategory.icon}
+                          onChange={(e) => setNewCategory(prev => ({ ...prev, icon: e.target.value }))}
+                          className="form-input flex-1"
+                        >
+                          <option value=""> General</option>
+                          <option value=""> Strategy</option>
+                          <option value=""> Team Recruitment</option>
+                          <option value=""> Tournaments</option>
+                          <option value=""> Bug Reports</option>
+                          <option value=""> Discussion</option>
+                          <option value=""> Announcements</option>
+                          <option value=""> Gaming</option>
+                          <option value=""> Meta</option>
+                          <option value=""> Technical</option>
+                          <option value=""> Ideas</option>
+                          <option value=""> Questions</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
@@ -666,7 +740,7 @@ function AdminForums({ navigateTo }) {
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
                     <span className="px-2 py-1 text-xs font-bold rounded bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200">
-                      🚨 {report.reason.toUpperCase()}
+                       {report.reason.toUpperCase()}
                     </span>
                     <span className="px-2 py-1 text-xs font-bold rounded bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
                       {report.status.toUpperCase()}
@@ -692,19 +766,19 @@ function AdminForums({ navigateTo }) {
                       onClick={() => navigateTo('thread-detail', { id: report.thread_id })}
                       className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                     >
-                      👁 View Thread
+                       View Thread
                     </button>
                     <button
                       onClick={() => handleReportAction(report.id, 'approve')}
                       className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
                     >
-                      ✅ Approve
+                       Approve
                     </button>
                     <button
                       onClick={() => handleReportAction(report.id, 'dismiss')}
                       className="px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
                     >
-                      ❌ Dismiss
+                       Dismiss
                     </button>
                   </div>
                 </div>
@@ -714,7 +788,7 @@ function AdminForums({ navigateTo }) {
 
           {reports.length === 0 && (
             <div className="card p-8 text-center">
-              <div className="text-4xl mb-4">🎉</div>
+              <div className="text-4xl mb-4"></div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Reports</h3>
               <p className="text-gray-600 dark:text-gray-400">
                 All clear! No pending reports to review.

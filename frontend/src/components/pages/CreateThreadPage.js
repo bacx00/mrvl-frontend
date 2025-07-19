@@ -1,24 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
+import { useMentionAutocomplete } from '../../hooks/useMentionAutocomplete';
+import MentionDropdown from '../shared/MentionDropdown';
 
 function CreateThreadPage({ navigateTo }) {
   const { user, api } = useAuth();
   const [formData, setFormData] = useState({
     title: '',
-    category: 'general',
-    content: '',
-    tags: ''
+    content: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // ✅ MINIMAL CATEGORIES - Only ones that work on backend  
-  const categories = [
-    { id: 'general', name: 'General Discussion', description: 'General Marvel Rivals discussion' },
-    { id: 'strategy', name: 'Strategy & Tactics', description: 'Share strategies and gameplay tactics' },
-    { id: 'guides', name: 'Guides & Tutorials', description: 'Player guides and tutorials' },
-    { id: 'feedback', name: 'Feedback & Suggestions', description: 'Game feedback and improvement suggestions' }
-  ];
+  // Mention autocomplete for content
+  const {
+    textareaRef: contentTextareaRef,
+    dropdownRef: contentDropdownRef,
+    showDropdown: showContentDropdown,
+    mentionResults: contentMentionResults,
+    selectedIndex: contentSelectedIndex,
+    loading: contentMentionLoading,
+    dropdownPosition: contentDropdownPosition,
+    handleInputChange: handleContentInputChange,
+    handleKeyDown: handleContentKeyDown,
+    selectMention: selectContentMention
+  } = useMentionAutocomplete();
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -26,6 +33,11 @@ function CreateThreadPage({ navigateTo }) {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleContentChange = (e) => {
+    handleInputChange(e);
+    handleContentInputChange(e, null);
   };
 
   const handleSubmit = async (e) => {
@@ -60,16 +72,13 @@ function CreateThreadPage({ navigateTo }) {
       
       const submitData = {
         title: formData.title.trim(),
-        category: formData.category,
-        content: formData.content.trim(),
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
-        author_id: user.id
+        content: formData.content.trim()
       };
 
       console.log('💾 CreateThreadPage: Submit data:', submitData);
 
       // Try to create thread via API
-      const response = await api.post('/forums/threads', submitData);
+      const response = await api.post('/user/forums/threads', submitData);
       
       console.log('✅ CreateThreadPage: Thread created successfully:', response);
       
@@ -200,74 +209,57 @@ function CreateThreadPage({ navigateTo }) {
               </p>
             </div>
 
-            {/* Category */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Category *
-              </label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-                className="form-input w-full"
-                required
-              >
-                {categories.map(category => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {categories.find(c => c.id === formData.category)?.description}
-              </p>
-            </div>
 
             {/* Content */}
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                 Content *
               </label>
-              <textarea
-                name="content"
-                value={formData.content}
-                onChange={handleInputChange}
-                rows={12}
-                className="form-input w-full"
-                placeholder="Share your thoughts, strategies, feedback, or questions about Marvel Rivals...
+              <div className="relative">
+                <textarea
+                  ref={contentTextareaRef}
+                  name="content"
+                  value={formData.content}
+                  onChange={handleContentChange}
+                  onKeyDown={(e) => {
+                    const result = handleContentKeyDown(e, null);
+                    if (result?.selectMention) {
+                      selectContentMention(result.selectMention, (newValue) => {
+                        setFormData(prev => ({ ...prev, content: newValue }));
+                      }, formData.content);
+                    }
+                  }}
+                  rows={12}
+                  className="form-input w-full"
+                  placeholder="Share your thoughts, strategies, feedback, or questions about Marvel Rivals...
 
 You can discuss:
-• Hero balance and gameplay mechanics
+• Hero balance and gameplay mechanics (@player:s1mple, @team:navi)
 • Strategic tips and team compositions
 • Tournament results and esports news
 • Bug reports and technical issues
 • Team recruitment and player connections
 
-Be respectful and constructive in your discussions!"
-                required
-              />
+Type @ to mention teams, players, or users!"
+                  required
+                />
+                <MentionDropdown
+                  show={showContentDropdown}
+                  results={contentMentionResults}
+                  selectedIndex={contentSelectedIndex}
+                  loading={contentMentionLoading}
+                  position={contentDropdownPosition}
+                  onSelect={(mention) => selectContentMention(mention, (newValue) => {
+                    setFormData(prev => ({ ...prev, content: newValue }));
+                  }, formData.content)}
+                  dropdownRef={contentDropdownRef}
+                />
+              </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Minimum 10 characters, be descriptive and helpful
+                Minimum 10 characters, be descriptive and helpful. Type @ to mention teams, players, or users!
               </p>
             </div>
 
-            {/* Tags */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Tags (Optional)
-              </label>
-              <input
-                type="text"
-                name="tags"
-                value={formData.tags}
-                onChange={handleInputChange}
-                className="form-input w-full"
-                placeholder="e.g., iron-man, balance, ranked, strategy"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Separate multiple tags with commas. Use relevant tags to help others find your thread.
-              </p>
-            </div>
           </div>
         </div>
 

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
+import { useMentionAutocomplete } from '../../hooks/useMentionAutocomplete';
 import { API_CONFIG } from '../../config';
 import ImageUpload from '../shared/ImageUpload';
+import MentionDropdown from '../shared/MentionDropdown';
 
 function TeamForm({ teamId, navigateTo }) {
   const [formData, setFormData] = useState({
@@ -11,8 +13,7 @@ function TeamForm({ teamId, navigateTo }) {
     logo: '',
     flag: '',
     country: '',
-    description: '',
-    elo: 1000, // FIXED: Added ELO field with Marvel Rivals default
+    rating: 1000, // Team ELO rating with Marvel Rivals default
     socialLinks: {
       twitter: '',
       instagram: '',
@@ -27,6 +28,7 @@ function TeamForm({ teamId, navigateTo }) {
   const [error, setError] = useState(null);
   const { api } = useAuth();
 
+
   const isEdit = Boolean(teamId);
 
   const fetchTeam = async () => {
@@ -37,7 +39,7 @@ function TeamForm({ teamId, navigateTo }) {
       const response = await api.get(`/teams/${teamId}`);
       const team = response.data || response;
       
-      console.log('🔍 TeamForm - Fetched team data:', team);
+      console.log('TeamForm - Fetched team data:', team);
       
       setFormData({
         name: team.name || '',
@@ -46,8 +48,7 @@ function TeamForm({ teamId, navigateTo }) {
         logo: team.logo_url || team.logo || '',
         flag: team.flag_url || team.flag || '',
         country: team.country || '',
-        description: team.description || '',
-        elo: team.elo || team.rating || 1000, // FIXED: Load ELO from backend
+        rating: team.rating || 1000, // Load ELO rating from backend
         socialLinks: team.social_links || team.socialLinks || {
           twitter: '',
           instagram: '',
@@ -87,8 +88,17 @@ function TeamForm({ teamId, navigateTo }) {
     }
   };
 
+
+  const handleNumberInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: parseInt(value) || 0
+    }));
+  };
+
   const handleLogoSelect = (file, previewUrl) => {
-    console.log('🖼️ TeamForm - Logo selected:', file?.name, previewUrl);
+    console.log('TeamForm - Logo selected:', file?.name, previewUrl);
     setLogoFile(file);
     setFormData(prev => ({
       ...prev,
@@ -97,7 +107,7 @@ function TeamForm({ teamId, navigateTo }) {
   };
 
   const handleFlagSelect = (file, previewUrl) => {
-    console.log('🖼️ TeamForm - Flag selected:', file?.name, previewUrl);
+    console.log('TeamForm - Flag selected:', file?.name, previewUrl);
     setFlagFile(file);
     setFormData(prev => ({
       ...prev,
@@ -109,7 +119,7 @@ function TeamForm({ teamId, navigateTo }) {
     if (!file) return null;
     
     try {
-      console.log(`🚀 TeamForm - Uploading ${type} for team ${teamId}:`, file.name);
+      console.log(`TeamForm - Uploading ${type} for team ${teamId}:`, file.name);
       
       const uploadFormData = new FormData();
       // CRITICAL FIX: Use correct field names based on backend documentation
@@ -123,11 +133,11 @@ function TeamForm({ teamId, navigateTo }) {
         ? `/upload/team/${teamId}/logo`
         : `/upload/team/${teamId}/flag`;
       
-      console.log(`🚀 TeamForm - Upload endpoint: ${endpoint}`);
+      console.log(`TeamForm - Upload endpoint: ${endpoint}`);
       
       const response = await api.postFile(endpoint, uploadFormData);
       
-      console.log(`✅ TeamForm - ${type} upload response:`, response);
+      console.log(`TeamForm - ${type} upload response:`, response);
       
       // CRITICAL FIX: Extract URL based on backend documentation
       const data = response.data || response;
@@ -140,16 +150,16 @@ function TeamForm({ teamId, navigateTo }) {
         imageUrl = data.logo_url || data.flag_url || data.url || data.logo || data.flag;
       }
       
-      console.log(`✅ TeamForm - Extracted ${type} URL:`, imageUrl);
+      console.log(`TeamForm - Extracted ${type} URL:`, imageUrl);
       
       if (!imageUrl) {
-        console.error(`❌ TeamForm - No ${type} URL found in response:`, data);
+        console.error(`TeamForm - No ${type} URL found in response:`, data);
         throw new Error(`No ${type} URL returned from upload`);
       }
       
       return imageUrl;
     } catch (error) {
-      console.error(`❌ TeamForm - Error uploading ${type}:`, error);
+      console.error(`TeamForm - Error uploading ${type}:`, error);
       throw error;
     }
   };
@@ -176,7 +186,7 @@ function TeamForm({ teamId, navigateTo }) {
     setError(null);
 
     try {
-      console.log('💾 TeamForm - Starting save process...');
+      console.log('TeamForm - Starting save process...');
       
       // CRITICAL FIX: Prepare proper data format for Laravel backend
       const submitData = {
@@ -184,8 +194,7 @@ function TeamForm({ teamId, navigateTo }) {
         short_name: formData.shortName.trim(),
         region: formData.region,
         country: formData.country,
-        description: formData.description,
-        elo: parseInt(formData.elo) || 1000, // FIXED: Include ELO rating
+        rating: parseInt(formData.rating) || 1000, // Include ELO rating
         // CRITICAL FIX: Ensure social_links is properly formatted
         social_links: {
           twitter: formData.socialLinks.twitter || '',
@@ -195,22 +204,22 @@ function TeamForm({ teamId, navigateTo }) {
         }
       };
 
-      console.log('💾 TeamForm - Submit data prepared:', submitData);
+      console.log('TeamForm - Submit data prepared:', submitData);
 
       let teamIdForUpload = teamId;
       
       // If creating new team, save team first to get ID
       if (!isEdit) {
-        console.log('🆕 Creating new team first to get ID...');
+        console.log('Creating new team first to get ID...');
         const response = await api.post('/admin/teams', submitData);
         const savedTeam = response.data || response;
         teamIdForUpload = savedTeam.id;
-        console.log('✅ New team created with ID:', teamIdForUpload);
+        console.log('New team created with ID:', teamIdForUpload);
       } else {
         // Update existing team
-        console.log('📝 Updating existing team with ID:', teamId);
+        console.log('Updating existing team with ID:', teamId);
         await api.put(`/admin/teams/${teamId}`, submitData);
-        console.log('✅ Team updated successfully');
+        console.log('Team updated successfully');
       }
 
       // CRITICAL FIX: Upload images AFTER team creation/update (fresh CSRF token)
@@ -219,28 +228,28 @@ function TeamForm({ teamId, navigateTo }) {
       
       try {
         if (logoFile) {
-          console.log('🖼️ TeamForm - Uploading logo...');
+          console.log('TeamForm - Uploading logo...');
           logoUrl = await uploadImage(logoFile, teamIdForUpload, 'logo');
           if (logoUrl) {
-            console.log('✅ TeamForm - Logo uploaded successfully:', logoUrl);
+            console.log('TeamForm - Logo uploaded successfully:', logoUrl);
           }
         }
 
         if (flagFile) {
-          console.log('🖼️ TeamForm - Uploading flag...');
+          console.log('TeamForm - Uploading flag...');
           flagUrl = await uploadImage(flagFile, teamIdForUpload, 'flag');
           if (flagUrl) {
-            console.log('✅ TeamForm - Flag uploaded successfully:', flagUrl);
+            console.log('TeamForm - Flag uploaded successfully:', flagUrl);
           }
         }
       } catch (uploadError) {
-        console.error('❌ TeamForm - Image upload failed:', uploadError);
-        alert('⚠️ Team saved but image upload failed: ' + uploadError.message);
+        console.error('TeamForm - Image upload failed:', uploadError);
+        alert('Team saved but image upload failed: ' + uploadError.message);
       }
 
       // Final update with image URLs if they were uploaded
       if ((logoFile && logoUrl) || (flagFile && flagUrl)) {
-        console.log('💾 TeamForm - Updating team with image URLs...');
+        console.log('TeamForm - Updating team with image URLs...');
         const finalUpdateData = {
           ...submitData,
           // Include uploaded image paths
@@ -249,7 +258,7 @@ function TeamForm({ teamId, navigateTo }) {
         };
 
         await api.put(`/admin/teams/${teamIdForUpload}`, finalUpdateData);
-        console.log('✅ TeamForm - Team updated with images');
+        console.log('TeamForm - Team updated with images');
       }
 
       // Update form data with final URLs
@@ -259,7 +268,7 @@ function TeamForm({ teamId, navigateTo }) {
         flag: flagUrl
       }));
 
-      alert(`✅ Team ${isEdit ? 'updated' : 'created'} successfully!`);
+      alert(`Team ${isEdit ? 'updated' : 'created'} successfully!`);
       
       // Delay navigation to let user see the success
       setTimeout(() => {
@@ -269,21 +278,21 @@ function TeamForm({ teamId, navigateTo }) {
       }, 1500);
       
     } catch (error) {
-      console.error('❌ TeamForm - Error saving team:', error);
+      console.error('TeamForm - Error saving team:', error);
       
       // Enhanced error handling for backend issues
       if (error.message.includes('500')) {
-        setError('🚨 BACKEND ISSUE: Server error. Please check backend team validation and database constraints.');
+        setError('BACKEND ISSUE: Server error. Please check backend team validation and database constraints.');
       } else if (error.message.includes('422')) {
         if (error.message.includes('name') && error.message.includes('unique')) {
-          setError('🚨 BACKEND ISSUE: Team name already exists. Check unique constraints.');
+          setError('BACKEND ISSUE: Team name already exists. Check unique constraints.');
         } else if (error.message.includes('social_links')) {
-          setError('🚨 BACKEND ISSUE: Social links validation failed. Check backend social_links field format.');
+          setError('BACKEND ISSUE: Social links validation failed. Check backend social_links field format.');
         } else {
-          setError('🚨 BACKEND ISSUE: Validation error. Check backend validation rules for team fields.');
+          setError('BACKEND ISSUE: Validation error. Check backend validation rules for team fields.');
         }
       } else if (error.message.includes('404')) {
-        setError('🚨 BACKEND ISSUE: Team API endpoint not found. Implement /api/admin/teams routes.');
+        setError('BACKEND ISSUE: Team API endpoint not found. Implement /api/admin/teams routes.');
       } else {
         setError(`Failed to save team: ${error.message}`);
       }
@@ -355,14 +364,11 @@ function TeamForm({ teamId, navigateTo }) {
                 className="w-full max-w-md"
               />
               {formData.logo && (
-                <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Current logo URL: {formData.logo}
-                  </p>
+                <div className="mt-2">
                   <img 
                     src={formData.logo} 
                     alt="Current logo" 
-                    className="w-16 h-16 object-cover rounded mt-1"
+                    className="w-16 h-16 object-cover rounded"
                     onError={(e) => {
                       e.target.style.display = 'none';
                     }}
@@ -383,14 +389,11 @@ function TeamForm({ teamId, navigateTo }) {
                 className="w-full max-w-md"
               />
               {formData.flag && (
-                <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Current flag URL: {formData.flag}
-                  </p>
+                <div className="mt-2">
                   <img 
                     src={formData.flag} 
                     alt="Current flag" 
-                    className="w-16 h-16 object-cover rounded mt-1"
+                    className="w-16 h-16 object-cover rounded"
                     onError={(e) => {
                       e.target.style.display = 'none';
                     }}
@@ -472,41 +475,27 @@ function TeamForm({ teamId, navigateTo }) {
               />
             </div>
 
-            {/* ELO Rating - FIXED: Single field only */}
+            {/* ELO Rating */}
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                 ELO Rating
               </label>
               <input
                 type="number"
-                name="elo"
-                value={formData.elo}
-                onChange={handleInputChange}
+                name="rating"
+                value={formData.rating}
+                onChange={handleNumberInputChange}
                 className="form-input"
                 placeholder="1000"
-                min="1000"
-                max="3000"
+                min="0"
+                max="5000"
                 step="1"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Marvel Rivals ELO rating (1000-3000). Default: 1000
+                Team ELO rating (0-5000). Default: 1000
               </p>
             </div>
 
-            {/* Description */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Description
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                rows={4}
-                className="form-input"
-                placeholder="Team bio, achievements, history, etc..."
-              />
-            </div>
           </div>
         </div>
 
@@ -517,7 +506,7 @@ function TeamForm({ teamId, navigateTo }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                🐦 Twitter
+                Twitter
               </label>
               <input
                 type="url"
@@ -534,7 +523,7 @@ function TeamForm({ teamId, navigateTo }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                📷 Instagram
+                Instagram
               </label>
               <input
                 type="url"
@@ -551,7 +540,7 @@ function TeamForm({ teamId, navigateTo }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                📺 YouTube
+                YouTube
               </label>
               <input
                 type="url"
@@ -568,7 +557,7 @@ function TeamForm({ teamId, navigateTo }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                🌐 Website
+                Website
               </label>
               <input
                 type="url"
@@ -591,22 +580,22 @@ function TeamForm({ teamId, navigateTo }) {
               <div className="flex flex-wrap gap-2">
                 {formData.socialLinks.twitter && (
                   <a href={formData.socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 text-sm">
-                    🐦 Twitter
+                    Twitter
                   </a>
                 )}
                 {formData.socialLinks.instagram && (
                   <a href={formData.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-pink-500 hover:text-pink-700 text-sm">
-                    📷 Instagram
+                    Instagram
                   </a>
                 )}
                 {formData.socialLinks.youtube && (
                   <a href={formData.socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="text-red-500 hover:text-red-700 text-sm">
-                    📺 YouTube
+                    YouTube
                   </a>
                 )}
                 {formData.socialLinks.website && (
                   <a href={formData.socialLinks.website} target="_blank" rel="noopener noreferrer" className="text-green-500 hover:text-green-700 text-sm">
-                    🌐 Website
+                    Website
                   </a>
                 )}
               </div>

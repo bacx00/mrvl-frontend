@@ -13,6 +13,7 @@ function PlayerForm({ playerId, navigateTo }) {
     region: '',
     country: 'US',
     age: '',
+    rating: '',
     avatar: '',
     socialLinks: {
       twitter: '',
@@ -38,10 +39,10 @@ function PlayerForm({ playerId, navigateTo }) {
       const response = await api.get(`/players/${playerId}`);
       const player = response.data || response;
       
-      console.log('🔍 PlayerForm - Fetched player data:', player);
+      console.log(' PlayerForm - Fetched player data:', player);
       
       setFormData({
-        name: player.name || '',
+        name: player.real_name || player.name || '',
         realName: player.real_name || player.realName || '',
         username: player.username || player.gamer_tag || '',
         team: player.team_id || player.team?.id || '',
@@ -49,8 +50,9 @@ function PlayerForm({ playerId, navigateTo }) {
         region: player.region || '',
         country: player.country || 'US',
         age: player.age || '',
+        rating: player.rating || '',
         avatar: player.avatar_url || player.avatar || '',
-        socialLinks: player.social_links || player.socialLinks || {
+        socialLinks: player.social_media || player.social_links || player.socialLinks || {
           twitter: '',
           twitch: '',
           youtube: '',
@@ -116,17 +118,17 @@ function PlayerForm({ playerId, navigateTo }) {
     if (!file) return null;
     
     try {
-      console.log('🚀 PlayerForm - Uploading avatar for player', playerId, ':', file.name);
+      console.log(' PlayerForm - Uploading avatar for player', playerId, ':', file.name);
       
       const uploadFormData = new FormData();
       uploadFormData.append('avatar', file);
       
       const endpoint = `/upload/player/${playerId}/avatar`;
-      console.log('🚀 PlayerForm - Upload endpoint:', endpoint);
+      console.log(' PlayerForm - Upload endpoint:', endpoint);
       
       const response = await api.postFile(endpoint, uploadFormData);
       
-      console.log('✅ PlayerForm - Avatar upload response:', response);
+      console.log(' PlayerForm - Avatar upload response:', response);
       
       const data = response.data || response;
       
@@ -137,16 +139,16 @@ function PlayerForm({ playerId, navigateTo }) {
         avatarUrl = data.avatar_url || data.url || data.avatar;
       }
       
-      console.log('✅ PlayerForm - Extracted avatar URL:', avatarUrl);
+      console.log(' PlayerForm - Extracted avatar URL:', avatarUrl);
       
       if (!avatarUrl) {
-        console.error('❌ PlayerForm - No avatar URL found in response:', data);
+        console.error(' PlayerForm - No avatar URL found in response:', data);
         throw new Error('No avatar URL returned from upload');
       }
       
       return avatarUrl;
     } catch (error) {
-      console.error('❌ PlayerForm - Error uploading avatar:', error);
+      console.error(' PlayerForm - Error uploading avatar:', error);
       throw error;
     }
   };
@@ -155,11 +157,16 @@ function PlayerForm({ playerId, navigateTo }) {
     e.preventDefault();
     if (saving) return;
 
-    console.log('💾 PlayerForm - Starting save process...');
+    console.log(' PlayerForm - Starting save process...');
 
     // Frontend validation
     if (!formData.name.trim()) {
       setError('Player name is required');
+      return;
+    }
+    
+    if (!formData.username.trim()) {
+      setError('Username is required');
       return;
     }
     if (!formData.role) {
@@ -175,34 +182,34 @@ function PlayerForm({ playerId, navigateTo }) {
 
       // CRITICAL FIX: Prepare proper data format for Laravel backend
       const submitData = {
-        name: formData.name.trim(),
         username: formData.username.trim(),
-        real_name: formData.realName.trim(),
+        real_name: formData.name.trim(), // The "Player Name" field is actually the real name
         team_id: formData.team ? parseInt(formData.team) : null, // FIXED: Ensure team_id is properly set
         role: formData.role,
         region: formData.region,
         country: formData.country,
         age: formData.age ? parseInt(formData.age) : null,
-        social_links: formData.socialLinks
+        rating: formData.rating ? parseFloat(formData.rating) : null,
+        social_media: formData.socialLinks
       };
 
-      console.log('💾 PlayerForm - Submit data prepared:', submitData);
+      console.log(' PlayerForm - Submit data prepared:', submitData);
 
       if (playerId) {
         // EDITING existing player
-        console.log('📝 Editing existing player with ID:', playerId);
+        console.log(' Editing existing player with ID:', playerId);
         await api.put(`/admin/players/${playerId}`, submitData);
-        console.log('✅ Player data updated successfully');
+        console.log(' Player data updated successfully');
       } else {
         // CREATING new player
-        console.log('🆕 Creating new player...');
+        console.log(' Creating new player...');
         const playerResponse = await api.post('/admin/players', submitData);
         currentPlayerId = playerResponse.data?.id || playerResponse.id;
-        console.log('✅ Player created with ID:', currentPlayerId);
+        console.log(' Player created with ID:', currentPlayerId);
       }
 
       // CRITICAL FIX: Upload avatar if a new file was selected
-      console.log('🔍 Checking avatar upload conditions:', {
+      console.log(' Checking avatar upload conditions:', {
         avatarFile: !!avatarFile,
         avatarFileName: avatarFile?.name,
         currentPlayerId: currentPlayerId,
@@ -210,65 +217,65 @@ function PlayerForm({ playerId, navigateTo }) {
       });
       
       if (avatarFile && currentPlayerId) {
-        console.log('📸 Uploading new avatar for player:', currentPlayerId);
+        console.log(' Uploading new avatar for player:', currentPlayerId);
         try {
           const avatarUrl = await uploadAvatar(avatarFile, currentPlayerId);
-          console.log('✅ Avatar uploaded successfully:', avatarUrl);
+          console.log(' Avatar uploaded successfully:', avatarUrl);
           
           // Update player with new avatar URL
           const updatedFormData = { ...submitData, avatar: avatarUrl };
-          console.log('🔄 Updating player with avatar URL:', updatedFormData.avatar);
+          console.log(' Updating player with avatar URL:', updatedFormData.avatar);
           await api.put(`/admin/players/${currentPlayerId}`, updatedFormData);
-          console.log('✅ Player updated with avatar URL');
+          console.log(' Player updated with avatar URL');
         } catch (avatarError) {
-          console.error('❌ Avatar upload failed:', avatarError);
+          console.error(' Avatar upload failed:', avatarError);
           // Don't fail the whole operation for avatar upload failure
-          alert('⚠️ Player saved but avatar upload failed. Please try uploading the avatar again.');
+          alert(' Player saved but avatar upload failed. Please try uploading the avatar again.');
         }
       } else {
-        console.log('⚠️ Skipping avatar upload:', {
+        console.log(' Skipping avatar upload:', {
           reason: !avatarFile ? 'No avatar file selected' : 'No player ID available'
         });
       }
 
-      alert('✅ Player saved successfully!');
+      alert(' Player saved successfully!');
 
       // Navigate back to admin dashboard
       if (navigateTo) {
         navigateTo('admin-dashboard');
       }
     } catch (error) {
-      console.error('❌ PlayerForm - Error saving player:', error);
+      console.error(' PlayerForm - Error saving player:', error);
       
       // Enhanced error handling for different scenarios
       if (error.message.includes('500')) {
-        setError('🚨 BACKEND ISSUE: Server error. Please check backend player validation and database constraints.');
+        setError(' BACKEND ISSUE: Server error. Please check backend player validation and database constraints.');
       } else if (error.message.includes('422')) {
         if (error.message.includes('role') && error.message.includes('invalid')) {
-          setError('🚨 BACKEND ISSUE: Invalid role validation. Backend expects specific role values.');
+          setError(' BACKEND ISSUE: Invalid role validation. Backend expects specific role values.');
         } else if (error.message.includes('team_id')) {
-          setError('🚨 BACKEND ISSUE: Team assignment failed. Check team_id foreign key constraints.');
+          setError(' BACKEND ISSUE: Team assignment failed. Check team_id foreign key constraints.');
         } else {
-          setError('🚨 BACKEND ISSUE: Validation error. Check backend validation rules for player fields.');
+          setError(' BACKEND ISSUE: Validation error. Check backend validation rules for player fields.');
         }
       } else if (error.message.includes('404')) {
-        setError('🚨 BACKEND ISSUE: Player API endpoint not found. Implement /api/admin/players routes.');
+        setError(' BACKEND ISSUE: Player API endpoint not found. Implement /api/admin/players routes.');
       } else {
         setError(`Failed to save player: ${error.message}`);
       }
       
       // Keep form data so user doesn't lose their input
-      console.log('🔄 Form data preserved for retry');
+      console.log(' Form data preserved for retry');
     } finally {
       setSaving(false);
     }
   };
 
-  // ✅ FIXED: Use only backend-supported roles (database constraint issue with Flex)
+  //  FIXED: Use only backend-supported roles (database constraint issue with Flex)
   const roles = [
     { value: 'Duelist', label: 'Duelist (DPS)', description: 'Damage dealers' },
-    { value: 'Tank', label: 'Tank (Vanguard)', description: 'Front-line defenders' },
-    { value: 'Support', label: 'Support (Strategist)', description: 'Team support and healing' }
+    { value: 'Vanguard', label: 'Vanguard (Tank)', description: 'Front-line defenders' },
+    { value: 'Strategist', label: 'Strategist (Support)', description: 'Team support and healing' }
   ];
 
   const countries = [
@@ -340,7 +347,7 @@ function PlayerForm({ playerId, navigateTo }) {
     { value: 'LB', label: '🇱🇧 Lebanon' },
     { value: 'IQ', label: '🇮🇶 Iraq' },
     { value: 'IR', label: '🇮🇷 Iran' },
-    { value: 'INTL', label: '🌍 International' }
+    { value: 'INTL', label: ' International' }
   ];
 
   if (loading) {
@@ -406,14 +413,11 @@ function PlayerForm({ playerId, navigateTo }) {
                 className="w-full max-w-md"
               />
               {formData.avatar && (
-                <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Current avatar URL: {formData.avatar}
-                  </p>
+                <div className="mt-2">
                   <img 
                     src={formData.avatar} 
                     alt="Current avatar" 
-                    className="w-16 h-16 object-cover rounded mt-1"
+                    className="w-16 h-16 object-cover rounded"
                     onError={(e) => {
                       e.target.style.display = 'none';
                     }}
@@ -486,6 +490,24 @@ function PlayerForm({ playerId, navigateTo }) {
               />
             </div>
 
+            {/* Player Rating */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Rating
+              </label>
+              <input
+                type="number"
+                name="rating"
+                value={formData.rating}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="e.g., 1500"
+                min="0"
+                max="3000"
+                step="1"
+              />
+            </div>
+
             {/* Team - CRITICAL FIX for Free Agent issue */}
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
@@ -497,7 +519,7 @@ function PlayerForm({ playerId, navigateTo }) {
                 onChange={handleInputChange}
                 className="form-input"
               >
-                <option value="">🚫 Free Agent (No Team)</option>
+                <option value=""> Free Agent (No Team)</option>
                 {teams.map(team => (
                   <option key={team.id} value={team.id}>
                     {team.name} ({team.short_name || team.shortName})

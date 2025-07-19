@@ -8,14 +8,11 @@ function HomePage({ navigateTo }) {
   const [liveEvents, setLiveEvents] = useState([]);
   const [recentDiscussions, setRecentDiscussions] = useState([]);
   const [featuredNews, setFeaturedNews] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    
     try {
       // CRITICAL FIX: Use REAL BACKEND DATA ONLY - no more mock data
-      console.log('🔍 HomePage: Fetching REAL LIVE DATA from backend...');
+      console.log('HomePage: Fetching REAL LIVE DATA from backend...');
       
       let matchesData = [];
       let eventsData = [];
@@ -37,22 +34,25 @@ function HomePage({ navigateTo }) {
               tier: match.event?.tier || 'S'
             },
             status: match.status || 'upcoming',
+            format: match.format || 'BO3',
             time: match.scheduled_at 
               ? new Date(match.scheduled_at).toLocaleTimeString('en-US', { 
                   hour: '2-digit', 
                   minute: '2-digit' 
                 })
               : match.status === 'live' ? 'LIVE' : 'TBD',
+            team1_score: match.team1_score || 0,
+            team2_score: match.team2_score || 0,
             score: match.status === 'completed' || match.status === 'live'
               ? `${match.team1_score || 0}-${match.team2_score || 0}`
               : '0-0',
             // ✅ FIXED: No more fake viewer generation - use real backend data only
             viewers: match.viewers || 0
           }));
-          console.log('✅ HomePage: Using REAL backend matches:', matchesData.length);
+          console.log('HomePage: Using REAL backend matches:', matchesData.length);
         }
       } catch (error) {
-        console.error('❌ HomePage: No backend matches available:', error);
+        console.error('HomePage: No backend matches available:', error);
         matchesData = []; // Empty if no backend data
       }
 
@@ -74,16 +74,16 @@ function HomePage({ navigateTo }) {
             featured_image: event.featured_image,
             banner_image: event.banner_image
           }));
-          console.log('✅ HomePage: Using REAL backend events:', eventsData.length);
+          console.log('HomePage: Using REAL backend events:', eventsData.length);
         }
       } catch (error) {
-        console.error('❌ HomePage: No backend events available:', error);
+        console.error('HomePage: No backend events available:', error);
         eventsData = [];
       }
 
       // CRITICAL FIX: Get REAL forum discussions from backend ONLY  
       try {
-        console.log('🔍 HomePage: Fetching REAL forum discussions from backend...');
+        console.log('HomePage: Fetching REAL forum discussions from backend...');
         const forumsResponse = await api.get('/forums/threads');
         const rawDiscussions = forumsResponse?.data?.data || forumsResponse?.data || [];
         
@@ -101,10 +101,10 @@ function HomePage({ navigateTo }) {
               lastActivity: formatTimeAgo(thread.updated_at || thread.created_at),
               category: formatCategory(thread.category)
             }));
-          console.log('✅ HomePage: Using REAL valid discussions:', discussionsData.length);
+          console.log('HomePage: Using REAL valid discussions:', discussionsData.length);
         }
       } catch (error) {
-        console.error('❌ HomePage: No backend discussions available:', error);
+        console.error('HomePage: No backend discussions available:', error);
         discussionsData = [];
       }
 
@@ -116,10 +116,10 @@ function HomePage({ navigateTo }) {
         if (Array.isArray(rawNews) && rawNews.length > 0) {
           const featured = rawNews.filter(n => n.featured).slice(0, 3);
           newsData = featured.length > 0 ? featured : rawNews.slice(0, 3);
-          console.log('✅ HomePage: Using REAL backend news:', newsData.length);
+          console.log('HomePage: Using REAL backend news:', newsData.length);
         }
       } catch (error) {
-        console.error('❌ HomePage: No backend news available:', error);
+        console.error('HomePage: No backend news available:', error);
         newsData = [];
       }
       
@@ -129,17 +129,15 @@ function HomePage({ navigateTo }) {
       setRecentDiscussions(discussionsData); // FIXED: Use real backend discussions
       setFeaturedNews(newsData);
       
-      console.log('✅ HomePage: All data loaded with REAL backend data ONLY');
+      console.log('HomePage: All data loaded with REAL backend data ONLY');
     } catch (error) {
-      console.error('❌ HomePage: Critical error in fetchData:', error);
+      console.error('HomePage: Critical error in fetchData:', error);
       
       // CRITICAL FIX: No more fallback to mock data
       setMatches([]);
       setLiveEvents([]);
       setFeaturedNews([]);
       setRecentDiscussions([]);
-    } finally {
-      setLoading(false);
     }
   }, [api]);
 
@@ -180,10 +178,10 @@ function HomePage({ navigateTo }) {
 
   // CRITICAL FIX: Ensure all navigation functions work properly with error handling
   const handleNavigationClick = (page, params = {}) => {
-    console.log(`🔗 HomePage: Navigation clicked - ${page}`, params);
+    console.log(`HomePage: Navigation clicked - ${page}`, params);
     
     if (!navigateTo || typeof navigateTo !== 'function') {
-      console.error('❌ HomePage: navigateTo function not available');
+      console.error('HomePage: navigateTo function not available');
       alert('Navigation error: Please refresh the page and try again.');
       return;
     }
@@ -191,7 +189,7 @@ function HomePage({ navigateTo }) {
     try {
       navigateTo(page, params);
     } catch (error) {
-      console.error('❌ HomePage: Navigation error:', error);
+      console.error('HomePage: Navigation error:', error);
       alert('Navigation failed. Please try again.');
     }
   };
@@ -199,52 +197,42 @@ function HomePage({ navigateTo }) {
   // CRITICAL FIX: Validate data before clicking handlers
   const handleMatchClick = (match) => {
     if (!match || !match.id) {
-      console.error('❌ HomePage: Invalid match data:', match);
+      console.error('HomePage: Invalid match data:', match);
       alert('Error: Match data is invalid. Cannot view match details.');
       return;
     }
     
-    console.log('🔗 HomePage: Clicking match with ID:', match.id);
+    console.log('HomePage: Clicking match with ID:', match.id);
     handleNavigationClick('match-detail', { id: match.id });
   };
 
   const handleNewsClick = (article) => {
     if (!article || !article.id) {
-      console.error('❌ HomePage: Invalid article data:', article);
+      console.error('HomePage: Invalid article data:', article);
       alert('Error: Article data is invalid. Cannot view article.');
       return;
     }
     
-    console.log('🔗 HomePage: Clicking news article with ID:', article.id, 'Title:', article.title);
+    console.log('HomePage: Clicking news article with ID:', article.id, 'Title:', article.title);
     handleNavigationClick('news-detail', { id: article.id });
   };
 
   // CRITICAL FIX: Use REAL thread IDs from backend
   const handleDiscussionClick = (discussion) => {
     if (!discussion || !discussion.id) {
-      console.error('❌ HomePage: Invalid discussion data:', discussion);
+      console.error('HomePage: Invalid discussion data:', discussion);
       alert('Error: Discussion data is invalid. Cannot view thread.');
       return;
     }
     
-    console.log('🔗 HomePage: Clicking discussion with REAL ID:', discussion.id, 'Title:', discussion.title);
+    console.log('HomePage: Clicking discussion with REAL ID:', discussion.id, 'Title:', discussion.title);
     handleNavigationClick('thread-detail', { id: discussion.id });
   };
 
   const liveMatches = matches.filter(m => m.status === 'live');
   const upcomingMatches = matches.filter(m => m.status === 'upcoming');
+  const completedMatches = matches.filter(m => m.status === 'completed').slice(0, 3); // Show last 3 completed matches
   const liveEventsBanner = liveEvents.filter(e => e.status === 'live');
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-red-600 mb-4">MRVL</div>
-          <div className="text-gray-600 dark:text-gray-400">Loading...</div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -284,7 +272,7 @@ function HomePage({ navigateTo }) {
                 ))
               ) : (
                 <div className="p-4 text-center text-gray-500 dark:text-gray-500">
-                  <div className="text-2xl mb-2">💬</div>
+                  <div className="text-2xl mb-2"></div>
                   <div className="text-sm">No discussions yet</div>
                 </div>
               )}
@@ -386,7 +374,7 @@ function HomePage({ navigateTo }) {
                 ))
               ) : (
                 <div className="text-center text-gray-500 dark:text-gray-500">
-                  <div className="text-2xl mb-2">📰</div>
+                  <div className="text-2xl mb-2"></div>
                   <div className="text-sm">No news articles yet</div>
                 </div>
               )}
@@ -422,7 +410,7 @@ function HomePage({ navigateTo }) {
                           {/* ✅ FIXED: Show real viewers or nothing if 0 */}
                           {match.viewers > 0 && (
                             <span className="text-xs text-gray-500 dark:text-gray-500">
-                              👁 {match.viewers.toLocaleString()}
+                              {match.viewers.toLocaleString()} viewers
                             </span>
                           )}
                         </div>
@@ -430,12 +418,25 @@ function HomePage({ navigateTo }) {
                       <div className="text-center">
                         {/* BIGGER TEAM DISPLAYS */}
                         <div className="flex items-center justify-between text-sm font-medium text-gray-900 dark:text-white mb-1">
-                          <div className="flex items-center space-x-2">
+                          <div className={`flex items-center space-x-2 ${match.status === 'completed' && match.team1_score <= match.team2_score ? 'opacity-50' : ''}`}>
                             <TeamLogo team={match.team1} size="w-6 h-6" />
                             <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team1.short_name}</span>
                           </div>
-                          <span className="text-red-600 dark:text-red-400 px-2 font-bold text-lg">{match.score}</span>
-                          <div className="flex items-center space-x-2">
+                          <div className="text-center px-2">
+                            <div className="text-red-600 dark:text-red-400 font-bold text-lg">
+                              <span className={match.status === 'completed' && match.team1_score > match.team2_score ? 'text-green-600 dark:text-green-400' : ''}>
+                                {match.team1_score}
+                              </span>
+                              -
+                              <span className={match.status === 'completed' && match.team2_score > match.team1_score ? 'text-green-600 dark:text-green-400' : ''}>
+                                {match.team2_score}
+                              </span>
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-500">
+                              {match.format}
+                            </div>
+                          </div>
+                          <div className={`flex items-center space-x-2 ${match.status === 'completed' && match.team2_score <= match.team1_score ? 'opacity-50' : ''}`}>
                             <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team2.short_name}</span>
                             <TeamLogo team={match.team2} size="w-6 h-6" />
                           </div>
@@ -479,7 +480,12 @@ function HomePage({ navigateTo }) {
                             <TeamLogo team={match.team1} size="w-6 h-6" />
                             <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team1.short_name}</span>
                           </div>
-                          <span className="text-gray-400 dark:text-gray-500 px-2">vs</span>
+                          <div className="text-center px-2">
+                            <div className="text-gray-400 dark:text-gray-500 font-bold">vs</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-500">
+                              {match.format}
+                            </div>
+                          </div>
                           <div className="flex items-center space-x-2">
                             <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team2.short_name}</span>
                             <TeamLogo team={match.team2} size="w-6 h-6" />
@@ -494,12 +500,70 @@ function HomePage({ navigateTo }) {
                   ))
                 ) : (
                   <div className="p-4 text-center text-gray-500 dark:text-gray-500">
-                    <div className="text-2xl mb-2">⚔️</div>
+                    <div className="text-2xl mb-2"></div>
                     <div className="text-sm">No upcoming matches</div>
                   </div>
                 )}
               </div>
             </div>
+
+            {/* Recent Results */}
+            {completedMatches.length > 0 && (
+              <div className="card">
+                <div 
+                  className="px-3 py-2 border-b border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                  onClick={() => handleNavigationClick('matches')}
+                >
+                  <h2 className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">
+                    Recent Results
+                  </h2>
+                </div>
+                <div className="divide-y divide-gray-200 dark:divide-gray-600">
+                  {completedMatches.filter(match => match && match.team1 && match.team2).map(match => (
+                    <div 
+                      key={match.id} 
+                      className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
+                      onClick={() => handleMatchClick(match)}
+                    >
+                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-1 font-medium">
+                        Completed
+                      </div>
+                      <div className="text-center">
+                        {/* Team displays with winner highlighting */}
+                        <div className="flex items-center justify-between text-sm font-medium text-gray-900 dark:text-white mb-1">
+                          <div className={`flex items-center space-x-2 ${match.team1_score <= match.team2_score ? 'opacity-60' : ''}`}>
+                            <TeamLogo team={match.team1} size="w-6 h-6" />
+                            <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team1.short_name}</span>
+                          </div>
+                          <div className="text-center px-2">
+                            <div className="text-red-600 dark:text-red-400 font-bold text-lg">
+                              <span className={match.team1_score > match.team2_score ? 'text-green-600 dark:text-green-400' : ''}>
+                                {match.team1_score}
+                              </span>
+                              -
+                              <span className={match.team2_score > match.team1_score ? 'text-green-600 dark:text-green-400' : ''}>
+                                {match.team2_score}
+                              </span>
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-500">
+                              {match.format}
+                            </div>
+                          </div>
+                          <div className={`flex items-center space-x-2 ${match.team2_score <= match.team1_score ? 'opacity-60' : ''}`}>
+                            <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team2.short_name}</span>
+                            <TeamLogo team={match.team2} size="w-6 h-6" />
+                          </div>
+                        </div>
+                        {/* Tournament info */}
+                        <div className="text-xs text-gray-500 dark:text-gray-500">
+                          {match.event.name}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
