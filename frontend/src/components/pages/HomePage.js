@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
-import { TeamLogo, getNewsFeaturedImageUrl } from '../../utils/imageUtils';
+import { TeamLogo, getNewsFeaturedImageUrl, getImageUrl } from '../../utils/imageUtils';
+import { formatTimeAgo } from '../../utils/dateUtils';
 
 function HomePage({ navigateTo }) {
   const { api } = useAuth();
@@ -145,18 +146,6 @@ function HomePage({ navigateTo }) {
     fetchData();
   }, [fetchData]);
 
-  // Helper function to format time ago
-  const formatTimeAgo = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return `${Math.floor(diffHours / 24)}d ago`;
-  };
 
   // Helper function to format category names
   const formatCategory = (category) => {
@@ -235,18 +224,18 @@ function HomePage({ navigateTo }) {
   const liveEventsBanner = liveEvents.filter(e => e.status === 'live');
 
   return (
-    <div className="max-w-7xl mx-auto">
-      {/* VLR.gg inspired layout - 4 columns */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* VLR.gg inspired responsive layout */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4">
         
         {/* Left Sidebar - Recent Discussions */}
-        <div className="xl:col-span-3">
+        <div className="md:col-span-3 lg:col-span-3 order-2 md:order-1">
           <div className="card">
             <div 
               className="px-3 py-2 border-b border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
               onClick={() => handleNavigationClick('forums')}
             >
-              <h2 className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">
+              <h2 className="text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">
                 Recent Discussion
               </h2>
             </div>
@@ -281,7 +270,7 @@ function HomePage({ navigateTo }) {
         </div>
 
         {/* Center Content - Live Banner + Featured News */}
-        <div className="xl:col-span-6">
+        <div className="md:col-span-12 lg:col-span-6 order-1 md:order-2">
           {/* ✅ MOVED: LIVE EVENT BANNER - Now in Center Column */}
           {liveEventsBanner.length > 0 && (
             <div className="mb-4">
@@ -291,7 +280,7 @@ function HomePage({ navigateTo }) {
                   className="relative bg-cover bg-center"
                   style={{
                     backgroundImage: liveEventsBanner[0].featured_image 
-                      ? `linear-gradient(rgba(220, 38, 38, 0.8), rgba(220, 38, 38, 0.8)), url('${liveEventsBanner[0].featured_image}')`
+                      ? `linear-gradient(rgba(220, 38, 38, 0.8), rgba(220, 38, 38, 0.8)), url('${getImageUrl(liveEventsBanner[0].featured_image)}')`
                       : 'linear-gradient(135deg, #dc2626, #b91c1c)'
                   }}
                 >
@@ -367,7 +356,7 @@ function HomePage({ navigateTo }) {
                       <div className="flex items-center space-x-2 mt-1 text-xs text-gray-400 dark:text-gray-500">
                         <span className="text-gray-600 dark:text-gray-400">{article.author?.name || 'MRVL Team'}</span>
                         <span>•</span>
-                        <span>{new Date(article.created_at).toLocaleDateString()}</span>
+                        <span>{formatTimeAgo(article.created_at)}</span>
                       </div>
                     </div>
                   </div>
@@ -383,7 +372,7 @@ function HomePage({ navigateTo }) {
         </div>
 
         {/* Right Sidebar - Matches with BIGGER DISPLAYS */}
-        <div className="xl:col-span-3">
+        <div className="md:col-span-9 lg:col-span-3 order-3">
           <div className="space-y-3">
             {/* Live Matches */}
             {liveMatches.length > 0 && (
@@ -392,7 +381,7 @@ function HomePage({ navigateTo }) {
                   className="px-3 py-2 border-b border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
                   onClick={() => handleNavigationClick('matches')}
                 >
-                  <h2 className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide flex items-center">
+                  <h2 className="text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide flex items-center">
                     <span className="w-2 h-2 bg-red-500 rounded-full mr-2 animate-pulse"></span>
                     Live Matches
                   </h2>
@@ -418,12 +407,12 @@ function HomePage({ navigateTo }) {
                       <div className="text-center">
                         {/* BIGGER TEAM DISPLAYS */}
                         <div className="flex items-center justify-between text-sm font-medium text-gray-900 dark:text-white mb-1">
-                          <div className={`flex items-center space-x-2 ${match.status === 'completed' && match.team1_score <= match.team2_score ? 'opacity-50' : ''}`}>
-                            <TeamLogo team={match.team1} size="w-6 h-6" />
-                            <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team1.short_name}</span>
+                          <div className={`flex items-center space-x-1 sm:space-x-2 ${match.status === 'completed' && match.team1_score <= match.team2_score ? 'opacity-50' : ''}`}>
+                            <TeamLogo team={match.team1} size="w-5 h-5 sm:w-6 sm:h-6" />
+                            <span className="match-team-name truncate text-gray-900 dark:text-gray-100 font-bold">{match.team1.short_name}</span>
                           </div>
-                          <div className="text-center px-2">
-                            <div className="text-red-600 dark:text-red-400 font-bold text-lg">
+                          <div className="text-center px-1 sm:px-2">
+                            <div className="match-score-display text-red-600 dark:text-red-400 font-bold text-base sm:text-lg">
                               <span className={match.status === 'completed' && match.team1_score > match.team2_score ? 'text-green-600 dark:text-green-400' : ''}>
                                 {match.team1_score}
                               </span>
@@ -436,9 +425,9 @@ function HomePage({ navigateTo }) {
                               {match.format}
                             </div>
                           </div>
-                          <div className={`flex items-center space-x-2 ${match.status === 'completed' && match.team2_score <= match.team1_score ? 'opacity-50' : ''}`}>
-                            <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team2.short_name}</span>
-                            <TeamLogo team={match.team2} size="w-6 h-6" />
+                          <div className={`flex items-center space-x-1 sm:space-x-2 ${match.status === 'completed' && match.team2_score <= match.team1_score ? 'opacity-50' : ''}`}>
+                            <span className="match-team-name truncate text-gray-900 dark:text-gray-100 font-bold">{match.team2.short_name}</span>
+                            <TeamLogo team={match.team2} size="w-5 h-5 sm:w-6 sm:h-6" />
                           </div>
                         </div>
                         {/* REAL TOURNAMENT NAME */}
@@ -458,7 +447,7 @@ function HomePage({ navigateTo }) {
                 className="px-3 py-2 border-b border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
                 onClick={() => handleNavigationClick('matches')}
               >
-                <h2 className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">
+                <h2 className="text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">
                   Upcoming Matches
                 </h2>
               </div>
@@ -476,19 +465,19 @@ function HomePage({ navigateTo }) {
                       <div className="text-center">
                         {/* BIGGER TEAM DISPLAYS */}
                         <div className="flex items-center justify-between text-sm font-medium text-gray-900 dark:text-white mb-1">
-                          <div className="flex items-center space-x-2">
-                            <TeamLogo team={match.team1} size="w-6 h-6" />
-                            <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team1.short_name}</span>
+                          <div className="flex items-center space-x-1 sm:space-x-2">
+                            <TeamLogo team={match.team1} size="w-5 h-5 sm:w-6 sm:h-6" />
+                            <span className="match-team-name truncate text-gray-900 dark:text-gray-100 font-bold">{match.team1.short_name}</span>
                           </div>
-                          <div className="text-center px-2">
-                            <div className="text-gray-400 dark:text-gray-500 font-bold">vs</div>
+                          <div className="text-center px-1 sm:px-2">
+                            <div className="text-gray-400 dark:text-gray-500 font-bold text-sm sm:text-base">vs</div>
                             <div className="text-xs text-gray-500 dark:text-gray-500">
                               {match.format}
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team2.short_name}</span>
-                            <TeamLogo team={match.team2} size="w-6 h-6" />
+                          <div className="flex items-center space-x-1 sm:space-x-2">
+                            <span className="match-team-name truncate text-gray-900 dark:text-gray-100 font-bold">{match.team2.short_name}</span>
+                            <TeamLogo team={match.team2} size="w-5 h-5 sm:w-6 sm:h-6" />
                           </div>
                         </div>
                         {/* REAL TOURNAMENT NAME */}
@@ -514,7 +503,7 @@ function HomePage({ navigateTo }) {
                   className="px-3 py-2 border-b border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
                   onClick={() => handleNavigationClick('matches')}
                 >
-                  <h2 className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">
+                  <h2 className="text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">
                     Recent Results
                   </h2>
                 </div>
@@ -535,8 +524,8 @@ function HomePage({ navigateTo }) {
                             <TeamLogo team={match.team1} size="w-6 h-6" />
                             <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team1.short_name}</span>
                           </div>
-                          <div className="text-center px-2">
-                            <div className="text-red-600 dark:text-red-400 font-bold text-lg">
+                          <div className="text-center px-1 sm:px-2">
+                            <div className="match-score-display text-red-600 dark:text-red-400 font-bold text-base sm:text-lg">
                               <span className={match.team1_score > match.team2_score ? 'text-green-600 dark:text-green-400' : ''}>
                                 {match.team1_score}
                               </span>

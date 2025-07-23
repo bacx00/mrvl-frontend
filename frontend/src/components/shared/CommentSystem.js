@@ -5,6 +5,7 @@ import UserDisplay from './UserDisplay';
 import VotingButtons from './VotingButtons';
 import MentionDropdown from './MentionDropdown';
 import { processContentWithMentions } from '../../utils/mentionUtils';
+import { formatTimeAgo } from '../../utils/dateUtils';
 
 function CommentSystem({ 
   itemType, // 'news', 'match', 'forum_thread'
@@ -325,7 +326,7 @@ function Comment({
               clickable={true}
             />
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              {new Date(comment.created_at).toLocaleDateString()}
+              {formatTimeAgo(comment.created_at)}
             </span>
             {comment.is_edited && (
               <span className="text-xs text-gray-400 italic">(edited)</span>

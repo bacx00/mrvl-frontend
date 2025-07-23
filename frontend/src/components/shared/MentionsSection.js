@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
 import { formatMentionForDisplay } from '../../utils/mentionUtils';
+import { formatTimeAgo } from '../../utils/dateUtils';
 
 const MentionsSection = ({ 
   entityType, // 'player' or 'team'
@@ -47,8 +48,15 @@ const MentionsSection = ({
       }
     } catch (error) {
       console.error('Error fetching mentions:', error);
-      setError('Error fetching mentions');
-      setMentions([]);
+      // If the mentions backend isn't fully configured yet, show empty state instead of error
+      if (error.message.includes('Column not found') || error.message.includes('Table') || error.message.includes('doesn\'t exist')) {
+        console.warn('Mentions system not fully configured in backend, showing empty state');
+        setMentions([]);
+        setError(null);
+      } else {
+        setError('Error fetching mentions');
+        setMentions([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -150,7 +158,13 @@ const MentionsSection = ({
       {/* Mentions List */}
       {mentions.length === 0 ? (
         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-          <p>No mentions found.</p>
+          <div className="space-y-2">
+            <div className="text-4xl">💬</div>
+            <p className="font-medium">No mentions yet</p>
+            <p className="text-sm">
+              This {entityType} hasn't been mentioned in forum discussions, news, or comments yet.
+            </p>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">
@@ -189,7 +203,7 @@ const MentionsSection = ({
                   )}
                 </div>
                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {new Date(mention.mentioned_at).toLocaleDateString()}
+                  {formatTimeAgo(mention.mentioned_at)}
                 </span>
               </div>
 
