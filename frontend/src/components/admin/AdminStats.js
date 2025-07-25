@@ -24,14 +24,16 @@ function AdminStats({ navigateTo }) {
         playersRes,
         matchesRes,
         eventsRes,
-        usersRes
+        usersRes,
+        popularDataRes
       ] = await Promise.all([
         api.get('/admin/stats').catch(() => ({ data: {} })),
         api.get('/teams').catch(() => ({ data: [] })),
         api.get('/players').catch(() => ({ data: [] })),
         api.get('/matches').catch(() => ({ data: [] })),
         api.get('/events').catch(() => ({ data: [] })),
-        api.get('/admin/users').catch(() => ({ data: [] }))
+        api.get('/admin/users').catch(() => ({ data: [] })),
+        api.get(`/admin/analytics/content?period=${timeRange}`).catch(() => ({ data: {} }))
       ]);
 
       const adminStats = adminStatsRes.data?.overview || adminStatsRes.data || {};
@@ -40,6 +42,7 @@ function AdminStats({ navigateTo }) {
       const matches = matchesRes.data || matchesRes || [];
       const events = eventsRes.data || eventsRes || [];
       const users = usersRes.data || usersRes || [];
+      const popularData = popularDataRes.data?.data || popularDataRes.data || {};
 
       console.log('AdminStats: Analytics data loaded:', {
         adminStats: Object.keys(adminStats).length,
@@ -47,7 +50,8 @@ function AdminStats({ navigateTo }) {
         players: players.length,
         matches: matches.length,
         events: events.length,
-        users: users.length
+        users: users.length,
+        popularData: Object.keys(popularData).length
       });
 
       // Process comprehensive statistics
@@ -67,7 +71,7 @@ function AdminStats({ navigateTo }) {
         engagement: generateEngagementData(users, matches, events),
         revenue: generateRevenueData(),
         regions: generateRegionData(teams, players),
-        trends: generateTrendData(matches, events)
+        trends: generateTrendData(matches, events, popularData)
       };
 
       setStats(processedStats.overview);
@@ -168,21 +172,32 @@ function AdminStats({ navigateTo }) {
     return regionStats;
   };
 
-  const generateTrendData = (matches, events) => {
+  const generateTrendData = (matches, events, popularData) => {
+    // Check data source and availability
+    const isRealData = popularData.is_real_data || false;
+    const dataSource = popularData.data_source || 'unknown';
+    const popularMaps = popularData.popular_maps || [];
+    const popularHeroes = popularData.popular_heroes || [];
+    
+    // Add data source indicators to the data
+    const mapsWithSource = popularMaps.map(map => ({
+      ...map,
+      isRealData,
+      source: dataSource
+    }));
+    
+    const heroesWithSource = popularHeroes.map(hero => ({
+      ...hero,
+      isRealData,
+      source: dataSource
+    }));
+    
     return {
-      popularMaps: [
-        { name: 'Asgard Throne Room', plays: Math.floor(Math.random() * 100 + 50) },
-        { name: 'Wakanda Palace', plays: Math.floor(Math.random() * 80 + 40) },
-        { name: 'Sanctum Sanctorum', plays: Math.floor(Math.random() * 70 + 35) },
-        { name: 'Tokyo 2099', plays: Math.floor(Math.random() * 90 + 45) },
-        { name: 'Klyntar', plays: Math.floor(Math.random() * 60 + 30) }
+      popularMaps: mapsWithSource.length > 0 ? mapsWithSource : [
+        { name: 'No data available', plays: 0, isRealData: false, source: 'none' }
       ],
-      popularHeroes: [
-        { name: 'Iron Man', picks: Math.floor(Math.random() * 200 + 100) },
-        { name: 'Spider-Man', picks: Math.floor(Math.random() * 180 + 90) },
-        { name: 'Hulk', picks: Math.floor(Math.random() * 160 + 80) },
-        { name: 'Doctor Strange', picks: Math.floor(Math.random() * 140 + 70) },
-        { name: 'Captain America', picks: Math.floor(Math.random() * 120 + 60) }
+      popularHeroes: heroesWithSource.length > 0 ? heroesWithSource : [
+        { name: 'No data available', picks: 0, isRealData: false, source: 'none' }
       ],
       peakHours: [
         { hour: '18:00', activity: 95 },
@@ -190,7 +205,12 @@ function AdminStats({ navigateTo }) {
         { hour: '20:00', activity: 98 },
         { hour: '21:00', activity: 87 },
         { hour: '22:00', activity: 75 }
-      ]
+      ],
+      heroStatistics: popularData.hero_statistics || [],
+      totalMatchesAnalyzed: popularData.total_matches_analyzed || 0,
+      isRealData,
+      dataSource,
+      debugInfo: popularData.debug_info || {}
     };
   };
 
@@ -402,15 +422,27 @@ function AdminStats({ navigateTo }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Popular Maps */}
         <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-            <span className="mr-2"></span>
-            Popular Maps
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center justify-between">
+            <div className="flex items-center">
+              <span className="mr-2">🗺️</span>
+              Popular Maps
+            </div>
+            {analyticsData.trends?.dataSource === 'fallback_demo' && (
+              <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
+                Demo Data
+              </span>
+            )}
           </h3>
+          {analyticsData.trends?.dataSource === 'fallback_demo' && (
+            <div className="text-xs text-yellow-600 dark:text-yellow-400 mb-3 p-2 bg-yellow-50 dark:bg-yellow-950 rounded">
+              ⚠️ No real match data available. Showing demo data. Create matches with map data to see real statistics.
+            </div>
+          )}
           <div className="space-y-3">
-            {(analyticsData.trends?.popularMaps || []).map((map, index) => (
+            {(analyticsData.trends?.popularMaps || []).map((map) => (
               <div key={map.name} className="flex justify-between items-center">
                 <div className="flex items-center space-x-3">
-                  <span className="text-sm font-bold text-blue-600 dark:text-blue-400">#{index + 1}</span>
+                  <span className="text-sm font-bold text-blue-600 dark:text-blue-400">#{map.rank || 1}</span>
                   <span className="text-gray-900 dark:text-white">{map.name}</span>
                 </div>
                 <span className="font-bold text-green-600 dark:text-green-400">{map.plays}</span>
@@ -421,15 +453,27 @@ function AdminStats({ navigateTo }) {
 
         {/* Popular Heroes */}
         <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-            <span className="mr-2"></span>
-            Popular Heroes
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center justify-between">
+            <div className="flex items-center">
+              <span className="mr-2">🦸</span>
+              Popular Heroes
+            </div>
+            {analyticsData.trends?.dataSource === 'fallback_demo' && (
+              <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
+                Demo Data
+              </span>
+            )}
           </h3>
+          {analyticsData.trends?.dataSource === 'fallback_demo' && (
+            <div className="text-xs text-yellow-600 dark:text-yellow-400 mb-3 p-2 bg-yellow-50 dark:bg-yellow-950 rounded">
+              ⚠️ No real player statistics available. Showing demo data. Create matches with player stats to see real hero usage.
+            </div>
+          )}
           <div className="space-y-3">
-            {(analyticsData.trends?.popularHeroes || []).map((hero, index) => (
+            {(analyticsData.trends?.popularHeroes || []).map((hero) => (
               <div key={hero.name} className="flex justify-between items-center">
                 <div className="flex items-center space-x-3">
-                  <span className="text-sm font-bold text-red-600 dark:text-red-400">#{index + 1}</span>
+                  <span className="text-sm font-bold text-red-600 dark:text-red-400">#{hero.rank || 1}</span>
                   <span className="text-gray-900 dark:text-white">{hero.name}</span>
                 </div>
                 <span className="font-bold text-purple-600 dark:text-purple-400">{hero.picks}</span>

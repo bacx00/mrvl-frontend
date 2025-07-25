@@ -51,6 +51,12 @@ export const getImageUrl = (imagePath, type = 'general') => {
       return `${API_CONFIG.BASE_URL}${cleanPath}`;
     }
     
+    // Special handling for players directory - direct public access
+    if (imagePath.includes('/players/') || imagePath.startsWith('players/')) {
+      const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+      return `${API_CONFIG.BASE_URL}${cleanPath}`;
+    }
+    
     // Always add /storage/ prefix for backend file paths
     const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
     

@@ -48,14 +48,18 @@ const MentionAutocomplete = ({
 
       try {
         setLoading(true);
+        console.log('🔍 MentionAutocomplete: Searching mentions:', query, type);
         const response = await api.get(`/public/mentions/search?q=${encodeURIComponent(query)}&type=${type}&limit=10`);
         
-        if (response.data.success) {
-          setMentionResults(response.data.data || []);
+        console.log('📥 MentionAutocomplete: Response:', response);
+        if (response.data?.success || response.success) {
+          const results = response.data?.data || response.data || [];
+          console.log('✅ MentionAutocomplete: Results:', results);
+          setMentionResults(results);
           setSelectedIndex(0);
         }
       } catch (error) {
-        console.error('Error searching mentions:', error);
+        console.error('❌ MentionAutocomplete: Error searching mentions:', error);
         setMentionResults([]);
       } finally {
         setLoading(false);
@@ -128,19 +132,29 @@ const MentionAutocomplete = ({
 
     // Find if cursor is after an @ symbol
     const textBeforeCursor = newValue.substring(0, cursorPosition);
+    console.log('🔍 MentionAutocomplete: Input change:', {
+      value: newValue,
+      cursorPosition,
+      textBeforeCursor
+    });
+    
     const mentionMatch = textBeforeCursor.match(/@([a-zA-Z0-9_]*)$/);
     
     if (mentionMatch) {
+      console.log('✅ MentionAutocomplete: Mention detected:', mentionMatch);
       const query = mentionMatch[1];
       const start = cursorPosition - mentionMatch[0].length;
       
       setMentionStart(start);
       setMentionQuery(query);
       setShowDropdown(true);
+      console.log('🔍 MentionAutocomplete: Setting dropdown visible', { showDropdown: true, query, start });
       
       // Update dropdown position
       setTimeout(() => {
-        setDropdownPosition(calculateDropdownPosition());
+        const position = calculateDropdownPosition();
+        console.log('🔍 MentionAutocomplete: Calculated position:', position);
+        setDropdownPosition(position);
       }, 0);
       
       // Always show dropdown immediately when @ is typed
@@ -190,6 +204,7 @@ const MentionAutocomplete = ({
             searchMentions(query, 'player');
           }
         } else {
+          console.log('🔍 MentionAutocomplete: Hiding dropdown - no mention pattern found');
           setShowDropdown(false);
           setMentionResults([]);
           setMentionStart(-1);
@@ -206,8 +221,9 @@ const MentionAutocomplete = ({
     const beforeMention = currentValue.substring(0, mentionStart);
     const afterCursor = currentValue.substring(textareaRef.current.selectionStart);
     
-    const newValue = beforeMention + mention.mention_text + ' ' + afterCursor;
-    const newCursorPosition = beforeMention.length + mention.mention_text.length + 1;
+    const displayText = `@${mention.display_name || mention.name}`;
+    const newValue = beforeMention + displayText + ' ' + afterCursor;
+    const newCursorPosition = beforeMention.length + displayText.length + 1;
     
     // Create a synthetic event
     const syntheticEvent = {
@@ -319,10 +335,17 @@ const MentionAutocomplete = ({
       />
 
       {/* Autocomplete Dropdown */}
-      {showDropdown && (
+      {showDropdown && (() => {
+        console.log('🎨 MentionAutocomplete: Rendering dropdown element', { 
+          showDropdown, 
+          mentionResults: mentionResults.length, 
+          loading,
+          position: dropdownPosition 
+        });
+        return (
         <div
           ref={dropdownRef}
-          className="fixed z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-64 overflow-y-auto min-w-64"
+          className="fixed z-[9999] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-64 overflow-y-auto min-w-64"
           style={{
             top: dropdownPosition.top,
             left: dropdownPosition.left
@@ -377,7 +400,8 @@ const MentionAutocomplete = ({
             </div>
           ) : null}
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 };

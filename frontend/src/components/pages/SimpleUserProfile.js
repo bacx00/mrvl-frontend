@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
-import HeroImage, { HeroPortrait } from '../shared/HeroImage';
+import HeroImage from '../shared/HeroImage';
 import { getImageUrl } from '../../utils/imageUtils';
 
 function SimpleUserProfile({ navigateTo, params }) {
@@ -50,7 +50,7 @@ function SimpleUserProfile({ navigateTo, params }) {
           email: user.email || '',
           avatar: user.avatar || '',
           hero_flair: user.hero_flair || '',
-          team_flair_id: user.team_flair_id || null,
+          team_flair_id: user.team_flair_id || user.team_flair?.id || null,
           show_hero_flair: user.show_hero_flair !== false,
           show_team_flair: user.show_team_flair !== false,
           use_hero_as_avatar: user.use_hero_as_avatar || false
@@ -88,7 +88,7 @@ function SimpleUserProfile({ navigateTo, params }) {
         email: user.email || '',
         avatar: user.avatar || '',
         hero_flair: user.hero_flair || '',
-        team_flair_id: user.team_flair_id || null,
+        team_flair_id: user.team_flair_id || user.team_flair?.id || null,
         show_hero_flair: user.show_hero_flair !== false,
         show_team_flair: user.show_team_flair !== false,
         use_hero_as_avatar: user.use_hero_as_avatar || false
@@ -245,7 +245,12 @@ function SimpleUserProfile({ navigateTo, params }) {
       }
       
       console.log('🎮 Final flairs data being set:', flairsData);
-      console.log('🎮 Setting flairs data:', flairsData);
+      console.log('🎮 Teams structure:', flairsData.teams);
+      console.log('🎮 Teams type:', typeof flairsData.teams);
+      if (flairsData.teams && typeof flairsData.teams === 'object') {
+        console.log('🎮 Teams keys:', Object.keys(flairsData.teams));
+        console.log('🎮 Teams values:', Object.values(flairsData.teams));
+      }
       setAvailableFlairs(flairsData);
     } catch (error) {
       console.error('❌ Error fetching flairs:', error);
@@ -294,11 +299,15 @@ function SimpleUserProfile({ navigateTo, params }) {
           {name: "Rocket Raccoon", role: "Strategist"}
         ]
       };
-      // Also add fallback teams data
-      const fallbackTeams = [
-        {id: 114, name: "TEST1", short_name: "TEST1", logo: "/teams/logos/687821f615647.png", region: "EU"},
-        {id: 115, name: "TEST2", short_name: "TEST2", logo: "/teams/logos/687822048fc25.png", region: "NA"}
-      ];
+      // Also add fallback teams data grouped by region to match API structure
+      const fallbackTeams = {
+        "EU": [
+          {id: 114, name: "TEST1", short_name: "TEST1", logo: "/teams/logos/687821f615647.png", region: "EU"}
+        ],
+        "NA": [
+          {id: 115, name: "TEST2", short_name: "TEST2", logo: "/teams/logos/687822048fc25.png", region: "NA"}
+        ]
+      };
       setAvailableFlairs({ heroes: fallbackHeroes, teams: fallbackTeams });
     }
   }, [api]);
@@ -309,8 +318,25 @@ function SimpleUserProfile({ navigateTo, params }) {
         ? `/admin/users/${targetUserId}/activity`
         : '/user/profile/activity';
       const response = await api.get(endpoint);
-      const data = response.data?.data || {};
-      setUserStats(data.stats || {});
+      const data = response.data?.data || response.data || {};
+      
+      // Handle different response structures
+      if (data.stats) {
+        // If stats are nested under 'stats' property
+        setUserStats(data.stats);
+      } else if (data.total_comments !== undefined || data.total_forum_threads !== undefined) {
+        // If stats are directly in data
+        setUserStats(data);
+      } else {
+        // Fallback to empty stats
+        setUserStats({
+          total_comments: 0,
+          total_forum_posts: 0,
+          total_forum_threads: 0,
+          days_active: 0,
+          total_votes: 0
+        });
+      }
     } catch (error) {
       console.error('Error fetching user stats:', error);
     }
@@ -457,7 +483,7 @@ function SimpleUserProfile({ navigateTo, params }) {
                       if (updatedUser) {
                         setProfileData(prev => ({
                           ...prev,
-                          team_flair_id: updatedUser.team_flair_id || newTeamId
+                          team_flair_id: updatedUser.team_flair_id || updatedUser.team_flair?.id || newTeamId
                         }));
                       }
                       
@@ -531,7 +557,7 @@ function SimpleUserProfile({ navigateTo, params }) {
       {/* User Stats */}
       <div className="card p-6">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Activity Stats</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {userStats.total_forum_threads || 0}
@@ -555,6 +581,12 @@ function SimpleUserProfile({ navigateTo, params }) {
               {userStats.days_active || 0}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Days Active</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">
+              {userStats.total_mentions || 0}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Mentions</div>
           </div>
         </div>
       </div>

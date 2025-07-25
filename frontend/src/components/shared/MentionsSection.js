@@ -15,7 +15,8 @@ const MentionsSection = ({
   const [totalPages, setTotalPages] = useState(1);
   const [contentTypeFilter, setContentTypeFilter] = useState('all');
   const [error, setError] = useState(null);
-  const { api } = useAuth();
+  const [deletingMentions, setDeletingMentions] = useState(new Set());
+  const { api, user, isAdmin, isModerator } = useAuth();
 
   useEffect(() => {
     fetchMentions();
@@ -38,13 +39,13 @@ const MentionsSection = ({
       const endpoint = `/${entityType}s/${entityId}/mentions?${params.toString()}`;
       const response = await api.get(endpoint);
       
-      if (response.data.success) {
-        setMentions(response.data.data || []);
-        if (response.data.pagination) {
-          setTotalPages(response.data.pagination.last_page);
+      if (response.success) {
+        setMentions(response.data || []);
+        if (response.pagination) {
+          setTotalPages(response.pagination.last_page);
         }
       } else {
-        setError(response.data.message || 'Failed to fetch mentions');
+        setError(response.message || 'Failed to fetch mentions');
       }
     } catch (error) {
       console.error('Error fetching mentions:', error);
@@ -69,6 +70,46 @@ const MentionsSection = ({
   const handleFilterChange = (filter) => {
     setContentTypeFilter(filter);
     setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  const deleteMention = async (mentionId) => {
+    try {
+      // Add to deleting state
+      setDeletingMentions(prev => new Set([...prev, mentionId]));
+
+      const endpoint = `/${entityType}s/${entityId}/mentions/${mentionId}`;
+      const response = await api.delete(endpoint);
+
+      if (response.success) {
+        // Immediately remove from UI
+        setMentions(prevMentions => prevMentions.filter(mention => mention.id !== mentionId));
+        
+        console.log('✅ Mention deleted successfully:', mentionId);
+      } else {
+        throw new Error(response.message || 'Failed to delete mention');
+      }
+    } catch (error) {
+      console.error('❌ Error deleting mention:', error);
+      // Show error to user (could add toast notification here)
+      alert('Failed to delete mention: ' + error.message);
+    } finally {
+      // Remove from deleting state
+      setDeletingMentions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(mentionId);
+        return newSet;
+      });
+    }
+  };
+
+  const canDeleteMention = (mention) => {
+    if (!user) return false;
+    
+    // Admin/moderator can delete any mention
+    if (isAdmin() || isModerator()) return true;
+    
+    // User can delete their own mentions
+    return mention.mentioned_by && mention.mentioned_by.id === user.id;
   };
 
   const getContentTypeDisplayName = (type) => {
@@ -202,9 +243,25 @@ const MentionsSection = ({
                     </span>
                   )}
                 </div>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {formatTimeAgo(mention.mentioned_at)}
-                </span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {formatTimeAgo(mention.mentioned_at)}
+                  </span>
+                  {canDeleteMention(mention) && (
+                    <button
+                      onClick={() => deleteMention(mention.id)}
+                      disabled={deletingMentions.has(mention.id)}
+                      className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Delete mention"
+                    >
+                      {deletingMentions.has(mention.id) ? (
+                        <div className="animate-spin w-4 h-4 border border-red-500 border-t-transparent rounded-full"></div>
+                      ) : (
+                        '🗑️'
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Context */}

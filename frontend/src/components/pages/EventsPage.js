@@ -7,6 +7,7 @@ function EventsPage({ navigateTo }) {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('ongoing');
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [regionFilter, setRegionFilter] = useState('all');
   const { api, isAdmin, isModerator } = useAuth();
 
@@ -14,19 +15,51 @@ function EventsPage({ navigateTo }) {
     fetchEvents();
   }, []);
 
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   const fetchEvents = async () => {
     try {
       setLoading(true);
       console.log('EventsPage: Fetching events from API...');
       
-      // Always fetch all events, we'll filter client-side for better UX
-      const url = '/events';
+      // Fetch all events without date filtering
+      const url = '/events?sort=all';
       
       const response = await api.get(url);
       const eventsData = response.data?.data || response.data || [];
       
       console.log('Events fetched:', eventsData);
-      setEvents(eventsData);
+      
+      // Transform nested data structure to flat structure for easier use
+      const transformedEvents = eventsData.map(event => ({
+        ...event,
+        // Flatten details
+        type: event.details?.type || event.type,
+        format: event.details?.format || event.format,
+        region: event.details?.region || event.region,
+        game_mode: event.details?.game_mode || event.game_mode,
+        prize_pool: event.details?.prize_pool || event.prize_pool,
+        currency: event.details?.currency || event.currency || 'USD',
+        // Flatten schedule
+        start_date: event.schedule?.start_date || event.start_date,
+        end_date: event.schedule?.end_date || event.end_date,
+        registration_start: event.schedule?.registration_start || event.registration_start,
+        registration_end: event.schedule?.registration_end || event.registration_end,
+        timezone: event.schedule?.timezone || event.timezone || 'UTC',
+        // Flatten participation
+        max_teams: event.participation?.max_teams || event.max_teams,
+        current_teams: event.participation?.current_teams || event.current_teams || 0,
+        registration_open: event.participation?.registration_open || event.registration_open,
+        teams: event.participation?.teams || event.teams || []
+      }));
+      
+      setEvents(transformedEvents);
     } catch (error) {
       console.error('Error fetching events:', error);
       setEvents([]);
@@ -39,16 +72,29 @@ function EventsPage({ navigateTo }) {
   const getFilteredEvents = () => {
     let filtered = events;
     
-    // Filter by status (tab)
+    // Filter by status (tab) with date-based fallback
     switch (activeTab) {
       case 'upcoming':
-        filtered = filtered.filter(event => event.status === 'upcoming');
+        filtered = filtered.filter(event => {
+          const status = event.status === 'upcoming';
+          const dateBasedUpcoming = event.start_date && new Date(event.start_date) > new Date();
+          return status || (!event.status && dateBasedUpcoming);
+        });
         break;
       case 'ongoing':
-        filtered = filtered.filter(event => event.status === 'ongoing' || event.status === 'live');
+        filtered = filtered.filter(event => {
+          const status = event.status === 'ongoing' || event.status === 'live';
+          const dateBasedOngoing = event.start_date && event.end_date && 
+            new Date() >= new Date(event.start_date) && new Date() <= new Date(event.end_date);
+          return status || (!event.status && dateBasedOngoing);
+        });
         break;
       case 'completed':
-        filtered = filtered.filter(event => event.status === 'completed');
+        filtered = filtered.filter(event => {
+          const status = event.status === 'completed';
+          const dateBasedCompleted = event.end_date && new Date(event.end_date) < new Date();
+          return status || (!event.status && dateBasedCompleted);
+        });
         break;
       default:
         break;
@@ -59,11 +105,14 @@ function EventsPage({ navigateTo }) {
       filtered = filtered.filter(event => event.region === regionFilter);
     }
     
-    // Filter by search term
-    if (searchTerm) {
+    // Filter by search term (improved search using debounced term)
+    if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
+      const searchLower = debouncedSearchTerm.toLowerCase().trim();
       filtered = filtered.filter(event => 
-        event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (event.description && event.description.toLowerCase().includes(searchTerm.toLowerCase()))
+        (event.name && event.name.toLowerCase().includes(searchLower)) ||
+        (event.description && event.description.toLowerCase().includes(searchLower)) ||
+        (event.type && event.type.toLowerCase().includes(searchLower)) ||
+        (event.region && event.region.toLowerCase().includes(searchLower))
       );
     }
     
@@ -71,6 +120,45 @@ function EventsPage({ navigateTo }) {
   };
 
   const filteredEvents = getFilteredEvents();
+
+  // Helper function to get count for each status with date-based fallback
+  const getStatusCount = (status) => {
+    return events.filter(event => {
+      switch (status) {
+        case 'upcoming':
+          const statusUpcoming = event.status === 'upcoming';
+          const dateBasedUpcoming = event.start_date && new Date(event.start_date) > new Date();
+          return statusUpcoming || (!event.status && dateBasedUpcoming);
+        case 'ongoing':
+          const statusOngoing = event.status === 'ongoing' || event.status === 'live';
+          const dateBasedOngoing = event.start_date && event.end_date && 
+            new Date() >= new Date(event.start_date) && new Date() <= new Date(event.end_date);
+          return statusOngoing || (!event.status && dateBasedOngoing);
+        case 'completed':
+          const statusCompleted = event.status === 'completed';
+          const dateBasedCompleted = event.end_date && new Date(event.end_date) < new Date();
+          return statusCompleted || (!event.status && dateBasedCompleted);
+        default:
+          return false;
+      }
+    }).length;
+  };
+
+  // Get available regions from actual event data
+  const availableRegions = React.useMemo(() => {
+    const regions = [...new Set(events.map(event => event.region).filter(Boolean))];
+    const regionMap = {
+      'NA': 'North America',
+      'EU': 'Europe',
+      'APAC': 'Asia-Pacific',
+      'CN': 'China',
+      'SA': 'South America',
+      'MENA': 'Middle East & North Africa',
+      'OCE': 'Oceania',
+      'INTL': 'International'
+    };
+    return regions.map(code => ({ code, name: regionMap[code] || code }));
+  }, [events]);
 
   if (loading) {
     return (
@@ -110,7 +198,7 @@ function EventsPage({ navigateTo }) {
                 : 'text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
             }`}
           >
-            Upcoming ({events.filter(e => e.status === 'upcoming').length})
+            Upcoming ({getStatusCount('upcoming')})
           </button>
           <button
             onClick={() => setActiveTab('ongoing')}
@@ -121,10 +209,10 @@ function EventsPage({ navigateTo }) {
             }`}
           >
             <div className="flex items-center justify-center space-x-2">
-              {events.filter(e => e.status === 'ongoing' || e.status === 'live').length > 0 && (
+              {getStatusCount('ongoing') > 0 && (
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
               )}
-              <span>Ongoing ({events.filter(e => e.status === 'ongoing' || e.status === 'live').length})</span>
+              <span>Ongoing ({getStatusCount('ongoing')})</span>
             </div>
           </button>
           <button
@@ -135,7 +223,7 @@ function EventsPage({ navigateTo }) {
                 : 'text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
             }`}
           >
-            Completed ({events.filter(e => e.status === 'completed').length})
+            Completed ({getStatusCount('completed')})
           </button>
         </div>
 
@@ -151,12 +239,11 @@ function EventsPage({ navigateTo }) {
                 className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="all">All Regions</option>
-                <option value="NA">North America</option>
-                <option value="EU">Europe</option>
-                <option value="APAC">Asia-Pacific</option>
-                <option value="BR">Brazil</option>
-                <option value="LATAM">LATAM</option>
-                <option value="INTL">International</option>
+                {availableRegions.map(region => (
+                  <option key={region.code} value={region.code}>
+                    {region.name}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -194,8 +281,10 @@ function EventsPage({ navigateTo }) {
               No {activeTab} events
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              {searchTerm 
-                ? `No events matching "${searchTerm}"`
+              {debouncedSearchTerm 
+                ? `No events matching "${debouncedSearchTerm}"`
+                : regionFilter !== 'all'
+                ? `No ${activeTab} events in this region`
                 : activeTab === 'upcoming' 
                   ? 'No upcoming events scheduled'
                   : activeTab === 'ongoing'

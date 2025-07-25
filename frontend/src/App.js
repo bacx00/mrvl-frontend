@@ -44,6 +44,7 @@ import AdminNews from './components/admin/AdminNews';
 import AdminEvents from './components/admin/AdminEvents';
 import AdminForums from './components/admin/AdminForums';
 import NewsFormSimple from './components/admin/NewsFormSimple';
+import NewsCategoriesPage from './components/admin/NewsCategoriesPage';
 import EventForm from './components/admin/EventForm';
 import MatchForm from './components/admin/MatchForm';
 import SinglePageLiveScoring from './components/admin/SinglePageLiveScoring';
@@ -92,7 +93,7 @@ const ROUTES = {
   'admin-live-scoring': (props) => <SinglePageLiveScoring {...props} />,
   'admin-forums': AdminForums,
   'admin-forum-categories': AdminForums,
-  'admin-news-categories': AdminNews,
+  'admin-news-categories': NewsCategoriesPage,
   
   // Footer pages
   'contact': ContactPage,

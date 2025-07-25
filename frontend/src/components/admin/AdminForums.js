@@ -214,8 +214,8 @@ function AdminForums({ navigateTo }) {
           if (!window.confirm('Are you sure you want to delete this thread? This action cannot be undone.')) {
             return;
           }
-          endpoint = `/admin/forums/threads/${threadId}`;
-          method = 'DELETE';
+          endpoint = `/admin/forums/threads/${threadId}/delete`;
+          method = 'POST';
           message = 'Thread deleted successfully!';
           break;
       }

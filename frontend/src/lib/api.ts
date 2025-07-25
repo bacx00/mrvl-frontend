@@ -221,6 +221,17 @@ export const authAPI = {
     
     return response;
   },
+
+  updateProfile: async (userData: Partial<User>): Promise<User> => {
+    const response = await apiPut<User>('user/profile', userData);
+    
+    // Update local storage with new user data
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user', JSON.stringify(response));
+    }
+    
+    return response;
+  },
 };
 
 // ═══════════════════════════════════════════════════════════════

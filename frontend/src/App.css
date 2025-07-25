@@ -298,10 +298,10 @@ body {
   -webkit-line-clamp: 3;
 }
 
-/* Mobile responsive improvements - PERFECTED */
+/* Mobile responsive improvements - ENHANCED */
 @media (max-width: 640px) {
   .card {
-    @apply rounded-lg mx-1 shadow-sm;
+    @apply rounded-lg shadow-sm mx-0;
   }
   
   .forum-thread {
@@ -309,26 +309,74 @@ body {
   }
   
   .match-card {
-    @apply p-3;
+    @apply p-2;
   }
   
   .btn {
-    @apply px-3 py-2 text-sm;
+    @apply px-3 py-1.5 text-sm;
   }
 
   .recent-discussion-item {
     @apply p-2;
   }
+  
+  /* Mobile-specific match display */
+  .match-team-name {
+    @apply text-xs max-w-[80px];
+  }
+  
+  /* Mobile score display */
+  .match-score-display {
+    @apply text-base;
+  }
+  
+  /* Reduce heading sizes on mobile */
+  h1 { @apply text-2xl; }
+  h2 { @apply text-xl; }
+  h3 { @apply text-lg; }
+  
+  /* Mobile container padding */
+  .container {
+    @apply px-3;
+  }
+  
+  /* Mobile navigation spacing */
+  .nav-item {
+    @apply px-2 py-1.5 text-xs;
+  }
 }
 
-/* Tablet responsive improvements - PERFECTED */
+/* Tablet responsive improvements - ENHANCED */
 @media (min-width: 641px) and (max-width: 1024px) {
   .responsive-grid {
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   }
   
   .card {
-    @apply mx-2;
+    @apply mx-0;
+  }
+  
+  /* Tablet-specific match display */
+  .match-team-name {
+    @apply text-sm max-w-[120px];
+  }
+  
+  /* Tablet container padding */
+  .container {
+    @apply px-4;
+  }
+}
+
+/* Small tablet breakpoint (768px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Better grid layouts for small tablets */
+  .home-layout {
+    @apply gap-3;
+  }
+  
+  /* Match cards on tablets */
+  .match-card {
+    @apply p-3;
   }
 }
 
@@ -577,4 +625,40 @@ body {
 /* Perfect team shortnames */
 .team-short {
   @apply font-mono font-bold tracking-wide;
+}
+
+/* Responsive container padding utility */
+.container-padding {
+  @apply px-4 sm:px-6 lg:px-8;
+}
+
+/* Responsive text utilities */
+.text-responsive-xs {
+  @apply text-xs sm:text-sm;
+}
+
+.text-responsive-sm {
+  @apply text-sm sm:text-base;
+}
+
+.text-responsive-base {
+  @apply text-base sm:text-lg;
+}
+
+.text-responsive-lg {
+  @apply text-lg sm:text-xl;
+}
+
+/* Responsive spacing utilities */
+.space-responsive {
+  @apply space-y-3 sm:space-y-4;
+}
+
+.gap-responsive {
+  @apply gap-3 sm:gap-4;
+}
+
+/* Mobile-first card padding */
+.card-padding {
+  @apply p-3 sm:p-4 md:p-6;
 }

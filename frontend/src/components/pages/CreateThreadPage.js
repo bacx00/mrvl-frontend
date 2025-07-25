@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
 import { useMentionAutocomplete } from '../../hooks/useMentionAutocomplete';
 import MentionDropdown from '../shared/MentionDropdown';
+import { extractMentionsFromContent } from '../../utils/mentionUtils';
 
 function CreateThreadPage({ navigateTo }) {
   const { user, api } = useAuth();
@@ -11,6 +12,20 @@ function CreateThreadPage({ navigateTo }) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Mention autocomplete for title
+  const {
+    textareaRef: titleInputRef,
+    dropdownRef: titleDropdownRef,
+    showDropdown: showTitleDropdown,
+    mentionResults: titleMentionResults,
+    selectedIndex: titleSelectedIndex,
+    loading: titleMentionLoading,
+    dropdownPosition: titleDropdownPosition,
+    handleInputChange: handleTitleInputChange,
+    handleKeyDown: handleTitleKeyDown,
+    selectMention: selectTitleMention
+  } = useMentionAutocomplete();
 
   // Mention autocomplete for content
   const {
@@ -33,6 +48,11 @@ function CreateThreadPage({ navigateTo }) {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleTitleChange = (e) => {
+    handleInputChange(e);
+    handleTitleInputChange(e, null);
   };
 
   const handleContentChange = (e) => {
@@ -70,9 +90,15 @@ function CreateThreadPage({ navigateTo }) {
     try {
       console.log('🚀 CreateThreadPage: Submitting thread...');
       
+      // Extract mentions from both title and content
+      const titleMentions = extractMentionsFromContent(formData.title.trim());
+      const contentMentions = extractMentionsFromContent(formData.content.trim());
+      const mentions = [...titleMentions, ...contentMentions];
+      
       const submitData = {
         title: formData.title.trim(),
-        content: formData.content.trim()
+        content: formData.content.trim(),
+        mentions: mentions // Include mentions in the payload
       };
 
       console.log('💾 CreateThreadPage: Submit data:', submitData);
@@ -194,16 +220,38 @@ function CreateThreadPage({ navigateTo }) {
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                 Thread Title *
               </label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                className="form-input w-full"
-                placeholder="e.g., Iron Man is too overpowered in ranked matches"
-                maxLength="200"
-                required
-              />
+              <div className="relative">
+                <input
+                  ref={titleInputRef}
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleTitleChange}
+                  onKeyDown={(e) => {
+                    const result = handleTitleKeyDown(e, null);
+                    if (result?.selectMention) {
+                      selectTitleMention(result.selectMention, (newValue) => {
+                        setFormData(prev => ({ ...prev, title: newValue }));
+                      }, formData.title);
+                    }
+                  }}
+                  className="form-input w-full"
+                  placeholder="e.g., Iron Man is too overpowered in ranked matches (@ to mention)"
+                  maxLength="200"
+                  required
+                />
+                <MentionDropdown
+                  show={showTitleDropdown}
+                  results={titleMentionResults}
+                  selectedIndex={titleSelectedIndex}
+                  loading={titleMentionLoading}
+                  position={titleDropdownPosition}
+                  onSelect={(mention) => selectTitleMention(mention, (newValue) => {
+                    setFormData(prev => ({ ...prev, title: newValue }));
+                  }, formData.title)}
+                  dropdownRef={titleDropdownRef}
+                />
+              </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 {formData.title.length}/200 characters
               </p>

@@ -139,7 +139,7 @@ export default function Header() {
           </div>
 
           {/* Center - Search Bar */}
-          <div className="hidden md:block flex-1 max-w-md mx-8">
+          <div className="hidden sm:block flex-1 max-w-md mx-4 lg:mx-8">
             <form onSubmit={handleSearchSubmit} className="relative">
               <div className="relative">
                 <input
@@ -204,9 +204,10 @@ export default function Header() {
             {/* Theme Toggle - VLR.gg Style */}
             <button
               onClick={toggleTheme}
-              className="hidden md:flex items-center space-x-1 text-xs font-semibold"
+              className="flex items-center space-x-1 text-xs font-semibold"
+              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             >
-              <span className="text-[#768894]">Night:</span>
+              <span className="text-[#768894] hidden sm:inline">Night:</span>
               <span className={`px-2 py-0.5 rounded text-xs font-bold transition-colors ${
                 theme === 'dark' 
                   ? 'bg-[#fa4454] text-white' 
@@ -219,7 +220,8 @@ export default function Header() {
             {/* Spoilers Toggle */}
             <button
               onClick={() => setShowSpoilers(!showSpoilers)}
-              className="hidden md:flex items-center space-x-1 text-xs font-semibold"
+              className="hidden sm:flex items-center space-x-1 text-xs font-semibold"
+              title={showSpoilers ? 'Hide spoilers' : 'Show spoilers'}
             >
               <span className="text-[#768894]">Spoilers:</span>
               <span className={`px-2 py-0.5 rounded text-xs font-bold transition-colors ${
@@ -272,7 +274,7 @@ export default function Header() {
                       </span>
                     </div>
                   )}
-                  <span className="hidden lg:block text-sm text-white font-medium">
+                  <span className="hidden sm:block text-sm text-white font-medium max-w-[100px] truncate">
                     {user.username}
                   </span>
                   <svg 

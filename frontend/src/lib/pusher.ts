@@ -3,11 +3,12 @@
 
 import Pusher from 'pusher-js';
 
-// Configuration
-const PUSHER_KEY = process.env.NEXT_PUBLIC_PUSHER_KEY || '';
-const PUSHER_CLUSTER = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'us2';
-const PUSHER_HOST = process.env.NEXT_PUBLIC_PUSHER_HOST;
-const PUSHER_PORT = process.env.NEXT_PUBLIC_PUSHER_PORT ? parseInt(process.env.NEXT_PUBLIC_PUSHER_PORT) : undefined;
+// Configuration - Support both React and Next.js env vars
+const PUSHER_KEY = process.env.REACT_APP_PUSHER_KEY || process.env.NEXT_PUBLIC_PUSHER_KEY || '';
+const PUSHER_CLUSTER = process.env.REACT_APP_PUSHER_CLUSTER || process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'us2';
+const PUSHER_HOST = process.env.REACT_APP_PUSHER_HOST || process.env.NEXT_PUBLIC_PUSHER_HOST;
+const PUSHER_PORT = (process.env.REACT_APP_PUSHER_PORT || process.env.NEXT_PUBLIC_PUSHER_PORT) ? 
+  parseInt(process.env.REACT_APP_PUSHER_PORT || process.env.NEXT_PUBLIC_PUSHER_PORT!) : undefined;
 
 // Mobile battery optimization - connection management
 class PusherManager {
@@ -292,16 +293,19 @@ export const subscribeLiveMatches = (callback: (data: any) => void) => {
 export const subscribeMatchUpdates = (matchId: string, callback: (data: any) => void) => {
   const channel = pusherManager.subscribe(`match.${matchId}`);
   if (channel) {
-    // Backend event names
+    // Backend event names (matching broadcastAs() in backend)
     channel.bind('hero.updated', callback);
-    channel.bind('MatchMapStarted', callback);
-    channel.bind('MatchMapEnded', callback);
-    channel.bind('MatchKillEvent', callback);
-    channel.bind('MatchObjectiveUpdate', callback);
-    channel.bind('MatchPaused', callback);
-    channel.bind('MatchResumed', callback);
-    channel.bind('match.map.transition', callback);
+    channel.bind('map.updated', callback);        // MatchMapUpdated event
+    channel.bind('live.update', callback);        // LiveMatchUpdate event - comprehensive updates
+    channel.bind('map.started', callback);        // Fixed from 'MatchMapStarted'
+    channel.bind('map.ended', callback);          // Fixed from 'MatchMapEnded'
+    channel.bind('kill.event', callback);         // Fixed from 'MatchKillEvent'
+    channel.bind('objective.update', callback);   // Fixed from 'MatchObjectiveUpdate'
+    channel.bind('match.paused', callback);       // Fixed from 'MatchPaused'
+    channel.bind('match.resumed', callback);      // Fixed from 'MatchResumed'
+    channel.bind('match.map.transition', callback); // Correct event name from backend
     channel.bind('match.started', callback);
+    channel.bind('match.updated', callback);      // Added for MatchUpdated event
     
     // Keep old events for compatibility
     channel.bind('score-updated', callback);

@@ -172,7 +172,7 @@ export interface MatchMap {
   team2_score: number;
   duration?: number;
   winner?: Team;
-  status: 'not_started' | 'in_progress' | 'completed';
+  status: 'upcoming' | 'live' | 'completed';
 }
 
 export interface MatchEvent {

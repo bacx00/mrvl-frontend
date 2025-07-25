@@ -10,9 +10,13 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AdminStatsController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\VoteController;
+use App\Http\Controllers\MentionController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 Route::middleware('auth:sanctum')->get('/user', [AuthController::class, 'me']);
 
@@ -44,6 +48,20 @@ Route::get('/events/{event}', [EventController::class, 'show']);
 
 Route::middleware('auth:sanctum')->get('/chat', [ChatController::class, 'index']);
 Route::middleware('auth:sanctum')->post('/chat', [ChatController::class, 'store']);
+
+// Mention routes
+Route::prefix('public/mentions')->group(function () {
+    Route::get('/search', [MentionController::class, 'search']);
+    Route::get('/popular', [MentionController::class, 'popular']);
+});
+
+// Voting routes
+Route::prefix('user')->middleware('auth:sanctum')->group(function () {
+    Route::post('/forums/threads/{thread}/vote', [VoteController::class, 'voteThread']);
+    Route::post('/forums/posts/{post}/vote', [VoteController::class, 'votePost']);
+    Route::post('/news/{newsId}/comments/{commentId}/vote', [VoteController::class, 'voteNewsComment']);
+    Route::post('/matches/comments/{commentId}/vote', [VoteController::class, 'voteMatchComment']);
+});
 
 // Admin routes
 

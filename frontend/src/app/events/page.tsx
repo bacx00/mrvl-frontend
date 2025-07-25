@@ -126,7 +126,7 @@ export default function EventsPage() {
           image: event.logo || event.image,
           logo: event.logo,
           banner: event.banner,
-          organizer: event.organizer,
+          organizer: typeof event.organizer === 'string' ? event.organizer : event.organizer?.name || 'Unknown Organizer',
           teams: event.max_teams,
           current_teams: event.current_teams,
           max_teams: event.max_teams

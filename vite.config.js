@@ -10,4 +10,13 @@ export default defineConfig({
         }),
         tailwindcss(),
     ],
+    build: {
+        minify: false,
+        sourcemap: false,
+        rollupOptions: {
+            output: {
+                manualChunks: undefined,
+            },
+        },
+    },
 });

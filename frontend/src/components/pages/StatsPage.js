@@ -109,8 +109,11 @@ function StatsPage({ navigateTo }) {
 
     } catch (error) {
       console.error('❌ StatsPage: Error fetching stats:', error);
-      // Set comprehensive fallback data
-      setFallbackData();
+      setStatsData({});
+      setTeamStats([]);
+      setPlayerStats([]);
+      setMatchStats({});
+      setHeroStats([]);
     } finally {
       setLoading(false);
     }
@@ -209,36 +212,6 @@ function StatsPage({ navigateTo }) {
     return 'D';
   };
 
-  const setFallbackData = () => {
-    setStatsData({
-      totalTeams: 32,
-      totalPlayers: 160,
-      totalMatches: 247,
-      liveMatches: 3,
-      totalEvents: 12,
-      activeEvents: 5,
-      totalUsers: 1250,
-      avgTeamRating: 1847,
-      avgPlayerRating: 1654
-    });
-    setTeamStats(getFallbackTeams());
-    setPlayerStats(getFallbackPlayers());
-    setMatchStats({
-      total: 247,
-      live: 3,
-      completed: 189,
-      upcoming: 55,
-      avgDuration: '32',
-      todayMatches: 8
-    });
-    setHeroStats(getFallbackHeroStats());
-  };
-
-  const getFallbackTeams = () => [];
-
-  const getFallbackPlayers = () => [];
-
-  const getFallbackHeroStats = () => [];
 
   const getTierColor = (tier) => {
     switch (tier) {

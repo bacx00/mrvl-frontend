@@ -3,6 +3,17 @@ import { TeamLogo, getCountryFlag } from '../utils/imageUtils';
 import { getImageUrl } from '../utils/imageUrlUtils';
 
 function MatchCard({ match, navigateTo, isCompact = false }) {
+  // Debug log to check match data
+  console.log('MatchCard - Match data:', {
+    id: match.id,
+    team1: match.team1,
+    team2: match.team2,
+    team1_name: match.team1?.name,
+    team2_name: match.team2?.name,
+    hasTeam1: !!match.team1,
+    hasTeam2: !!match.team2
+  });
+  
   // Determine match winner
   const isTeam1Winner = match.status === 'completed' && match.team1_score > match.team2_score;
   const isTeam2Winner = match.status === 'completed' && match.team2_score > match.team1_score;
@@ -44,7 +55,7 @@ function MatchCard({ match, navigateTo, isCompact = false }) {
       case 'live':
         return (
           <div className="flex items-center justify-center">
-            <span className="bg-red-600 text-white px-3 py-1 text-xs font-bold rounded-full flex items-center animate-pulse">
+            <span className="bg-red-600 text-white px-2 sm:px-3 py-1 text-xs font-bold rounded-full flex items-center animate-pulse">
               <span className="w-2 h-2 bg-white rounded-full mr-1.5"></span>
               LIVE
             </span>
@@ -53,7 +64,7 @@ function MatchCard({ match, navigateTo, isCompact = false }) {
       case 'completed':
         return (
           <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+            <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
               <span className={isTeam1Winner ? 'text-green-600 dark:text-green-400' : ''}>
                 {match.team1_score || 0}
               </span>
@@ -68,10 +79,11 @@ function MatchCard({ match, navigateTo, isCompact = false }) {
           </div>
         );
       case 'upcoming':
+      case 'scheduled':
       default:
         return (
           <div className="text-center">
-            <div className="text-lg font-medium text-gray-900 dark:text-white">
+            <div className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">
               {formatTime(match.scheduled_at)}
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-500">
@@ -101,10 +113,10 @@ function MatchCard({ match, navigateTo, isCompact = false }) {
           </div>
           <div className="text-right">
             {match.status === 'live' ? (
-              <span className="text-red-600 font-bold text-xs">LIVE</span>
+              <span className="text-red-600 font-bold text-sm animate-pulse">LIVE</span>
             ) : match.status === 'completed' ? (
               <div className="text-center">
-                <div className="font-bold text-lg">
+                <div className="font-bold text-xl">
                   {match.team1_score || 0}-{match.team2_score || 0}
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -128,13 +140,13 @@ function MatchCard({ match, navigateTo, isCompact = false }) {
       className="card hover:shadow-lg transition-shadow cursor-pointer"
       onClick={() => navigateTo && navigateTo('match-detail', { id: match.id })}
     >
-      <div className="p-4">
+      <div className="p-4 sm:p-6">
         {/* Event and format info - VLR.gg Style with Event Image */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
             {/* Event Image - VLR.gg Style */}
             {match.event?.logo && (
-              <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0">
+              <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0">
                 <img 
                   src={getImageUrl(match.event.logo)} 
                   alt={match.event.name}
@@ -142,9 +154,11 @@ function MatchCard({ match, navigateTo, isCompact = false }) {
                 />
               </div>
             )}
-            <span className="text-xs text-gray-500 dark:text-gray-500">
-              {match.event?.name || 'Scrim'}
-            </span>
+            {match.event?.name && (
+              <span className="text-xs text-gray-500 dark:text-gray-500">
+                {match.event.name}
+              </span>
+            )}
             {match.event?.tier && (
               <span className={`px-1.5 py-0.5 text-xs font-bold rounded border ${
                 match.event.tier === 'S' ? 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/20 dark:text-yellow-200' :
@@ -165,11 +179,11 @@ function MatchCard({ match, navigateTo, isCompact = false }) {
           {/* Team 1 */}
           <div className={`flex-1 min-w-0 ${isTeam1Winner ? 'opacity-100' : match.status === 'completed' ? 'opacity-50' : ''}`}>
             <div className="flex items-center space-x-3">
-              <TeamLogo team={match.team1} size="w-10 h-10" className="flex-shrink-0" />
+              <TeamLogo team={match.team1} size="w-10 h-10 sm:w-12 sm:h-12" className="flex-shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center space-x-2">
                   <span 
-                    className="font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer truncate"
+                    className="font-semibold text-base sm:text-lg text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer truncate"
                     onClick={(e) => {
                       e.stopPropagation();
                       navigateTo && navigateTo('team-detail', { id: match.team1?.id });
@@ -205,7 +219,7 @@ function MatchCard({ match, navigateTo, isCompact = false }) {
                     <span className="text-sm flex-shrink-0">{getCountryFlag(match.team2.country)}</span>
                   )}
                   <span 
-                    className="font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer truncate"
+                    className="font-semibold text-base sm:text-lg text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer truncate"
                     onClick={(e) => {
                       e.stopPropagation();
                       navigateTo && navigateTo('team-detail', { id: match.team2?.id });
@@ -221,7 +235,7 @@ function MatchCard({ match, navigateTo, isCompact = false }) {
                   </div>
                 )}
               </div>
-              <TeamLogo team={match.team2} size="w-10 h-10" className="flex-shrink-0" />
+              <TeamLogo team={match.team2} size="w-10 h-10 sm:w-12 sm:h-12" className="flex-shrink-0" />
             </div>
           </div>
         </div>
@@ -247,24 +261,42 @@ function MatchCard({ match, navigateTo, isCompact = false }) {
         )}
 
         {/* Map score for completed matches */}
-        {match.status === 'completed' && match.maps_data && (
-          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-center space-x-2 text-xs">
-              {match.maps_data.map((map, index) => (
-                <div 
-                  key={index} 
-                  className={`px-2 py-1 rounded ${
-                    map.winner === match.team1_id 
-                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200' 
-                      : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200'
-                  }`}
-                >
-                  {map.map_name}: {map.team1_score}-{map.team2_score}
-                </div>
-              ))}
+        {match.status === 'completed' && match.maps_data && (() => {
+          // Safely parse maps_data if it's a string
+          let mapsArray = match.maps_data;
+          if (typeof mapsArray === 'string') {
+            try {
+              mapsArray = JSON.parse(mapsArray);
+            } catch (e) {
+              console.error('Failed to parse maps_data:', e);
+              return null;
+            }
+          }
+          
+          // Only render if we have a valid array
+          if (!Array.isArray(mapsArray) || mapsArray.length === 0) {
+            return null;
+          }
+          
+          return (
+            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-center space-x-2 text-xs">
+                {mapsArray.map((map, index) => (
+                  <div 
+                    key={index} 
+                    className={`px-2 py-1 rounded ${
+                      map.winner_id === match.team1_id 
+                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200' 
+                        : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200'
+                    }`}
+                  >
+                    {map.map_name}: {map.team1_score || 0}-{map.team2_score || 0}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );

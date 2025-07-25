@@ -327,7 +327,7 @@ const MatchCard: React.FC<MatchCardProps> = ({
                     {map.team1_score}-{map.team2_score}
                   </span>
                 )}
-                {map.status === 'in_progress' && (
+                {map.status === 'live' && (
                   <span className="text-[#fa4454] font-bold">LIVE</span>
                 )}
               </div>

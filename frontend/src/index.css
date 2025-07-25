@@ -46,6 +46,88 @@ code {
   }
 }
 
+/* VLR Bracket Styles */
+@layer components {
+  .bracket-container {
+    @apply relative;
+  }
+  
+  .bracket-container.fullscreen {
+    @apply fixed inset-0 bg-white dark:bg-gray-900 z-50 overflow-auto;
+  }
+  
+  .bracket-visualization {
+    @apply relative;
+  }
+  
+  .bracket-section {
+    @apply relative;
+  }
+  
+  .bracket-round {
+    @apply flex flex-col;
+  }
+  
+  .bracket-match {
+    @apply relative;
+  }
+  
+  /* VLR-style Match Cards */
+  .bracket-match-card {
+    @apply bg-white dark:bg-gray-900 rounded-lg overflow-hidden;
+    min-width: 280px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+  }
+  
+  .bracket-match-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+  }
+  
+  /* Match Connectors */
+  .match-connector {
+    @apply absolute pointer-events-none;
+    stroke: theme('colors.gray.300');
+  }
+  
+  .dark .match-connector {
+    stroke: theme('colors.gray.600');
+  }
+  
+  /* Team Path Highlighting */
+  .team-path-highlight {
+    @apply relative;
+  }
+  
+  .team-path-highlight::before {
+    content: '';
+    @apply absolute inset-0 bg-blue-500 opacity-10 rounded;
+    z-index: -1;
+  }
+  
+  /* Predictions */
+  .prediction-bar {
+    @apply relative h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden;
+  }
+  
+  .prediction-fill {
+    @apply absolute top-0 left-0 h-full bg-blue-500 transition-all duration-300;
+  }
+}
+
+/* Fade in-out animation */
+@keyframes fade-in-out {
+  0% { opacity: 0; transform: translateY(-10px); }
+  20% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+
+.animate-fade-in-out {
+  animation: fade-in-out 3s ease-in-out;
+}
+
 /* Animated Background */
 .animated-background {
   position: fixed;

@@ -33,7 +33,14 @@ function UserDisplay({
     <div className={`flex items-center space-x-2 ${className}`}>
       {/* Avatar with hero flair */}
       {showAvatar && (
-        <UserAvatar user={user} size={size} showFlairs={false} showName={false} />
+        <UserAvatar 
+          user={user} 
+          size={size} 
+          showFlairs={false} 
+          showName={false} 
+          clickable={clickable}
+          navigateTo={navigateTo}
+        />
       )}
 
       {/* Username */}

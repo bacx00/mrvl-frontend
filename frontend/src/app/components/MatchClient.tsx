@@ -359,7 +359,7 @@ export default function MatchClient({ matchId, initialData }: MatchClientProps) 
                       {map.team1_score} - {map.team2_score}
                     </div>
                   )}
-                  {map.status === 'in_progress' && (
+                  {map.status === 'live' && (
                     <div className="text-xs text-[#4ade80] mt-1">LIVE</div>
                   )}
                 </button>

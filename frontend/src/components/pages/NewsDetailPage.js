@@ -4,7 +4,9 @@ import UserDisplay from '../shared/UserDisplay';
 import VotingButtons from '../shared/VotingButtons';
 import MentionAutocomplete from '../shared/MentionAutocomplete';
 import MentionLink from '../shared/MentionLink';
-import { processContentWithMentions } from '../../utils/mentionUtils';
+import NewsContent from '../shared/NewsContent';
+import { processContentWithMentions, extractMentionsFromContent } from '../../utils/mentionUtils';
+import { getImageUrl } from '../../utils/imageUtils';
 
 function NewsDetailPage({ params, navigateTo }) {
   const [article, setArticle] = useState(null);
@@ -13,7 +15,10 @@ function NewsDetailPage({ params, navigateTo }) {
   const [commentText, setCommentText] = useState('');
   const [replyToId, setReplyToId] = useState(null);
   const [submittingComment, setSubmittingComment] = useState(false);
-  const { api, user, isAuthenticated } = useAuth();
+  const [editingComment, setEditingComment] = useState(null);
+  const [editContent, setEditContent] = useState('');
+  const [selectedMentions, setSelectedMentions] = useState([]);
+  const { api, user, isAuthenticated, isAdmin, isModerator } = useAuth();
 
   const articleId = params?.id;
 
@@ -32,15 +37,9 @@ function NewsDetailPage({ params, navigateTo }) {
       const articleData = response.data?.data || response.data || response;
       
       console.log('✅ Article loaded:', articleData);
+      console.log('📝 Comments in article:', articleData.comments?.length || 0);
       setArticle(articleData);
       setComments(articleData.comments || []);
-      
-      // Increment view count
-      try {
-        await api.post(`/news/${articleId}/view`);
-      } catch (error) {
-        console.log('View count failed (likely not logged in)');
-      }
       
     } catch (error) {
       console.error('❌ Error fetching article:', error);
@@ -64,16 +63,32 @@ function NewsDetailPage({ params, navigateTo }) {
 
     setSubmittingComment(true);
     try {
-      const response = await api.post(`/news/${articleId}/comments`, {
+      const response = await api.post(`/user/news/${articleId}/comments`, {
         content: commentText,
-        parent_id: replyToId
+        parent_id: replyToId,
+        mentions: selectedMentions // Use the tracked selected mentions
       });
 
-      if (response.data.success) {
+      console.log('🔍 Checking response for success...', response.data);
+      console.log('🔍 Full response object:', response);
+      console.log('🔍 Response success check:', response.data?.success === true || response.success === true);
+      if (response.data?.success === true || response.success === true) {
+        console.log('✅ Comment posted successfully, refreshing article data...');
+        console.log('📝 Response data:', response.data);
+        
+        // Clear form
         setCommentText('');
         setReplyToId(null);
-        // Refresh comments
-        await fetchArticle();
+        setSelectedMentions([]);
+        
+        // Fetch fresh data from server to get properly processed mentions
+        console.log('🔄 Calling fetchArticle to refresh comments...');
+        try {
+          await fetchArticle();
+          console.log('✅ fetchArticle completed');
+        } catch (fetchError) {
+          console.error('❌ Error in fetchArticle:', fetchError);
+        }
       }
     } catch (error) {
       console.error('Error posting comment:', error);
@@ -83,54 +98,87 @@ function NewsDetailPage({ params, navigateTo }) {
     }
   };
 
-  const renderContentWithMentions = (content, mentions = []) => {
-    if (!content) return null;
-    
-    // Create a map of mention texts to their data
-    const mentionMap = {};
-    mentions.forEach(mention => {
-      mentionMap[mention.mention_text] = mention;
-    });
-    
-    // Split content by mentions pattern
-    const mentionPattern = /(@\w+|@team:\w+|@player:\w+)/g;
-    const parts = content.split(mentionPattern);
-    
-    return parts.map((part, index) => {
-      const mentionData = mentionMap[part];
-      
-      if (mentionData) {
-        return (
-          <MentionLink
-            key={index}
-            mention={mentionData}
-            onClick={(mention) => {
-              const nav = {
-                player: () => navigateTo('player-detail', { id: mention.id }),
-                team: () => navigateTo('team-detail', { id: mention.id }),
-                user: () => navigateTo('user-profile', { id: mention.id })
-              };
-              
-              if (nav[mention.type]) {
-                nav[mention.type]();
-              }
-            }}
-          />
-        );
-      }
-      
-      // For unlinked mentions, still style them
-      if (part.match(mentionPattern)) {
-        return (
-          <span key={index} className="text-red-600 dark:text-red-400 font-medium">
-            {part}
-          </span>
-        );
-      }
-      
-      return part;
+  const handleMentionSelect = (mention) => {
+    // Add the selected mention to our tracking array
+    setSelectedMentions(prev => {
+      // Avoid duplicates
+      const exists = prev.find(m => m.id === mention.id && m.type === mention.type);
+      if (exists) return prev;
+      return [...prev, mention];
     });
   };
+
+  const handleEditComment = (comment) => {
+    setEditingComment(comment);
+    setEditContent(comment.content);
+  };
+
+  const handleSaveEdit = async (commentId) => {
+    if (!editContent.trim()) return;
+
+    try {
+      setSubmittingComment(true);
+
+      // Extract mentions from the edited content
+      const mentions = extractMentionsFromContent(editContent.trim());
+      
+      const response = await api.put(`/user/news/comments/${commentId}`, {
+        content: editContent.trim(),
+        mentions: mentions // Include mentions in the payload
+      });
+
+      if (response.data?.success === true || response.success === true) {
+        setEditingComment(null);
+        setEditContent('');
+        
+        // Immediately fetch fresh data
+        try {
+          await fetchArticle();
+          console.log('✅ fetchArticle completed after edit');
+        } catch (fetchError) {
+          console.error('❌ Error in fetchArticle after edit:', fetchError);
+        }
+      } else {
+        alert('Failed to edit comment. Please try again.');
+      }
+    } catch (error) {
+      console.error('❌ Failed to edit comment:', error);
+      alert('Failed to edit comment. Please try again.');
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm('Are you sure you want to delete this comment?')) return;
+
+    try {
+      setSubmittingComment(true);
+      console.log('🗑️ Deleting comment...', commentId);
+
+      const response = await api.delete(`/user/news/comments/${commentId}`);
+
+      if (response.data?.success || response.success) {
+        console.log('✅ Comment deleted successfully, refreshing article data...');
+        // Immediately fetch fresh data
+        try {
+          await fetchArticle();
+          console.log('✅ fetchArticle completed after delete');
+        } catch (fetchError) {
+          console.error('❌ Error in fetchArticle after delete:', fetchError);
+        }
+      } else {
+        alert('Failed to delete comment. Please try again.');
+      }
+    } catch (error) {
+      console.error('❌ Failed to delete comment:', error);
+      alert('Failed to delete comment. Please try again.');
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
+  // Use the utility function to process content with mentions
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -158,102 +206,209 @@ function NewsDetailPage({ params, navigateTo }) {
     return (
       <div 
         key={comment.id} 
-        className={`${isReply ? 'pl-4 border-l-2 border-gray-200 dark:border-gray-700' : ''} py-4`}
+        className={`${
+          isReply ? 'pl-4 border-l-2 border-gray-200 dark:border-gray-700' : ''
+        } py-4 ${depth > 0 ? 'bg-gray-50/50 dark:bg-gray-800/50 rounded-lg' : ''}`}
         style={marginStyle}
       >
-        <div className="flex items-start space-x-3">
-          {/* Voting (left side) */}
-          <VotingButtons
-            itemType="news_comment"
-            itemId={comment.id}
-            parentId={articleId}
-            initialUpvotes={comment.stats?.upvotes || 0}
-            initialDownvotes={comment.stats?.downvotes || 0}
-            userVote={comment.user_vote}
-            direction="vertical"
-            size="sm"
-          />
-
-          {/* Comment content */}
-          <div className="flex-1">
-            {/* Author info */}
-            <div className="flex items-center space-x-2 mb-2">
-              <UserDisplay
-                user={comment.author}
-                showAvatar={true}
-                showHeroFlair={true}
-                showTeamFlair={true}
-                size="sm"
-                clickable={false}
-              />
-              <span className="text-xs text-gray-500 dark:text-gray-500">
-                {formatDate(comment.meta?.created_at)}
+        <div className="w-full">
+          {/* User Info Header */}
+          <div className="flex items-center space-x-3 mb-3">
+            <UserDisplay
+              user={comment.author}
+              showAvatar={true}
+              showHeroFlair={true}
+              showTeamFlair={true}
+              size="sm"
+              clickable={false}
+            />
+            <span className="text-sm text-gray-500 dark:text-gray-500">
+              {formatDate(comment.meta?.created_at)}
+            </span>
+            {comment.meta?.edited && (
+              <span className="text-xs text-gray-400 dark:text-gray-600">
+                (edited)
               </span>
-              {comment.meta?.edited && (
-                <span className="text-xs text-gray-400 dark:text-gray-600">(edited)</span>
-              )}
-            </div>
+            )}
+            {/* Voting buttons right after username info */}
+            <VotingButtons
+              itemType="news_comment"
+              itemId={comment.id}
+              parentId={articleId}
+              initialUpvotes={comment.stats?.upvotes || 0}
+              initialDownvotes={comment.stats?.downvotes || 0}
+              userVote={comment.user_vote}
+              direction="horizontal"
+              size="xs"
+              onVoteChange={(newVote, stats) => {
+                // Update comment vote in state
+                const updateCommentVote = (comments) => {
+                  return comments.map(c => {
+                    if (c.id === comment.id) {
+                      return {
+                        ...c,
+                        user_vote: newVote,
+                        stats: {
+                          ...c.stats,
+                          upvotes: stats.upvotes,
+                          downvotes: stats.downvotes,
+                          score: stats.upvotes - stats.downvotes
+                        }
+                      };
+                    } else if (c.replies && c.replies.length > 0) {
+                      return {
+                        ...c,
+                        replies: updateCommentVote(c.replies)
+                      };
+                    }
+                    return c;
+                  });
+                };
+                setComments(updateCommentVote(comments));
+              }}
+            />
+          </div>
 
-            {/* Comment text with mentions */}
-            <div className="text-gray-900 dark:text-white mb-2">
-              {renderContentWithMentions(comment.content, comment.mentions || [])}
-            </div>
+          {/* Comment Content */}
+          <div className="prose prose-sm dark:prose-invert max-w-none mb-4">
+            {comment.content.split('\n').map((paragraph, index) => (
+              <p key={index} className="mb-2 last:mb-0">
+                {processContentWithMentions(paragraph, comment.mentions || [], navigateTo)}
+              </p>
+            ))}
+          </div>
 
-            {/* Comment actions */}
-            <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-500">
+          {/* Comment Actions */}
+          <div className="flex items-center space-x-4 mb-3">
+            {/* Reply Button */}
+            {isAuthenticated && (
               <button
                 onClick={() => setReplyToId(comment.id)}
-                className="hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                className="text-xs text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
               >
                 Reply
               </button>
-              
-              {comment.mentions && comment.mentions.length > 0 && (
-                <span className="flex items-center space-x-1">
-                  <span>@</span>
-                  <span>{comment.mentions.length} mentions</span>
-                </span>
-              )}
-            </div>
-
-            {/* Reply form */}
-            {replyToId === comment.id && (
-              <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded">
-                <form onSubmit={handleSubmitComment}>
-                  <MentionAutocomplete
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    placeholder={`Reply to ${comment.author?.name}...`}
-                    rows={3}
-                    className="px-3 py-2 text-sm"
-                  />
-                  <div className="flex justify-end space-x-2 mt-2">
-                    <button
-                      type="button"
-                      onClick={() => setReplyToId(null)}
-                      className="px-3 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submittingComment || !commentText.trim()}
-                      className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {submittingComment ? 'Posting...' : 'Reply'}
-                    </button>
-                  </div>
-                </form>
-              </div>
+            )}
+            
+            {/* Edit Button */}
+            {(comment.author?.id === user?.id || isAdmin || isModerator) && (
+              <button
+                onClick={() => handleEditComment(comment)}
+                className="text-xs text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              >
+                Edit
+              </button>
             )}
 
-            {/* Nested replies */}
-            {comment.replies && comment.replies.length > 0 && (
-              <div className="mt-4 space-y-2">
-                {comment.replies.map(reply => renderComment(reply, true, depth + 1))}
-              </div>
+            {/* Delete Button */}
+            {(comment.author?.id === user?.id || isAdmin || isModerator) && (
+              <button
+                onClick={() => handleDeleteComment(comment.id)}
+                disabled={submittingComment}
+                className={`text-xs transition-colors ${
+                  submittingComment 
+                    ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' 
+                    : 'text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400'
+                }`}
+              >
+                {submittingComment ? 'Deleting...' : 'Delete'}
+              </button>
             )}
           </div>
+
+          {/* Reply Form */}
+          {replyToId === comment.id && (
+            <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded">
+              <form onSubmit={handleSubmitComment}>
+                <div className="mb-2">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Replying to @{comment.author?.username || comment.author?.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setReplyToId(null)}
+                    className="ml-2 text-xs text-red-600 dark:text-red-400 hover:underline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <MentionAutocomplete
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  onMentionSelect={handleMentionSelect}
+                  placeholder="Write your reply..."
+                  rows={3}
+                  className="p-2"
+                />
+                <div className="flex justify-end space-x-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setReplyToId(null)}
+                    className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!commentText.trim() || submittingComment}
+                    className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {submittingComment ? 'Posting...' : 'Reply'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Edit Form */}
+          {editingComment?.id === comment.id && (
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-700">
+              <form onSubmit={(e) => { e.preventDefault(); handleSaveEdit(comment.id); }}>
+                <div className="mb-2">
+                  <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                    Editing comment
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => { setEditingComment(null); setEditContent(''); }}
+                    className="ml-2 text-xs text-red-600 dark:text-red-400 hover:underline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  placeholder="Edit your comment..."
+                  rows={4}
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent"
+                />
+                <div className="flex justify-end space-x-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => { setEditingComment(null); setEditContent(''); }}
+                    className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!editContent.trim() || submittingComment}
+                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {submittingComment ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Nested Replies */}
+          {comment.replies && comment.replies.length > 0 && (
+            <div className="mt-4 space-y-2">
+              {comment.replies.map(reply => renderComment(reply, true, depth + 1))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -306,7 +461,7 @@ function NewsDetailPage({ params, navigateTo }) {
           News
         </button>
         <span>›</span>
-        <span className="text-gray-900 dark:text-white">{article.title}</span>
+        <span className="text-gray-900 dark:text-white">{processContentWithMentions(article.title, article.mentions || [], navigateTo)}</span>
       </div>
 
       {/* Article */}
@@ -318,9 +473,9 @@ function NewsDetailPage({ params, navigateTo }) {
             {article.category && (
               <span 
                 className="px-3 py-1 text-xs font-bold rounded-full text-white"
-                style={{ backgroundColor: article.category.color || '#6b7280' }}
+                style={{ backgroundColor: '#6b7280' }}
               >
-                {article.category.icon || '📰'} {article.category.name}
+                {typeof article.category === 'string' ? article.category : article.category.name}
               </span>
             )}
             {article.meta?.featured && (
@@ -335,7 +490,7 @@ function NewsDetailPage({ params, navigateTo }) {
 
           {/* Title */}
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            {article.title}
+            {processContentWithMentions(article.title, article.mentions || [], navigateTo)}
           </h1>
 
           {/* Author and meta */}
@@ -350,9 +505,6 @@ function NewsDetailPage({ params, navigateTo }) {
             
             <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-500">
               <span>{formatDate(article.meta?.published_at || article.meta?.created_at)}</span>
-              {article.stats?.views > 0 && (
-                <span>👁 {article.stats.views.toLocaleString()}</span>
-              )}
               {article.meta?.read_time && (
                 <span>📖 {article.meta.read_time} min read</span>
               )}
@@ -364,7 +516,7 @@ function NewsDetailPage({ params, navigateTo }) {
         {article.featured_image && (
           <div className="aspect-video overflow-hidden bg-gray-100 dark:bg-gray-800">
             <img 
-              src={article.featured_image}
+              src={getImageUrl(article.featured_image)}
               alt={article.title}
               className="w-full h-full object-cover"
               onError={(e) => {
@@ -379,16 +531,11 @@ function NewsDetailPage({ params, navigateTo }) {
         <div className="p-6">
           {article.excerpt && (
             <div className="text-lg text-gray-700 dark:text-gray-300 mb-6 font-medium">
-              {article.excerpt}
+              {processContentWithMentions(article.excerpt, article.mentions || [], navigateTo)}
             </div>
           )}
           
-          <div className="prose dark:prose-invert max-w-none">
-            {article.mentions && article.mentions.length > 0 
-              ? processContentWithMentions(article.content, article.mentions)
-              : <div dangerouslySetInnerHTML={{ __html: article.content }} />
-            }
-          </div>
+          <NewsContent content={article.content} mentions={article.mentions || []} />
         </div>
 
         {/* Article voting and sharing */}
@@ -401,6 +548,18 @@ function NewsDetailPage({ params, navigateTo }) {
               initialDownvotes={article.stats?.downvotes || 0}
               userVote={article.user_vote}
               direction="horizontal"
+              onVoteChange={(newVote, stats) => {
+                setArticle(prev => ({
+                  ...prev,
+                  user_vote: newVote,
+                  stats: {
+                    ...prev.stats,
+                    upvotes: stats.upvotes,
+                    downvotes: stats.downvotes,
+                    score: stats.upvotes - stats.downvotes
+                  }
+                }));
+              }}
             />
             
             <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-500">
@@ -436,6 +595,7 @@ function NewsDetailPage({ params, navigateTo }) {
                   <MentionAutocomplete
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
+                    onMentionSelect={handleMentionSelect}
                     placeholder="Add a comment... Use @username to mention someone"
                     rows={4}
                     className="px-3 py-2"

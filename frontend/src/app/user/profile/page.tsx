@@ -12,13 +12,13 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [form, setForm] = useState({
-    username: user?.username || '',
+    username: user?.username || user?.name || '',
     email: user?.email || '',
-    bio: '',
-    location: '',
-    website: '',
-    twitter: '',
-    discord: ''
+    bio: user?.bio || '',
+    location: user?.location || '',
+    website: user?.website || '',
+    twitter: user?.twitter || '',
+    discord: user?.discord || ''
   });
   
   const [isEditing, setIsEditing] = useState(false);
@@ -46,8 +46,45 @@ export default function ProfilePage() {
         console.error('Error fetching teams:', error);
       }
     };
+    
+    // Fetch user profile data
+    const fetchUserProfile = async () => {
+      try {
+        const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + '/api/user/profile', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const profileData = data.data || data;
+          
+          // Update form with fetched data
+          setForm({
+            username: profileData.name || profileData.username || '',
+            email: profileData.email || '',
+            bio: profileData.bio || '',
+            location: profileData.location || '',
+            website: profileData.website || '',
+            twitter: profileData.twitter || '',
+            discord: profileData.discord || ''
+          });
+          
+          // Update selected flairs
+          setSelectedHero(profileData.hero_flair || '');
+          setSelectedTeam(profileData.team_flair_id || null);
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+    
     fetchTeams();
-  }, []);
+    if (user) {
+      fetchUserProfile();
+    }
+  }, [user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -57,28 +94,65 @@ export default function ProfilePage() {
     fileInputRef.current?.click();
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Mock avatar update
-      console.log('Avatar upload:', file.name);
+    if (file && user) {
+      try {
+        const formData = new FormData();
+        formData.append('avatar', file);
+        
+        const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + '/api/user/profile/upload-avatar', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          },
+          body: formData,
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (updateUser && data.data?.avatar) {
+            updateUser({ ...user, avatar: data.data.avatar });
+          }
+        }
+      } catch (error) {
+        console.error('Avatar upload failed:', error);
+      }
     }
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + '/api/user/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+        body: JSON.stringify({
+          name: form.username,
+          email: form.email,
+          bio: form.bio,
+          location: form.location,
+          website: form.website,
+          twitter: form.twitter,
+          discord: form.discord,
+        }),
+      });
       
-      // Update user context
-      if (updateUser) {
-        updateUser({ ...user, username: form.username, email: form.email });
+      if (response.ok) {
+        const data = await response.json();
+        if (updateUser && data.data) {
+          updateUser(data.data);
+        }
+        setIsEditing(false);
+      } else {
+        throw new Error('Failed to update profile');
       }
-      
-      setIsEditing(false);
     } catch (error) {
       console.error('Save failed:', error);
+      alert('Failed to update profile. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -103,7 +177,7 @@ export default function ProfilePage() {
                     <img src={getHeroImageSync(selectedHero)} alt={selectedHero} className="w-24 h-24 rounded-full object-cover" />
                   ) : (
                     <span className="text-2xl font-bold text-[#768894]">
-                      {user.username.charAt(0).toUpperCase()}
+                      {(user.name || user.username || 'U').charAt(0).toUpperCase()}
                     </span>
                   )}
                 </div>
@@ -141,16 +215,16 @@ export default function ProfilePage() {
             {/* User Info */}
             <div className="flex-1">
               <div className="flex items-center space-x-3 mb-2">
-                <h1 className="text-2xl font-bold text-white">{user.username}</h1>
+                <h1 className="text-2xl font-bold text-white">{user.name || user.username}</h1>
                 <span className="px-2 py-1 bg-[#fa4454] text-white text-xs font-medium rounded">
-                  {user.role.toUpperCase()}
+                  {(user.role || 'user').toUpperCase()}
                 </span>
               </div>
               <p className="text-[#768894] mb-2">{user.email}</p>
               <div className="flex items-center space-x-4 text-sm text-[#768894]">
-                <span>Joined {new Date(user.joinDate).toLocaleDateString()}</span>
+                <span>Joined {new Date(user.created_at || user.joinDate || Date.now()).toLocaleDateString()}</span>
                 <span>•</span>
-                <span>{user.posts} posts</span>
+                <span>{user.posts || 0} posts</span>
               </div>
             </div>
 
@@ -467,8 +541,25 @@ export default function ProfilePage() {
               <button
                 onClick={async () => {
                   // Save hero selection
-                  if (updateUser) {
-                    updateUser({ ...user, hero_flair: selectedHero });
+                  try {
+                    const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + '/api/user/profile/flairs', {
+                      method: 'PUT',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+                      },
+                      body: JSON.stringify({
+                        hero_flair: selectedHero,
+                        show_hero_flair: true,
+                      }),
+                    });
+                    
+                    if (response.ok && updateUser) {
+                      const data = await response.json();
+                      updateUser(data.data);
+                    }
+                  } catch (error) {
+                    console.error('Failed to update hero flair:', error);
                   }
                   setShowHeroModal(false);
                 }}
@@ -542,8 +633,25 @@ export default function ProfilePage() {
               <button
                 onClick={async () => {
                   // Save team selection
-                  if (updateUser) {
-                    updateUser({ ...user, team_flair_id: selectedTeam });
+                  try {
+                    const response = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + '/api/user/profile/flairs', {
+                      method: 'PUT',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+                      },
+                      body: JSON.stringify({
+                        team_flair_id: selectedTeam,
+                        show_team_flair: true,
+                      }),
+                    });
+                    
+                    if (response.ok && updateUser) {
+                      const data = await response.json();
+                      updateUser(data.data);
+                    }
+                  } catch (error) {
+                    console.error('Failed to update team flair:', error);
                   }
                   setShowTeamModal(false);
                 }}

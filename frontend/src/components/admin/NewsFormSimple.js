@@ -8,7 +8,7 @@ function NewsFormSimple({ newsId, navigateTo }) {
     title: '',
     excerpt: '',
     content: '',
-    category: 'news',
+    category: '',
     status: 'draft',
     featured: false,
     featured_image: '',
@@ -19,9 +19,31 @@ function NewsFormSimple({ newsId, navigateTo }) {
   const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const { api } = useAuth();
 
   const isEdit = Boolean(newsId);
+
+  const fetchCategories = async () => {
+    try {
+      setCategoriesLoading(true);
+      const response = await api.get('/news/categories');
+      const categoriesData = response.data?.data || response.data || [];
+      setCategories(categoriesData);
+      
+      // Set default category if none selected and we have categories
+      if (categoriesData.length > 0 && !formData.category) {
+        const defaultCategory = categoriesData.find(cat => cat.is_default) || categoriesData[0];
+        setFormData(prev => ({ ...prev, category: defaultCategory.slug }));
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      setCategories([]);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
 
   const fetchNews = async () => {
     if (!isEdit) return;
@@ -34,7 +56,7 @@ function NewsFormSimple({ newsId, navigateTo }) {
         title: news.title || '',
         excerpt: news.excerpt || '',
         content: news.content || '',
-        category: news.category || 'news',
+        category: news.category_slug || news.category || '',
         status: news.status || 'draft',
         featured: news.featured || false,
         featured_image: news.featured_image || '',
@@ -51,6 +73,7 @@ function NewsFormSimple({ newsId, navigateTo }) {
   };
 
   useEffect(() => {
+    fetchCategories();
     fetchNews();
   }, [newsId, isEdit]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -111,7 +134,7 @@ function NewsFormSimple({ newsId, navigateTo }) {
         title: formData.title.trim(),
         excerpt: formData.excerpt.trim(),
         content: formData.content.trim(),
-        category_id: getCategoryId(formData.category),
+        category: formData.category,
         status: formData.status,
         featured: formData.featured,
         published_at: formData.published_at,
@@ -132,9 +155,7 @@ function NewsFormSimple({ newsId, navigateTo }) {
         imageFormData.append('featured_image', imageFile);
         
         try {
-          await api.post(`/admin/news/${articleId}/featured-image`, imageFormData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
+          await api.postFile(`/admin/news/${articleId}/featured-image`, imageFormData);
         } catch (imageError) {
           console.error('Error uploading image:', imageError);
           // Don't fail the whole operation if image upload fails
@@ -155,20 +176,6 @@ function NewsFormSimple({ newsId, navigateTo }) {
     }
   };
 
-  const getCategoryId = (category) => {
-    const categoryMap = {
-      'news': 1,
-      'esports': 1,
-      'updates': 2,
-      'community': 3,
-      'guides': 4,
-      'opinion': 5,
-      'balance': 2,
-      'content': 2,
-      'events': 1
-    };
-    return categoryMap[category] || 1;
-  };
 
   if (loading) {
     return (
@@ -296,12 +303,19 @@ function NewsFormSimple({ newsId, navigateTo }) {
               value={formData.category}
               onChange={handleInputChange}
               className="w-full px-3 py-2 bg-[#0f1419] border border-[#2b3d4d] rounded text-white focus:border-[#fa4454] focus:outline-none text-sm"
+              disabled={categoriesLoading}
             >
-              <option value="esports">Esports</option>
-              <option value="news">General News</option>
-              <option value="updates">Game Updates</option>
-              <option value="events">Events</option>
-              <option value="community">Community</option>
+              {categoriesLoading ? (
+                <option value="">Loading categories...</option>
+              ) : categories.length > 0 ? (
+                categories.map(category => (
+                  <option key={category.id} value={category.slug}>
+                    {category.name}
+                  </option>
+                ))
+              ) : (
+                <option value="">No categories available</option>
+              )}
             </select>
           </div>
 

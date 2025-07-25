@@ -118,6 +118,9 @@ function PlayerDetailPage({ params, navigateTo }) {
         lastActive: playerData.last_active,
         totalEarnings: playerData.total_earnings || 0,
         
+        // Rating from performance stats
+        rating: playerData.stats?.ratings?.current || playerData.rating,
+        
         // Event data
         eventPlacements: playerData.event_placements || [],
         heroStats: playerData.hero_stats || []
@@ -186,6 +189,14 @@ function PlayerDetailPage({ params, navigateTo }) {
       const perfData = performanceResponse.data.data || {};
       setPerformanceStats(perfData);
       
+      // Update player rating from performance stats if available
+      if (perfData.ratings && perfData.ratings.current && player) {
+        setPlayer(prevPlayer => ({
+          ...prevPlayer,
+          rating: perfData.ratings.current
+        }));
+      }
+      
       // Set map statistics
       const mapData = mapStatsResponse.data.data || [];
       setMapStats(mapData);
@@ -239,6 +250,13 @@ function PlayerDetailPage({ params, navigateTo }) {
       case 'Strategist': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-green-300 dark:border-green-700';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600';
     }
+  };
+
+  const formatSocialHandle = (handle, includeAt = true) => {
+    if (!handle) return '';
+    // Remove @ if it already exists to avoid double @
+    const cleanHandle = handle.startsWith('@') ? handle.substring(1) : handle;
+    return includeAt ? `@${cleanHandle}` : cleanHandle;
   };
 
   if (loading) {
@@ -295,32 +313,32 @@ function PlayerDetailPage({ params, navigateTo }) {
                   <div className="flex items-center space-x-4">
                     {player.socialMedia.twitter && (
                       <a 
-                        href={`https://twitter.com/${player.socialMedia.twitter}`} 
+                        href={`https://twitter.com/${formatSocialHandle(player.socialMedia.twitter, false)}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="text-white hover:text-red-200 transition-colors"
+                        className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
                       >
-                        🐦 Twitter
+                        {formatSocialHandle(player.socialMedia.twitter)}
                       </a>
                     )}
                     {player.socialMedia.twitch && (
                       <a 
-                        href={`https://twitch.tv/${player.socialMedia.twitch}`} 
+                        href={`https://twitch.tv/${formatSocialHandle(player.socialMedia.twitch, false)}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="text-white hover:text-red-200 transition-colors"
+                        className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
                       >
-                        📺 Twitch
+                        twitch.tv/{formatSocialHandle(player.socialMedia.twitch, false)}
                       </a>
                     )}
                     {player.socialMedia.youtube && (
                       <a 
-                        href={`https://youtube.com/@${player.socialMedia.youtube}`} 
+                        href={`https://youtube.com/@${formatSocialHandle(player.socialMedia.youtube, false)}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="text-white hover:text-red-200 transition-colors"
+                        className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
                       >
-                        🎥 YouTube
+                        {formatSocialHandle(player.socialMedia.youtube)}
                       </a>
                     )}
                   </div>
@@ -328,8 +346,8 @@ function PlayerDetailPage({ params, navigateTo }) {
               </div>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-white">{formatCurrency(player.totalEarnings)}</div>
-              <div className="text-sm text-red-100">Total Earnings</div>
+              <div className="text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(player.totalEarnings)}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-300">Total Earnings</div>
             </div>
           </div>
         </div>
@@ -358,36 +376,14 @@ function PlayerDetailPage({ params, navigateTo }) {
               </div>
               <div>
                 <div className="text-gray-500 dark:text-gray-500 text-sm">Rating</div>
-                <div className="font-medium text-yellow-600 dark:text-yellow-400 mt-1">{player.rating || 1500}</div>
+                <div className="font-medium text-yellow-600 dark:text-yellow-400 mt-1">{player.rating || 'N/A'}</div>
               </div>
             </div>
           </div>
 
-          {/* Current Team */}
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Current Team</h3>
-            {player.currentTeam ? (
-              <div className="flex items-center space-x-4">
-                <TeamLogo team={player.currentTeam} size="w-12 h-12" />
-                <div>
-                  <button
-                    onClick={() => navigateTo('team-detail', { id: player.currentTeam.id })}
-                    className="text-lg font-semibold text-gray-900 dark:text-white hover:text-red-600 dark:hover:text-red-400"
-                  >
-                    {player.currentTeam.name}
-                  </button>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {player.currentTeam.region}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <p className="text-gray-500 dark:text-gray-500">Free Agent</p>
-            )}
-          </div>
 
-          {/* Career Stats Overview (VLR.gg Style) */}
-          {performanceStats && (
+          {/* Career Stats Overview (VLR.gg Style) - Hidden for now */}
+          {false && performanceStats && (
             <div className="card p-6 mb-6">
               <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Career Performance</h3>
               <div className="grid grid-cols-3 gap-4 text-center">
@@ -534,16 +530,17 @@ function PlayerDetailPage({ params, navigateTo }) {
                     <thead>
                       <tr className="border-b border-gray-200 dark:border-gray-700">
                         <th className="text-left px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Hero</th>
-                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Usage</th>
-                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Rounds</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Maps</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Win%</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">E</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">D</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">A</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">K/D</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">K/D/A</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">DMG</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">HEAL</th>
+                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">BLK</th>
                         <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Rating</th>
-                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">ACS</th>
-                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">K:D</th>
-                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">ADR</th>
-                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">KAST</th>
-                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">HS%</th>
-                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">FK</th>
-                        <th className="text-center px-4 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">FD</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -579,35 +576,32 @@ function PlayerDetailPage({ params, navigateTo }) {
                               </div>
                             </td>
                             <td className="px-4 py-3 text-center">
-                              <div className="flex items-center justify-center space-x-2">
-                                <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                  <div 
-                                    className="bg-red-600 h-2 rounded-full"
-                                    style={{ width: `${Math.min(usagePercent, 100)}%` }}
-                                  />
-                                </div>
-                                <span className="text-sm text-gray-900 dark:text-white">
-                                  {usagePercent.toFixed(0)}%
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-center">
                               <span className="text-sm text-gray-900 dark:text-white">
-                                {hero.rounds_played || hero.maps_played * 15 || 0}
+                                {hero.maps_played || 0}
                               </span>
                             </td>
                             <td className="px-4 py-3 text-center">
                               <span className={`text-sm font-medium ${
-                                hero.avg_performance_rating >= 1.2 ? 'text-green-600 dark:text-green-400' :
-                                hero.avg_performance_rating >= 0.9 ? 'text-gray-900 dark:text-white' :
+                                (hero.win_rate || 0) >= 60 ? 'text-green-600 dark:text-green-400' :
+                                (hero.win_rate || 0) >= 40 ? 'text-gray-900 dark:text-white' :
                                 'text-red-600 dark:text-red-400'
                               }`}>
-                                {(hero.avg_performance_rating || 0).toFixed(2)}
+                                {(hero.win_rate || 0).toFixed(0)}%
                               </span>
                             </td>
                             <td className="px-4 py-3 text-center">
-                              <span className="text-sm text-gray-900 dark:text-white">
-                                {Math.round(hero.avg_combat_score || hero.avg_damage * 0.5 || 0)}
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                {(hero.avg_eliminations || 0).toFixed(1)}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                {(hero.avg_deaths || 0).toFixed(1)}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                {(hero.avg_assists || 0).toFixed(1)}
                               </span>
                             </td>
                             <td className="px-4 py-3 text-center">
@@ -620,28 +614,32 @@ function PlayerDetailPage({ params, navigateTo }) {
                               </span>
                             </td>
                             <td className="px-4 py-3 text-center">
-                              <span className="text-sm text-gray-900 dark:text-white">
-                                {Math.round(hero.avg_damage || 0)}
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                {(hero.avg_kda || ((hero.avg_eliminations || 0) + (hero.avg_assists || 0)) / Math.max(hero.avg_deaths || 1, 1)).toFixed(2)}
                               </span>
                             </td>
                             <td className="px-4 py-3 text-center">
                               <span className="text-sm text-gray-900 dark:text-white">
-                                {hero.kast_percentage ? `${hero.kast_percentage.toFixed(0)}%` : '-'}
+                                {hero.avg_damage ? `${(hero.avg_damage / 1000).toFixed(1)}k` : '-'}
                               </span>
                             </td>
                             <td className="px-4 py-3 text-center">
                               <span className="text-sm text-gray-900 dark:text-white">
-                                {hero.headshot_percentage ? `${hero.headshot_percentage.toFixed(0)}%` : '-'}
+                                {hero.avg_healing ? `${(hero.avg_healing / 1000).toFixed(1)}k` : '-'}
                               </span>
                             </td>
                             <td className="px-4 py-3 text-center">
                               <span className="text-sm text-gray-900 dark:text-white">
-                                {hero.first_kills || '0'}
+                                {hero.avg_damage_blocked ? `${(hero.avg_damage_blocked / 1000).toFixed(1)}k` : '-'}
                               </span>
                             </td>
                             <td className="px-4 py-3 text-center">
-                              <span className="text-sm text-gray-900 dark:text-white">
-                                {hero.first_deaths || '0'}
+                              <span className={`text-sm font-medium ${
+                                hero.avg_performance_rating >= 1.2 ? 'text-green-600 dark:text-green-400' :
+                                hero.avg_performance_rating >= 0.9 ? 'text-gray-900 dark:text-white' :
+                                'text-red-600 dark:text-red-400'
+                              }`}>
+                                {(hero.avg_performance_rating || 0).toFixed(2)}
                               </span>
                             </td>
                           </tr>
@@ -1034,6 +1032,65 @@ function PlayerDetailPage({ params, navigateTo }) {
               )}
             </div>
           )}
+          
+          {/* Teams Section - Current and Past */}
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Teams</h3>
+            
+            {/* Current Team */}
+            <div className="mb-6">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Current Team</h4>
+              {player.currentTeam ? (
+                <div className="flex items-center space-x-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <TeamLogo team={player.currentTeam} size="w-12 h-12" />
+                  <div className="flex-1">
+                    <button
+                      onClick={() => navigateTo('team-detail', { id: player.currentTeam.id })}
+                      className="text-lg font-semibold text-gray-900 dark:text-white hover:text-red-600 dark:hover:text-red-400"
+                    >
+                      {player.currentTeam.name}
+                    </button>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      {player.currentTeam.region}
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-500">
+                    {new Date().getFullYear()}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-500 dark:text-gray-500 italic">Free Agent</p>
+              )}
+            </div>
+            
+            {/* Past Teams */}
+            {player.teamHistory && player.teamHistory.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Past Teams</h4>
+                <div className="space-y-2">
+                  {player.teamHistory.map((team, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <TeamLogo team={team} size="w-10 h-10" />
+                        <button
+                          onClick={() => navigateTo('team-detail', { id: team.id })}
+                          className="font-medium text-gray-900 dark:text-white hover:text-red-600 dark:hover:text-red-400"
+                        >
+                          {team.name}
+                        </button>
+                      </div>
+                      {(team.join_date || team.leave_date) && (
+                        <div className="text-sm text-gray-500 dark:text-gray-500">
+                          {team.join_date && new Date(team.join_date).getFullYear()}
+                          {team.leave_date && ` - ${new Date(team.leave_date).getFullYear()}`}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right Sidebar - VLR.gg Style */}
@@ -1047,35 +1104,6 @@ function PlayerDetailPage({ params, navigateTo }) {
             />
           </div>
 
-          {/* Past Teams */}
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Past Teams</h3>
-            {player.teamHistory && player.teamHistory.length > 0 ? (
-              <div className="space-y-3">
-                {player.teamHistory.map((team, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <TeamLogo team={team} size="sm" />
-                      <button
-                        onClick={() => navigateTo('team-detail', { id: team.id })}
-                        className="font-medium text-gray-900 dark:text-white hover:text-red-600 dark:hover:text-red-400"
-                      >
-                        {team.name}
-                      </button>
-                    </div>
-                    {(team.join_date || team.leave_date) && (
-                      <div className="text-sm text-gray-500 dark:text-gray-500">
-                        {team.join_date && new Date(team.join_date).getFullYear()}
-                        {team.leave_date && ` - ${new Date(team.leave_date).getFullYear()}`}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 dark:text-gray-500">No previous teams</p>
-            )}
-          </div>
 
           {/* Event Placements/Achievements */}
           <div className="card p-6">

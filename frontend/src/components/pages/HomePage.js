@@ -89,19 +89,26 @@ function HomePage({ navigateTo }) {
         const rawDiscussions = forumsResponse?.data?.data || forumsResponse?.data || [];
         
         if (Array.isArray(rawDiscussions) && rawDiscussions.length > 0) {
-          // ✅ SIMPLIFIED FIX: Only include threads with valid IDs and basic validation
+          // ✅ FIXED: Properly map backend forum data structure with null safety
           discussionsData = rawDiscussions
-            .filter(thread => thread.id && thread.title && thread.id > 0) // Only valid threads
+            .filter(thread => thread && thread.id && thread.title && thread.id > 0) // Only valid threads
             .slice(0, 8)
-            .map(thread => ({
-              id: thread.id,
-              title: thread.title,
-              // ✅ FIXED: Use "MRVL User" instead of "Anonymous"
-              author: thread.user_name || thread.author?.name || 'MRVL User',
-              replies: thread.replies || thread.replies_count || 0,
-              lastActivity: formatTimeAgo(thread.updated_at || thread.created_at),
-              category: formatCategory(thread.category)
-            }));
+            .map(thread => {
+              // ✅ SAFE: Ensure all data has fallbacks to prevent NaN/undefined
+              const author = thread.author?.name || thread.user_name || 'MRVL User';
+              const replies = parseInt(thread.stats?.replies || thread.replies_count || 0) || 0;
+              const dateForActivity = thread.meta?.last_reply_at || thread.meta?.created_at || thread.updated_at || thread.created_at;
+              const category = thread.category?.name || thread.category_name || thread.category || 'general';
+              
+              return {
+                id: thread.id,
+                title: thread.title || 'Untitled Discussion',
+                author: author,
+                replies: replies,
+                lastActivity: dateForActivity ? formatTimeAgo(dateForActivity) : 'Unknown',
+                category: formatCategory(category)
+              };
+            });
           console.log('HomePage: Using REAL valid discussions:', discussionsData.length);
         }
       } catch (error) {
@@ -115,8 +122,32 @@ function HomePage({ navigateTo }) {
         const rawNews = newsResponse?.data?.data || newsResponse?.data || newsResponse || [];
         
         if (Array.isArray(rawNews) && rawNews.length > 0) {
-          const featured = rawNews.filter(n => n.featured).slice(0, 3);
-          newsData = featured.length > 0 ? featured : rawNews.slice(0, 3);
+          // ✅ FIXED: Properly filter and map news data structure
+          const featured = rawNews.filter(n => n.meta?.featured || n.featured).slice(0, 3);
+          const selectedNews = featured.length > 0 ? featured : rawNews.slice(0, 3);
+          
+          // ✅ FIXED: Map news data to expected frontend structure with null safety
+          newsData = selectedNews
+            .filter(article => article && article.id && article.title) // Only valid articles
+            .map(article => {
+              // ✅ SAFE: Ensure all data has fallbacks to prevent NaN/undefined
+              return {
+                id: article.id,
+                title: article.title || 'Untitled Article',
+                slug: article.slug || `news-${article.id}`,
+                excerpt: article.excerpt || '',
+                content: article.content || '',
+                featured_image: article.featured_image || null,
+                image: article.featured_image || null, // Also provide as 'image' for compatibility
+                author: article.author || { name: 'MRVL Team' },
+                // ✅ SAFE: Properly handle dates with fallbacks
+                created_at: article.meta?.created_at || article.created_at || new Date().toISOString(),
+                published_at: article.meta?.published_at || article.published_at || article.created_at,
+                updated_at: article.meta?.updated_at || article.updated_at || article.created_at,
+                featured: Boolean(article.meta?.featured || article.featured)
+              };
+            });
+          
           console.log('HomePage: Using REAL backend news:', newsData.length);
         }
       } catch (error) {
@@ -252,7 +283,9 @@ function HomePage({ navigateTo }) {
                     </h3>
                     <div className="flex items-center justify-between recent-discussion-meta">
                       <span className="truncate text-xs text-gray-600 dark:text-gray-400">{discussion.author}</span>
-                      <span className="text-xs text-gray-500 dark:text-gray-500">{discussion.replies}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-500">
+                        {discussion.replies > 0 ? `${discussion.replies} replies` : 'No replies'}
+                      </span>
                     </div>
                     <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                       {discussion.lastActivity}

@@ -60,7 +60,7 @@ function AdminMatches({ navigateTo }) {
 
   const fetchEvents = useCallback(async () => {
     try {
-      const eventsResponse = await api.get('/events');
+      const eventsResponse = await api.get('/events?sort=all');
       setEvents(eventsResponse.data?.data || eventsResponse.data || eventsResponse || []);
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -131,38 +131,24 @@ function AdminMatches({ navigateTo }) {
 
   const updateMatchStatus = async (matchId, newStatus) => {
     try {
-      // Use dedicated endpoints for match control
+      // Map status to control action
+      let action = newStatus;
       if (newStatus === 'live') {
-        await api.post(`/admin/matches/${matchId}/start`);
-      } else if (newStatus === 'paused') {
-        await api.post(`/admin/matches/${matchId}/pause`);
+        action = 'start';
       } else if (newStatus === 'completed') {
-        await api.post(`/admin/matches/${matchId}/complete`);
-      } else {
-        // Fallback to regular update
-        await api.put(`/admin/matches/${matchId}`, { status: newStatus });
+        action = 'complete';
+      } else if (newStatus === 'paused') {
+        action = 'pause';
       }
+      
+      // Use the control endpoint
+      await api.post(`/admin/matches/${matchId}/control`, { action });
+      
       await fetchMatches(); // Refresh the list
       console.log(`Match status updated to ${newStatus}!`);
-      alert(`Match status updated to ${newStatus}!`);
     } catch (error) {
       console.error('Error updating match status:', error);
-      
-      // Better error handling for live match status updates
-      if (error.message.includes('405')) {
-        console.log('PUT method not supported - trying PATCH instead...');
-        try {
-          await api.patch(`/admin/matches/${matchId}`, { status: newStatus });
-          await fetchMatches();
-          console.log(`Match status updated to ${newStatus} via PATCH!`);
-          alert(`Match status updated to ${newStatus}!`);
-        } catch (patchError) {
-          console.error('PATCH also failed:', patchError);
-          alert('Unable to update match status. Please check admin permissions.');
-        }
-      } else {
-        alert('Error updating match status. Please try again.');
-      }
+      alert('Error updating match status. Please try again.');
     }
   };
 
@@ -450,9 +436,9 @@ function AdminMatches({ navigateTo }) {
                     <button
                       onClick={async () => {
                         try {
-                          await api.post(`/admin/matches/${match.id}/resume`);
+                          await api.post(`/admin/matches/${match.id}/control`, { action: 'resume' });
                           await fetchMatches();
-                          alert('Match resumed successfully!');
+                          console.log('Match resumed successfully!');
                         } catch (error) {
                           console.error('Error resuming match:', error);
                           alert('Error resuming match. Please try again.');
@@ -475,9 +461,9 @@ function AdminMatches({ navigateTo }) {
                   <button
                     onClick={async () => {
                       try {
-                        await api.post(`/admin/matches/${match.id}/restart`);
+                        await api.post(`/admin/matches/${match.id}/control`, { action: 'restart' });
                         await fetchMatches();
-                        alert('Match restarted successfully!');
+                        console.log('Match restarted successfully!');
                       } catch (error) {
                         console.error('Error restarting match:', error);
                         alert('Error restarting match. Please try again.');

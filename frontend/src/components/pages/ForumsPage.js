@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
 import UserDisplay from '../shared/UserDisplay';
 import VotingButtons from '../shared/VotingButtons';
+import { processContentWithMentions } from '../../utils/mentionUtils';
 
 function ForumsPage({ navigateTo }) {
   const { isAuthenticated, isAdmin, isModerator, api, user } = useAuth();
@@ -126,10 +127,6 @@ function ForumsPage({ navigateTo }) {
     return category?.color || '#6b7280';
   };
 
-  const getCategoryIcon = (categorySlug) => {
-    const category = categories.find(c => c.slug === categorySlug);
-    return category?.icon || '';
-  };
 
   if (loading) {
     return (
@@ -177,7 +174,7 @@ function ForumsPage({ navigateTo }) {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search threads..."
+              placeholder="Search threads, mentions (@user, @team:VP, @player:Shao)..."
               className="text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-1 text-gray-900 dark:text-white flex-1 md:max-w-xs"
             />
             {searchQuery && (
@@ -202,7 +199,7 @@ function ForumsPage({ navigateTo }) {
               <option value="all">All Categories</option>
               {categories.map(category => (
                 <option key={category.id} value={category.slug}>
-                  {category.icon} {category.name}
+                  {category.name}
                 </option>
               ))}
             </select>
@@ -284,13 +281,13 @@ function ForumsPage({ navigateTo }) {
                           className="px-2 py-0.5 text-xs font-bold rounded-full text-white"
                           style={{ backgroundColor: thread.category?.color || getCategoryColor(thread.category_slug) }}
                         >
-                          {getCategoryIcon(thread.category?.slug || thread.category_slug)} {thread.category?.name || thread.category_name || 'General'}
+                          {thread.category?.name || thread.category_name || 'General'}
                         </span>
                       </div>
 
                       {/* Title */}
                       <h3 className="font-semibold text-gray-900 dark:text-white mb-1 hover:text-red-600 dark:hover:text-red-400 transition-colors line-clamp-1">
-                        {thread.title}
+                        {processContentWithMentions(thread.title, thread.mentions || [])}
                       </h3>
 
                       {/* Author */}

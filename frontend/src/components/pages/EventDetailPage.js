@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
-import { TeamLogo, getCountryFlag, getImageUrl } from '../../utils/imageUtils';
+import { TeamLogo, getCountryFlag, getImageUrl, getEventLogoUrl } from '../../utils/imageUtils';
 import MatchCard from '../MatchCard';
 import BracketVisualization from '../BracketVisualization';
+import VLRBracketVisualization from '../VLRBracketVisualization';
+import UniversalBracketVisualization from '../UniversalBracketVisualization';
+import MarvelRivalsBracketVisualization from '../MarvelRivalsBracketVisualization';
+import EnhancedBracketManager from '../admin/EnhancedBracketManager';
 import { subscribeEventUpdates } from '../../lib/pusher.ts';
 
 function EventDetailPage({ params, navigateTo }) {
@@ -76,19 +80,70 @@ function EventDetailPage({ params, navigateTo }) {
       // Set event data
       setEvent(eventData);
       
-      // Set teams if included
-      if (eventData.teams && Array.isArray(eventData.teams)) {
+      // Set teams if included - check both nested and flat structure
+      console.log('🏆 Teams data structure:', {
+        'participation.teams': eventData.participation?.teams,
+        'teams': eventData.teams,
+        'hasParticipation': !!eventData.participation,
+        'hasTeams': !!eventData.teams
+      });
+      
+      if (eventData.participation?.teams && Array.isArray(eventData.participation.teams)) {
+        console.log('✅ Using teams from participation:', eventData.participation.teams);
+        setTeams(eventData.participation.teams);
+      } else if (eventData.teams && Array.isArray(eventData.teams)) {
+        console.log('✅ Using teams from root:', eventData.teams);
         setTeams(eventData.teams);
+      } else {
+        console.log('⚠️ No teams found in event data');
+        setTeams([]);
       }
       
-      // Set matches if included
+      // Set matches if included and transform flat structure to nested
       if (eventData.matches && Array.isArray(eventData.matches)) {
-        setMatches(eventData.matches);
+        const transformedMatches = eventData.matches.map(match => ({
+          ...match,
+          // Transform flat team data to nested structure
+          team1: match.team1_name ? {
+            id: match.team1_id,
+            name: match.team1_name,
+            short_name: match.team1_short,
+            logo: match.team1_logo
+          } : null,
+          team2: match.team2_name ? {
+            id: match.team2_id,
+            name: match.team2_name,
+            short_name: match.team2_short,
+            logo: match.team2_logo
+          } : null
+        }));
+        console.log('✅ Transformed matches:', transformedMatches);
+        setMatches(transformedMatches);
       }
       
       // Set bracket if included
       if (eventData.bracket) {
+        console.log('🎯 Setting bracket from event data:', eventData.bracket);
         setBracket(eventData.bracket);
+      }
+
+      // Fetch bracket data separately for all users
+      try {
+        console.log('🎯 Making bracket API call to:', `/events/${eventId}/bracket`);
+        const bracketResponse = await api.get(`/events/${eventId}/bracket`);
+        const bracketData = bracketResponse.data?.data || bracketResponse.data;
+        console.log('🎯 Full bracket API response:', bracketResponse.data);
+        console.log('🎯 Extracted bracket data:', bracketData);
+        if (bracketData && bracketData.bracket) {
+          console.log('✅ Setting bracket state from API:', bracketData.bracket);
+          console.log('✅ Bracket rounds:', bracketData.bracket.rounds);
+          setBracket(bracketData.bracket);
+        } else {
+          console.log('⚠️ No bracket data in response structure:', { bracketData, hasData: !!bracketData, hasBracket: !!(bracketData?.bracket) });
+        }
+      } catch (bracketError) {
+        console.log('ℹ️ Bracket API error:', bracketError.message);
+        console.log('ℹ️ No bracket data available yet');
       }
       
     } catch (error) {
@@ -280,7 +335,7 @@ function EventDetailPage({ params, navigateTo }) {
               {/* Event Logo */}
               {event.logo && (
                 <img 
-                  src={getImageUrl(event.logo, 'event-logo')} 
+                  src={getEventLogoUrl(event)} 
                   alt={event.name}
                   className="w-24 h-24 rounded-lg shadow-lg border-2 border-white dark:border-gray-800"
                   onError={(e) => {
@@ -435,9 +490,12 @@ function EventDetailPage({ params, navigateTo }) {
                         <TeamLogo team={team} size="w-12 h-12" />
                         <div>
                           <div className="font-semibold text-gray-900 dark:text-white">{team.name}</div>
-                          <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-500">
-                            <span>{getCountryFlag(team.country)}</span>
-                            <span>{team.region}</span>
+                          <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                            <span className="text-base">{getCountryFlag(team.country)}</span>
+                            <span>{team.country || team.region}</span>
+                            {team.country && team.region && team.country !== team.region && (
+                              <span className="text-gray-400 dark:text-gray-500">• {team.region}</span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -491,34 +549,32 @@ function EventDetailPage({ params, navigateTo }) {
           {/* Bracket Tab */}
           {activeTab === 'bracket' && (
             <div>
-              {bracket ? (
-                <BracketVisualization 
-                  bracket={bracket} 
+              {(isAdmin() || isModerator()) ? (
+                <EnhancedBracketManager 
+                  eventId={eventId}
                   navigateTo={navigateTo}
-                  isAdmin={isAdmin() || isModerator()}
-                  onMatchUpdate={handleBracketMatchUpdate}
                 />
               ) : (
-                <div className="text-center py-12">
-                  <div className="text-4xl mb-4">🏆</div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    Bracket not generated yet
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-6">
-                    {teams.length < 2 
-                      ? `Need at least 2 teams to generate bracket (currently ${teams.length})`
-                      : 'Click below to generate the tournament bracket'
-                    }
-                  </p>
-                  {(isAdmin() || isModerator()) && teams.length >= 2 && (
-                    <button 
-                      onClick={generateBracket}
-                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                    >
-                      Generate Bracket
-                    </button>
-                  )}
-                </div>
+                (console.log('🔍 Bracket state at render:', bracket), bracket) ? (
+                  <UniversalBracketVisualization 
+                    bracket={bracket}
+                    event={event}
+                    navigateTo={navigateTo}
+                    isAdmin={false}
+                    onMatchUpdate={null}
+                    showPredictions={false}
+                  />
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="text-4xl mb-4">🏆</div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      Bracket not generated yet
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      The tournament bracket will be available once the tournament organizers generate it.
+                    </p>
+                  </div>
+                )
               )}
             </div>
           )}

@@ -44,7 +44,7 @@ function PlayersPage({ navigateTo }) {
         region: player.region,
         country: player.country,
         age: player.age,
-        rating: player.rating || Math.floor(Math.random() * 500) + 1500,
+        rating: player.rating,
         rank: player.rank || 0,
         winRate: player.win_rate || Math.floor(Math.random() * 30) + 70,
         kd: player.kd || (Math.random() * 0.8 + 0.8).toFixed(2),
@@ -55,55 +55,7 @@ function PlayersPage({ navigateTo }) {
       console.log('✅ PlayersPage: Players transformation complete with real IDs');
     } catch (error) {
       console.error('❌ PlayersPage: Error fetching players:', error);
-      // Set fallback data with REAL backend structure using actual IDs
-      setPlayers([
-        {
-          id: 28,
-          name: "Test Player 3",
-          username: "testplayer789",
-          realName: "Test Player 3",
-          avatar: null,
-          team: {
-            id: 30,
-            name: "Team Alpha Test",
-            shortName: "ALF",
-            logo: null
-          },
-          role: "Duelist",
-          mainHero: "Iron Man",
-          region: "NA",
-          country: "USA",
-          age: 24,
-          rating: 1847,
-          rank: 1,
-          winRate: 89.2,
-          kd: "1.34",
-          achievements: ["Test Tournament MVP"]
-        },
-        {
-          id: 27,
-          name: "Test Player 2",
-          username: "testplayer456",
-          realName: "Test Player 2",
-          avatar: null,
-          team: {
-            id: 31,
-            name: "Team Beta Test",
-            shortName: "BET",
-            logo: null
-          },
-          role: "Support",
-          mainHero: "Doctor Strange",
-          region: "EU",
-          country: "Germany",
-          age: 26,
-          rating: 1723,
-          rank: 2,
-          winRate: 85.7,
-          kd: "0.98",
-          achievements: ["EU Regional Champion"]
-        }
-      ]);
+      setPlayers([]);
     } finally {
       setLoading(false);
     }
@@ -200,8 +152,8 @@ function PlayersPage({ navigateTo }) {
         </div>
       </div>
 
-      {/* Players Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+      {/* Players Grid - Mobile First */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
         {filteredPlayers.map(player => (
           <div key={player.id} className="glass rounded-xl p-6 hover:transform hover:scale-105 transition-all duration-300">
             <div className="text-center mb-6">
@@ -247,7 +199,7 @@ function PlayersPage({ navigateTo }) {
                 <div className="text-xs text-slate-600 dark:text-slate-400">Rank</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{player.rating}</div>
+                <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{player.rating || 'N/A'}</div>
                 <div className="text-xs text-slate-600 dark:text-slate-400">Rating</div>
               </div>
               <div className="text-center">

@@ -35,42 +35,42 @@ const MARVEL_RIVALS_CONFIG = {
       displayName: 'Convoy', 
       color: 'blue', 
       description: 'Escort the payload to victory',
-      icon: 'truck'
+      icon: ''
     },
     'Domination': { 
       duration: 12 * 60, 
       displayName: 'Domination', 
       color: 'red', 
       description: 'Control strategic points',
-      icon: 'flag'
+      icon: ''
     },
     'Convergence': { 
       duration: 15 * 60, 
       displayName: 'Convergence', 
       color: 'purple', 
       description: 'Converge on objectives',
-      icon: 'lightning'
+      icon: ''
     },
     'Conquest': { 
       duration: 20 * 60, 
       displayName: 'Conquest', 
       color: 'green', 
       description: 'Capture and hold territory',
-      icon: 'gem'
+      icon: ''
     },
     'Doom Match': { 
       duration: 10 * 60, 
       displayName: 'Doom Match', 
       color: 'orange', 
       description: 'Eliminate all opponents',
-      icon: 'skull'
+      icon: ''
     },
     'Escort': { 
       duration: 16 * 60, 
       displayName: 'Escort', 
       color: 'yellow', 
       description: 'Guide the target safely',
-      icon: 'shield'
+      icon: ''
     }
   },
   
@@ -168,6 +168,8 @@ function MatchForm({ matchId, navigateTo }) {
   });
   // SEASON 2.5 HERO ROSTER (39 HEROES)
   const [herosByRole, setHerosByRole] = useState(HEROES);
+  const [restrictedFields, setRestrictedFields] = useState([]);
+  const [editWarning, setEditWarning] = useState('');
   
   const { api } = useAuth();
   const isEdit = Boolean(matchId);
@@ -182,7 +184,7 @@ function MatchForm({ matchId, navigateTo }) {
     const loadHeroesFromAPI = async () => {
       try {
         console.log('Loading heroes from backend API...');
-        const response = await api.get('/heroes');
+        const response = await api.get('/public/heroes');
         const heroData = response?.data;
         
         console.log('Heroes loaded from API:', heroData);
@@ -233,7 +235,8 @@ function MatchForm({ matchId, navigateTo }) {
         console.log('REAL Teams loaded:', realTeams.length, realTeams);
 
         //  CRITICAL: Get REAL events from backend using API helper
-        const eventsResponse = await api.get('/events');
+        // Use sort=all to get ALL events, not just upcoming ones
+        const eventsResponse = await api.get('/events?sort=all');
         const realEvents = eventsResponse?.data || [];
         setEvents(Array.isArray(realEvents) ? realEvents : []);
         console.log('REAL Events loaded:', realEvents.length, realEvents);
@@ -286,6 +289,16 @@ function MatchForm({ matchId, navigateTo }) {
               };
               
               setFormData(transformedData);
+              
+              // Set restrictions based on match status
+              if (['live', 'completed'].includes(transformedData.status)) {
+                setRestrictedFields(['team1_id', 'team2_id', 'format', 'scheduled_at', 'event_id']);
+                setEditWarning(
+                  transformedData.status === 'live' 
+                    ? '⚠️ This match is currently LIVE. Some fields cannot be edited to prevent disruption.'
+                    : '⚠️ This match is COMPLETED. Critical fields are locked to preserve match integrity.'
+                );
+              }
               
               // Set selected teams for UI
               const team1 = realTeams.find(t => t.id === transformedData.team1_id);
@@ -347,7 +360,7 @@ function MatchForm({ matchId, navigateTo }) {
             [compositionKey]: realPlayers.slice(0, 6).map((player, index) => ({
               player_id: player.id,
               player_name: player.name, // REAL PLAYER NAME
-              hero: player.main_hero || (index % 2 === 0 ? 'Captain America' : 'Storm'),
+              hero: player.main_hero || null, // No hardcoded defaults - use real data only
               role: player.role || 'Tank',
               country: player.country || player.nationality || 'US',
               eliminations: 0,
@@ -379,17 +392,36 @@ function MatchForm({ matchId, navigateTo }) {
     console.log(`Changing format from ${formData.format} to ${newFormat}`);
     
     const newMatchData = getInitialMatchData(newFormat);
+    
+    // Preserve existing map scores and user changes when changing format
+    const preservedMaps = newMatchData.maps.map((newMap, index) => {
+      const existingMap = formData.maps[index];
+      if (existingMap) {
+        // Preserve user-modified scores and settings
+        return {
+          ...newMap,
+          team1_score: existingMap.team1_score || 0,
+          team2_score: existingMap.team2_score || 0,
+          team1_rounds: existingMap.team1_rounds || 0,
+          team2_rounds: existingMap.team2_rounds || 0,
+          winner_id: existingMap.winner_id || null,
+          status: existingMap.status || 'upcoming'
+        };
+      }
+      return newMap;
+    });
+    
     setFormData(prev => ({
       ...prev,
       format: newFormat,
-      maps: newMatchData.maps,
+      maps: preservedMaps,
       map_pool: newMatchData.map_pool,
       // Reset scores when changing format
       team1_score: 0,
       team2_score: 0
     }));
     
-    console.log(`Format changed to ${newFormat} with ${newMatchData.maps.length} maps`);
+    console.log(`Format changed to ${newFormat} with ${preservedMaps.length} maps`);
   };
 
   // ENHANCED: URL Management Functions
@@ -399,8 +431,13 @@ function MatchForm({ matchId, navigateTo }) {
       [type]: [...prev[type], { url: '', label: `${type.charAt(0).toUpperCase() + type.slice(1)} ${prev[type].length + 1}` }]
     }));
     
-    // Update form data
-    const fieldName = `${type}_urls`;
+    // Update form data with correct field mapping
+    const fieldMap = {
+      'streams': 'stream_urls',
+      'betting': 'betting_urls', 
+      'vods': 'vod_urls'
+    };
+    const fieldName = fieldMap[type];
     setFormData(prev => ({
       ...prev,
       [fieldName]: [...(prev[fieldName] || []), '']
@@ -413,8 +450,13 @@ function MatchForm({ matchId, navigateTo }) {
       [type]: prev[type].filter((_, i) => i !== index)
     }));
     
-    // Update form data
-    const fieldName = `${type}_urls`;
+    // Update form data with correct field mapping
+    const fieldMap = {
+      'streams': 'stream_urls',
+      'betting': 'betting_urls', 
+      'vods': 'vod_urls'
+    };
+    const fieldName = fieldMap[type];
     setFormData(prev => ({
       ...prev,
       [fieldName]: prev[fieldName].filter((_, i) => i !== index)
@@ -422,7 +464,12 @@ function MatchForm({ matchId, navigateTo }) {
   };
 
   const handleUrlChange = (type, index, value) => {
-    const fieldName = `${type}_urls`;
+    const fieldMap = {
+      'streams': 'stream_urls',
+      'betting': 'betting_urls', 
+      'vods': 'vod_urls'
+    };
+    const fieldName = fieldMap[type];
     setFormData(prev => ({
       ...prev,
       [fieldName]: prev[fieldName].map((url, i) => i === index ? value : url)
@@ -432,6 +479,32 @@ function MatchForm({ matchId, navigateTo }) {
   // PERFECT INPUT CHANGE HANDLER - FIXED REAL PLAYER POPULATION
   const handleInputChange = async (e) => {
     const { name, value, type, checked } = e.target;
+    
+    // Status change validation for live/completed matches
+    if (name === 'status' && isEdit && formData.status) {
+      const currentStatus = formData.status;
+      const validTransitions = {
+        'upcoming': ['live', 'cancelled', 'postponed'],
+        'scheduled': ['live', 'cancelled', 'postponed'],
+        'live': ['paused', 'completed'],
+        'paused': ['live', 'completed'],
+        'completed': [], // Don't allow status changes from completed
+        'cancelled': ['upcoming'],
+        'postponed': ['upcoming']
+      };
+      
+      if (!validTransitions[currentStatus]?.includes(value)) {
+        alert(`Cannot change status from ${currentStatus} to ${value}. Valid transitions: ${validTransitions[currentStatus]?.join(', ') || 'none'}`);
+        return;
+      }
+      
+      // Confirm dangerous status changes
+      if (['live', 'completed'].includes(currentStatus) && value !== currentStatus) {
+        if (!window.confirm(`This match is currently ${currentStatus}. Are you sure you want to change its status to ${value}?`)) {
+          return;
+        }
+      }
+    }
     const actualValue = type === 'checkbox' ? checked : value;
     
     console.log(`Input change: ${name} = ${actualValue}`);
@@ -558,13 +631,17 @@ function MatchForm({ matchId, navigateTo }) {
         allow_past_date: formData.allow_past_date || false,
         
         // CRITICAL: Save complete map compositions for production (6v6 format)
+        // FIX: Use maps_data to match backend expectation
         maps_data: formData.maps.map((map, index) => ({
+          winner_id: formData.status === 'completed' && map.team1_score !== map.team2_score 
+            ? (map.team1_score > map.team2_score ? parseInt(formData.team1_id) : parseInt(formData.team2_id))
+            : null,
           map_number: index + 1,
           map_name: map.map_name,           // PRESERVE selected map
           mode: map.mode,                   // PRESERVE selected mode
           team1_score: parseInt(map.team1_score) || 0,
           team2_score: parseInt(map.team2_score) || 0,
-          status: 'upcoming',
+          status: formData.status === 'completed' ? 'completed' : 'upcoming',
           
           // ENSURE 6v6 TEAM COMPOSITIONS for production
           team1_composition: (map.team1_composition || [])
@@ -572,7 +649,7 @@ function MatchForm({ matchId, navigateTo }) {
             .map(player => ({
               player_id: player.player_id || player.id,
               player_name: player.player_name || player.name || player.username,
-              hero: player.hero || 'Captain America',
+              hero: player.hero || null, // No hardcoded defaults - use real data only
               role: player.role || 'Vanguard',
               country: player.country || player.nationality || 'US',
               // Initialize all required stats for 6v6
@@ -591,7 +668,7 @@ function MatchForm({ matchId, navigateTo }) {
             .map(player => ({
               player_id: player.player_id || player.id,
               player_name: player.player_name || player.name || player.username,
-              hero: player.hero || 'Hulk',
+              hero: player.hero || null, // No hardcoded defaults - use real data only
               role: player.role || 'Vanguard',
               country: player.country || player.nationality || 'US',
               // Initialize all required stats for 6v6
@@ -612,8 +689,8 @@ function MatchForm({ matchId, navigateTo }) {
       let response;
       if (isEdit) {
         console.log('Updating existing match via PRODUCTION API...');
-        // PRODUCTION: Use complete update endpoint
-        response = await api.put(`/admin/matches/${matchId}/complete-update`, productionData);
+        // FIX: Use the correct update endpoint that exists in routes
+        response = await api.put(`/admin/matches/${matchId}`, productionData);
       } else {
         console.log('Creating new match via PRODUCTION API...');
         response = await api.post('/admin/matches', productionData);
@@ -665,6 +742,13 @@ function MatchForm({ matchId, navigateTo }) {
         </button>
       </div>
 
+      {/* Edit Warning */}
+      {editWarning && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+          <p className="text-yellow-800 dark:text-yellow-200">{editWarning}</p>
+        </div>
+      )}
+
       <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-6">
         {/* Teams Selection */}
         <div className="card p-6">
@@ -679,7 +763,8 @@ function MatchForm({ matchId, navigateTo }) {
                 name="team1_id"
                 value={formData.team1_id}
                 onChange={handleInputChange}
-                className={`form-input ${errors.team1_id ? 'border-red-500' : ''}`}
+                className={`form-input ${errors.team1_id ? 'border-red-500' : ''} ${restrictedFields.includes('team1_id') ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={restrictedFields.includes('team1_id')}
                 required
               >
                 <option value="">Select Team 1...</option>
@@ -705,7 +790,8 @@ function MatchForm({ matchId, navigateTo }) {
                 name="team2_id"
                 value={formData.team2_id}
                 onChange={handleInputChange}
-                className={`form-input ${errors.team2_id ? 'border-red-500' : ''}`}
+                className={`form-input ${errors.team2_id ? 'border-red-500' : ''} ${restrictedFields.includes('team2_id') ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={restrictedFields.includes('team2_id')}
                 required
               >
                 <option value="">Select Team 2...</option>
@@ -732,16 +818,15 @@ function MatchForm({ matchId, navigateTo }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Event *
+                Event (Optional)
               </label>
               <select
                 name="event_id"
                 value={formData.event_id}
                 onChange={handleInputChange}
                 className={`form-input ${errors.event_id ? 'border-red-500' : ''}`}
-                required
               >
-                <option value="">Select Event...</option>
+                <option value="">No Event (Standalone Match)</option>
                 {events.map(event => (
                   <option key={event.id} value={event.id}>
                     {event.name} ({event.type || 'Tournament'})

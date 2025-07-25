@@ -47,7 +47,7 @@ function TeamDetailPage({ params, navigateTo }) {
         logo: teamData.logo_url || teamData.logo,
         country: teamData.country,
         region: teamData.region,
-        rating: teamData.rating || 1500,
+        rating: teamData.rating,
         rank: teamData.rank,
         winRate: teamData.stats?.win_rate || 0,
         points: teamData.points || 0,
@@ -55,9 +55,10 @@ function TeamDetailPage({ params, navigateTo }) {
         founded: teamData.founded,
         captain: teamData.captain,
         coach: teamData.coach,
+        coachPicture: teamData.coach_picture_url || teamData.coach_picture,
         website: teamData.website,
         earnings: teamData.earnings || teamData.total_earnings || 0,
-        social_media: teamData.social_media || teamData.social_links || {},
+        social_media: teamData.social_links || teamData.social_media || {},
         achievements: teamData.achievements || [],
         created_at: teamData.created_at,
         division: teamData.division,
@@ -187,9 +188,20 @@ function TeamDetailPage({ params, navigateTo }) {
 
   // Helper function to format currency
   const formatCurrency = (amount) => {
-    if (typeof amount === 'string' && amount.includes('$')) return amount;
+    // Handle string amounts that already have currency symbols
+    if (typeof amount === 'string') {
+      if (amount.includes('$')) return amount;
+      // Try to extract numeric value from string
+      const numericAmount = parseFloat(amount.replace(/[^0-9.-]/g, ''));
+      if (!isNaN(numericAmount)) {
+        return numericAmount === 0 ? '$0' : `$${numericAmount.toLocaleString()}`;
+      }
+      return amount; // Return original string if can't parse
+    }
+    
+    // Handle numeric amounts
     if (!amount || amount === 0) return '$0';
-    return `$${amount.toLocaleString()}`;
+    return `$${Number(amount).toLocaleString()}`;
   };
 
   // Helper function to format date
@@ -201,9 +213,11 @@ function TeamDetailPage({ params, navigateTo }) {
 
   // Utility function to calculate average team rating
   const calculateAvgTeamRating = (players) => {
-    if (players.length === 0) return 1500;
-    const totalRating = players.reduce((sum, player) => sum + (player.rating || 1500), 0);
-    return Math.floor(totalRating / players.length);
+    if (players.length === 0) return null;
+    const playersWithRating = players.filter(player => player.rating !== null && player.rating !== undefined);
+    if (playersWithRating.length === 0) return null;
+    const totalRating = playersWithRating.reduce((sum, player) => sum + player.rating, 0);
+    return Math.floor(totalRating / playersWithRating.length);
   };
 
   const getRoleColor = (role) => {
@@ -262,7 +276,7 @@ function TeamDetailPage({ params, navigateTo }) {
                 <div className="flex items-center space-x-4 mb-3">
                   <div className="flex items-center space-x-2">
                     <span className="text-lg">{getCountryFlag(team.country)}</span>
-                    <span className="text-gray-600 dark:text-gray-300">{team.region}</span>
+                    <span className="text-gray-600 dark:text-gray-300">{team.country}</span>
                   </div>
                 </div>
                 {/* Social Links - VLR.gg Style */}
@@ -270,32 +284,32 @@ function TeamDetailPage({ params, navigateTo }) {
                   <div className="flex items-center space-x-4">
                     {team.social_media.twitter && (
                       <a 
-                        href={`https://twitter.com/${team.social_media.twitter}`} 
+                        href={team.social_media.twitter.startsWith('http') ? team.social_media.twitter : `https://twitter.com/${team.social_media.twitter}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
                       >
-                        🐦 Twitter
+                        Twitter
                       </a>
                     )}
                     {team.social_media.instagram && (
                       <a 
-                        href={`https://instagram.com/${team.social_media.instagram}`} 
+                        href={team.social_media.instagram.startsWith('http') ? team.social_media.instagram : `https://instagram.com/${team.social_media.instagram}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
                       >
-                        📷 Instagram
+                        Instagram
                       </a>
                     )}
                     {team.social_media.youtube && (
                       <a 
-                        href={`https://youtube.com/@${team.social_media.youtube}`} 
+                        href={team.social_media.youtube.startsWith('http') ? team.social_media.youtube : `https://youtube.com/@${team.social_media.youtube}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
                       >
-                        🎥 YouTube
+                        YouTube
                       </a>
                     )}
                     {team.social_media.website && (
@@ -305,7 +319,7 @@ function TeamDetailPage({ params, navigateTo }) {
                         rel="noopener noreferrer" 
                         className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
                       >
-                        🌐 Website
+                        Website
                       </a>
                     )}
                   </div>
@@ -315,7 +329,7 @@ function TeamDetailPage({ params, navigateTo }) {
             <div className="text-right">
               <div className="text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(matchStats.totalEarnings || team.earnings || 0)}</div>
               <div className="text-sm text-gray-600 dark:text-gray-300">Total Earnings</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{Math.floor(matchStats.rating || team.rating || 1500)}</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{Math.floor(matchStats.rating || team.rating) || 'N/A'}</div>
               <div className="text-sm text-gray-600 dark:text-gray-300">Rating • #{matchStats.ranking || team.rank || 'N/A'}</div>
             </div>
           </div>
@@ -341,7 +355,7 @@ function TeamDetailPage({ params, navigateTo }) {
               </div>
               <div>
                 <div className="text-gray-500 dark:text-gray-500 text-sm">Avg Team Rating</div>
-                <div className="font-medium text-gray-900 dark:text-white mt-1">{Math.floor(matchStats.avgTeamRating || 1500)}</div>
+                <div className="font-medium text-gray-900 dark:text-white mt-1">{Math.floor(matchStats.avgTeamRating) || 'N/A'}</div>
               </div>
               <div>
                 <div className="text-gray-500 dark:text-gray-500 text-sm">Map Diff</div>
@@ -394,7 +408,7 @@ function TeamDetailPage({ params, navigateTo }) {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold text-gray-900 dark:text-white">{player.rating || 1500}</div>
+                    <div className="font-bold text-gray-900 dark:text-white">{player.rating || 'N/A'}</div>
                     <div className="text-xs text-gray-500 dark:text-gray-500">Rating</div>
                   </div>
                 </div>
@@ -402,9 +416,23 @@ function TeamDetailPage({ params, navigateTo }) {
             </div>
             {team.coach && (
               <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex items-center space-x-2">
-                  <span className="text-gray-600 dark:text-gray-400">Coach:</span>
-                  <span className="font-semibold text-gray-900 dark:text-white">{team.coach}</span>
+                <div className="flex items-center space-x-3">
+                  {team.coachPicture && (
+                    <div className="flex-shrink-0">
+                      <img 
+                        src={team.coachPicture} 
+                        alt={`${team.coach} - Coach`}
+                        className="w-8 h-8 rounded-full object-cover border border-gray-300 dark:border-gray-600"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+                  <div className="flex items-center space-x-2">
+                    <span className="text-gray-600 dark:text-gray-400">Coach:</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{team.coach}</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -412,6 +440,9 @@ function TeamDetailPage({ params, navigateTo }) {
 
           {/* Match History Section - VLR.gg Style */}
           <div className="card">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400">Matches</h3>
+            </div>
             {/* Match Tabs */}
             <div className="border-b border-gray-200 dark:border-gray-700">
               <div className="flex">
@@ -760,24 +791,6 @@ function TeamDetailPage({ params, navigateTo }) {
             />
           </div>
 
-          {/* Team Information */}
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Team Information</h3>
-            <div className="space-y-3">
-              <div>
-                <div className="text-gray-500 dark:text-gray-500 text-sm">Founded</div>
-                <div className="font-medium text-gray-900 dark:text-white">{team.founded ? new Date(team.founded).getFullYear() : 'N/A'}</div>
-              </div>
-              <div>
-                <div className="text-gray-500 dark:text-gray-500 text-sm">Region</div>
-                <div className="font-medium text-gray-900 dark:text-white">{team.region}</div>
-              </div>
-              <div>
-                <div className="text-gray-500 dark:text-gray-500 text-sm">Captain</div>
-                <div className="font-medium text-gray-900 dark:text-white">{team.captain || 'N/A'}</div>
-              </div>
-            </div>
-          </div>
 
           {/* Achievements */}
           {team.achievements && team.achievements.length > 0 && (

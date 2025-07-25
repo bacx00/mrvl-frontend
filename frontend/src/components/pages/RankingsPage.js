@@ -92,8 +92,193 @@ function RankingsPage({ navigateTo }) {
   };
 
   // Country flag helper function
-  const getCountryFlag = (countryCode) => {
-    return `${countryCode}`;
+  const getCountryFlag = (countryInput) => {
+    if (!countryInput) return '🌍';
+    
+    // Map full country names to codes
+    const countryNameToCode = {
+      'United States': 'US',
+      'United Kingdom': 'GB',
+      'Russia': 'RU',
+      'Germany': 'DE',
+      'France': 'FR',
+      'Spain': 'ES',
+      'Italy': 'IT',
+      'Netherlands': 'NL',
+      'Sweden': 'SE',
+      'Poland': 'PL',
+      'Turkey': 'TR',
+      'China': 'CN',
+      'South Korea': 'KR',
+      'Japan': 'JP',
+      'Thailand': 'TH',
+      'Vietnam': 'VN',
+      'Singapore': 'SG',
+      'Malaysia': 'MY',
+      'Indonesia': 'ID',
+      'Philippines': 'PH',
+      'Taiwan': 'TW',
+      'Hong Kong': 'HK',
+      'India': 'IN',
+      'Australia': 'AU',
+      'New Zealand': 'NZ',
+      'Canada': 'CA',
+      'Mexico': 'MX',
+      'Brazil': 'BR',
+      'Argentina': 'AR',
+      'Chile': 'CL',
+      'Colombia': 'CO',
+      'Peru': 'PE'
+    };
+    
+    // Get country code (either directly or from name mapping)
+    let countryCode = countryInput.length === 2 ? countryInput : countryNameToCode[countryInput];
+    
+    if (!countryCode) return '🌍';
+    
+    try {
+      // Convert country code to flag emoji
+      const codePoints = countryCode
+        .toUpperCase()
+        .split('')
+        .map(char => 127397 + char.charCodeAt());
+      
+      return String.fromCodePoint(...codePoints);
+    } catch (error) {
+      return '🌍';
+    }
+  };
+
+  // Country name helper function
+  const getCountryName = (countryCode) => {
+    if (!countryCode) return 'International';
+    
+    const countryNames = {
+      // Americas
+      'US': 'United States',
+      'CA': 'Canada',
+      'MX': 'Mexico',
+      'BR': 'Brazil',
+      'AR': 'Argentina',
+      'CL': 'Chile',
+      'CO': 'Colombia',
+      'PE': 'Peru',
+      'VE': 'Venezuela',
+      'UY': 'Uruguay',
+      'EC': 'Ecuador',
+      'BO': 'Bolivia',
+      'PY': 'Paraguay',
+      'GY': 'Guyana',
+      'SR': 'Suriname',
+      'GF': 'French Guiana',
+      
+      // EMEA
+      'GB': 'United Kingdom',
+      'UK': 'United Kingdom',
+      'DE': 'Germany',
+      'FR': 'France',
+      'ES': 'Spain',
+      'IT': 'Italy',
+      'NL': 'Netherlands',
+      'BE': 'Belgium',
+      'SE': 'Sweden',
+      'NO': 'Norway',
+      'DK': 'Denmark',
+      'FI': 'Finland',
+      'PL': 'Poland',
+      'CZ': 'Czech Republic',
+      'SK': 'Slovakia',
+      'HU': 'Hungary',
+      'AT': 'Austria',
+      'CH': 'Switzerland',
+      'PT': 'Portugal',
+      'IE': 'Ireland',
+      'GR': 'Greece',
+      'BG': 'Bulgaria',
+      'RO': 'Romania',
+      'HR': 'Croatia',
+      'SI': 'Slovenia',
+      'LT': 'Lithuania',
+      'LV': 'Latvia',
+      'EE': 'Estonia',
+      'MT': 'Malta',
+      'CY': 'Cyprus',
+      'LU': 'Luxembourg',
+      'RU': 'Russia',
+      'UA': 'Ukraine',
+      'BY': 'Belarus',
+      'TR': 'Turkey',
+      'SA': 'Saudi Arabia',
+      'AE': 'UAE',
+      'IL': 'Israel',
+      'EG': 'Egypt',
+      'ZA': 'South Africa',
+      'MA': 'Morocco',
+      'TN': 'Tunisia',
+      'DZ': 'Algeria',
+      'NG': 'Nigeria',
+      'KE': 'Kenya',
+      'GH': 'Ghana',
+      
+      // Asia
+      'CN': 'China',
+      'KR': 'South Korea',
+      'JP': 'Japan',
+      'TH': 'Thailand',
+      'VN': 'Vietnam',
+      'SG': 'Singapore',
+      'MY': 'Malaysia',
+      'ID': 'Indonesia',
+      'PH': 'Philippines',
+      'TW': 'Taiwan',
+      'HK': 'Hong Kong',
+      'MO': 'Macau',
+      'IN': 'India',
+      'PK': 'Pakistan',
+      'BD': 'Bangladesh',
+      'LK': 'Sri Lanka',
+      'MM': 'Myanmar',
+      'KH': 'Cambodia',
+      'LA': 'Laos',
+      'MN': 'Mongolia',
+      'KZ': 'Kazakhstan',
+      'UZ': 'Uzbekistan',
+      'KG': 'Kyrgyzstan',
+      'TJ': 'Tajikistan',
+      'TM': 'Turkmenistan',
+      'AF': 'Afghanistan',
+      'NP': 'Nepal',
+      'BT': 'Bhutan',
+      'MV': 'Maldives',
+      
+      // Oceania
+      'AU': 'Australia',
+      'NZ': 'New Zealand',
+      'FJ': 'Fiji',
+      'PG': 'Papua New Guinea',
+      'NC': 'New Caledonia',
+      'VU': 'Vanuatu',
+      'SB': 'Solomon Islands',
+      'TO': 'Tonga',
+      'WS': 'Samoa',
+      'KI': 'Kiribati',
+      'TV': 'Tuvalu',
+      'NR': 'Nauru',
+      'PW': 'Palau',
+      'MH': 'Marshall Islands',
+      'FM': 'Micronesia',
+      
+      // Regions as fallback
+      'Americas': 'Americas',
+      'EMEA': 'Europe/Middle East/Africa',
+      'Asia': 'Asia',
+      'China': 'China',
+      'Oceania': 'Oceania',
+      'EU': 'Europe',
+      'NA': 'North America'
+    };
+    
+    return countryNames[countryCode] || countryCode;
   };
 
   // Marvel Rivals Official Tournament Regions (2025)
@@ -146,37 +331,43 @@ function RankingsPage({ navigateTo }) {
               >
                 <div className="flex items-center justify-between">
                   {/* Left: Rank */}
-                  <div className="w-12 text-center">
-                    <span className={`font-bold text-lg ${
-                      team.rank <= 3 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-900 dark:text-white'
+                  <div className="w-16 text-center">
+                    <span className={`font-bold text-2xl ${
+                      team.rank === 1 ? 'text-yellow-500' : 
+                      team.rank === 2 ? 'text-gray-400' : 
+                      team.rank === 3 ? 'text-orange-600' : 
+                      'text-gray-600 dark:text-gray-400'
                     }`}>
-                      {team.rank}
+                      #{team.rank}
                     </span>
-                    {team.rank <= 3 && (
-                      <div className="text-sm">
-                        {team.rank === 1 ? '#1' : team.rank === 2 ? '#2' : '#3'}
-                      </div>
-                    )}
                   </div>
 
                   {/* Center: Team info */}
-                  <div className="flex-1 flex items-center space-x-3">
-                    {/* Country Code */}
-                    <span className="text-lg">{getCountryFlag(team.country)}</span>
-                    
+                  <div className="flex-1 flex items-center space-x-4">
                     {/* Team Logo */}
-                    <TeamLogo team={team} size="w-8 h-8" />
+                    <TeamLogo team={team} size="w-12 h-12" />
                     
-                    {/* Team Name */}
+                    {/* Team Name and Country */}
                     <div>
-                      <div className="font-bold text-gray-900 dark:text-white hover:text-red-600 dark:hover:text-red-400 transition-colors">
-                        {team.short_name}
+                      <div className="font-bold text-lg text-gray-900 dark:text-white hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                        {team.name || team.short_name}
                       </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-500">
-                        {team.name}
+                      {/* Always show country/region info */}
+                      <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-500">
+                        {(() => {
+                          const countryCode = team.country || team.region || team.location;
+                          const flag = getCountryFlag(countryCode);
+                          const name = getCountryName(countryCode);
+                          
+                          return (
+                            <>
+                              <span className="text-base">{flag}</span>
+                              <span>{name}</span>
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
-                    
                   </div>
 
                   {/* Right: ELO Rating & Division */}

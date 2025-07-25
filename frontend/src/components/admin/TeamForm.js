@@ -14,6 +14,8 @@ function TeamForm({ teamId, navigateTo }) {
     flag: '',
     country: '',
     rating: 1000, // Team ELO rating with Marvel Rivals default
+    earnings: 0, // Team total earnings
+    coachPicture: '',
     socialLinks: {
       twitter: '',
       instagram: '',
@@ -25,6 +27,7 @@ function TeamForm({ teamId, navigateTo }) {
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState(null);
   const [flagFile, setFlagFile] = useState(null);
+  const [coachFile, setCoachFile] = useState(null);
   const [error, setError] = useState(null);
   const { api } = useAuth();
 
@@ -49,6 +52,8 @@ function TeamForm({ teamId, navigateTo }) {
         flag: team.flag_url || team.flag || '',
         country: team.country || '',
         rating: team.rating || 1000, // Load ELO rating from backend
+        earnings: team.earnings || team.total_earnings || 0, // Load team earnings
+        coachPicture: team.coach_picture_url || team.coach_picture || '',
         socialLinks: team.social_links || team.socialLinks || {
           twitter: '',
           instagram: '',
@@ -115,6 +120,15 @@ function TeamForm({ teamId, navigateTo }) {
     }));
   };
 
+  const handleCoachSelect = (file, previewUrl) => {
+    console.log('TeamForm - Coach picture selected:', file?.name, previewUrl);
+    setCoachFile(file);
+    setFormData(prev => ({
+      ...prev,
+      coachPicture: previewUrl || ''
+    }));
+  };
+
   const uploadImage = async (file, teamId, type) => {
     if (!file) return null;
     
@@ -125,13 +139,17 @@ function TeamForm({ teamId, navigateTo }) {
       // CRITICAL FIX: Use correct field names based on backend documentation
       if (type === 'logo') {
         uploadFormData.append('logo', file); // Backend expects 'logo' field
-      } else {
+      } else if (type === 'flag') {
         uploadFormData.append('flag', file); // Backend expects 'flag' field
+      } else if (type === 'coach') {
+        uploadFormData.append('coach_picture', file); // Backend expects 'coach_picture' field
       }
       
       const endpoint = type === 'logo' 
         ? `/upload/team/${teamId}/logo`
-        : `/upload/team/${teamId}/flag`;
+        : type === 'flag'
+        ? `/upload/team/${teamId}/flag`
+        : `/upload/team/${teamId}/coach`;
       
       console.log(`TeamForm - Upload endpoint: ${endpoint}`);
       
@@ -145,9 +163,9 @@ function TeamForm({ teamId, navigateTo }) {
       // Backend returns: {"success": true, "message": "...", "data": {"logo": "path", "logo_url": "full_url"}}
       let imageUrl;
       if (data.data) {
-        imageUrl = data.data.logo_url || data.data.flag_url || data.data.logo || data.data.flag;
+        imageUrl = data.data.logo_url || data.data.flag_url || data.data.coach_picture_url || data.data.logo || data.data.flag || data.data.coach_picture;
       } else {
-        imageUrl = data.logo_url || data.flag_url || data.url || data.logo || data.flag;
+        imageUrl = data.logo_url || data.flag_url || data.coach_picture_url || data.url || data.logo || data.flag || data.coach_picture;
       }
       
       console.log(`TeamForm - Extracted ${type} URL:`, imageUrl);
@@ -195,6 +213,7 @@ function TeamForm({ teamId, navigateTo }) {
         region: formData.region,
         country: formData.country,
         rating: parseInt(formData.rating) || 1000, // Include ELO rating
+        earnings: parseFloat(formData.earnings) || 0, // Include team earnings
         // CRITICAL FIX: Ensure social_links is properly formatted
         social_links: {
           twitter: formData.socialLinks.twitter || '',
@@ -225,6 +244,7 @@ function TeamForm({ teamId, navigateTo }) {
       // CRITICAL FIX: Upload images AFTER team creation/update (fresh CSRF token)
       let logoUrl = formData.logo;
       let flagUrl = formData.flag;
+      let coachPictureUrl = formData.coachPicture;
       
       try {
         if (logoFile) {
@@ -242,19 +262,29 @@ function TeamForm({ teamId, navigateTo }) {
             console.log('TeamForm - Flag uploaded successfully:', flagUrl);
           }
         }
+
+        if (coachFile) {
+          console.log('TeamForm - Uploading coach picture...');
+          coachPictureUrl = await uploadImage(coachFile, teamIdForUpload, 'coach');
+          if (coachPictureUrl) {
+            console.log('TeamForm - Coach picture uploaded successfully:', coachPictureUrl);
+          }
+        }
       } catch (uploadError) {
         console.error('TeamForm - Image upload failed:', uploadError);
         alert('Team saved but image upload failed: ' + uploadError.message);
       }
 
       // Final update with image URLs if they were uploaded
-      if ((logoFile && logoUrl) || (flagFile && flagUrl)) {
+      if ((logoFile && logoUrl) || (flagFile && flagUrl) || (coachFile && coachPictureUrl)) {
         console.log('TeamForm - Updating team with image URLs...');
         const finalUpdateData = {
           ...submitData,
           // Include uploaded image paths
           logo: logoUrl && logoUrl.includes('storage/') ? logoUrl.replace(`${API_CONFIG.BASE_URL}/storage/`, '') : logoUrl,
-          flag: flagUrl && flagUrl.includes('storage/') ? flagUrl.replace(`${API_CONFIG.BASE_URL}/storage/`, '') : flagUrl
+          flag: flagUrl && flagUrl.includes('storage/') ? flagUrl.replace(`${API_CONFIG.BASE_URL}/storage/`, '') : flagUrl,
+          coach_picture: coachPictureUrl && coachPictureUrl.includes('storage/') ? coachPictureUrl.replace(`${API_CONFIG.BASE_URL}/storage/`, '') : coachPictureUrl,
+          earnings: parseFloat(formData.earnings) || 0 // Ensure earnings is included in final update
         };
 
         await api.put(`/admin/teams/${teamIdForUpload}`, finalUpdateData);
@@ -265,7 +295,8 @@ function TeamForm({ teamId, navigateTo }) {
       setFormData(prev => ({
         ...prev,
         logo: logoUrl,
-        flag: flagUrl
+        flag: flagUrl,
+        coachPicture: coachPictureUrl
       }));
 
       alert(`Team ${isEdit ? 'updated' : 'created'} successfully!`);
@@ -402,6 +433,34 @@ function TeamForm({ teamId, navigateTo }) {
               )}
             </div>
 
+            {/* Coach Picture */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Coach Picture
+              </label>
+              <ImageUpload
+                onImageSelect={handleCoachSelect}
+                currentImage={formData.coachPicture}
+                placeholder="Upload Coach Picture"
+                className="w-full max-w-md"
+              />
+              {formData.coachPicture && (
+                <div className="mt-2">
+                  <img 
+                    src={formData.coachPicture} 
+                    alt="Current coach" 
+                    className="w-16 h-16 object-cover rounded"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Optional: Picture of the team's coach
+              </p>
+            </div>
+
             {/* Team Name */}
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
@@ -493,6 +552,26 @@ function TeamForm({ teamId, navigateTo }) {
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Team ELO rating (0-5000). Default: 1000
+              </p>
+            </div>
+
+            {/* Total Earnings */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Total Earnings ($)
+              </label>
+              <input
+                type="number"
+                name="earnings"
+                value={formData.earnings}
+                onChange={handleNumberInputChange}
+                className="form-input"
+                placeholder="0"
+                min="0"
+                step="0.01"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Team's total tournament earnings in USD
               </p>
             </div>
 

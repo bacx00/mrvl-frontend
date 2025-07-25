@@ -25,14 +25,18 @@ export const useMentionAutocomplete = (onMentionSelect) => {
 
       try {
         setLoading(true);
+        console.log('🔍 Searching mentions:', query, type);
         const response = await api.get(`/public/mentions/search?q=${encodeURIComponent(query)}&type=${type}&limit=8`);
         
-        if (response.data.success) {
-          setMentionResults(response.data.data || []);
+        console.log('📥 Mentions response:', response);
+        if (response.data?.success || response.success) {
+          const results = response.data?.data || response.data || [];
+          console.log('✅ Mention results:', results);
+          setMentionResults(results);
           setSelectedIndex(0);
         }
       } catch (error) {
-        console.error('Error searching mentions:', error);
+        console.error('❌ Error searching mentions:', error);
         setMentionResults([]);
       } finally {
         setLoading(false);
@@ -45,14 +49,18 @@ export const useMentionAutocomplete = (onMentionSelect) => {
   const getPopularMentions = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('🔍 Fetching popular mentions');
       const response = await api.get('/public/mentions/popular?limit=6');
       
-      if (response.data.success) {
-        setMentionResults(response.data.data || []);
+      console.log('📥 Popular mentions response:', response);
+      if (response.data?.success || response.success) {
+        const results = response.data?.data || response.data || [];
+        console.log('✅ Popular mention results:', results);
+        setMentionResults(results);
         setSelectedIndex(0);
       }
     } catch (error) {
-      console.error('Error fetching popular mentions:', error);
+      console.error('❌ Error fetching popular mentions:', error);
       setMentionResults([]);
     } finally {
       setLoading(false);

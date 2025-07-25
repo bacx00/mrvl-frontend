@@ -17,6 +17,53 @@ const eventQuerySchema = z.object({
 // Comprehensive events database
 const events = [
   {
+    id: "100",
+    name: "Marvel Rivals Invitational 2025: North America",
+    shortName: "MRI NA 2025",
+    startDate: "2025-03-14T00:00:00.000Z",
+    endDate: "2025-03-23T23:59:59.000Z",
+    registrationStart: "2025-02-01T00:00:00.000Z",
+    registrationEnd: "2025-03-10T23:59:59.000Z",
+    location: {
+      city: "Online",
+      country: "North America",
+      venue: "Online Tournament",
+      timezone: "EST"
+    },
+    prize: {
+      total: 100000,
+      currency: "USD",
+      distribution: [
+        { place: 1, amount: 40000, percentage: 40 },
+        { place: 2, amount: 20000, percentage: 20 },
+        { place: 3, amount: 10000, percentage: 10 },
+        { place: 4, amount: 10000, percentage: 10 }
+      ]
+    },
+    type: "ongoing",
+    status: "playoffs",
+    region: "americas",
+    format: {
+      type: "tournament",
+      teams: 8,
+      stages: ["swiss", "double_elimination"],
+      elimination: "double",
+      matchFormat: "Bo3/Bo5",
+      finalFormat: "Bo7"
+    },
+    organizer: {
+      name: "NetEase Games",
+      logo: "/organizers/netease-logo.png"
+    },
+    image: "/events/mri-na-2025.jpg",
+    banner: "/events/mri-na-2025-banner.jpg",
+    description: "The Marvel Rivals Invitational 2025: North America features 8 top teams competing in a Swiss stage followed by double elimination playoffs.",
+    featured: true,
+    trending: true,
+    createdAt: "2025-02-01T10:00:00.000Z",
+    updatedAt: "2025-03-22T16:30:00.000Z"
+  },
+  {
     id: "1",
     name: "Marvel Rivals Championship 2025",
     shortName: "MRC 2025",

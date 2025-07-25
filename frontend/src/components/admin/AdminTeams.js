@@ -73,9 +73,40 @@ function AdminTeams({ navigateTo }) {
         alert('Team deleted successfully!');
       } catch (error) {
         console.error('Error deleting team:', error);
+        
         if (error.response && error.response.status === 404) {
           alert('Team not found. It may have already been deleted. Refreshing the list...');
           await fetchTeams(); // Refresh the list
+        } else if (error.response && error.response.status === 400) {
+          const errorData = error.response.data;
+          
+          if (errorData.can_force) {
+            const playerCount = errorData.player_count || 0;
+            const matchCount = errorData.match_count || 0;
+            
+            let message = errorData.message + '\n\n';
+            if (playerCount > 0) {
+              message += `This team has ${playerCount} active player(s) who will be moved to Free Agent status.\n`;
+            }
+            if (matchCount > 0) {
+              message += `This team has ${matchCount} match(es) in history.\n`;
+            }
+            message += '\nDo you want to force delete this team?';
+            
+            // eslint-disable-next-line no-restricted-globals
+            if (window.confirm(message)) {
+              try {
+                await api.post(`/admin/teams/${teamId}`, { _method: 'DELETE', force: true });
+                await fetchTeams();
+                alert('Team force deleted successfully!');
+              } catch (forceError) {
+                console.error('Error force deleting team:', forceError);
+                alert('Error force deleting team. Please try again.');
+              }
+            }
+          } else {
+            alert(errorData.message || 'Cannot delete team. Please check for dependencies.');
+          }
         } else {
           alert('Error deleting team. Please try again.');
         }

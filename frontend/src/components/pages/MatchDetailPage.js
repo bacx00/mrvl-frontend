@@ -5,6 +5,9 @@ import UserDisplay from '../shared/UserDisplay';
 import VotingButtons from '../shared/VotingButtons';
 import SinglePageLiveScoring from '../admin/SinglePageLiveScoring';
 import HeroImage from '../shared/HeroImage';
+import MentionAutocomplete from '../shared/MentionAutocomplete';
+import MentionLink from '../shared/MentionLink';
+import { processContentWithMentions } from '../../utils/mentionUtils';
 import {
   GAME_MODES,
   PLAYER_STATS,
@@ -21,14 +24,14 @@ function MatchDetailPage({ matchId, navigateTo }) {
   const [newComment, setNewComment] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
   const [commentsLoading, setCommentsLoading] = useState(false);
+  const [selectedMentions, setSelectedMentions] = useState([]);
   const [replyingTo, setReplyingTo] = useState(null);
+  const [editingComment, setEditingComment] = useState(null);
+  const [editContent, setEditContent] = useState('');
   const [replyText, setReplyText] = useState('');
   const [userVotes, setUserVotes] = useState({});
-  const [matchTimer, setMatchTimer] = useState('00:00');
   const [isPreparationPhase, setIsPreparationPhase] = useState(false);
-  const [preparationTimer, setPreparationTimer] = useState(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [timerInterval, setTimerInterval] = useState(null);
   
   // 🔥 COMPREHENSIVE MATCH STATE - REAL-TIME SYNCHRONIZED
   const [liveScores, setLiveScores] = useState({ team1: null, team2: null });
@@ -49,7 +52,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
     status: 'upcoming',
     scores: { series: { team1: 0, team2: 0 }, maps: [] },
     urls: { streams: [], betting: [], vods: [] },
-    live_data: { current_map: 1, timer: null, overtime: false, viewers: 0, hero_picks: [], live_updates: [] },
+    live_data: { current_map: 1, overtime: false, viewers: 0, hero_picks: [], live_updates: [] },
     player_stats: {},
     tournament: { round: null, bracket_position: null }
   });
@@ -63,34 +66,167 @@ function MatchDetailPage({ matchId, navigateTo }) {
   // Live update tracking
   const [heroSelections, setHeroSelections] = useState({});
   const [mapScores, setMapScores] = useState([]);
-  const [currentMapTimer, setCurrentMapTimer] = useState({ minutes: 0, seconds: 0, phase: 'preparation' });
   const [liveEventStream, setLiveEventStream] = useState([]);
   const [playerPerformance, setPlayerPerformance] = useState({});
   
-  const { user, isAuthenticated, api } = useAuth();
-  
-  // Auto-increment timer for live matches
-  useEffect(() => {
-    if (match?.status === 'live' && !isPreparationPhase) {
-      const interval = setInterval(() => {
-        setMatchTimer(prevTimer => {
-          const [mins, secs] = prevTimer.split(':').map(Number);
-          const totalSecs = mins * 60 + secs + 1;
-          const newMins = Math.floor(totalSecs / 60);
-          const newSecs = totalSecs % 60;
-          return `${String(newMins).padStart(2, '0')}:${String(newSecs).padStart(2, '0')}`;
-        });
-      }, 1000);
+  const { user, isAuthenticated, api, isAdmin, isModerator } = useAuth();
+
+  // Helper function to extract domain name from URL
+  const getDomainFromUrl = (url) => {
+    try {
+      const urlObj = new URL(url);
+      let domain = urlObj.hostname;
       
-      setTimerInterval(interval);
-      return () => clearInterval(interval);
-    } else {
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        setTimerInterval(null);
+      // Remove 'www.' prefix if present
+      if (domain.startsWith('www.')) {
+        domain = domain.substring(4);
       }
+      
+      // Special handling for common platforms
+      if (domain.includes('twitch.tv')) return 'Twitch';
+      if (domain.includes('youtube.com') || domain.includes('youtu.be')) return 'YouTube';
+      if (domain.includes('kick.com')) return 'Kick';
+      if (domain.includes('bet365.com')) return 'Bet365';
+      if (domain.includes('draftkings.com')) return 'DraftKings';
+      if (domain.includes('fanduel.com')) return 'FanDuel';
+      if (domain.includes('betway.com')) return 'Betway';
+      
+      // For other domains, return the main domain name
+      const parts = domain.split('.');
+      if (parts.length >= 2) {
+        return parts[parts.length - 2].charAt(0).toUpperCase() + parts[parts.length - 2].slice(1);
+      }
+      
+      return domain;
+    } catch (error) {
+      return 'Link';
     }
-  }, [match?.status, isPreparationPhase]);
+  };
+
+  // Extract channel/username from streaming URLs
+  const getStreamChannelName = (url) => {
+    try {
+      const urlObj = new URL(url);
+      const pathname = urlObj.pathname;
+      
+      // Twitch: https://twitch.tv/channelname
+      if (urlObj.hostname.includes('twitch.tv')) {
+        const channel = pathname.split('/').filter(p => p)[0];
+        return channel ? channel.charAt(0).toUpperCase() + channel.slice(1) : 'Twitch';
+      }
+      
+      // YouTube: various formats
+      if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
+        // Handle different YouTube URL formats
+        if (pathname.includes('/channel/')) {
+          return 'YouTube Channel';
+        } else if (pathname.includes('/c/')) {
+          const channel = pathname.split('/c/')[1]?.split('/')[0];
+          return channel || 'YouTube';
+        } else if (pathname.includes('/@')) {
+          const channel = pathname.split('/@')[1]?.split('/')[0];
+          return channel || 'YouTube';
+        } else if (pathname.includes('/watch')) {
+          return 'YouTube Stream';
+        }
+        return 'YouTube';
+      }
+      
+      // Kick: https://kick.com/channelname
+      if (urlObj.hostname.includes('kick.com')) {
+        const channel = pathname.split('/').filter(p => p)[0];
+        return channel ? channel.charAt(0).toUpperCase() + channel.slice(1) : 'Kick';
+      }
+      
+      // Default: use domain name
+      return getDomainFromUrl(url);
+    } catch (error) {
+      console.error('Error parsing stream URL:', error);
+      return 'Stream';
+    }
+  };
+
+  // Get appropriate display name for any URL type
+  const getUrlDisplayName = (url, type = 'stream') => {
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.replace('www.', '');
+      const pathname = urlObj.pathname;
+      
+      // For streaming URLs, use the channel name
+      if (type === 'stream') {
+        return getStreamChannelName(url);
+      }
+      
+      // For betting URLs, show the betting site name
+      if (type === 'betting') {
+        if (hostname.includes('bet365')) return 'Bet365';
+        if (hostname.includes('draftkings')) return 'DraftKings';
+        if (hostname.includes('fanduel')) return 'FanDuel';
+        if (hostname.includes('betway')) return 'Betway';
+        if (hostname.includes('pinnacle')) return 'Pinnacle';
+        if (hostname.includes('bovada')) return 'Bovada';
+        return getDomainFromUrl(url);
+      }
+      
+      // For VOD URLs, show appropriate names
+      if (type === 'vod') {
+        // YouTube VODs
+        if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
+          if (pathname.includes('/watch')) {
+            return 'YouTube VOD';
+          } else if (pathname.includes('/@')) {
+            const channel = pathname.split('/@')[1]?.split('/')[0];
+            return channel ? `${channel} VOD` : 'YouTube VOD';
+          }
+          return 'YouTube VOD';
+        }
+        
+        // Twitch VODs
+        if (hostname.includes('twitch.tv')) {
+          if (pathname.includes('/videos/')) {
+            return 'Twitch VOD';
+          }
+          const channel = pathname.split('/').filter(p => p)[0];
+          return channel ? `${channel} VOD` : 'Twitch VOD';
+        }
+        
+        return getDomainFromUrl(url) + ' VOD';
+      }
+      
+      // Default fallback
+      return getDomainFromUrl(url);
+    } catch (error) {
+      console.error('Error parsing URL:', error);
+      return type.charAt(0).toUpperCase() + type.slice(1);
+    }
+  };
+  
+  // Helper function to calculate series score from maps data
+  const calculateSeriesScore = (mapsData, teamNumber) => {
+    if (!mapsData || !Array.isArray(mapsData)) return 0;
+    
+    console.log('🎯 calculateSeriesScore - Maps data:', mapsData.map((map, idx) => ({
+      mapIndex: idx,
+      team1Score: map.team1_score,
+      team2Score: map.team2_score,
+      status: map.status,
+      winner: map.team1_score > map.team2_score ? 'team1' : map.team2_score > map.team1_score ? 'team2' : 'tie'
+    })));
+    
+    return mapsData.reduce((wins, map) => {
+      const team1Score = map.team1_score || 0;
+      const team2Score = map.team2_score || 0;
+      
+      if (teamNumber === 1 && team1Score > team2Score) {
+        return wins + 1;
+      } else if (teamNumber === 2 && team2Score > team1Score) {
+        return wins + 1;
+      }
+      return wins;
+    }, 0);
+  };
+  
   
   // 🔥 CRITICAL: FIXED BACKEND URL LOADING
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://staging.mrvl.net/api';
@@ -152,32 +288,6 @@ function MatchDetailPage({ matchId, navigateTo }) {
   // 🎮 SEASON 2.5 GAME MODES
   const gameModesData = GAME_MODES;
 
-  const getGameModeTimer = (mode) => {
-    const modeData = gameModesData[mode];
-    if (!modeData) return { 
-      timer: { preparation: 30 },
-      name: mode || 'Unknown', 
-      color: 'gray', 
-      description: 'Unknown mode',
-      icon: '❓'
-    };
-    
-    // Calculate total duration based on mode type
-    let duration = 900; // Default 15 minutes
-    if (mode === 'Convoy') {
-      duration = modeData.timer.baseTime + modeData.timer.checkpoint1 + modeData.timer.checkpoint2;
-    } else if (mode === 'Convergence') {
-      duration = modeData.timer.capturePhase + modeData.timer.escortPhase;
-    } else if (mode === 'Domination') {
-      duration = 12 * 60; // Average for best of 3
-    }
-    
-    return {
-      ...modeData,
-      duration,
-      color: mode === 'Convoy' ? 'blue' : mode === 'Domination' ? 'red' : 'purple'
-    };
-  };
 
 
   // 🚨 CRITICAL: EXTRACT MATCH ID FROM URL OR PROPS
@@ -234,6 +344,17 @@ function MatchDetailPage({ matchId, navigateTo }) {
         if (apiResponse?.success && apiResponse.data) {
           const responseData = apiResponse.data;
           
+          // Debug logging for URL fields
+          console.log('🔍 URL fields in response:', {
+            stream_url: responseData.stream_url,
+            stream_urls: responseData.stream_urls,
+            vod_url: responseData.vod_url,
+            vod_urls: responseData.vod_urls,
+            betting_url: responseData.betting_url,
+            betting_urls: responseData.betting_urls,
+            urls: responseData.urls
+          });
+          
           // Update comprehensive match state
           setMatchData({
             teams: responseData.teams || { team1: null, team2: null },
@@ -241,14 +362,14 @@ function MatchDetailPage({ matchId, navigateTo }) {
             schedule: responseData.schedule || null,
             format: responseData.format || 'BO3',
             status: responseData.status || 'upcoming',
-            scores: responseData.scores || { series: { team1: 0, team2: 0 }, maps: [] },
+            scores: responseData.scores || responseData.score || { series: { team1: 0, team2: 0 }, maps: [] },
             // 🔥 ENHANCED: Handle URLs from comprehensive endpoint
             urls: {
               streams: responseData.stream_urls || (responseData.stream_url ? [responseData.stream_url] : []),
               betting: responseData.betting_urls || (responseData.betting_url ? [responseData.betting_url] : []),
-              vods: responseData.vod_urls || []
+              vods: responseData.vod_urls || (responseData.vod_url ? [responseData.vod_url] : [])
             },
-            live_data: responseData.live_data || { current_map: 1, timer: null, overtime: false, viewers: 0, hero_picks: [], live_updates: [] },
+            live_data: responseData.live_data || { current_map: 1, overtime: false, viewers: 0, hero_picks: [], live_updates: [] },
             player_stats: responseData.player_stats || {},
             tournament: { 
               round: responseData.round || null, 
@@ -261,16 +382,31 @@ function MatchDetailPage({ matchId, navigateTo }) {
           setMatch(responseData);
           
           // Update live state variables
-          if (responseData.scores?.series) {
+          const scoresData = responseData.scores || responseData.score;
+          if (scoresData?.series) {
             setLiveSeriesScores({
-              team1: responseData.scores.series.team1 || 0,
-              team2: responseData.scores.series.team2 || 0
+              team1: scoresData.series.team1 || 0,
+              team2: scoresData.series.team2 || 0
+            });
+          } else {
+            // Fallback to series_score fields or calculate from maps
+            const team1SeriesScore = responseData.series_score_team1 || 
+              (responseData.maps_data ? calculateSeriesScore(responseData.maps_data, 1) : 0) || 0;
+            const team2SeriesScore = responseData.series_score_team2 || 
+              (responseData.maps_data ? calculateSeriesScore(responseData.maps_data, 2) : 0) || 0;
+            
+            setLiveSeriesScores({
+              team1: team1SeriesScore,
+              team2: team2SeriesScore
             });
           }
           
           // Update map scores
-          if (responseData.scores?.maps) {
-            setMapScores(responseData.scores.maps);
+          if (scoresData?.maps) {
+            setMapScores(scoresData.maps);
+          } else if (responseData.maps_data) {
+            // Fallback to maps_data if available
+            setMapScores(responseData.maps_data);
           }
           
           // Update hero selections
@@ -278,19 +414,6 @@ function MatchDetailPage({ matchId, navigateTo }) {
             setHeroSelections(responseData.live_data.hero_picks);
           }
           
-          // Update timer - handle both new and legacy formats
-          if (responseData.live_data?.timer) {
-            setCurrentMapTimer(responseData.live_data.timer);
-            const minutes = responseData.live_data.timer.minutes || 0;
-            const seconds = responseData.live_data.timer.seconds || 0;
-            setMatchTimer(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-          } else if (responseData.timer) {
-            // Legacy format support
-            setMatchTimer(responseData.timer);
-          } else if (responseData.match_timer) {
-            // Alternative format
-            setMatchTimer(responseData.match_timer);
-          }
           
           // Update player stats
           if (responseData.player_stats) {
@@ -314,7 +437,6 @@ function MatchDetailPage({ matchId, navigateTo }) {
             seriesScore: responseData.scores?.series,
             mapCount: responseData.scores?.maps?.length || 0,
             currentMap: responseData.live_data?.current_map,
-            hasTimer: !!responseData.live_data?.timer,
             heroPicksCount: Object.keys(responseData.live_data?.hero_picks || {}).length,
             playerStatsCount: Object.keys(responseData.player_stats || {}).length
           });
@@ -429,34 +551,53 @@ function MatchDetailPage({ matchId, navigateTo }) {
           
           console.log('Final game mode detected:', currentGameMode);
           
-          // Update live timer state - handle multiple formats
-          if (matchData.live_timer) {
-            setMatchTimer(matchData.live_timer);
-          } else if (matchData.timer) {
-            setMatchTimer(matchData.timer);
-          } else if (matchData.match_timer) {
-            setMatchTimer(matchData.match_timer);
-          }
           
           // Update preparation phase state
           if (matchData.is_preparation_phase !== undefined) {
             setIsPreparationPhase(matchData.is_preparation_phase);
           }
           
-          if (matchData.preparation_timer !== undefined) {
-            setPreparationTimer(matchData.preparation_timer);
-          }
           
           // Update current map index
           if (matchData.current_map_index !== undefined) {
             setCurrentMapIndex(matchData.current_map_index);
           }
           
+          // Debug logging for URL fields in matchData
+          console.log('🔍 URL fields in matchData (from response):', {
+            stream_url: matchData.stream_url,
+            stream_urls: matchData.stream_urls,
+            vod_url: matchData.vod_url,
+            vod_urls: matchData.vod_urls,
+            betting_url: matchData.betting_url,
+            betting_urls: matchData.betting_urls,
+            urls: matchData.urls
+          });
+          
+          // Calculate series scores from maps if not provided
+          console.log('🔍 Calculating series scores:', {
+            team1_score: matchData.team1_score,
+            series_score_team1: matchData.series_score_team1,
+            parsedMapsData,
+            calculatedFromMaps: parsedMapsData ? {
+              team1: calculateSeriesScore(parsedMapsData, 1),
+              team2: calculateSeriesScore(parsedMapsData, 2)
+            } : null
+          });
+          
+          // Calculate series scores with proper priority
+          const calculatedTeam1Score = matchData.team1_score || 
+            matchData.series_score_team1 || 
+            (parsedMapsData ? calculateSeriesScore(parsedMapsData, 1) : 0) || 0;
+          const calculatedTeam2Score = matchData.team2_score || 
+            matchData.series_score_team2 || 
+            (parsedMapsData ? calculateSeriesScore(parsedMapsData, 2) : 0) || 0;
+          
           const transformedMatch = {
             id: matchData.match_id || realMatchId,
             status: matchData.status || 'unknown',
-            team1_score: matchData.team1_score || 0,
-            team2_score: matchData.team2_score || 0,
+            team1_score: calculatedTeam1Score,
+            team2_score: calculatedTeam2Score,
             format: matchData.format || 'BO1',
             currentMap: parsedMapsData?.[matchData.current_map_index || 0]?.name || 
                        parsedMapsData?.[matchData.current_map_index || 0]?.map_name || 
@@ -466,13 +607,12 @@ function MatchDetailPage({ matchId, navigateTo }) {
             viewers: matchData.viewer_count || 0,
             totalMaps: totalMaps,
             // 🔥 ENHANCED: Multiple URLs support - use comprehensive data if available
-            stream_urls: matchData.stream_urls || (matchData.stream_url ? [matchData.stream_url] : []),
-            betting_urls: matchData.betting_urls || (matchData.betting_url ? [matchData.betting_url] : []),
-            vod_urls: matchData.vod_urls || [],
+            // Check both direct fields and urls object
+            stream_urls: matchData.stream_urls || matchData.urls?.streams || (matchData.stream_url ? [matchData.stream_url] : []),
+            betting_urls: matchData.betting_urls || matchData.urls?.betting || (matchData.betting_url ? [matchData.betting_url] : []),
+            vod_urls: matchData.vod_urls || matchData.urls?.vods || (matchData.vod_url ? [matchData.vod_url] : []),
             round: matchData.round || null,
             bracket_position: matchData.bracket_position || null,
-            timer: matchData.timer || '00:00',
-            timer_running: matchData.timer_running || false,
             
             // Teams from live-scoreboard response with better field mapping
             team1: {
@@ -502,37 +642,60 @@ function MatchDetailPage({ matchId, navigateTo }) {
                   status: isCurrentMap ? matchData.status : (mapData.status || 'upcoming'),
                   team1Score: mapData.team1_score || 0,
                   team2Score: mapData.team2_score || 0,
-                  timer: getGameModeTimer(mapData.mode || 'Domination'),
-                  team1Composition: (mapData.team1_composition || []).map(player => ({
-                    playerId: player.player_id || player.id,
-                    name: player.name || player.player_name || player.username || `Player ${player.player_id}`,
-                    hero: player.hero || player.current_hero || player.main_hero || 'Captain America',
-                    role: convertRoleToFrontend(player.role),
-                    country: player.country || player.nationality || 'US',
-                    country_flag: player.country_flag || player.flag,
-                    avatar: player.avatar,
-                    eliminations: player.eliminations || 0,
-                    deaths: player.deaths || 0,
-                    assists: player.assists || 0,
-                    damage: player.damage || 0,
-                    healing: player.healing || 0,
-                    damageBlocked: player.damage_blocked || player.blocked || 0
-                  })),
-                  team2Composition: (mapData.team2_composition || []).map(player => ({
-                    playerId: player.player_id || player.id,
-                    name: player.name || player.player_name || player.username || `Player ${player.player_id}`,
-                    hero: player.hero || player.current_hero || player.main_hero || 'Hulk',
-                    role: convertRoleToFrontend(player.role),
-                    country: player.country || player.nationality || 'US',
-                    country_flag: player.country_flag || player.flag,
-                    avatar: player.avatar,
-                    eliminations: player.eliminations || 0,
-                    deaths: player.deaths || 0,
-                    assists: player.assists || 0,
-                    damage: player.damage || 0,
-                    healing: player.healing || 0,
-                    damageBlocked: player.damage_blocked || player.blocked || 0
-                  }))
+                  team1Composition: (mapData.team1_composition || []).map(player => {
+                    // Find the corresponding real player data from team roster
+                    const playerId = player.player_id || player.id;
+                    const realPlayer = matchData.team1?.players?.find(rp => 
+                      rp.id === playerId || rp.player_id === playerId
+                    );
+                    
+                    return {
+                      playerId: playerId,
+                      name: realPlayer?.username || realPlayer?.player_name || realPlayer?.name || 
+                            player.username || player.player_name || player.name || 
+                            `Player ${playerId}`,
+                      hero: player.hero || player.current_hero || player.main_hero || 'Captain America',
+                      role: convertRoleToFrontend(player.role),
+                      country: realPlayer?.country || realPlayer?.nationality || 
+                               player.country || player.nationality || 'US',
+                      country_flag: realPlayer?.country_flag || realPlayer?.flag || 
+                                   player.country_flag || player.flag,
+                      avatar: realPlayer?.avatar || player.avatar,
+                      eliminations: player.eliminations || 0,
+                      deaths: player.deaths || 0,
+                      assists: player.assists || 0,
+                      damage: player.damage || 0,
+                      healing: player.healing || 0,
+                      damageBlocked: player.damage_blocked || player.blocked || 0
+                    };
+                  }),
+                  team2Composition: (mapData.team2_composition || []).map(player => {
+                    // Find the corresponding real player data from team roster
+                    const playerId = player.player_id || player.id;
+                    const realPlayer = matchData.team2?.players?.find(rp => 
+                      rp.id === playerId || rp.player_id === playerId
+                    );
+                    
+                    return {
+                      playerId: playerId,
+                      name: realPlayer?.username || realPlayer?.player_name || realPlayer?.name || 
+                            player.username || player.player_name || player.name || 
+                            `Player ${playerId}`,
+                      hero: player.hero || player.current_hero || player.main_hero || 'Hulk',
+                      role: convertRoleToFrontend(player.role),
+                      country: realPlayer?.country || realPlayer?.nationality || 
+                               player.country || player.nationality || 'US',
+                      country_flag: realPlayer?.country_flag || realPlayer?.flag || 
+                                   player.country_flag || player.flag,
+                      avatar: realPlayer?.avatar || player.avatar,
+                      eliminations: player.eliminations || 0,
+                      deaths: player.deaths || 0,
+                      assists: player.assists || 0,
+                      damage: player.damage || 0,
+                      healing: player.healing || 0,
+                      damageBlocked: player.damage_blocked || player.blocked || 0
+                    };
+                  })
                 };
               } else {
                 // Fallback for maps without data
@@ -543,20 +706,28 @@ function MatchDetailPage({ matchId, navigateTo }) {
                   status: 'upcoming',
                   team1Score: 0,
                   team2Score: 0,
-                  timer: getGameModeTimer('Domination'),
                   team1Composition: [],
                   team2Composition: []
                 };
               }
             }),
             
-            // Timer and other data
-            currentRound: matchData.current_round,
-            activeTimers: matchData.active_timers || []
+            currentRound: matchData.current_round
           };
           
           console.log('✅ MatchDetailPage: Transformed match data:', transformedMatch);
+          console.log('🔗 URLs in transformedMatch:', {
+            stream_urls: transformedMatch.stream_urls,
+            betting_urls: transformedMatch.betting_urls,
+            vod_urls: transformedMatch.vod_urls
+          });
           setMatch(transformedMatch);
+          
+          // Initialize live series scores from match data
+          setLiveSeriesScores({
+            team1: transformedMatch.team1_score || 0,
+            team2: transformedMatch.team2_score || 0
+          });
           
         } else {
           console.error('❌ Failed to load match data:', apiResponse);
@@ -584,7 +755,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
     if (match?.status === 'live') {
       pollInterval = setInterval(() => {
         fetchMatchData(false); // Silent refresh
-      }, 1000); // Poll every second for live matches to show timer updates
+      }, 5000); // Poll every 5 seconds for live matches (reduced from 1s to prevent conflicts)
     }
 
     // 🔥 ENHANCED CROSS-TAB SYNC - LISTEN FOR ALL ADMIN UPDATES
@@ -594,7 +765,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
       
       console.log('MatchDetailPage: Sync event received:', {
         eventType: event.type,
-        detailType: detail.type,
+        detailType: detail.updateType,
         eventMatchId: detail.matchId,
         currentMatchId: currentMatchId,
         currentMatchIdType: typeof currentMatchId,
@@ -611,7 +782,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
       
       if (matchesId) {
         // 🔥 PREVENT DUPLICATE EVENT PROCESSING
-        const eventId = `${detail.type}-${detail.timestamp}-${detail.matchId}`;
+        const eventId = `${detail.updateType}-${detail.timestamp}-${detail.matchId}`;
         if (lastProcessedEventId === eventId) {
           console.log('🚫 Skipping duplicate event:', eventId);
           return;
@@ -619,7 +790,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
         setLastProcessedEventId(eventId);
         
         console.log('MatchDetailPage: Processing real-time update:', {
-          type: detail.type,
+          type: detail.updateType,
           hasMatchData: !!detail.matchData,
           timestamp: detail.timestamp,
           eventId,
@@ -628,52 +799,12 @@ function MatchDetailPage({ matchId, navigateTo }) {
         
         // Handle different types of updates with IMMEDIATE RESPONSE and ERROR HANDLING
         try {
-          console.log('ENTERING SWITCH STATEMENT for type:', detail.type);
+          console.log('ENTERING SWITCH STATEMENT for type:', detail.updateType);
           
           
-          switch (detail.type) {
+          switch (detail.updateType) {
             case 'SCORE_UPDATE':
               console.log('Score update received - IMMEDIATE UPDATE', detail);
-              
-              // 🔥 IMMEDIATE LIVE SCORES UPDATE (like timer)
-              if (detail.overallScores) {
-                const team1Score = detail.overallScores.team1 || detail.overallScores[0] || 0;
-                const team2Score = detail.overallScores.team2 || detail.overallScores[1] || 0;
-                
-                console.log(`IMMEDIATE: Setting live scores to Team1=${team1Score}, Team2=${team2Score}`);
-                console.log(`BEFORE UPDATE: liveScores was:`, liveScores);
-                
-                // 🔥 FORCE STATE UPDATE AND RE-RENDER
-                setLiveScores({ team1: team1Score, team2: team2Score });
-                setRefreshTrigger(prev => prev + 1); // Force re-render
-                
-                console.log(`AFTER UPDATE: liveScores should be Team1=${team1Score}, Team2=${team2Score}`);
-                
-                setLastScoreUpdate({ 
-                  team1: team1Score, 
-                  team2: team2Score, 
-                  timestamp: Date.now(),
-                  mapIndex: detail.mapIndex 
-                });
-              }
-              
-              // 🔥 FALLBACK: Try to extract scores from matchData if overallScores missing
-              else if (detail.matchData) {
-                const team1Score = detail.matchData.team1_score || detail.matchData.team1Score || 0;
-                const team2Score = detail.matchData.team2_score || detail.matchData.team2Score || 0;
-                
-                console.log(`FALLBACK: Setting live scores from matchData Team1=${team1Score}, Team2=${team2Score}`);
-                setLiveScores({ team1: team1Score, team2: team2Score });
-                setRefreshTrigger(prev => prev + 1); // Force re-render
-              }
-              
-              // Also update series scores if provided
-              if (detail.seriesScores) {
-                setLiveSeriesScores({ 
-                  team1: detail.seriesScores.team1 || 0, 
-                  team2: detail.seriesScores.team2 || 0 
-                });
-              }
               
               // PRIORITY 1: Update match data immediately if provided
               if (detail.matchData) {
@@ -682,26 +813,11 @@ function MatchDetailPage({ matchId, navigateTo }) {
                 setRefreshTrigger(prev => prev + 1); // Force re-render
               }
               
-              // PRIORITY 2: Update overall scores immediately
-              if (detail.overallScores) {
-                console.log('Updating overall scores:', detail.overallScores);
-                // Handle different score data structures
-                const team1Score = detail.overallScores.team1 || detail.overallScores[0] || 0;
-                const team2Score = detail.overallScores.team2 || detail.overallScores[1] || 0;
-                
-                setMatch(prev => prev ? {
-                  ...prev,
-                  team1_score: team1Score,
-                  team2_score: team2Score,
-                  lastUpdated: Date.now()
-                } : prev);
-                
-                console.log(`Scores updated to: Team1=${team1Score}, Team2=${team2Score}`);
-              }
-              
-              // PRIORITY 3: Handle map-level score updates for immediate feedback
+              // PRIORITY 2: Handle map-level score updates for immediate feedback
               if (detail.mapScore !== undefined && detail.teamNumber && detail.mapIndex !== undefined) {
-                console.log(`Map score update: Team ${detail.teamNumber} = ${detail.mapScore} on map ${detail.mapIndex + 1}`);
+                console.log(`🎯 IMMEDIATE Map score update: Team ${detail.teamNumber} = ${detail.mapScore} on map ${detail.mapIndex + 1}`);
+                
+                // Update match state immediately
                 setMatch(prev => {
                   if (!prev || !prev.maps || !prev.maps[detail.mapIndex]) return prev;
                   
@@ -722,7 +838,18 @@ function MatchDetailPage({ matchId, navigateTo }) {
                     lastUpdated: Date.now()
                   };
                 });
+                
+                // Force immediate re-render
+                setRefreshTrigger(prev => prev + 1);
               }
+              
+              // Don't refresh immediately - let the immediate update show first
+              // Backend refresh will happen after a delay to avoid overwriting immediate changes
+              setTimeout(() => {
+                console.log('🔄 Background refresh after score update...');
+                fetchMatchData(false);
+              }, 3000); // 3 second delay to let immediate update be visible
+              
               console.log('SCORE_UPDATE processing completed');
               break;
               
@@ -785,13 +912,17 @@ function MatchDetailPage({ matchId, navigateTo }) {
             case 'STAT_UPDATE':
               console.log('📊 Stat update received - IMMEDIATE UPDATE');
               
-              // 🔥 IMMEDIATE STAT UPDATE (like timer)
-              if (detail.playerName && detail.statName && detail.value !== undefined) {
-                console.log(`📊 IMMEDIATE: ${detail.playerName} ${detail.statName} = ${detail.value}`);
+              // 🔥 IMMEDIATE STAT UPDATE (like timer) - ENHANCED COMPATIBILITY
+              const statType = detail.statType || detail.statName;
+              const statValue = detail.statValue || detail.value;
+              
+              if (detail.playerName && statType && statValue !== undefined) {
+                console.log(`📊 IMMEDIATE: ${detail.playerName} ${statType} = ${statValue}`);
                 setLastStatUpdate({
                   playerName: detail.playerName,
-                  statName: detail.statName,
-                  value: detail.value,
+                  statName: statType,
+                  statType: statType,
+                  value: statValue,
                   team: detail.team,
                   mapIndex: detail.mapIndex,
                   timestamp: Date.now()
@@ -806,21 +937,6 @@ function MatchDetailPage({ matchId, navigateTo }) {
               console.log('📊 STAT_UPDATE processing completed');
               break;
               
-            case 'TIMER_START':
-            case 'TIMER_PAUSE':
-            case 'TIMER_RESET':
-            case 'TIMER_UPDATE':
-              console.log('Timer update received - IMMEDIATE UPDATE:', detail);
-              if (detail.timer !== undefined) {
-                setMatchTimer(detail.timer);
-              }
-              if (detail.isRunning !== undefined) {
-                // Update visual timer state immediately
-                console.log('Timer running state:', detail.isRunning);
-              }
-              // NO BACKEND FETCH for timer updates - use event data only
-              console.log('TIMER update processing completed - returning early');
-              return; // Don't fetch backend data for timer updates
               
             case 'MAP_ADVANCE':
               console.log('Map advance received - IMMEDIATE UPDATE');
@@ -833,7 +949,6 @@ function MatchDetailPage({ matchId, navigateTo }) {
             case 'PREPARATION_PHASE':
               console.log('⏳ Preparation phase update - IMMEDIATE UPDATE');
               setIsPreparationPhase(detail.isPreparation || false);
-              setPreparationTimer(detail.preparationTimer || 0);
               console.log('⏳ PREPARATION_PHASE processing completed');
               break;
               
@@ -855,6 +970,77 @@ function MatchDetailPage({ matchId, navigateTo }) {
               console.log('🧪 TEST processing completed');
               break;
               
+            case 'MAP_COMPLETED':
+              console.log('🏁 Map completed - updating series scores', detail);
+              
+              // Update series scores immediately
+              if (detail.seriesScoreTeam1 !== undefined && detail.seriesScoreTeam2 !== undefined) {
+                setMatch(prev => prev ? {
+                  ...prev,
+                  team1_score: detail.seriesScoreTeam1,
+                  team2_score: detail.seriesScoreTeam2,
+                  lastUpdated: Date.now()
+                } : prev);
+                
+                console.log(`🏁 Series scores updated: Team1=${detail.seriesScoreTeam1}, Team2=${detail.seriesScoreTeam2}`);
+                setRefreshTrigger(prev => prev + 1);
+              }
+              
+              // Refresh to get updated map statuses
+              setTimeout(() => {
+                fetchMatchData(false);
+              }, 1000);
+              break;
+              
+            case 'COMPLETE_UPDATE':
+              console.log('💾 Complete update from LiveScoring - transforming and applying', detail);
+              
+              // Transform the maps data from LiveScoring format to MatchDetail format
+              if (detail.maps && Array.isArray(detail.maps)) {
+                setMatch(prev => {
+                  if (!prev) return prev;
+                  
+                  // Transform maps from LiveScoring format (camelCase) to display format
+                  const transformedMaps = detail.maps.map((map, index) => ({
+                    ...prev.maps[index], // Keep existing map data
+                    team1Score: map.team1Score,
+                    team2Score: map.team2Score,
+                    team1_score: map.team1Score, // Also include snake_case for compatibility
+                    team2_score: map.team2Score,
+                    status: map.status || prev.maps[index]?.status || 'upcoming',
+                    mapName: map.name || prev.maps[index]?.mapName,
+                    mode: map.mode || prev.maps[index]?.mode
+                  }));
+                  
+                  console.log('💾 Transformed maps:', transformedMaps);
+                  
+                  return {
+                    ...prev,
+                    maps: transformedMaps,
+                    team1_score: detail.series_score_team1 || detail.team1_score || prev.team1_score,
+                    team2_score: detail.series_score_team2 || detail.team2_score || prev.team2_score,
+                    status: detail.status || prev.status,
+                    current_map: detail.current_map || prev.current_map,
+                    lastUpdated: Date.now()
+                  };
+                });
+                
+                // Update series scores
+                setLiveSeriesScores({
+                  team1: detail.series_score_team1 || detail.team1_score || 0,
+                  team2: detail.series_score_team2 || detail.team2_score || 0
+                });
+                
+                setRefreshTrigger(prev => prev + 1);
+              }
+              
+              // Don't immediately refresh - let the update show first
+              setTimeout(() => {
+                console.log('🔄 Background refresh after complete update');
+                fetchMatchData(false);
+              }, 3000);
+              break;
+              
             default:
               console.log('🔄 General update received - IMMEDIATE UPDATE', detail);
               if (detail.matchData) {
@@ -869,10 +1055,9 @@ function MatchDetailPage({ matchId, navigateTo }) {
           
           // For non-timer updates, also fetch fresh data for consistency (silently)
           // BUT for SCORE_UPDATE, delay the refresh to let real-time update show first
-          if (detail.type !== 'TIMER_START' && detail.type !== 'TIMER_PAUSE' && 
-              detail.type !== 'TIMER_RESET' && detail.type !== 'TIMER_UPDATE') {
+          if (true) {
             
-            if (detail.type === 'SCORE_UPDATE') {
+            if (detail.updateType === 'SCORE_UPDATE') {
               // Delay background refresh for score updates to show immediate changes first
               setTimeout(() => {
                 console.log('🔄 Delayed refresh after SCORE_UPDATE for consistency');
@@ -894,47 +1079,28 @@ function MatchDetailPage({ matchId, navigateTo }) {
       }
     };
 
-    // Listen for ALL possible sync events with proper event handling
-    const eventTypes = [
-      'mrvl-match-updated',
-      'mrvl-hero-updated', 
-      'mrvl-stats-updated',
-      'mrvl-score-updated',
-      'mrvl-timer-updated',
-      'mrvl-data-refresh'
-    ];
-    
-    // 🔥 FIX: Ensure handleMatchUpdate is properly called for CustomEvents
+    // 🔥 SIMPLIFIED: Listen only for unified match update event
     const customEventHandler = (event) => {
-      console.log(`MatchDetailPage: CustomEvent ${event.type} received, calling handleMatchUpdate`);
-      console.log(`Event detail:`, event.detail);
-      console.log(`Current match ID:`, getMatchId());
+      console.log(`MatchDetailPage: Unified event received:`, event.detail);
       
-      // 🔥 CRITICAL: Verify the event has the proper structure
-      if (!event.detail) {
-        console.error('❌ CustomEvent missing detail property!', event);
+      // Validate event structure
+      if (!event.detail?.matchId || !event.detail?.updateType) {
+        console.error('❌ Invalid event structure:', event.detail);
         return;
       }
       
-      if (!event.detail.matchId) {
-        console.error('❌ CustomEvent detail missing matchId!', event.detail);
+      // Only process events for this match
+      if (String(event.detail.matchId) !== String(getMatchId())) {
+        console.log('🚫 Event for different match, ignoring');
         return;
       }
       
-      if (!event.detail.type) {
-        console.error('❌ CustomEvent detail missing type!', event.detail);
-        return;
-      }
-      
-      console.log(`Event validation passed, calling handleMatchUpdate`);
+      console.log(`✅ Processing unified event type: ${event.detail.updateType}`);
       handleMatchUpdate(event);
-      console.log(`handleMatchUpdate call completed for ${event.type}`);
     };
     
-    eventTypes.forEach(eventType => {
-      console.log(`MatchDetailPage: Registering listener for ${eventType}`);
-      window.addEventListener(eventType, customEventHandler);
-    });
+    // Register single unified event listener
+    window.addEventListener('mrvl-match-updated', customEventHandler);
     
     console.log('MatchDetailPage: All event listeners registered for match:', getMatchId());
     
@@ -957,7 +1123,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
           window.dispatchEvent(new CustomEvent(test.type, {
             detail: {
               matchId: getMatchId(),
-              type: test.eventType,
+              updateType: test.eventType,
               timestamp: Date.now(),
               message: `Testing if MatchDetailPage can receive ${test.type} events`,
               testData: true
@@ -977,9 +1143,8 @@ function MatchDetailPage({ matchId, navigateTo }) {
       });
     };
     
-    eventTypes.forEach(eventType => {
-      window.addEventListener(eventType, diagnosticHandler);
-    });
+    // Register diagnostic handler for unified event
+    window.addEventListener('mrvl-match-updated', diagnosticHandler);
 
     // 🚨 ENHANCED LOCALSTORAGE SYNC WITH BETTER MATCH ID HANDLING
     const handleStorageChange = (event) => {
@@ -991,53 +1156,15 @@ function MatchDetailPage({ matchId, navigateTo }) {
         timestamp: new Date().toISOString()
       });
       
-      // Listen for both standard keys AND unique event keys AND event-specific keys
-      const isRelevantKey = event.key === 'mrvl-match-sync' || 
-                           event.key === `mrvl-match-${getMatchId()}` ||
-                           event.key === 'mrvl-timer-sync' ||
-                           event.key === 'mrvl-hero-sync' ||
-                           event.key === 'mrvl-score-sync' ||
-                           event.key === 'mrvl-stat-sync' ||
-                           event.key === 'mrvl-save-sync' ||
-                           (event.key && event.key.startsWith('mrvl-match-sync-'));
-      
-      if (isRelevantKey && event.newValue) {
+      // 🔥 SIMPLIFIED: Listen only for this match's specific storage key
+      const expectedKey = `mrvl-match-sync-${getMatchId()}`;
+      if (event.key === expectedKey && event.newValue) {
         try {
           const syncData = JSON.parse(event.newValue);
-          console.log('🔄 PARSED STORAGE SYNC DATA:', {
-            syncMatchId: syncData.matchId,
-            currentMatchId: getMatchId(),
-            syncType: syncData.type,
-            willProcess: String(syncData.matchId) === String(getMatchId()),
-            eventKey: event.key
-          });
+          console.log('🔄 Storage sync for this match:', syncData);
           
-          // 🚨 IMPROVED MATCH ID COMPARISON
-          const currentMatchId = getMatchId();
-          const matchIdMatches = String(syncData.matchId) === String(currentMatchId) || 
-                                parseInt(syncData.matchId) === parseInt(currentMatchId);
-          
-          if (matchIdMatches && syncData.type) {
-            console.log('🔄 Storage sync detected and processing:', syncData);
+          if (syncData.updateType) {
             handleMatchUpdate({ detail: syncData });
-            
-            // Clean up unique keys after processing to prevent localStorage bloat
-            if (event.key.startsWith('mrvl-match-sync-') && event.key !== 'mrvl-match-sync') {
-              setTimeout(() => {
-                try {
-                  localStorage.removeItem(event.key);
-                  console.log('🧹 Cleaned up unique key:', event.key);
-                } catch (error) {
-                  console.warn('⚠️ Could not clean up key:', event.key, error);
-                }
-              }, 3000); // Clean up after 3 seconds
-            }
-          } else {
-            console.log('🚫 Storage sync ignored - match ID mismatch or missing type:', {
-              syncMatchId: syncData.matchId,
-              currentMatchId: currentMatchId,
-              hasType: !!syncData.type
-            });
           }
         } catch (error) {
           console.error('❌ Error parsing storage sync data:', error, event.newValue);
@@ -1135,8 +1262,73 @@ function MatchDetailPage({ matchId, navigateTo }) {
       matchChannel = subscribeMatchUpdates(String(matchId), (data) => {
         console.log('📡 Pusher match update:', data);
         
-        // Handle different event types
-        if (data.type === 'score-updated') {
+        // Handle comprehensive live updates from LiveMatchUpdate event
+        if (data.update_type || data.all_maps) {
+          console.log('🔥 Live update received:', data.update_type);
+          
+          // Update series scores immediately
+          if (data.series_score) {
+            setLiveSeriesScores({
+              team1: data.series_score.team1 || 0,
+              team2: data.series_score.team2 || 0
+            });
+          }
+          
+          // Update current map scores immediately
+          if (data.current_map_scores) {
+            setLiveScores({
+              team1: data.current_map_scores.team1_score || 0,
+              team2: data.current_map_scores.team2_score || 0
+            });
+          }
+          
+          // Update all map data
+          if (data.all_maps) {
+            setMapScores(data.all_maps);
+          }
+          
+          // Update hero selections
+          if (data.hero_selections && data.hero_selections.length > 0) {
+            const heroMap = {};
+            data.hero_selections.forEach(selection => {
+              heroMap[selection.player_id] = selection.hero;
+            });
+            setHeroSelections(heroMap);
+            setLastHeroChange({
+              timestamp: data.timestamp,
+              selections: data.hero_selections
+            });
+          }
+          
+          // Update player stats
+          if (data.player_stats) {
+            setPlayerPerformance(data.player_stats);
+            setLastStatUpdate({
+              timestamp: data.timestamp,
+              stats: data.player_stats
+            });
+          }
+          
+          // Update timer
+          
+          // Update match status
+          if (data.match_status) {
+            setMatch(prev => prev ? { ...prev, status: data.match_status } : prev);
+          }
+          
+          // Force UI refresh
+          setRefreshTrigger(prev => prev + 1);
+          
+          // Show live update indicator
+          setLiveUpdateIndicator({
+            type: data.update_type,
+            timestamp: Date.now()
+          });
+          setTimeout(() => setLiveUpdateIndicator(null), 3000);
+          
+        }
+        // Handle legacy event types
+        else if (data.type === 'score-updated') {
           setLiveScores({ team1: data.team1_score, team2: data.team2_score });
           setRefreshTrigger(prev => prev + 1);
         } else if (data.type === 'map-started' || data.type === 'map-ended') {
@@ -1210,13 +1402,118 @@ function MatchDetailPage({ matchId, navigateTo }) {
         scoringChannel.unsubscribe();
       }
       
-      eventTypes.forEach(eventType => {
-        window.removeEventListener(eventType, customEventHandler);
-        window.removeEventListener(eventType, diagnosticHandler);
-      });
+      // Remove unified event listeners
+      window.removeEventListener('mrvl-match-updated', customEventHandler);
+      window.removeEventListener('mrvl-match-updated', diagnosticHandler);
       window.removeEventListener('storage', handleStorageChange);
     };
   }, [matchId, api, refreshTrigger, BACKEND_URL]);
+
+  // 🔄 SEPARATE POLLING EFFECT - Polls every second when match is live
+  useEffect(() => {
+    if (!match || !matchId) return;
+    
+    // Start polling if match is live
+    console.log('🔍 Checking polling condition:', { matchStatus: match.status, isLive: match.status === 'live', matchId });
+    if (match.status === 'live') {
+      console.log('🔄 Starting 1-second polling for live match:', matchId);
+      
+      const pollInterval = setInterval(async () => {
+        try {
+          // Use public live endpoint for faster updates (no auth required)
+          const apiResponse = await api.get(`/live/${matchId}`);
+          if (apiResponse?.data) {
+            const liveData = apiResponse.data;
+            
+            console.log('🔄 Live polling update received:', liveData);
+            
+            
+            // Update series scores immediately
+            setLiveSeriesScores({
+              team1: liveData.series_score_team1 || 0,
+              team2: liveData.series_score_team2 || 0
+            });
+            
+            // Update match status
+            if (liveData.status) {
+              setMatch(prev => prev ? { ...prev, status: liveData.status } : prev);
+            }
+            
+            // Update maps data if available
+            if (liveData.maps && Array.isArray(liveData.maps)) {
+              // Process maps with updated player stats
+              const processedMaps = liveData.maps.map(map => {
+                // Update team compositions with latest hero selections from player_stats
+                const updatedMap = { ...map };
+                
+                if (liveData.player_stats) {
+                  // Update team1 composition
+                  if (map.team1Composition) {
+                    updatedMap.team1Composition = map.team1Composition.map(player => {
+                      const playerStats = liveData.player_stats[player.playerId];
+                      if (playerStats) {
+                        return {
+                          ...player,
+                          hero: playerStats.hero || player.hero,
+                          eliminations: playerStats.eliminations || player.eliminations || 0,
+                          deaths: playerStats.deaths || player.deaths || 0,
+                          assists: playerStats.assists || player.assists || 0,
+                          damage: playerStats.damage || player.damage || 0,
+                          healing: playerStats.healing || player.healing || 0,
+                          damageBlocked: playerStats.damage_blocked || player.damageBlocked || 0
+                        };
+                      }
+                      return player;
+                    });
+                  }
+                  
+                  // Update team2 composition
+                  if (map.team2Composition) {
+                    updatedMap.team2Composition = map.team2Composition.map(player => {
+                      const playerStats = liveData.player_stats[player.playerId];
+                      if (playerStats) {
+                        return {
+                          ...player,
+                          hero: playerStats.hero || player.hero,
+                          eliminations: playerStats.eliminations || player.eliminations || 0,
+                          deaths: playerStats.deaths || player.deaths || 0,
+                          assists: playerStats.assists || player.assists || 0,
+                          damage: playerStats.damage || player.damage || 0,
+                          healing: playerStats.healing || player.healing || 0,
+                          damageBlocked: playerStats.damage_blocked || player.damageBlocked || 0
+                        };
+                      }
+                      return player;
+                    });
+                  }
+                }
+                
+                return updatedMap;
+              });
+              
+              setMapScores(processedMaps);
+            }
+            
+            // Update player stats if available
+            if (liveData.player_stats) {
+              setPlayerPerformance(liveData.player_stats);
+            }
+            
+            // Show live update indicator
+            setLiveUpdateIndicator('Updated');
+            setTimeout(() => setLiveUpdateIndicator(null), 500);
+          }
+        } catch (error) {
+          console.error('Polling error:', error);
+        }
+      }, 1000); // Poll every 1 second
+      
+      return () => {
+        console.log('🛑 Stopping polling for match:', matchId);
+        clearInterval(pollInterval);
+      };
+    }
+  }, [match?.status, matchId, api]);
 
   // Helper function to convert roles
   const convertRoleToFrontend = (backendRole) => {
@@ -1237,7 +1534,6 @@ function MatchDetailPage({ matchId, navigateTo }) {
       'SCORE_UPDATE': '🏆 Score Updated',
       'HERO_CHANGE': '🦸 Hero Changed',
       'STAT_UPDATE': '📊 Stats Updated',
-      'TIMER_UPDATE': '⏱️ Timer Updated',
       'PRODUCTION_SAVE': '💾 Data Saved',
       'MAP_ADVANCE': '🗺️ Next Map',
       'PREPARATION_PHASE': '⏳ Prep Phase'
@@ -1258,7 +1554,47 @@ function MatchDetailPage({ matchId, navigateTo }) {
     try {
       const response = await api.get(`/matches/${currentMatchId}/comments`);
       const commentsData = response?.data || [];
-      setComments(Array.isArray(commentsData) ? commentsData : []);
+      
+      // Process comments to build proper user objects from flat data
+      const processedComments = (Array.isArray(commentsData) ? commentsData : []).map(comment => ({
+        ...comment,
+        user: {
+          id: comment.user_id,
+          name: comment.user_name,
+          avatar: comment.avatar,
+          hero_flair: comment.hero_flair,
+          team_flair_id: comment.team_flair_id,
+          flairs: {
+            hero: comment.hero_flair ? {
+              type: 'hero',
+              name: comment.hero_flair,
+              image: `/images/heroes/${comment.hero_flair.toLowerCase().replace(/\s+/g, '-')}.png`,
+              fallback_text: comment.hero_flair
+            } : null
+          }
+        },
+        // Process replies the same way
+        replies: (comment.replies || []).map(reply => ({
+          ...reply,
+          user: {
+            id: reply.user_id,
+            name: reply.user_name,
+            avatar: reply.avatar,
+            hero_flair: reply.hero_flair,
+            team_flair_id: reply.team_flair_id,
+            flairs: {
+              hero: reply.hero_flair ? {
+                type: 'hero',
+                name: reply.hero_flair,
+                image: `/images/heroes/${reply.hero_flair.toLowerCase().replace(/\s+/g, '-')}.png`,
+                fallback_text: reply.hero_flair
+              } : null
+            }
+          }
+        }))
+      }));
+      
+      setComments(processedComments);
     } catch (error) {
       console.error('❌ Error fetching comments:', error);
       setComments([]);
@@ -1267,19 +1603,40 @@ function MatchDetailPage({ matchId, navigateTo }) {
     }
   };
 
+  const handleMentionSelect = (mention) => {
+    // Add the selected mention to our tracking array
+    setSelectedMentions(prev => {
+      // Avoid duplicates
+      const exists = prev.find(m => m.id === mention.id && m.type === mention.type);
+      if (exists) return prev;
+      return [...prev, mention];
+    });
+  };
+
   const submitComment = async () => {
-    if (!newComment.trim()) return;
+    const content = replyingTo ? replyText.trim() : newComment.trim();
+    if (!content) return;
     
     setSubmittingComment(true);
     try {
       const currentMatchId = getMatchId();
-      const response = await api.post(`/matches/${currentMatchId}/comments`, {
-        content: newComment
+      const response = await api.post(`/user/matches/${currentMatchId}/comments`, {
+        content: content,
+        parent_id: replyingTo?.id || null,
+        mentions: selectedMentions
       });
       
-      if (response?.data) {
-        setComments(prev => [response.data, ...prev]);
+      if (response?.success || response?.data) {
+        console.log('✅ Comment posted successfully, refreshing comments...');
+        
+        // Clear form
         setNewComment('');
+        setReplyText('');
+        setReplyingTo(null);
+        setSelectedMentions([]);
+        
+        // Fetch fresh data from server to get properly processed mentions
+        await fetchComments();
       }
     } catch (error) {
       console.error('❌ Error submitting comment:', error);
@@ -1289,21 +1646,104 @@ function MatchDetailPage({ matchId, navigateTo }) {
     }
   };
 
-  // Render comment function (VLR.gg style)
+  const handleEditComment = (comment) => {
+    setEditingComment(comment);
+    setEditContent(comment.content);
+  };
+
+  const handleSaveEdit = async (commentId) => {
+    if (!editContent.trim()) return;
+
+    try {
+      setSubmittingComment(true);
+
+      const response = await api.put(`/user/matches/comments/${commentId}`, {
+        content: editContent.trim(),
+        mentions: selectedMentions
+      });
+
+      if (response.success) {
+        setEditingComment(null);
+        setEditContent('');
+        setSelectedMentions([]);
+        
+        // Immediately fetch fresh data
+        await fetchComments();
+      } else {
+        alert('Failed to edit comment. Please try again.');
+      }
+    } catch (error) {
+      console.error('❌ Failed to edit comment:', error);
+      alert('Failed to edit comment. Please try again.');
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm('Are you sure you want to delete this comment?')) return;
+
+    // Prevent double-clicks
+    if (submittingComment) return;
+
+    try {
+      setSubmittingComment(true);
+      console.log('🗑️ Deleting comment...', commentId);
+
+      const response = await api.delete(`/user/matches/comments/${commentId}`);
+
+      if (response.success) {
+        console.log('✅ Comment deleted successfully');
+        // Immediately fetch fresh data
+        await fetchComments();
+      } else {
+        alert('Failed to delete comment. Please try again.');
+      }
+    } catch (error) {
+      console.error('❌ Failed to delete comment:', error);
+      alert('Failed to delete comment. Please try again.');
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
+  // Render comment function (Forums style)
   const renderComment = (comment, isReply = false, depth = 0) => {
     const maxDepth = 3; // Limit nesting depth for readability
     const shouldShowReplies = comment.replies && comment.replies.length > 0 && depth < maxDepth;
+    
+    // Use inline style for dynamic margin instead of class
+    const marginStyle = isReply ? { marginLeft: `${Math.min(depth * 2, 6)}rem` } : {};
     
     return (
       <div 
         key={comment.id}
         className={`${
-          isReply ? `ml-${Math.min(depth * 4 + 4, 16)} pl-4 border-l-2 border-gray-200 dark:border-gray-700` : ''
-        } py-4 ${depth > 0 ? 'bg-gray-50/50 dark:bg-gray-800/50 rounded-r-lg' : ''}`}
+          isReply ? 'pl-4 border-l-2 border-gray-200 dark:border-gray-700' : ''
+        } py-4 ${depth > 0 ? 'bg-gray-50/50 dark:bg-gray-800/50 rounded-lg' : ''}`}
+        style={marginStyle}
       >
-        <div className="flex space-x-4">
-          {/* Voting */}
-          <div className="flex-shrink-0">
+        <div className="w-full">
+          {/* User Info Header */}
+          <div className="flex items-center space-x-3 mb-3">
+            <UserDisplay
+              user={comment.user}
+              showAvatar={true}
+              showHeroFlair={true}
+              showTeamFlair={true}
+              size="sm"
+              clickable={true}
+              navigateTo={navigateTo}
+            />
+            <span className="text-sm text-gray-500 dark:text-gray-500">
+              {formatTimeAgo(comment.created_at)}
+            </span>
+            {comment.is_edited && (
+              <span className="text-xs text-gray-400 dark:text-gray-600">
+                (edited {formatTimeAgo(comment.updated_at)})
+              </span>
+            )}
+            {/* Voting buttons right after username info */}
             <VotingButtons
               itemType="match_comment"
               itemId={comment.id}
@@ -1311,81 +1751,68 @@ function MatchDetailPage({ matchId, navigateTo }) {
               initialUpvotes={comment.votes?.upvotes || comment.upvotes || 0}
               initialDownvotes={comment.votes?.downvotes || comment.downvotes || 0}
               userVote={comment.user_vote}
-              direction="vertical"
-              size="sm"
+              direction="horizontal"
+              size="xs"
+              onVoteChange={(newVote, stats) => {
+                console.log('📊 Comment vote changed:', newVote, 'Stats:', stats);
+                // VotingButtons handles UI updates internally, no need to refresh
+              }}
             />
           </div>
 
-          {/* Comment Content */}
-          <div className="flex-1 min-w-0">
-            {/* User Info Header */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-3">
-                <UserDisplay
-                  user={comment.user}
-                  showAvatar={true}
-                  showHeroFlair={true}
-                  showTeamFlair={true}
-                  size="sm"
-                  clickable={true}
-                  navigateTo={navigateTo}
-                />
-                <span className="text-sm text-gray-500 dark:text-gray-500">
-                  {formatTimeAgo(comment.created_at)}
-                </span>
-                {comment.is_edited && (
-                  <span className="text-xs text-gray-400 dark:text-gray-600">
-                    (edited {formatTimeAgo(comment.updated_at)})
-                  </span>
-                )}
-              </div>
+          {/* Comment Content with mentions */}
+          <div className="prose prose-sm dark:prose-invert max-w-none mb-4">
+            {comment.content.split('\n').map((paragraph, index) => (
+              <p key={index} className="mb-2 last:mb-0">
+                {processContentWithMentions(paragraph, comment.mentions || [], navigateTo)}
+              </p>
+            ))}
+          </div>
 
-              {/* Comment Actions */}
-              <div className="flex items-center space-x-2">
-                {isAuthenticated && (
-                  <button
-                    onClick={() => setReplyingTo(comment)}
-                    className="text-xs text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                  >
-                    Reply
-                  </button>
-                )}
-                {(comment.user?.id === user?.id) && (
-                  <button
-                    className="text-xs text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                  >
-                    Edit
-                  </button>
-                )}
-              </div>
-            </div>
+          {/* Comment Actions */}
+          <div className="flex items-center space-x-4 mb-3">
+            {/* Reply Button */}
+            {isAuthenticated && !comment.is_temp && (
+              <button
+                onClick={() => setReplyingTo(comment)}
+                className="text-xs text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              >
+                Reply
+              </button>
+            )}
+            
+            {/* Edit Button */}
+            {(comment.user?.id === user?.id || isAdmin() || isModerator()) && (
+              <button
+                onClick={() => handleEditComment(comment)}
+                className="text-xs text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              >
+                Edit
+              </button>
+            )}
 
-            {/* Comment Content */}
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              {comment.content.split('\n').map((paragraph, index) => (
-                <p key={index} className="mb-2 last:mb-0">
-                  {paragraph.split(/(@\w+)/).map((part, partIndex) => 
-                    part.startsWith('@') ? (
-                      <span key={partIndex} className="text-red-600 dark:text-red-400 font-medium cursor-pointer hover:underline">
-                        {part}
-                      </span>
-                    ) : (
-                      part
-                    )
-                  )}
-                </p>
-              ))}
-            </div>
+            {/* Delete Button */}
+            {(comment.user?.id === user?.id || isAdmin() || isModerator()) && (
+              <button
+                onClick={() => handleDeleteComment(comment.id)}
+                disabled={submittingComment}
+                className={`text-xs transition-colors ${
+                  submittingComment 
+                    ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' 
+                    : 'text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400'
+                }`}
+              >
+                {submittingComment ? 'Deleting...' : 'Delete'}
+              </button>
+            )}
+          </div>
 
-            {/* Reply Form */}
-            {replyingTo?.id === comment.id && (
-              <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded">
+          {/* Reply Form */}
+          {replyingTo?.id === comment.id && (
+            <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded">
                 <form onSubmit={(e) => {
                   e.preventDefault();
-                  // TODO: Implement reply submission
-                  console.log('Reply to comment:', comment.id, replyText);
-                  setReplyingTo(null);
-                  setReplyText('');
+                  submitComment();
                 }}>
                   <div className="mb-2">
                     <span className="text-sm text-gray-600 dark:text-gray-400">
@@ -1393,59 +1820,107 @@ function MatchDetailPage({ matchId, navigateTo }) {
                     </span>
                     <button
                       type="button"
-                      onClick={() => setReplyingTo(null)}
+                      onClick={() => {
+                        setReplyingTo(null);
+                        setReplyText('');
+                        setSelectedMentions([]);
+                      }}
                       className="ml-2 text-xs text-red-600 dark:text-red-400 hover:underline"
                     >
                       Cancel
                     </button>
                   </div>
-                  <textarea
+                  <MentionAutocomplete
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
-                    placeholder="Write your reply..."
-                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-white resize-none"
-                    rows="3"
-                    required
+                    onMentionSelect={handleMentionSelect}
+                    placeholder="Write your reply... Use @username to mention someone"
+                    rows={3}
+                    className="px-3 py-2"
                   />
                   <div className="flex justify-end space-x-2 mt-2">
                     <button
                       type="button"
-                      onClick={() => setReplyingTo(null)}
+                      onClick={() => {
+                        setReplyingTo(null);
+                        setReplyText('');
+                        setSelectedMentions([]);
+                      }}
                       className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      disabled={!replyText.trim()}
+                      disabled={!replyText.trim() || submittingComment}
                       className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      Reply
+                      {submittingComment ? 'Posting...' : 'Reply'}
                     </button>
                   </div>
                 </form>
               </div>
-            )}
+          )}
 
-            {/* Nested Replies */}
-            {shouldShowReplies && (
-              <div className="mt-4">
-                <div className="text-xs text-gray-500 dark:text-gray-500 mb-2 border-l-2 border-gray-200 dark:border-gray-700 pl-2">
-                  {comment.replies.length} {comment.replies.length === 1 ? 'reply' : 'replies'}
-                </div>
-                {comment.replies.map(reply => renderComment(reply, true, depth + 1))}
+          {/* Edit Form */}
+          {editingComment?.id === comment.id && (
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-700">
+                <form onSubmit={(e) => { e.preventDefault(); handleSaveEdit(comment.id); }}>
+                  <div className="mb-2">
+                    <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                      Editing comment
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => { setEditingComment(null); setEditContent(''); setSelectedMentions([]); }}
+                      className="ml-2 text-xs text-red-600 dark:text-red-400 hover:underline"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  <MentionAutocomplete
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    onMentionSelect={handleMentionSelect}
+                    placeholder="Edit your comment..."
+                    rows={4}
+                    className="px-3 py-2"
+                  />
+                  <div className="flex justify-end space-x-2 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => { setEditingComment(null); setEditContent(''); setSelectedMentions([]); }}
+                      className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={!editContent.trim() || submittingComment}
+                      className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {submittingComment ? 'Saving...' : 'Save Changes'}
+                    </button>
+                  </div>
+                </form>
               </div>
-            )}
-            
-            {/* Show collapsed replies indicator if max depth reached */}
-            {comment.replies && comment.replies.length > 0 && depth >= maxDepth && (
-              <div className="mt-3 ml-4">
-                <button className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
-                  View {comment.replies.length} more {comment.replies.length === 1 ? 'reply' : 'replies'}...
-                </button>
-              </div>
-            )}
-          </div>
+          )}
+
+          {/* Nested Replies */}
+          {shouldShowReplies && (
+            <div className="mt-4 space-y-2">
+              {comment.replies.map(reply => renderComment(reply, true, depth + 1))}
+            </div>
+          )}
+          
+          {/* Show collapsed replies indicator if max depth reached */}
+          {comment.replies && comment.replies.length > 0 && depth >= maxDepth && (
+            <div className="mt-3 ml-4">
+              <button className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                View {comment.replies.length} more {comment.replies.length === 1 ? 'reply' : 'replies'}...
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1484,40 +1959,72 @@ function MatchDetailPage({ matchId, navigateTo }) {
 
   // Use current map data - fixed to match backend structure
   const currentMap = match?.maps?.[currentMapIndex] || match?.maps?.[0] || null;
+  
+  // Debug logging for flag issue - check both naming conventions
+  if (currentMap) {
+    const composition = currentMap.team2_composition || currentMap.team2Composition;
+    if (composition && composition.length > 0) {
+      console.log('🚩 Debug - Team 2 Player 1 data:', composition[0]);
+      console.log('🚩 Debug - Player country:', composition[0].country);
+      console.log('🚩 Debug - Player flag:', composition[0].flag);
+      console.log('🚩 Debug - Player country_flag:', composition[0].country_flag);
+    }
+  }
+  
   const currentMapData = currentMap ? {
     map_name: currentMap.mapName || match?.currentMap || 'Unknown Map',
     mode: currentMap.mode || match?.gameMode || 'Unknown Mode',
-    timer: currentMap.timer || getGameModeTimer(currentMap.mode || match?.gameMode || 'Domination'),
-    team1Players: (currentMap.team1Composition || match?.team1?.roster || match?.team1?.players || []).map(p => ({
-      ...p,
-      name: p.name || p.real_name || p.player_name || p.username || `Player ${p.player_id || p.id}`,
-      id: p.playerId || p.player_id || p.id,
-      country: p.country || p.nationality || 'US',
-      hero: p.hero || p.current_hero || p.main_hero || 'Unknown Hero'
-    })),
-    team2Players: (currentMap.team2Composition || match?.team2?.roster || match?.team2?.players || []).map(p => ({
-      ...p,
-      name: p.name || p.real_name || p.player_name || p.username || `Player ${p.player_id || p.id}`, 
-      id: p.playerId || p.player_id || p.id,
-      country: p.country || p.nationality || 'US',
-      hero: p.hero || p.current_hero || p.main_hero || 'Unknown Hero'
-    }))
+    team1Players: (currentMap.team1_composition || currentMap.team1Composition || match?.team1?.roster || match?.team1?.players || []).slice(0, 6).map(p => {
+      // Find the corresponding real player data from team roster
+      const playerId = p.playerId || p.player_id || p.id;
+      const realPlayer = match?.team1?.players?.find(rp => rp.id === playerId || rp.player_id === playerId);
+      
+      return {
+        id: playerId,
+        name: realPlayer?.username || realPlayer?.player_name || realPlayer?.name || p.username || p.player_name || p.name || 'Unknown Player',
+        username: realPlayer?.username || p.username,
+        real_name: realPlayer?.real_name || p.real_name,
+        country: realPlayer?.country || realPlayer?.nationality || p.country || p.nationality || 'US',
+        country_flag: realPlayer?.country_flag || realPlayer?.flag || p.country_flag || p.flag || p.countryFlag,
+        hero: p.hero || p.current_hero || p.main_hero || 'Unknown Hero',
+        role: realPlayer?.role || p.role,
+        stats: p.stats
+      };
+    }),
+    team2Players: (currentMap.team2_composition || currentMap.team2Composition || match?.team2?.roster || match?.team2?.players || []).slice(0, 6).map(p => {
+      // Find the corresponding real player data from team roster
+      const playerId = p.playerId || p.player_id || p.id;
+      const realPlayer = match?.team2?.players?.find(rp => rp.id === playerId || rp.player_id === playerId);
+      
+      return {
+        id: playerId,
+        name: realPlayer?.username || realPlayer?.player_name || realPlayer?.name || p.username || p.player_name || p.name || 'Unknown Player',
+        username: realPlayer?.username || p.username,
+        real_name: realPlayer?.real_name || p.real_name,
+        country: realPlayer?.country || realPlayer?.nationality || p.country || p.nationality || 'US',
+        country_flag: realPlayer?.country_flag || realPlayer?.flag || p.country_flag || p.flag || p.countryFlag,
+        hero: p.hero || p.current_hero || p.main_hero || 'Unknown Hero',
+        role: realPlayer?.role || p.role,
+        stats: p.stats
+      };
+    })
   } : {
     map_name: match?.currentMap || 'Unknown Map',
     mode: match?.gameMode || 'Unknown Mode',
-    timer: getGameModeTimer(match?.gameMode || 'Domination'),
     team1Players: (match?.team1?.roster || match?.team1?.players || []).map(p => ({
       ...p,
-      name: p.name || p.real_name || p.player_name || p.username || `Player ${p.player_id || p.id}`,
+      name: p.username || p.player_name || p.name || 'Unknown Player',
       id: p.playerId || p.player_id || p.id,
       country: p.country || p.nationality || 'US',
+      country_flag: p.country_flag || p.flag || p.countryFlag,
       hero: p.hero || p.current_hero || p.main_hero || 'Unknown Hero'
     })),
     team2Players: (match?.team2?.roster || match?.team2?.players || []).map(p => ({
       ...p,
-      name: p.name || p.real_name || p.player_name || p.username || `Player ${p.player_id || p.id}`,
+      name: p.username || p.player_name || p.name || 'Unknown Player',
       id: p.playerId || p.player_id || p.id,
       country: p.country || p.nationality || 'US',
+      country_flag: p.country_flag || p.flag || p.countryFlag,
       hero: p.hero || p.current_hero || p.main_hero || 'Unknown Hero'
     }))
   };
@@ -1569,30 +2076,35 @@ function MatchDetailPage({ matchId, navigateTo }) {
           </div>
         )}
         
-        {/* GAME MODE & TIMER INFO */}
-        <div className="mt-2 flex justify-center items-center space-x-4">
+        {/* GAME MODE INFO */}
+        <div className="mt-2 flex justify-center items-center">
           <div className={`px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400`}>
             {match.gameMode || match.maps?.[currentMapIndex]?.mode || 'Domination'}
           </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            Match Duration: {Math.floor((match.maps?.[currentMapIndex]?.timer?.duration || 720) / 60)}m
-          </div>
         </div>
         
-        {/* PREPARATION PHASE DISPLAY */}
-        {isPreparationPhase && preparationTimer > 0 && (
+        {/* LIVE UPDATE INDICATOR */}
+        {liveUpdateIndicator && (
           <div className="mt-4 flex justify-center">
-            <div className="bg-orange-600 text-white px-6 py-2 rounded-lg font-mono text-xl font-bold animate-pulse">
-              ⏳ PREP PHASE • {preparationTimer}s
+            <div className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium animate-fade-in-out">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                <span>
+                  {liveUpdateIndicator.type === 'hero_update' && '🦸 Heroes Updated'}
+                  {liveUpdateIndicator.type === 'score_update' && '🎯 Scores Updated'}
+                  {liveUpdateIndicator.type === 'stats_update' && '📊 Stats Updated'}
+                  {liveUpdateIndicator.type === 'general' && '🔄 Match Updated'}
+                </span>
+              </div>
             </div>
           </div>
         )}
         
-        {/* LIVE MATCH TIMER */}
+        {/* LIVE STATUS DISPLAY */}
         {match.status === 'live' && !isPreparationPhase && (
           <div className="mt-4 flex justify-center">
             <div className="bg-red-600 text-white px-6 py-2 rounded-lg font-mono text-xl font-bold animate-pulse">
-              🔴 LIVE • {matchTimer}
+              🔴 LIVE
             </div>
           </div>
         )}
@@ -1600,68 +2112,71 @@ function MatchDetailPage({ matchId, navigateTo }) {
         
         {/* 🔥 ENHANCED: Multiple URLs Action Buttons */}
         <div className="mt-6 space-y-4">
-          {/* Stream URLs - Show even if only single URL field exists */}
-          {((match.stream_urls && match.stream_urls.length > 0 && match.stream_urls.some(url => url)) || match.stream_url) && (
-            <div className="text-center">
-              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">📺 Live Streams</div>
-              <div className="flex justify-center flex-wrap gap-2">
+          {/* Debug logging for match object */}
+          {console.log('🎯 Match object in render:', {
+            stream_url: match.stream_url,
+            stream_urls: match.stream_urls,
+            vod_url: match.vod_url,
+            vod_urls: match.vod_urls,
+            betting_url: match.betting_url,
+            betting_urls: match.betting_urls
+          })}
+          {/* URLs Section - Horizontal Layout */}
+          <div className="flex flex-wrap justify-center gap-4">
+            {/* Stream URLs */}
+            {((match.stream_urls && match.stream_urls.length > 0 && match.stream_urls.some(url => url)) || match.stream_url) && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Stream:</span>
                 {(match.stream_urls || (match.stream_url ? [match.stream_url] : [])).filter(url => url).map((url, index) => (
                   <a
                     key={index}
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors text-sm"
+                    className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded font-medium transition-colors text-sm"
                   >
-                    <span>📺</span>
-                    <span>Stream {index + 1}</span>
+                    {getStreamChannelName(url)}
                   </a>
                 ))}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Betting URLs - Show even if only single URL field exists */}
-          {((match.betting_urls && match.betting_urls.length > 0 && match.betting_urls.some(url => url)) || match.betting_url) && (
-            <div className="text-center">
-              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">💰 Betting Sites</div>
-              <div className="flex justify-center flex-wrap gap-2">
+            {/* Betting URLs */}
+            {((match.betting_urls && match.betting_urls.length > 0 && match.betting_urls.some(url => url)) || match.betting_url) && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Betting:</span>
                 {(match.betting_urls || (match.betting_url ? [match.betting_url] : [])).filter(url => url).map((url, index) => (
                   <a
                     key={index}
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors text-sm"
+                    className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded font-medium transition-colors text-sm"
                   >
-                    <span>💰</span>
-                    <span>Betting {index + 1}</span>
+                    {getUrlDisplayName(url, 'betting')}
                   </a>
                 ))}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* VOD URLs - Show even if only single URL field exists */}
-          {((match.vod_urls && match.vod_urls.length > 0 && match.vod_urls.some(url => url)) || match.vod_url) && (
-            <div className="text-center">
-              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">🎬 Video on Demand</div>
-              <div className="flex justify-center flex-wrap gap-2">
+            {/* VOD URLs */}
+            {((match.vod_urls && match.vod_urls.length > 0 && match.vod_urls.some(url => url)) || match.vod_url) && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">VOD:</span>
                 {(match.vod_urls || (match.vod_url ? [match.vod_url] : [])).filter(url => url).map((url, index) => (
                   <a
                     key={index}
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm"
+                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors text-sm"
                   >
-                    <span>🎬</span>
-                    <span>VOD {index + 1}</span>
+                    {getUrlDisplayName(url, 'vod')}
                   </a>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
@@ -1669,7 +2184,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
       {match.totalMaps > 1 && (
         <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg p-6">
           <h3 className="text-xl font-bold text-center text-gray-900 dark:text-white mb-4">
-            🏆 Series Progress (First to {Math.ceil(match.totalMaps / 2)})
+            Series Progress (First to {Math.ceil(match.totalMaps / 2)})
           </h3>
           <div className="flex items-center justify-center space-x-8 mb-4">
             <div className="text-center">
@@ -1680,11 +2195,11 @@ function MatchDetailPage({ matchId, navigateTo }) {
                 {match.team1?.name}
               </h2>
               <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">
-                {liveScores.team1 !== null ? liveScores.team1 : (match.team1_score || 0)}
+                {liveSeriesScores.team1 || 0}
               </div>
-              {liveScores.team1 !== null && (
+              {match.status === 'live' && (
                 <div className="text-xs text-green-500 animate-pulse">
-                  🔴 LIVE: {liveScores.team1}
+                  LIVE
                 </div>
               )}
             </div>
@@ -1701,35 +2216,58 @@ function MatchDetailPage({ matchId, navigateTo }) {
                 {match.team2?.name}
               </h2>
               <div className="text-4xl font-bold text-red-600 dark:text-red-400">
-                {liveScores.team2 !== null ? liveScores.team2 : (match.team2_score || 0)}
+                {liveSeriesScores.team2 || 0}
               </div>
-              {liveScores.team2 !== null && (
+              {match.status === 'live' && (
                 <div className="text-xs text-green-500 animate-pulse">
-                  🔴 LIVE: {liveScores.team2}
+                  LIVE
                 </div>
               )}
             </div>
           </div>
           
-          {/* Map Status Indicators - Clickable */}
-          <div className="flex justify-center space-x-2">
+          {/* Map Scores Display - Shows individual map scores */}
+          <div className="flex justify-center gap-4 mt-4">
             {match.maps.map((map, index) => (
-              <button
+              <div 
                 key={index}
-                onClick={() => setCurrentMapIndex(index)}
-                className={`px-3 py-1 rounded text-sm cursor-pointer transition-all ${
-                  index === currentMapIndex ? 'bg-yellow-600 text-white ring-2 ring-yellow-400' :
-                  map.status === 'completed' ? 'bg-green-600 text-white hover:bg-green-700' :
-                  'bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-300 hover:bg-gray-400 dark:hover:bg-gray-500'
+                className={`text-center cursor-pointer p-3 rounded-lg transition-all ${
+                  index === currentMapIndex 
+                    ? 'bg-white dark:bg-gray-700 shadow-lg ring-2 ring-purple-500' 
+                    : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
+                onClick={() => setCurrentMapIndex(index)}
               >
-                Map {index + 1}
-                {map.status === 'completed' && (
-                  <span className="ml-1">
-                    {map.team1Score > map.team2Score ? '(T1)' : '(T2)'}
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Map {index + 1}
+                </div>
+                <div className="text-xl font-bold">
+                  <span className={(map.team1_score || map.team1Score || 0) > (map.team2_score || map.team2Score || 0) ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'}>
+                    {map.team1_score || map.team1Score || 0}
                   </span>
+                  <span className="mx-2 text-gray-500">-</span>
+                  <span className={(map.team2_score || map.team2Score || 0) > (map.team1_score || map.team1Score || 0) ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}>
+                    {map.team2_score || map.team2Score || 0}
+                  </span>
+                </div>
+                {map.status === 'completed' && (
+                  <div className="text-xs mt-1 font-medium">
+                    {(map.team1_score || map.team1Score || 0) > (map.team2_score || map.team2Score || 0) ? (
+                      <span className="text-blue-600 dark:text-blue-400">{match.team1?.name || 'Team 1'} Wins</span>
+                    ) : (map.team2_score || map.team2Score || 0) > (map.team1_score || map.team1Score || 0) ? (
+                      <span className="text-red-600 dark:text-red-400">{match.team2?.name || 'Team 2'} Wins</span>
+                    ) : (
+                      <span className="text-gray-600 dark:text-gray-400">Draw</span>
+                    )}
+                  </div>
                 )}
-              </button>
+                {map.status === 'live' && (
+                  <div className="text-xs mt-1 text-green-500 animate-pulse">LIVE</div>
+                )}
+                {map.status === 'upcoming' && (
+                  <div className="text-xs mt-1 text-gray-500">Upcoming</div>
+                )}
+              </div>
             ))}
           </div>
         </div>
@@ -1747,17 +2285,30 @@ function MatchDetailPage({ matchId, navigateTo }) {
                 {match.team1?.name}
               </h2>
               <div className="text-6xl font-bold text-blue-600 dark:text-blue-400">
-                {liveScores.team1 !== null ? liveScores.team1 : (match.maps?.[0]?.team1Score || match.team1_score || 0)}
+                {match.maps?.[currentMapIndex]?.team1Score || 0}
               </div>
-              {liveScores.team1 !== null && (
+              {match.status === 'live' && (
                 <div className="text-xs text-green-500 animate-pulse mt-2">
-                  🔴 LIVE ROUND: {liveScores.team1}
+                  LIVE
                 </div>
               )}
             </div>
             
-            <div className="text-center">
-              <div className="text-4xl text-gray-500 dark:text-gray-500">VS</div>
+            <div className="text-center mx-8">
+              <div className="text-5xl text-gray-400 dark:text-gray-600">VS</div>
+              <div className="mt-4">
+                <div className="text-lg font-medium text-gray-600 dark:text-gray-400">
+                  {match.totalMaps > 1 ? `Map ${currentMapIndex + 1}` : ''}
+                </div>
+                {match.status === 'live' && (
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    <span className="flex items-center space-x-2 justify-center">
+                      <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
+                      <span className="text-xl">LIVE</span>
+                    </span>
+                  </div>
+                )}
+              </div>
               <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                 <span className="text-blue-600 dark:text-blue-400 font-semibold">
                   {match.gameMode || match.maps?.[0]?.mode || 'Domination'}
@@ -1776,11 +2327,11 @@ function MatchDetailPage({ matchId, navigateTo }) {
                 {match.team2?.name}
               </h2>
               <div className="text-6xl font-bold text-red-600 dark:text-red-400">
-                {liveScores.team2 !== null ? liveScores.team2 : (match.maps?.[0]?.team2Score || match.team2_score || 0)}
+                {match.maps?.[currentMapIndex]?.team2Score || 0}
               </div>
-              {liveScores.team2 !== null && (
+              {match.status === 'live' && (
                 <div className="text-xs text-green-500 animate-pulse mt-2">
-                  🔴 LIVE ROUND: {liveScores.team2}
+                  LIVE
                 </div>
               )}
             </div>
@@ -1788,10 +2339,13 @@ function MatchDetailPage({ matchId, navigateTo }) {
         </div>
       )}
 
+
       {/* MATCH STATISTICS */}
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Match Statistics</h3>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {match.totalMaps > 1 ? `Map ${currentMapIndex + 1} Statistics` : 'Match Statistics'}
+          </h3>
           
           <div className="flex items-center space-x-4">
             {/* Live Update Status */}
@@ -2099,30 +2653,41 @@ function MatchDetailPage({ matchId, navigateTo }) {
         {/* Comment Input */}
         {isAuthenticated ? (
           <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <div className="flex items-start space-x-3">
-              <div className="text-2xl">{user?.avatar || "🦸"}</div>
-              <div className="flex-1">
-                <textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Share your thoughts about this match..."
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none"
-                  rows="3"
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              submitComment();
+            }}>
+              <div className="flex items-start space-x-3">
+                <UserDisplay
+                  user={user}
+                  showAvatar={true}
+                  showTeamFlair={false}
+                  size="sm"
                 />
-                <div className="flex justify-between items-center mt-2">
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Posting as {user?.name}
+                <div className="flex-1">
+                  <MentionAutocomplete
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    onMentionSelect={handleMentionSelect}
+                    placeholder="Share your thoughts about this match... Use @username to mention someone"
+                    rows={3}
+                    className="px-3 py-2"
+                  />
+                  <div className="flex justify-between items-center mt-2">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      Posting as {user?.name}
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={!newComment.trim() || submittingComment}
+                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {submittingComment ? 'Posting...' : 'Post Comment'}
+                    </button>
                   </div>
-                  <button
-                    onClick={submitComment}
-                    disabled={!newComment.trim() || submittingComment}
-                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {submittingComment ? 'Posting...' : 'Post Comment'}
-                  </button>
                 </div>
               </div>
-            </div>
+            </form>
           </div>
         ) : (
           <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-center">

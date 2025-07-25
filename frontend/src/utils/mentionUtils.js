@@ -2,83 +2,68 @@ import React from 'react';
 import MentionLink from '../components/shared/MentionLink';
 
 // Process text content to convert mentions to clickable components
-export const processContentWithMentions = (content, mentions = []) => {
+export const processContentWithMentions = (content, mentions = [], navigateTo = null) => {
   if (!content || mentions.length === 0) {
     return content;
   }
 
-  // Create a map of mention texts to mention objects for quick lookup
-  const mentionMap = {};
-  mentions.forEach(mention => {
-    const mentionText = mention.mention_text || `@${mention.name}`;
-    mentionMap[mentionText] = mention;
-  });
+  // Start with the content as a single text segment
+  let segments = [{ type: 'text', content }];
 
-  // Find all mention patterns in the content
-  const mentionPatterns = [
-    /@([a-zA-Z0-9_]+)/g,           // @username
-    /@team:([a-zA-Z0-9_]+)/g,      // @team:teamname
-    /@player:([a-zA-Z0-9_]+)/g     // @player:playername
-  ];
-
-  let processedContent = content;
-  let segments = [{ type: 'text', content: processedContent }];
-
-  mentionPatterns.forEach(pattern => {
+  // Process each mention in the mentions array
+  mentions.forEach((mention, index) => {
     const newSegments = [];
     
+    // Get all possible mention texts for this mention
+    const possibleTexts = [
+      mention.mention_text,                           // @player:Cloud
+      `@${mention.display_name}`,                     // @Dmitry Solovyev  
+      `@${mention.name}`                              // @Cloud
+    ].filter(Boolean); // Remove undefined/null values
+
     segments.forEach(segment => {
       if (segment.type !== 'text') {
         newSegments.push(segment);
         return;
       }
 
-      const text = segment.content;
-      let lastIndex = 0;
-      let match;
+      let text = segment.content;
+      let foundMatch = false;
 
-      pattern.lastIndex = 0; // Reset regex state
-      
-      while ((match = pattern.exec(text)) !== null) {
-        const fullMatch = match[0];
-        const mentionStart = match.index;
-        const mentionEnd = mentionStart + fullMatch.length;
-
-        // Add text before mention
-        if (mentionStart > lastIndex) {
-          newSegments.push({
-            type: 'text',
-            content: text.slice(lastIndex, mentionStart)
-          });
+      // Try each possible mention text
+      for (const mentionText of possibleTexts) {
+        if (text.includes(mentionText)) {
+          // Split the text around the mention
+          const parts = text.split(mentionText);
+          
+          for (let i = 0; i < parts.length; i++) {
+            // Add text part
+            if (parts[i]) {
+              newSegments.push({
+                type: 'text',
+                content: parts[i]
+              });
+            }
+            
+            // Add mention component (except after the last part)
+            if (i < parts.length - 1) {
+              newSegments.push({
+                type: 'mention',
+                content: mentionText,
+                mention: mention,
+                key: `mention-${index}-${i}`
+              });
+            }
+          }
+          
+          foundMatch = true;
+          break; // Found a match, no need to try other texts
         }
-
-        // Check if this mention exists in our mentions array
-        const mentionData = mentionMap[fullMatch];
-        if (mentionData) {
-          // Add mention component
-          newSegments.push({
-            type: 'mention',
-            content: fullMatch,
-            mention: mentionData,
-            key: `mention-${mentionStart}-${mentionEnd}`
-          });
-        } else {
-          // Add as plain text if mention not found
-          newSegments.push({
-            type: 'text',
-            content: fullMatch
-          });
-        }
-
-        lastIndex = mentionEnd;
       }
 
-      // Add remaining text
-      if (lastIndex < text.length) {
-        newSegments.push({
-          type: 'text',
-          content: text.slice(lastIndex)
-        });
+      // If no match found, keep as text
+      if (!foundMatch) {
+        newSegments.push(segment);
       }
     });
 
@@ -92,6 +77,17 @@ export const processContentWithMentions = (content, mentions = []) => {
         <MentionLink
           key={segment.key || `mention-${index}`}
           mention={segment.mention}
+          onClick={navigateTo ? (mention) => {
+            const nav = {
+              player: () => navigateTo('player-detail', { id: mention.id }),
+              team: () => navigateTo('team-detail', { id: mention.id }),
+              user: () => navigateTo('user-profile', { id: mention.id })
+            };
+            
+            if (nav[mention.type]) {
+              nav[mention.type]();
+            }
+          } : undefined}
         />
       );
     }

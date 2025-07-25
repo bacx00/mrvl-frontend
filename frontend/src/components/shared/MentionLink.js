@@ -1,4 +1,5 @@
 import React from 'react';
+import { PlayerAvatar, TeamLogo } from '../../utils/imageUtils';
 
 const MentionLink = ({ 
   mention, 
@@ -22,28 +23,42 @@ const MentionLink = ({
     }
   };
 
-  // Get icon based on mention type
+  // Get icon based on mention type with proper avatars/logos
   const getIcon = () => {
     if (!showIcon) return null;
     
     switch (type) {
       case 'player':
         return (
-          <span className="inline-flex items-center justify-center w-3 h-3 mr-1 text-xs bg-blue-100 text-blue-600 rounded-full">
-            P
-          </span>
+          <PlayerAvatar 
+            player={{ 
+              id: id,
+              name: display_name || name,
+              username: name,
+              real_name: display_name,
+              avatar: mention.avatar || mention.avatar_url 
+            }} 
+            size="w-4 h-4" 
+            className="mr-1" 
+          />
         );
       case 'team':
         return (
-          <span className="inline-flex items-center justify-center w-3 h-3 mr-1 text-xs bg-red-100 text-red-600 rounded-full">
-            T
-          </span>
+          <TeamLogo 
+            team={{ 
+              id: id,
+              name: display_name || name,
+              logo: mention.logo || mention.logo_url 
+            }} 
+            size="w-4 h-4" 
+            className="mr-1" 
+          />
         );
       case 'user':
         return (
-          <span className="inline-flex items-center justify-center w-3 h-3 mr-1 text-xs bg-green-100 text-green-600 rounded-full">
-            U
-          </span>
+          <div className="inline-flex items-center justify-center w-4 h-4 mr-1 text-xs bg-gray-100 dark:bg-gray-700 rounded-full">
+            <span className="text-gray-500 dark:text-gray-400 text-xs font-bold">U</span>
+          </div>
         );
       default:
         return null;

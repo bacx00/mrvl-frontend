@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
+import { processContentWithMentions } from '../../utils/mentionUtils';
 
 function NewsPage({ navigateTo }) {
   const { isAdmin, isModerator, api, user } = useAuth();
@@ -7,12 +8,19 @@ function NewsPage({ navigateTo }) {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('latest');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchNews = useCallback(async () => {
     try {
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (selectedCategory !== 'all') params.append('category', selectedCategory);
+      if (sortBy) params.append('sort', sortBy);
+      if (searchQuery.trim()) params.append('search', searchQuery.trim());
+      
       // Fetch news and categories in parallel
       const [newsResponse, categoriesResponse] = await Promise.all([
-        api.get(`/news?category=${selectedCategory}&sort=${sortBy}`),
+        api.get(`/news?${params.toString()}`),
         api.get('/news/categories')
       ]);
       
@@ -29,11 +37,15 @@ function NewsPage({ navigateTo }) {
       setNews([]);
       setCategories([]);
     }
-  }, [api, selectedCategory, sortBy]);
+  }, [api, selectedCategory, sortBy, searchQuery]);
 
   useEffect(() => {
-    fetchNews();
-  }, [selectedCategory, sortBy, fetchNews]);
+    const timeoutId = setTimeout(() => {
+      fetchNews();
+    }, searchQuery ? 500 : 0); // Debounce search queries
+
+    return () => clearTimeout(timeoutId);
+  }, [selectedCategory, sortBy, searchQuery, fetchNews]);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -116,6 +128,27 @@ function NewsPage({ navigateTo }) {
       {/* Filters and Sorting - VLR.gg Style */}
       <div className="card p-3 mb-4">
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+          {/* Search */}
+          <div className="flex items-center space-x-2 flex-1">
+            <span className="text-sm text-gray-600 dark:text-gray-400">Search</span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search news, mentions (@user, @team:VP, @player:Shao)..."
+              className="text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-1 text-gray-900 dark:text-white flex-1 md:max-w-xs"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="text-xs text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                title="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          
           {/* Category Filter */}
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">Category:</span>
@@ -127,7 +160,7 @@ function NewsPage({ navigateTo }) {
               <option value="all">All Categories</option>
               {categories.map(category => (
                 <option key={category.id} value={category.slug}>
-                  {category.icon} {category.name}
+                  {category.name}
                 </option>
               ))}
             </select>
@@ -191,7 +224,7 @@ function NewsPage({ navigateTo }) {
                           backgroundColor: categories.find(c => c.slug === article.category_slug)?.color || '#6b7280' 
                         }}
                       >
-                        {categories.find(c => c.slug === article.category_slug)?.icon || '📰'} {article.category}
+                        {typeof article.category === 'string' ? article.category : article.category.name}
                       </span>
                     )}
                     
@@ -210,13 +243,13 @@ function NewsPage({ navigateTo }) {
 
                   {/* Title */}
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 hover:text-red-600 dark:hover:text-red-400 transition-colors">
-                    {article.title}
+                    {processContentWithMentions(article.title, article.mentions || [])}
                   </h2>
 
                   {/* Excerpt */}
                   {article.excerpt && (
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
-                      {article.excerpt}
+                      {processContentWithMentions(article.excerpt, article.mentions || [])}
                     </p>
                   )}
 
@@ -227,13 +260,6 @@ function NewsPage({ navigateTo }) {
                     
                     {/* Engagement Stats */}
                     <div className="flex items-center space-x-3">
-                      {article.views > 0 && (
-                        <span className="flex items-center space-x-1">
-                          <span>👁</span>
-                          <span>{article.views.toLocaleString()}</span>
-                        </span>
-                      )}
-                      
                       {article.comments_count > 0 && (
                         <span className="flex items-center space-x-1">
                           <span>💬</span>

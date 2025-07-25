@@ -155,8 +155,22 @@ export default function EventDetailPage() {
           throw new Error('Failed to fetch event data');
         }
         
-        const data = await res.json();
-        setEvent(data);
+        const response = await res.json();
+        const apiEvent = response.data || response;
+        
+        // Transform API data to match our interface
+        const transformedEvent = {
+          ...apiEvent,
+          id: apiEvent.id?.toString() || params.id,
+          name: apiEvent.name,
+          startDate: apiEvent.startDate || apiEvent.start_date,
+          endDate: apiEvent.endDate || apiEvent.end_date,
+          type: apiEvent.type || apiEvent.status,
+          // Handle organizer - could be string or object
+          organizer: typeof apiEvent.organizer === 'string' ? apiEvent.organizer : apiEvent.organizer?.name || 'Unknown Organizer'
+        };
+        
+        setEvent(transformedEvent);
       } catch (err) {
         console.warn('API failed, using mock data:', err);
         setEvent(mockEvent);
@@ -248,7 +262,7 @@ export default function EventDetailPage() {
               </span>
             </div>
             <h1 className="text-3xl font-bold mb-2">{event.name}</h1>
-            <p className="text-[#768894]">{event.organizer}</p>
+            <p className="text-[#768894]">{typeof event.organizer === 'string' ? event.organizer : event.organizer?.name || 'Unknown Organizer'}</p>
           </div>
         </div>
         
@@ -598,9 +612,16 @@ export default function EventDetailPage() {
                   </p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  {/* Tournament bracket visualization */}
-                  <div className="min-w-[1200px] py-8">
+                <>
+                  {/* Mobile view message */}
+                  <div className="block lg:hidden bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3 rounded-lg mb-4">
+                    <p className="text-xs sm:text-sm text-blue-800 dark:text-blue-200">
+                      ℹ️ Bracket view is best viewed on desktop. Swipe horizontally to navigate.
+                    </p>
+                  </div>
+                  <div className="overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
+                    {/* Tournament bracket visualization */}
+                    <div className="min-w-[900px] lg:min-w-[1200px] py-4 sm:py-8">
                     <div className="text-center mb-8">
                       <h4 className="text-lg font-medium mb-2">Tournament Bracket</h4>
                       <p className="text-[#768894] text-sm">Single Elimination • Best of 5 Finals</p>

@@ -13,7 +13,6 @@ export const MARVEL_RIVALS_MAPS = {
       name: 'Hellfire Gala: Krakoa',
       mode: 'Domination',
       type: 'competitive',
-      icon: '🔥',
       season: 2,
       description: 'NEW Season 2 competitive map'
     },
@@ -22,7 +21,6 @@ export const MARVEL_RIVALS_MAPS = {
       name: 'Hydra Charteris Base: Hell\'s Heaven',
       mode: 'Domination',
       type: 'competitive',
-      icon: '⚙️',
       season: 1,
       description: 'Classic domination battleground'
     },
@@ -31,7 +29,6 @@ export const MARVEL_RIVALS_MAPS = {
       name: 'Intergalactic Empire of Wakanda: Birnin T\'Challa',
       mode: 'Domination',
       type: 'competitive',
-      icon: '💎',
       season: 1,
       description: 'Wakandan capital warfare'
     },
@@ -40,7 +37,6 @@ export const MARVEL_RIVALS_MAPS = {
       name: 'Empire of Eternal Night: Central Park',
       mode: 'Convoy',
       type: 'competitive',
-      icon: '🌃',
       season: 1,
       description: 'Payload escort through darkened NYC'
     }
@@ -75,7 +71,6 @@ export const MARVEL_RIVALS_MAPS = {
       name: 'Yggsgard: Royal Palace',
       mode: 'Domination',
       type: 'casual',
-      icon: '👑',
       removed: 'Season 2',
       description: 'REMOVED from competitive Season 2'
     },
@@ -86,7 +81,6 @@ export const MARVEL_RIVALS_MAPS = {
       name: 'Tokyo 2099: Spider-Islands',
       mode: 'Convoy',
       type: 'casual',
-      icon: '🕸️',
       description: 'Futuristic Tokyo payload escort'
     },
     {
@@ -94,7 +88,6 @@ export const MARVEL_RIVALS_MAPS = {
       name: 'Yggsgard: Yggdrasill Path',
       mode: 'Convoy',
       type: 'casual',
-      icon: '🌳',
       description: 'World tree convoy route'
     },
     {
@@ -102,7 +95,6 @@ export const MARVEL_RIVALS_MAPS = {
       name: 'Empire of Eternal Night: Midtown',
       mode: 'Convoy',
       type: 'casual',
-      icon: '🏢',
       description: 'Manhattan streets payload'
     },
     
@@ -112,7 +104,6 @@ export const MARVEL_RIVALS_MAPS = {
       name: 'Empire of Eternal Night: Sanctum Sanctorum',
       mode: 'Convergence',
       type: 'casual',
-      icon: '🔮',
       description: 'Mystical hybrid combat'
     },
     {
@@ -120,7 +111,6 @@ export const MARVEL_RIVALS_MAPS = {
       name: 'Tokyo 2099: Shin-Shibuya',
       mode: 'Convergence',
       type: 'casual',
-      icon: '🗼',
       removed: 'Season 2',
       description: 'REMOVED from rotation Season 2'
     },
@@ -129,7 +119,6 @@ export const MARVEL_RIVALS_MAPS = {
       name: 'Klyntar: Symbiotic Surface',
       mode: 'Convergence',
       type: 'casual',
-      icon: '🖤',
       description: 'Alien world convergence'
     },
     {
@@ -137,7 +126,6 @@ export const MARVEL_RIVALS_MAPS = {
       name: 'Intergalactic Empire of Wakanda: Hall of Djalia',
       mode: 'Convergence',
       type: 'casual',
-      icon: '✨',
       description: 'Ancestral plane hybrid battle'
     }
   ]
@@ -147,7 +135,7 @@ export const MARVEL_RIVALS_MAPS = {
 export const GAME_MODES = {
   Domination: {
     name: 'Domination',
-    icon: '🎯',
+    icon: '',
     type: 'Control Point',
     format: 'Best of 3 rounds',
     timer: {
@@ -160,7 +148,7 @@ export const GAME_MODES = {
   },
   Convoy: {
     name: 'Convoy',
-    icon: '🚛',
+    icon: '',
     type: 'Escort',
     format: '2 rounds in Competitive (swap sides)',
     timer: {
@@ -174,7 +162,7 @@ export const GAME_MODES = {
   },
   Convergence: {
     name: 'Convergence',
-    icon: '🔄',
+    icon: '',
     type: 'Hybrid',
     format: '2 rounds in Competitive (swap sides)',
     timer: {

@@ -2,6 +2,70 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // Comprehensive event details database
 const eventDetails = {
+  "100": {
+    id: "100",
+    name: "Marvel Rivals Invitational 2025: North America",
+    shortName: "MRI NA 2025",
+    startDate: "2025-03-14T00:00:00.000Z",
+    endDate: "2025-03-23T23:59:59.000Z",
+    location: {
+      city: "Online",
+      country: "North America",
+      venue: "Online Tournament"
+    },
+    prize: {
+      total: 100000,
+      currency: "USD",
+      distribution: [
+        { place: 1, amount: 40000, percentage: 40 },
+        { place: 2, amount: 20000, percentage: 20 },
+        { place: 3, amount: 10000, percentage: 10 },
+        { place: 4, amount: 10000, percentage: 10 },
+        { place: "5-6", amount: 5000, percentage: 5 },
+        { place: "7-8", amount: 2500, percentage: 2.5 }
+      ]
+    },
+    type: "ongoing",
+    status: "playoffs",
+    region: "americas",
+    format: {
+      type: "tournament",
+      teams: 8,
+      stages: [
+        {
+          name: "Swiss Stage",
+          format: "Swiss System",
+          elimination: "swiss",
+          advancement: "Top 4 to Upper Bracket, Bottom 4 to Lower Bracket"
+        },
+        {
+          name: "Playoffs",
+          format: "Double Elimination",
+          elimination: "double",
+          advancement: "Winner takes all"
+        }
+      ],
+      matchFormat: "Bo3/Bo5",
+      finalFormat: "Bo7"
+    },
+    organizer: {
+      name: "NetEase Games",
+      logo: "/organizers/netease-logo.png"
+    },
+    teams: [
+      { id: 1, name: "100 Thieves", short_name: "100T", logo: "/teams/100t-logo.png" },
+      { id: 2, name: "FlyQuest", short_name: "FLY", logo: "/teams/flyquest-logo.png" },
+      { id: 3, name: "Sentinels", short_name: "SEN", logo: "/teams/sentinels-logo.png" },
+      { id: 4, name: "ENVY", short_name: "ENVY", logo: "/teams/envy-logo.png" },
+      { id: 5, name: "Shikigami", short_name: "SHK", logo: "/teams/shikigami-logo.png" },
+      { id: 6, name: "NTMR", short_name: "NTMR", logo: "/teams/ntmr-logo.png" },
+      { id: 7, name: "SHROUD-X", short_name: "SHRX", logo: "/teams/shroudx-logo.png" },
+      { id: 8, name: "Rad Esports", short_name: "RAD", logo: "/teams/rad-logo.png" }
+    ],
+    description: "The Marvel Rivals Invitational 2025: North America features 8 top teams competing in a Swiss stage followed by double elimination playoffs.",
+    featured: true,
+    trending: true
+  },
   "1": {
     id: "1",
     name: "Marvel Rivals Championship 2025",

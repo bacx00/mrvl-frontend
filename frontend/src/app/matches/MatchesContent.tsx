@@ -17,7 +17,7 @@ interface Match {
     logo?: string;
     score?: number;
   };
-  status: 'live' | 'upcoming' | 'completed';
+  status: 'live' | 'upcoming' | 'completed' | 'paused';
   event?: string;
   stage?: string;
   time?: string;
@@ -37,8 +37,8 @@ export default function MatchesContent() {
   const mockMatches: Match[] = useMemo(() => [
     {
       id: 1,
-      team1: { name: 'Team Alpha', logo: '/placeholder.png' },
-      team2: { name: 'Team Beta', logo: '/placeholder.png' },
+      team1: { name: 'Sentinels', logo: '/teams/sentinels-logo.png', score: 11 },
+      team2: { name: 'NRG Esports', logo: '/teams/nrg-logo.png', score: 9 },
       status: 'live',
       event: 'MRVL Championship 2025',
       stage: 'Grand Finals',
@@ -48,8 +48,8 @@ export default function MatchesContent() {
     },
     {
       id: 2,
-      team1: { name: 'Phoenix Esports', logo: '/placeholder.png', score: 2 },
-      team2: { name: 'Nexus Gaming', logo: '/placeholder.png', score: 1 },
+      team1: { name: 'Team Liquid', logo: '/teams/liquid-logo.png', score: 2 },
+      team2: { name: 'Fnatic', logo: '/teams/fnatic-logo.png', score: 1 },
       status: 'completed',
       event: 'MRVL Championship 2025',
       stage: 'Semi-Finals',
@@ -59,14 +59,36 @@ export default function MatchesContent() {
     },
     {
       id: 3,
-      team1: { name: 'Storm Riders', logo: '/placeholder.png' },
-      team2: { name: 'Shadow Legion', logo: '/placeholder.png' },
+      team1: { name: 'G2 Esports', logo: '/teams/g2-logo.png' },
+      team2: { name: '100 Thieves', logo: '/teams/100t-logo.png' },
       status: 'upcoming',
       event: 'MRVL Pro League',
       stage: 'Regular Season',
       time: new Date(Date.now() + 7200000).toISOString(),
       series: 'Bo3',
       date: new Date().toDateString()
+    },
+    {
+      id: 4,
+      team1: { name: 'LOUD', logo: '/teams/loud-logo.png', score: 2 },
+      team2: { name: 'KRÜ Esports', logo: '/teams/kru-logo.png', score: 0 },
+      status: 'completed',
+      event: 'MRVL Pro League',
+      stage: 'Regular Season',
+      time: new Date(Date.now() - 7200000).toISOString(),
+      series: 'Bo3',
+      date: new Date().toDateString()
+    },
+    {
+      id: 5,
+      team1: { name: 'Gen.G', logo: '/teams/geng-logo.png' },
+      team2: { name: 'Karmine Corp', logo: '/teams/kc-logo.png' },
+      status: 'upcoming',
+      event: 'MRVL Championship 2025',
+      stage: 'Quarter-Finals',
+      time: new Date(Date.now() + 14400000).toISOString(),
+      series: 'Bo3',
+      date: new Date(Date.now() + 86400000).toDateString() // Tomorrow
     }
   ], []);
   
@@ -178,7 +200,7 @@ export default function MatchesContent() {
   const { filteredMatches, groupedMatches, sortedDates } = useMemo(() => {
     const filtered = matches.filter(match => {
       if (activeView === 'schedule') {
-        return match.status === 'upcoming' || match.status === 'live';
+        return match.status === 'upcoming' || match.status === 'live' || match.status === 'paused';
       }
       return match.status === 'completed';
     });
@@ -219,8 +241,8 @@ export default function MatchesContent() {
 
   if (error && matches.length === 0) {
     return (
-      <div className="container mx-auto py-8">
-        <div className="bg-[#1a242d] border border-[#fa4454] p-6 text-center rounded-lg">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-[#1a242d] border border-[#fa4454] p-4 sm:p-6 text-center rounded-lg">
           <div className="text-[#fa4454] text-4xl mb-4">⚠️</div>
           <h3 className="text-lg font-medium mb-2">Unable to Load Matches</h3>
           <p className="text-[#768894] mb-4">{error}</p>
@@ -271,9 +293,9 @@ export default function MatchesContent() {
         </div>
       </div>
       
-      <div className="container mx-auto">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {sortedDates.length === 0 ? (
-          <div className="bg-[#1a242d] border border-[#2b3d4d] py-12 text-center rounded-lg">
+          <div className="bg-[#1a242d] border border-[#2b3d4d] py-8 sm:py-12 text-center rounded-lg">
             <div className="text-[#768894] text-5xl mb-4">📅</div>
             <h3 className="text-lg font-medium mb-2">No Matches Found</h3>
             <p className="text-[#768894] mb-4">

@@ -444,7 +444,10 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           let team1Players = [];
           let team2Players = [];
           
-          // Parse maps_data JSON string
+          // ENHANCED: Try multiple sources for player data
+          console.log('ADMIN: Attempting to load real player data...');
+          
+          // Priority 1: Parse maps_data JSON string
           if (matchData.maps_data) {
             try {
               const mapsData = JSON.parse(matchData.maps_data);
@@ -452,10 +455,32 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
                 const mapData = mapsData[0];
                 team1Players = mapData.team1_composition || [];
                 team2Players = mapData.team2_composition || [];
+                console.log('ADMIN: Player data from maps_data:', { team1Count: team1Players.length, team2Count: team2Players.length });
               }
             } catch (error) {
               console.error(' ADMIN: Error parsing maps_data:', error);
             }
+          }
+          
+          // Priority 2: Try direct team compositions from API
+          if ((!team1Players.length || !team2Players.length) && (matchData.team1_composition || matchData.team2_composition)) {
+            team1Players = matchData.team1_composition || [];
+            team2Players = matchData.team2_composition || [];
+            console.log('ADMIN: Player data from direct compositions:', { team1Count: team1Players.length, team2Count: team2Players.length });
+          }
+          
+          // Priority 3: Try team rosters from match object
+          if ((!team1Players.length || !team2Players.length) && match.team1 && match.team2) {
+            team1Players = match.team1.roster || match.team1.players || [];
+            team2Players = match.team2.roster || match.team2.players || [];
+            console.log('ADMIN: Player data from match team rosters:', { team1Count: team1Players.length, team2Count: team2Players.length });
+          }
+          
+          // Priority 4: Try teams structure from API response
+          if ((!team1Players.length || !team2Players.length) && data.teams) {
+            team1Players = data.teams.team1?.roster || data.teams.team1?.players || [];
+            team2Players = data.teams.team2?.roster || data.teams.team2?.players || [];
+            console.log('ADMIN: Player data from API teams structure:', { team1Count: team1Players.length, team2Count: team2Players.length });
           }
           
           //  IMPROVED GAME MODE DETECTION FOR ADMIN
@@ -583,6 +608,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
     const syncData = {
       matchId: match.id,
       type: type,
+      updateType: type, // CRITICAL FIX: Add updateType for MatchDetailPage compatibility
       timestamp: Date.now(),
       ...data
     };
@@ -759,6 +785,13 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           teamNumber,
           increment,
           mapScore: newMapScore,
+          // CRITICAL FIX: Use correct field names for MatchDetailPage
+          team1_score: currentMapData.team1Score || 0,
+          team2_score: currentMapData.team2Score || 0,
+          series_scores: {
+            team1: newStats.mapWins?.team1 || 0,
+            team2: newStats.mapWins?.team2 || 0
+          },
           // Send CURRENT ROUND SCORES immediately (not just mapWins)
           overallScores: {
             team1: currentMapData.team1Score || 0,
@@ -847,6 +880,13 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           hero, 
           role,
           playerName: players[playerIndex].name,
+          // CRITICAL FIX: Add direct access fields for MatchDetailPage
+          player: {
+            name: players[playerIndex].name,
+            hero: hero,
+            role: role,
+            team: team
+          },
           matchData: completeMatchData
         });
         
@@ -917,8 +957,16 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token }) => {
           team,
           playerIndex,
           statName,
+          statType: statName, // CRITICAL FIX: Add statType field for MatchDetailPage
+          statValue: parseInt(value) || 0, // CRITICAL FIX: Add statValue field for MatchDetailPage
           value,
           playerName: players[playerIndex].name,
+          // CRITICAL FIX: Add player object for direct access
+          player: {
+            name: players[playerIndex].name,
+            [statName]: parseInt(value) || 0,
+            team: team
+          },
           matchData: completeMatchData
         });
         

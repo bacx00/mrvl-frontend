@@ -31,6 +31,21 @@ function MatchesPage({ navigateTo }) {
           // Use backend data directly - MatchCard will handle formatting
           matchesData = rawMatches;
           console.log('MatchesPage: Using REAL backend matches:', matchesData.length);
+          
+          // Debug: log the structure of the first match to understand the data format
+          if (matchesData.length > 0) {
+            console.log('MatchesPage: First match team data:', {
+              hasTeam1: 'team1' in matchesData[0],
+              team1: matchesData[0].team1,
+              hasTeam2: 'team2' in matchesData[0],
+              team2: matchesData[0].team2,
+              team1_id: matchesData[0].team1_id,
+              team2_id: matchesData[0].team2_id,
+              hasStatus: 'status' in matchesData[0],
+              statusValue: matchesData[0].status,
+              fullMatch: matchesData[0]
+            });
+          }
         } else {
           console.log('MatchesPage: No matches found in backend - showing empty state');
           matchesData = []; // Empty array for proper empty state
@@ -42,6 +57,12 @@ function MatchesPage({ navigateTo }) {
       
       setMatches(matchesData);
       console.log('MatchesPage: Matches loaded with REAL backend data:', matchesData.length);
+      
+      // Debug: Log all unique status values for debugging
+      if (matchesData.length > 0) {
+        const uniqueStatuses = [...new Set(matchesData.map(m => m.status || m.match_info?.status))];
+        console.log('MatchesPage: Unique status values in matches:', uniqueStatuses);
+      }
       
     } catch (error) {
       console.error('Error in fetchMatches:', error);
@@ -69,13 +90,17 @@ function MatchesPage({ navigateTo }) {
       case 'live':
         filtered = filtered.filter(match => 
           (match.status === 'live') || 
-          (match.match_info && match.match_info.status === 'live')
+          (match.status === 'paused') ||
+          (match.match_info && match.match_info.status === 'live') ||
+          (match.match_info && match.match_info.status === 'paused')
         );
         break;
       case 'upcoming':
         filtered = filtered.filter(match => 
           (match.status === 'upcoming') || 
-          (match.match_info && match.match_info.status === 'upcoming')
+          (match.status === 'scheduled') ||
+          (match.match_info && match.match_info.status === 'upcoming') ||
+          (match.match_info && match.match_info.status === 'scheduled')
         );
         break;
       case 'completed':
@@ -85,10 +110,14 @@ function MatchesPage({ navigateTo }) {
         );
         break;
       default:
-        // Default to upcoming matches
+        // Default to upcoming and paused matches
         filtered = filtered.filter(match => 
           (match.status === 'upcoming') || 
-          (match.match_info && match.match_info.status === 'upcoming')
+          (match.status === 'scheduled') ||
+          (match.status === 'paused') ||
+          (match.match_info && match.match_info.status === 'upcoming') ||
+          (match.match_info && match.match_info.status === 'scheduled') ||
+          (match.match_info && match.match_info.status === 'paused')
         );
         break;
     }
@@ -100,9 +129,11 @@ function MatchesPage({ navigateTo }) {
 
     // Sort matches
     filtered.sort((a, b) => {
-      // Live matches first
+      // Live matches first, then paused
       if (a.status === 'live' && b.status !== 'live') return -1;
       if (b.status === 'live' && a.status !== 'live') return 1;
+      if (a.status === 'paused' && b.status !== 'paused' && b.status !== 'live') return -1;
+      if (b.status === 'paused' && a.status !== 'paused' && a.status !== 'live') return 1;
       
       // Then by scheduled time
       return new Date(a.scheduled_at) - new Date(b.scheduled_at);
@@ -151,130 +182,123 @@ function MatchesPage({ navigateTo }) {
 
   return (
     <div className="max-w-6xl mx-auto">
-      {/* VLR-Style Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Matches</h1>
-          <div className="flex items-center space-x-4">
-            {/* Event Filter Dropdown */}
-            <select
-              value={selectedEvent}
-              onChange={(e) => setSelectedEvent(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
-            >
-              <option value="all">All Events</option>
-              {events.map(event => (
-                <option key={event.id} value={event.id}>
-                  {event.name}
-                </option>
-              ))}
-            </select>
-            
-            {(isAdmin() || isModerator()) && (
-              <button 
-                onClick={() => navigateTo && navigateTo('admin-match-create')}
-                className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
-              >
-                <span>+</span>
-                <span>Create Match</span>
-              </button>
-            )}
-          </div>
-        </div>
+      {/* Header - VLR.gg Style (matching events page) */}
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Matches</h1>
+        {(isAdmin() || isModerator()) && (
+          <button 
+            onClick={() => navigateTo && navigateTo('admin-match-create')}
+            className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+          >
+            Create Match
+          </button>
+        )}
       </div>
 
-      {/* VLR-Style Tabs */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+      {/* Tabs and Filters - VLR.gg Style (matching events page) */}
+      <div className="card">
+        {/* Match Status Tabs */}
         <div className="flex border-b border-gray-200 dark:border-gray-700">
           <button
-            onClick={() => setActiveTab('live')}
-            className={`px-6 py-3 text-sm font-medium transition-all relative ${
-              activeTab === 'live'
-                ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50'
+            onClick={() => setActiveTab('upcoming')}
+            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'upcoming'
+                ? 'text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400 bg-red-50 dark:bg-red-900/10'
+                : 'text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
             }`}
           >
-            <div className="flex items-center space-x-2">
-              {matches.filter(m => (m.status === 'live') || (m.match_info && m.match_info.status === 'live')).length > 0 && (
-                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-              )}
-              <span>Live</span>
-              <span className="text-xs bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full">
-                {matches.filter(m => (m.status === 'live') || (m.match_info && m.match_info.status === 'live')).length}
-              </span>
-            </div>
-            {activeTab === 'live' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600 dark:bg-red-400"></div>
-            )}
+            Upcoming ({matches.filter(m => m.status === 'upcoming' || m.status === 'scheduled').length})
           </button>
           <button
-            onClick={() => setActiveTab('upcoming')}
-            className={`px-6 py-3 text-sm font-medium transition-all relative ${
-              activeTab === 'upcoming'
-                ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50'
+            onClick={() => setActiveTab('live')}
+            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'live'
+                ? 'text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400 bg-red-50 dark:bg-red-900/10'
+                : 'text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
             }`}
           >
-            Upcoming
-            {activeTab === 'upcoming' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600 dark:bg-red-400"></div>
-            )}
+            <div className="flex items-center justify-center space-x-2">
+              {matches.filter(m => m.status === 'live').length > 0 && (
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              )}
+              <span>Live ({matches.filter(m => m.status === 'live').length})</span>
+            </div>
           </button>
           <button
             onClick={() => setActiveTab('completed')}
-            className={`px-6 py-3 text-sm font-medium transition-all relative ${
+            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
               activeTab === 'completed'
-                ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                ? 'text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400 bg-red-50 dark:bg-red-900/10'
+                : 'text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
             }`}
           >
-            Results
-            {activeTab === 'completed' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600 dark:bg-red-400"></div>
-            )}
+            Completed ({matches.filter(m => m.status === 'completed').length})
           </button>
         </div>
 
-        {/* VLR-Style Matches List */}
-        <div className="">
-          {filteredMatches.length > 0 ? (
-            <div>
-              {Object.entries(groupedMatches).map(([date, dateMatches]) => (
-                <div key={date}>
-                  {/* Date Header */}
-                  <div className="px-6 py-3 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
-                    <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                      {date}
-                    </h3>
-                  </div>
-                  
-                  {/* Matches for this date */}
-                  <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {dateMatches.map(match => (
-                      <div 
-                        key={match.id}
-                        className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors cursor-pointer"
-                        onClick={() => navigateTo && navigateTo('match-detail', match.id)}
-                      >
-                        <div className="flex items-center">
-                          {/* Match Time & Status */}
-                          <div className="w-20 text-sm">
-                            {(() => {
-                              const status = match.status || match.match_info?.status || 'upcoming';
-                              const scheduledTime = match.scheduled_at || match.match_info?.scheduled_at;
-                              
-                              if (status === 'live') {
-                                return (
-                                  <div className="flex items-center space-x-2">
-                                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                                    <span className="text-red-600 dark:text-red-400 font-medium text-xs">LIVE</span>
-                                  </div>
-                                );
-                              } else if (status === 'completed') {
-                                return <span className="text-gray-500 dark:text-gray-400 text-xs">Final</span>;
-                              } else {
-                                return (
-                                  <span className="text-gray-600 dark:text-gray-300 text-xs">
+        {/* Secondary Filters */}
+        <div className="p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Event Filter */}
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Event:</span>
+              <select
+                value={selectedEvent}
+                onChange={(e) => setSelectedEvent(e.target.value)}
+                className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="all">All Events</option>
+                {events.map(event => (
+                  <option key={event.id} value={event.id}>
+                    {event.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Matches List - VLR.gg Style */}
+        {filteredMatches.length > 0 ? (
+          <div className="space-y-4">
+            {Object.entries(groupedMatches).map(([date, dateMatches]) => (
+              <div key={date}>
+                {/* Date Header */}
+                <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                  <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    {date}
+                  </h3>
+                </div>
+                
+                {/* Matches for this date */}
+                <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {dateMatches.map(match => (
+                    <div 
+                      key={match.id}
+                      className="px-4 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors cursor-pointer"
+                      onClick={() => navigateTo && navigateTo('match-detail', match.id)}
+                    >
+                      <div className="flex items-center">
+                        {/* Match Time & Status */}
+                        <div className="w-20 text-sm">
+                          {(() => {
+                            const rawStatus = match.status || match.match_info?.status || 'upcoming';
+                            // Normalize 'scheduled' to 'upcoming' for consistent display
+                            const status = rawStatus === 'scheduled' ? 'upcoming' : rawStatus;
+                            const scheduledTime = match.scheduled_at || match.match_info?.scheduled_at;
+                            
+                            if (status === 'live') {
+                              return (
+                                <div className="flex items-center space-x-2">
+                                  <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                                  <span className="text-red-600 dark:text-red-400 font-medium text-xs">LIVE</span>
+                                </div>
+                              );
+                            } else if (status === 'completed') {
+                              return <span className="text-gray-500 dark:text-gray-400 text-xs">Final</span>;
+                            } else {
+                              return (
+                                <span className="text-gray-600 dark:text-gray-300 text-xs">
                                     {scheduledTime ? new Date(scheduledTime).toLocaleTimeString('en-US', {
                                       hour: 'numeric',
                                       minute: '2-digit',
@@ -305,7 +329,7 @@ function MatchesPage({ navigateTo }) {
                             </span>
                             <TeamLogo 
                               team={match.team1} 
-                              size="w-5 h-5" 
+                              size="w-8 h-8" 
                               onClick={(e) => {
                                 e.stopPropagation();
                                 navigateTo && navigateTo('team-detail', match.team1?.id);
@@ -315,9 +339,11 @@ function MatchesPage({ navigateTo }) {
                           </div>
                           
                           {/* Match Score / VS */}
-                          <div className="flex items-center justify-center min-w-[80px]">
+                          <div className="flex items-center justify-center min-w-[60px] sm:min-w-[80px]">
                             {(() => {
-                              const status = match.status || match.match_info?.status || 'upcoming';
+                              const rawStatus = match.status || match.match_info?.status || 'upcoming';
+                              // Normalize 'scheduled' to 'upcoming' for consistent display
+                              const status = rawStatus === 'scheduled' ? 'upcoming' : rawStatus;
                               const team1Score = match.team1_score || match.match_info?.team1_score || 0;
                               const team2Score = match.team2_score || match.match_info?.team2_score || 0;
                               
@@ -355,7 +381,7 @@ function MatchesPage({ navigateTo }) {
                           <div className="flex-1 flex items-center space-x-3 pl-4">
                             <TeamLogo 
                               team={match.team2} 
-                              size="w-5 h-5" 
+                              size="w-8 h-8" 
                               onClick={(e) => {
                                 e.stopPropagation();
                                 navigateTo && navigateTo('team-detail', match.team2?.id);
@@ -398,28 +424,25 @@ function MatchesPage({ navigateTo }) {
               ))}
             </div>
           ) : (
-            <div className="py-16 text-center">
-              <div className="text-6xl mb-4 opacity-20">🎮</div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                No {activeTab} matches found
+            <div className="py-12 text-center">
+              <div className="text-4xl mb-4">🎮</div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                No {activeTab} matches
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
-                {activeTab === 'live' 
+                {selectedEvent !== 'all' && events.find(e => e.id == selectedEvent)
+                  ? `No ${activeTab} matches for ${events.find(e => e.id == selectedEvent).name}`
+                  : activeTab === 'live' 
                   ? 'No matches are currently live'
                   : activeTab === 'upcoming' 
                   ? 'No upcoming matches scheduled'
-                  : activeTab === 'completed'
-                  ? 'No completed matches to show'
-                  : selectedEvent !== 'all'
-                  ? 'No matches found for the selected event'
-                  : 'No matches available'
+                  : 'No completed matches to show'
                 }
               </p>
             </div>
           )}
         </div>
       </div>
-    </div>
   );
 }
 

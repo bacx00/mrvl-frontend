@@ -28,7 +28,7 @@ function VotingButtons({
   const getVoteEndpoint = () => {
     switch (itemType) {
       case 'news':
-        return `/user/news/${itemId}/vote`;
+        return `/user/news/${parentId || itemId}/vote`;
       case 'news_comment':
         return `/user/news/comments/${itemId}/vote`;
       case 'forum_thread':
@@ -36,7 +36,7 @@ function VotingButtons({
       case 'forum_post':
         return `/user/forums/posts/${itemId}/vote`;
       case 'match_comment':
-        return `/matches/comments/${itemId}/vote`;
+        return `/user/matches/comments/${itemId}/vote`;
       default:
         throw new Error(`Unknown item type: ${itemType}`);
     }
@@ -59,6 +59,12 @@ function VotingButtons({
     setLoading(true);
     try {
       const endpoint = getVoteEndpoint();
+      
+      // Check if user is clicking the same vote to toggle it off
+      const isTogglingOff = currentVote === voteType;
+      
+      // If toggling off, we send the same vote type again
+      // The backend should handle this as a toggle/removal
       const payload = {
         vote_type: voteType
       };
@@ -70,11 +76,20 @@ function VotingButtons({
         payload.comment_id = itemId;
       }
 
+      console.log('Voting:', {
+        currentVote,
+        voteType,
+        isTogglingOff,
+        payload
+      });
+      
       const response = await api.post(endpoint, payload);
       
-      if (response?.data?.success) {
+      console.log('Vote response:', response);
+      
+      if (response?.success) {
         // Update local state based on vote action
-        if (response.data.action === 'removed') {
+        if (response.action === 'removed') {
           // Vote was removed
           if (currentVote === 'upvote') {
             setUpvotes(prev => prev - 1);
@@ -82,28 +97,61 @@ function VotingButtons({
             setDownvotes(prev => prev - 1);
           }
           setCurrentVote(null);
-        } else if (response.data.action === 'voted' || response.data.action === 'changed') {
-          // Vote was added or changed
+        } else if (response.action === 'voted') {
+          // New vote was added (no previous vote)
+          if (voteType === 'upvote') {
+            setUpvotes(prev => prev + 1);
+          } else {
+            setDownvotes(prev => prev + 1);
+          }
+          setCurrentVote(voteType);
+        } else if (response.action === 'changed') {
+          // Vote was changed from one type to another
           if (currentVote === 'upvote' && voteType === 'downvote') {
             setUpvotes(prev => prev - 1);
             setDownvotes(prev => prev + 1);
           } else if (currentVote === 'downvote' && voteType === 'upvote') {
             setDownvotes(prev => prev - 1);
             setUpvotes(prev => prev + 1);
-          } else if (!currentVote) {
-            if (voteType === 'upvote') {
-              setUpvotes(prev => prev + 1);
-            } else {
-              setDownvotes(prev => prev + 1);
-            }
           }
           setCurrentVote(voteType);
         }
 
-        // Notify parent component immediately
+        // Notify parent component with the NEW state
         if (onVoteChange) {
-          onVoteChange({
-            action: response.data.action
+          let newVote = currentVote;
+          let newUpvotes = upvotes;
+          let newDownvotes = downvotes;
+          
+          if (response.action === 'removed') {
+            newVote = null;
+            if (currentVote === 'upvote') {
+              newUpvotes = upvotes - 1;
+            } else if (currentVote === 'downvote') {
+              newDownvotes = downvotes - 1;
+            }
+          } else if (response.action === 'voted') {
+            newVote = voteType;
+            if (voteType === 'upvote') {
+              newUpvotes = upvotes + 1;
+            } else {
+              newDownvotes = downvotes + 1;
+            }
+          } else if (response.action === 'changed') {
+            newVote = voteType;
+            if (currentVote === 'upvote' && voteType === 'downvote') {
+              newUpvotes = upvotes - 1;
+              newDownvotes = downvotes + 1;
+            } else if (currentVote === 'downvote' && voteType === 'upvote') {
+              newDownvotes = downvotes - 1;
+              newUpvotes = upvotes + 1;
+            }
+          }
+          
+          onVoteChange(newVote, {
+            upvotes: newUpvotes,
+            downvotes: newDownvotes,
+            action: response.action
           });
         }
       }

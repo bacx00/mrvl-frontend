@@ -20,7 +20,6 @@ function EventForm({ eventId, navigateTo }) {
     currency: 'USD',
     prize_distribution: {},
     logo: '',
-    banner: '',
     rules: '',
     registration_requirements: {},
     streams: {},
@@ -34,7 +33,6 @@ function EventForm({ eventId, navigateTo }) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState(null);
-  const [bannerFile, setBannerFile] = useState(null);
   const [teams, setTeams] = useState([]);
   const [eventTeams, setEventTeams] = useState([]);
   const [selectedTeamId, setSelectedTeamId] = useState('');
@@ -88,7 +86,6 @@ function EventForm({ eventId, navigateTo }) {
         currency: event.currency || 'USD',
         prize_distribution: event.prize_distribution || {},
         logo: event.logo || '',
-        banner: event.banner || '',
         rules: event.rules || '',
         registration_requirements: event.registration_requirements || {},
         streams: event.streams || {},
@@ -130,13 +127,6 @@ function EventForm({ eventId, navigateTo }) {
     }));
   };
 
-  const handleBannerSelect = (file, previewUrl) => {
-    setBannerFile(file);
-    setFormData(prev => ({
-      ...prev,
-      banner: previewUrl || ''
-    }));
-  };
 
   const handleAddTeam = async () => {
     if (!selectedTeamId || !eventId) return;
@@ -174,9 +164,7 @@ function EventForm({ eventId, navigateTo }) {
     imageFormData.append(type, file);
     
     try {
-      const response = await api.post(`/admin/events/${eventId}/${type}`, imageFormData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const response = await api.postFile(`/admin/events/${eventId}/${type}`, imageFormData);
       return response.data?.logo_url || response.data?.banner_url || response.data?.url;
     } catch (error) {
       console.error(`Error uploading ${type}:`, error);
@@ -253,12 +241,6 @@ function EventForm({ eventId, navigateTo }) {
         }
       }
 
-      if (bannerFile && createdEventId) {
-        const bannerUrl = await uploadImage(bannerFile, 'banner', createdEventId);
-        if (bannerUrl) {
-          console.log('Banner uploaded successfully:', bannerUrl);
-        }
-      }
 
       alert(`Event ${isEdit ? 'updated' : 'created'} successfully!`);
       
@@ -390,20 +372,6 @@ function EventForm({ eventId, navigateTo }) {
               <p className="text-xs text-gray-500 mt-2">Recommended: 512x512px, PNG format</p>
             </div>
 
-            {/* Banner */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
-                Event Banner
-              </label>
-              <ImageUpload
-                onImageSelect={handleBannerSelect}
-                currentImage={formData.banner}
-                placeholder="Upload Event Banner (1920x1080)"
-                className="w-full"
-                aspectRatio="16/9"
-              />
-              <p className="text-xs text-gray-500 mt-2">Recommended: 1920x1080px, JPG format</p>
-            </div>
           </div>
         </div>
 

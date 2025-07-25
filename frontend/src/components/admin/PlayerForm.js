@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
 import { API_CONFIG } from '../../config';
+import { HEROES } from '../../constants/marvelRivalsData';
 import ImageUpload from '../shared/ImageUpload';
 
 function PlayerForm({ playerId, navigateTo }) {
@@ -15,12 +16,22 @@ function PlayerForm({ playerId, navigateTo }) {
     age: '',
     rating: '',
     avatar: '',
+    status: 'active',
+    biography: '',
+    mainHero: '',
+    altHeroes: [],
+    totalEarnings: 0,
     socialLinks: {
       twitter: '',
       twitch: '',
       youtube: '',
       instagram: ''
-    }
+    },
+    streaming: {
+      platform: '',
+      channel: ''
+    },
+    pastTeams: []
   });
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -52,12 +63,22 @@ function PlayerForm({ playerId, navigateTo }) {
         age: player.age || '',
         rating: player.rating || '',
         avatar: player.avatar_url || player.avatar || '',
+        status: player.status || 'active',
+        biography: player.biography || '',
+        mainHero: player.main_hero || '',
+        altHeroes: player.alt_heroes || [],
+        totalEarnings: player.total_earnings || 0,
         socialLinks: player.social_media || player.social_links || player.socialLinks || {
           twitter: '',
           twitch: '',
           youtube: '',
           instagram: ''
-        }
+        },
+        streaming: player.streaming || {
+          platform: '',
+          channel: ''
+        },
+        pastTeams: player.teamHistory || player.past_teams || []
       });
     } catch (error) {
       console.error('Error fetching player:', error);
@@ -93,12 +114,58 @@ function PlayerForm({ playerId, navigateTo }) {
           [socialKey]: value
         }
       }));
+    } else if (name.startsWith('streaming_')) {
+      const streamingKey = name.replace('streaming_', '');
+      setFormData(prev => ({
+        ...prev,
+        streaming: {
+          ...prev.streaming,
+          [streamingKey]: value
+        }
+      }));
     } else {
       setFormData(prev => ({
         ...prev,
         [name]: value
       }));
     }
+  };
+
+  const handleAltHeroChange = (heroValue) => {
+    setFormData(prev => ({
+      ...prev,
+      altHeroes: prev.altHeroes.includes(heroValue)
+        ? prev.altHeroes.filter(h => h !== heroValue)
+        : [...prev.altHeroes, heroValue]
+    }));
+  };
+
+  const addPastTeam = () => {
+    setFormData(prev => ({
+      ...prev,
+      pastTeams: [...prev.pastTeams, {
+        id: '',
+        teamName: '',
+        startDate: '',
+        endDate: ''
+      }]
+    }));
+  };
+
+  const removePastTeam = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      pastTeams: prev.pastTeams.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updatePastTeam = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      pastTeams: prev.pastTeams.map((team, i) => 
+        i === index ? { ...team, [field]: value } : team
+      )
+    }));
   };
 
   const handleImageSelect = (file, previewUrl) => {
@@ -190,7 +257,14 @@ function PlayerForm({ playerId, navigateTo }) {
         country: formData.country,
         age: formData.age ? parseInt(formData.age) : null,
         rating: formData.rating ? parseFloat(formData.rating) : null,
-        social_media: formData.socialLinks
+        status: formData.status,
+        biography: formData.biography.trim(),
+        main_hero: formData.mainHero,
+        alt_heroes: formData.altHeroes,
+        total_earnings: formData.totalEarnings ? parseFloat(formData.totalEarnings) : 0,
+        social_media: formData.socialLinks,
+        streaming: formData.streaming,
+        past_teams: formData.pastTeams.filter(team => team.id && team.teamName.trim())
       };
 
       console.log(' PlayerForm - Submit data prepared:', submitData);
@@ -501,11 +575,49 @@ function PlayerForm({ playerId, navigateTo }) {
                 value={formData.rating}
                 onChange={handleInputChange}
                 className="form-input"
-                placeholder="e.g., 1500"
+                placeholder="Enter player rating"
                 min="0"
                 max="3000"
                 step="1"
               />
+            </div>
+
+            {/* Player Status */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Status
+              </label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                className="form-input"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="retired">Retired</option>
+                <option value="substitute">Substitute</option>
+              </select>
+            </div>
+
+            {/* Total Earnings */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Total Earnings ($)
+              </label>
+              <input
+                type="number"
+                name="totalEarnings"
+                value={formData.totalEarnings}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="0"
+                min="0"
+                step="0.01"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Player's total tournament earnings in USD
+              </p>
             </div>
 
             {/* Team - CRITICAL FIX for Free Agent issue */}
@@ -596,6 +708,86 @@ function PlayerForm({ playerId, navigateTo }) {
           </div>
         </div>
 
+        {/* Biography and Heroes */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Biography & Heroes</h3>
+          
+          <div className="grid grid-cols-1 gap-6">
+            {/* Biography */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Biography
+              </label>
+              <textarea
+                name="biography"
+                value={formData.biography}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="Player biography and background..."
+                rows="4"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Brief description of the player's background and achievements
+              </p>
+            </div>
+
+            {/* Main Hero */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Main Hero
+              </label>
+              <select
+                name="mainHero"
+                value={formData.mainHero}
+                onChange={handleInputChange}
+                className="form-input"
+              >
+                <option value="">Select Main Hero</option>
+                {Object.entries(HEROES).map(([role, heroes]) => (
+                  <optgroup key={role} label={role}>
+                    {heroes.map(hero => (
+                      <option key={hero} value={hero}>
+                        {hero}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Primary hero the player is known for
+              </p>
+            </div>
+
+            {/* Alternative Heroes */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Alternative Heroes
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-40 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md p-3">
+                {Object.entries(HEROES).map(([role, heroes]) => (
+                  <div key={role}>
+                    <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">{role}</div>
+                    {heroes.map(hero => (
+                      <label key={hero} className="flex items-center space-x-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={formData.altHeroes.includes(hero)}
+                          onChange={() => handleAltHeroChange(hero)}
+                          className="rounded"
+                        />
+                        <span className="text-gray-700 dark:text-gray-300">{hero}</span>
+                      </label>
+                    ))}
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Other heroes the player can play effectively
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Social Links */}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Social Links</h3>
@@ -657,6 +849,131 @@ function PlayerForm({ playerId, navigateTo }) {
               />
             </div>
           </div>
+        </div>
+
+        {/* Streaming Information */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Streaming Information</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Streaming Platform
+              </label>
+              <select
+                name="streaming_platform"
+                value={formData.streaming.platform}
+                onChange={handleInputChange}
+                className="form-input"
+              >
+                <option value="">No Streaming</option>
+                <option value="twitch">Twitch</option>
+                <option value="youtube">YouTube</option>
+                <option value="facebook">Facebook Gaming</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Channel/Username
+              </label>
+              <input
+                type="text"
+                name="streaming_channel"
+                value={formData.streaming.channel}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="Enter channel name or username"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Channel name for the selected streaming platform
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Past Teams */}
+        <div className="card p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Past Teams</h3>
+            <button
+              type="button"
+              onClick={addPastTeam}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+            >
+              + Add Past Team
+            </button>
+          </div>
+          
+          {formData.pastTeams.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No past teams added yet. Click "Add Past Team" to add team history.</p>
+          ) : (
+            <div className="space-y-4">
+              {formData.pastTeams.map((pastTeam, index) => (
+                <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+                  <div className="flex justify-between items-start mb-3">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">Past Team #{index + 1}</h4>
+                    <button
+                      type="button"
+                      onClick={() => removePastTeam(index)}
+                      className="text-red-600 hover:text-red-800 text-sm"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                        Team
+                      </label>
+                      <select
+                        value={pastTeam.id}
+                        onChange={(e) => {
+                          const selectedTeam = teams.find(team => team.id.toString() === e.target.value);
+                          updatePastTeam(index, 'id', e.target.value);
+                          updatePastTeam(index, 'teamName', selectedTeam ? selectedTeam.name : '');
+                        }}
+                        className="form-input"
+                      >
+                        <option value="">Select Team</option>
+                        {teams.map(team => (
+                          <option key={team.id} value={team.id}>
+                            {team.name} ({team.short_name || team.shortName})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                        Start Date
+                      </label>
+                      <input
+                        type="date"
+                        value={pastTeam.startDate}
+                        onChange={(e) => updatePastTeam(index, 'startDate', e.target.value)}
+                        className="form-input"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                        End Date
+                      </label>
+                      <input
+                        type="date"
+                        value={pastTeam.endDate}
+                        onChange={(e) => updatePastTeam(index, 'endDate', e.target.value)}
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Submit Button */}

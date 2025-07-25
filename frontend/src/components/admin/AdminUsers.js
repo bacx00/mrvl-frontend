@@ -20,7 +20,20 @@ function AdminUsers({ navigateTo }) {
     try {
       setLoading(true);
       const response = await api.get('/admin/users');
-      let usersData = response.data || response;
+      console.log('📊 Raw API response:', response);
+      
+      // Handle Laravel backend response format
+      let usersData = [];
+      if (response.data && response.data.data) {
+        // Laravel format: { success: true, data: [...], total: X }
+        usersData = response.data.data;
+      } else if (response.data && Array.isArray(response.data)) {
+        // Direct array response
+        usersData = response.data;
+      } else if (Array.isArray(response)) {
+        // Raw array response
+        usersData = response;
+      }
 
       // Apply filters
       if (filters.search) {
@@ -31,11 +44,20 @@ function AdminUsers({ navigateTo }) {
       }
 
       if (filters.role !== 'all') {
-        usersData = usersData.filter(user => 
-          Array.isArray(user.roles) && user.roles.includes(filters.role)
-        );
+        usersData = usersData.filter(user => {
+          // Handle both array roles and single role string
+          const userRoles = Array.isArray(user.roles) ? user.roles : 
+                           (user.role ? [user.role] : []);
+          return userRoles.includes(filters.role);
+        });
       }
 
+      if (filters.status !== 'all') {
+        usersData = usersData.filter(user => user.status === filters.status);
+      }
+
+      console.log('📊 Loaded users:', usersData);
+      console.log('📊 First user sample:', usersData[0]);
       setUsers(usersData);
     } catch (error) {
       console.error('AdminUsers: Backend users API failed:', error);
@@ -49,13 +71,22 @@ function AdminUsers({ navigateTo }) {
   const handleDelete = async (userId, userName) => {
     if (window.confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
       try {
-        // FIXED: Use POST with method spoofing for Laravel backend deletes
-        await api.post(`/admin/users/${userId}`, { _method: 'DELETE' });
+        console.log(`🗑️ Attempting to delete user ${userId} (${userName})`);
+        // Use proper DELETE method for Laravel backend
+        const response = await api.delete(`/admin/users/${userId}`);
+        console.log('✅ Delete response:', response);
         await fetchUsers(); // Refresh the list
         alert('User deleted successfully!');
       } catch (error) {
-        console.error('Error deleting user:', error);
-        alert('Error deleting user. Please try again.');
+        console.error('❌ Error deleting user:', error);
+        let errorMessage = 'Error deleting user. Please try again.';
+        if (error.message) {
+          errorMessage = error.message;
+        }
+        if (error.data && error.data.message) {
+          errorMessage = error.data.message;
+        }
+        alert(`Error: ${errorMessage}`);
       }
     }
   };
@@ -76,51 +107,99 @@ function AdminUsers({ navigateTo }) {
       
       // Get current user data to preserve status
       const currentUser = users.find(u => u.id === userId);
-      await api.put(`/admin/users/${userId}`, { 
+      const response = await api.put(`/admin/users/${userId}`, { 
         role: newRole,
         status: currentUser.status || 'active'
       });
       
-      // Force refresh after successful update
-      await fetchUsers();
-      alert(`User role updated to ${newRole}!`);
+      if (response.success) {
+        // Force refresh after successful update
+        await fetchUsers();
+        alert(`User role updated to ${newRole}!`);
+      } else {
+        throw new Error(response.message || 'Failed to update role');
+      }
     } catch (error) {
       console.error('Error updating user role:', error);
       // Revert optimistic update on error
       await fetchUsers();
-      alert('Error updating user role. Please try again.');
+      let errorMessage = 'Error updating user role. Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      alert(`Error: ${errorMessage}`);
     }
   };
 
   const updateUserStatus = async (userId, newStatus) => {
     try {
+      // Optimistic UI update
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === userId 
+            ? { ...user, status: newStatus }
+            : user
+        )
+      );
+
       // FIXED: Get current user data to preserve role
       const currentUser = users.find(u => u.id === userId);
-      const currentRole = Array.isArray(currentUser.roles) ? currentUser.roles[0] : (currentUser.roles || 'user');
-      await api.put(`/admin/users/${userId}`, { 
+      const currentRole = getUserRole(currentUser);
+      const response = await api.put(`/admin/users/${userId}`, { 
         role: currentRole, 
         status: newStatus 
       });
-      await fetchUsers(); // Refresh the list
-      alert(`User status updated to ${newStatus}!`);
+      
+      if (response.success) {
+        await fetchUsers(); // Refresh the list
+        alert(`User status updated to ${newStatus}!`);
+      } else {
+        throw new Error(response.message || 'Failed to update status');
+      }
     } catch (error) {
       console.error('Error updating user status:', error);
-      alert('Error updating user status. Please try again.');
+      // Revert optimistic update on error
+      await fetchUsers();
+      let errorMessage = 'Error updating user status. Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      alert(`Error: ${errorMessage}`);
     }
   };
 
-  const getRoleColor = (roles) => {
-    const roleList = Array.isArray(roles) ? roles : [];
+  const getRoleColor = (user) => {
+    const roleList = Array.isArray(user.roles) ? user.roles : 
+                    (user.role ? [user.role] : []);
     if (roleList.includes('admin')) return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
     if (roleList.includes('moderator')) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
     return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
   };
 
-  const getRoleDisplay = (roles) => {
-    const roleList = Array.isArray(roles) ? roles : [];
+  const getRoleDisplay = (user) => {
+    const roleList = Array.isArray(user.roles) ? user.roles : 
+                    (user.role ? [user.role] : []);
     if (roleList.includes('admin')) return 'Admin';
     if (roleList.includes('moderator')) return 'Moderator';
     return 'User';
+  };
+  
+  const getUserRole = (user) => {
+    if (Array.isArray(user.roles) && user.roles.length > 0) {
+      return user.roles[0];
+    }
+    return user.role || 'user';
+  };
+  
+  const hasRole = (user, role) => {
+    if (!user) return false;
+    const roleList = Array.isArray(user.roles) ? user.roles : 
+                    (user.role ? [user.role] : []);
+    return roleList.includes(role);
   };
 
   const getStatusColor = (status) => {
@@ -189,14 +268,14 @@ function AdminUsers({ navigateTo }) {
         <div className="card p-6 text-center">
           <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-            {users.filter(u => Array.isArray(u.roles) && u.roles.includes('admin')).length}
+            {users.filter(u => hasRole(u, 'admin')).length}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Admins</div>
         </div>
         <div className="card p-6 text-center">
           <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-            {users.filter(u => Array.isArray(u.roles) && u.roles.includes('moderator')).length}
+            {users.filter(u => hasRole(u, 'moderator')).length}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Moderators</div>
         </div>
@@ -304,6 +383,7 @@ function AdminUsers({ navigateTo }) {
                         showAvatar={true}
                         showHeroFlair={true}
                         showTeamFlair={true}
+                        clickable={true}
                         navigateTo={navigateTo}
                       />
                       <div className="text-sm text-gray-500 dark:text-gray-400 ml-8">
@@ -312,8 +392,8 @@ function AdminUsers({ navigateTo }) {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getRoleColor(user.roles)}`}>
-                      {getRoleDisplay(user.roles)}
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getRoleColor(user)}`}>
+                      {getRoleDisplay(user)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -330,7 +410,7 @@ function AdminUsers({ navigateTo }) {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       <select
-                        value={Array.isArray(user.roles) ? user.roles[0] : 'user'}
+                        value={getUserRole(user)}
                         onChange={(e) => updateUserRole(user.id, e.target.value)}
                         className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800"
                       >
@@ -348,9 +428,13 @@ function AdminUsers({ navigateTo }) {
                         <option value="banned">Banned</option>
                       </select>
                       <button
-                        onClick={() => handleDelete(user.id, user.name)}
-                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                        disabled={Array.isArray(user.roles) && user.roles.includes('admin')} // Prevent deleting admins
+                        onClick={() => {
+                          console.log('🔍 Delete button clicked for user:', user.id, user.name);
+                          console.log('🔍 User roles:', user.roles);
+                          handleDelete(user.id, user.name);
+                        }}
+                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 cursor-pointer"
+                        title="Delete user"
                       >
                         Delete
                       </button>

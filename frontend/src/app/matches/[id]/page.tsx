@@ -720,23 +720,23 @@ export default function MatchDetailPage() {
                 </div>
                 <h3 className="font-medium">{match.team1.name}</h3>
               </div>
-              <div className="p-4">
-                <table className="w-full text-sm">
+              <div className="p-4 overflow-x-auto">
+                <table className="w-full text-sm min-w-[400px]">
                   <thead>
                     <tr className="border-b border-[#2b3d4d]">
-                      <th className="text-left p-2">Player</th>
-                      <th className="text-left p-2">Hero</th>
-                      <th className="text-center p-2">K/D/A</th>
-                      <th className="text-center p-2">ACS</th>
+                      <th className="text-left p-2 text-xs sm:text-sm">Player</th>
+                      <th className="text-left p-2 text-xs sm:text-sm">Hero</th>
+                      <th className="text-center p-2 text-xs sm:text-sm">K/D/A</th>
+                      <th className="text-center p-2 text-xs sm:text-sm">ACS</th>
                     </tr>
                   </thead>
                   <tbody>
                     {match.team1.roster.map((player) => (
                       <tr key={player.name} className="border-b border-[#2b3d4d] hover:bg-[#0f1923]">
-                        <td className="p-2 font-medium">{player.name}</td>
-                        <td className="p-2">{player.hero}</td>
-                        <td className="p-2 text-center">{player.kills}/{player.deaths}/{player.assists}</td>
-                        <td className="p-2 text-center font-bold">{player.acs}</td>
+                        <td className="p-2 font-medium text-xs sm:text-sm">{player.name}</td>
+                        <td className="p-2 text-xs sm:text-sm">{player.hero}</td>
+                        <td className="p-2 text-center text-xs sm:text-sm">{player.kills}/{player.deaths}/{player.assists}</td>
+                        <td className="p-2 text-center font-bold text-xs sm:text-sm">{player.acs}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -757,23 +757,23 @@ export default function MatchDetailPage() {
                 </div>
                 <h3 className="font-medium">{match.team2.name}</h3>
               </div>
-              <div className="p-4">
-                <table className="w-full text-sm">
+              <div className="p-4 overflow-x-auto">
+                <table className="w-full text-sm min-w-[400px]">
                   <thead>
                     <tr className="border-b border-[#2b3d4d]">
-                      <th className="text-left p-2">Player</th>
-                      <th className="text-left p-2">Hero</th>
-                      <th className="text-center p-2">K/D/A</th>
-                      <th className="text-center p-2">ACS</th>
+                      <th className="text-left p-2 text-xs sm:text-sm">Player</th>
+                      <th className="text-left p-2 text-xs sm:text-sm">Hero</th>
+                      <th className="text-center p-2 text-xs sm:text-sm">K/D/A</th>
+                      <th className="text-center p-2 text-xs sm:text-sm">ACS</th>
                     </tr>
                   </thead>
                   <tbody>
                     {match.team2.roster.map((player) => (
                       <tr key={player.name} className="border-b border-[#2b3d4d] hover:bg-[#0f1923]">
-                        <td className="p-2 font-medium">{player.name}</td>
-                        <td className="p-2">{player.hero}</td>
-                        <td className="p-2 text-center">{player.kills}/{player.deaths}/{player.assists}</td>
-                        <td className="p-2 text-center font-bold">{player.acs}</td>
+                        <td className="p-2 font-medium text-xs sm:text-sm">{player.name}</td>
+                        <td className="p-2 text-xs sm:text-sm">{player.hero}</td>
+                        <td className="p-2 text-center text-xs sm:text-sm">{player.kills}/{player.deaths}/{player.assists}</td>
+                        <td className="p-2 text-center font-bold text-xs sm:text-sm">{player.acs}</td>
                       </tr>
                     ))}
                   </tbody>

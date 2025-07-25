@@ -24,3 +24,44 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Custom Match Card Styles */
+.match-card-container {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.match-card-container:hover {
+  @apply shadow-lg;
+}
+
+/* Team logo animation */
+.team-logo-container {
+  @apply transition-transform duration-200;
+}
+
+.match-card-container:hover .team-logo-container {
+  @apply scale-110;
+}
+
+/* Live match pulse animation */
+@keyframes live-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.live-indicator {
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+/* Score animation */
+.match-score {
+  @apply transition-all duration-300;
+}
+
+.match-card-container:hover .match-score {
+  @apply scale-105;
+}

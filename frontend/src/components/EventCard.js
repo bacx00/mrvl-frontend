@@ -1,5 +1,5 @@
 import React from 'react';
-import { getImageUrl, getCountryFlag } from '../utils/imageUtils';
+import { getImageUrl, getCountryFlag, getEventLogoUrl } from '../utils/imageUtils';
 
 function EventCard({ event, navigateTo }) {
   // Format date range
@@ -85,7 +85,7 @@ function EventCard({ event, navigateTo }) {
             {event.logo && (
               <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-700">
                 <img 
-                  src={getImageUrl(event.logo, 'event-logo')} 
+                  src={getEventLogoUrl(event)} 
                   alt={event.name}
                   className="w-full h-full object-contain"
                   onError={(e) => {
@@ -150,6 +150,16 @@ function EventCard({ event, navigateTo }) {
               <span className="text-gray-500 dark:text-gray-400">Teams</span>
               <span className="font-medium text-gray-900 dark:text-white">
                 {event.current_teams || 0}/{event.max_teams || '?'}
+              </span>
+            </div>
+          )}
+
+          {/* Format */}
+          {event.format && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500 dark:text-gray-400">Format</span>
+              <span className="font-medium text-gray-900 dark:text-white">
+                {event.format.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
               </span>
             </div>
           )}

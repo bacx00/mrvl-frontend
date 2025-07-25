@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
+import { getEventLogoUrl } from '../../utils/imageUtils';
 
 function AdminEvents({ navigateTo }) {
   const [events, setEvents] = useState([]);
@@ -21,45 +22,13 @@ function AdminEvents({ navigateTo }) {
       if (filters.type !== 'all') params.append('type', filters.type);
       if (filters.status !== 'all') params.append('status', filters.status);
       
-      const response = await api.get(`/events${params.toString() ? `?${params.toString()}` : ''}`);
-      setEvents(response.data || response);
+      // Use admin endpoint for simpler data structure
+      const response = await api.get(`/admin/events${params.toString() ? `?${params.toString()}` : ''}`);
+      const eventsData = response.data?.data || response.data || response || [];
+      setEvents(eventsData);
     } catch (error) {
       console.error('Error fetching events:', error);
-      // Set fallback data
-      setEvents([
-        {
-          id: 1,
-          name: "Marvel Rivals World Championship 2025",
-          type: "International",
-          status: "upcoming",
-          start_date: "2025-03-15",
-          end_date: "2025-03-22",
-          prize_pool: "$1,000,000",
-          team_count: 32,
-          location: "Los Angeles, CA",
-          organizer: "Marvel Esports",
-          format: "Double Elimination",
-          description: "The ultimate Marvel Rivals championship featuring the world's best teams competing for glory and the largest prize pool in the game's history.",
-          image: "",
-          registration_open: true
-        },
-        {
-          id: 2,
-          name: "NA Regional Championship",
-          type: "Regional",
-          status: "live",
-          start_date: "2025-01-20",
-          end_date: "2025-01-25",
-          prize_pool: "$250,000",
-          team_count: 16,
-          location: "Online",
-          organizer: "Marvel Rivals League",
-          format: "Swiss + Playoffs",
-          description: "North American teams battle for regional supremacy and qualification spots for the World Championship.",
-          image: "🇺🇸",
-          registration_open: false
-        }
-      ]);
+      setEvents([]);
     } finally {
       setLoading(false);
     }
@@ -131,7 +100,8 @@ function AdminEvents({ navigateTo }) {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'live': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      case 'live':
+      case 'ongoing': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
       case 'upcoming': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
       case 'completed': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
@@ -140,16 +110,16 @@ function AdminEvents({ navigateTo }) {
 
   const getTypeColor = (type) => {
     switch (type) {
-      case 'International': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
-      case 'Regional': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
-      case 'Qualifier': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
-      case 'Community': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 'tournament': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
+      case 'league': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
+      case 'qualifier': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'showmatch': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     }
   };
 
-  const types = ['all', 'International', 'Regional', 'Qualifier', 'Community'];
-  const statuses = ['all', 'live', 'upcoming', 'completed'];
+  const types = ['all', 'tournament', 'league', 'qualifier', 'showmatch'];
+  const statuses = ['all', 'ongoing', 'upcoming', 'completed'];
 
   if (loading) {
     return (
@@ -183,7 +153,7 @@ function AdminEvents({ navigateTo }) {
         <div className="card p-6 text-center">
           <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-            {events.filter(e => e.status === 'live').length}
+            {events.filter(e => e.status === 'live' || e.status === 'ongoing').length}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Live Events</div>
         </div>
@@ -198,7 +168,8 @@ function AdminEvents({ navigateTo }) {
           <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-green-600 dark:text-green-400">
             ${events.reduce((acc, e) => {
-              const prizePool = parseInt(e.prize_pool?.replace(/[$,]/g, '') || '0');
+              const prizePool = typeof e.prize_pool === 'number' ? e.prize_pool : 
+                             typeof e.prize_pool === 'string' ? parseInt(e.prize_pool.replace(/[$,]/g, '') || '0') : 0;
               return acc + prizePool;
             }, 0).toLocaleString()}
           </div>
@@ -207,7 +178,7 @@ function AdminEvents({ navigateTo }) {
         <div className="card p-6 text-center">
           <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-            {events.reduce((acc, e) => acc + (e.team_count || 0), 0)}
+            {events.reduce((acc, e) => acc + (e.current_teams || 0), 0)}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">Total Teams</div>
         </div>
@@ -227,7 +198,7 @@ function AdminEvents({ navigateTo }) {
             >
               {types.map(type => (
                 <option key={type} value={type}>
-                  {type === 'all' ? 'All Types' : type}
+                  {type === 'all' ? 'All Types' : type.charAt(0).toUpperCase() + type.slice(1)}
                 </option>
               ))}
             </select>
@@ -267,7 +238,24 @@ function AdminEvents({ navigateTo }) {
               {/* Event Info */}
               <div className="flex-1">
                 <div className="flex items-start gap-4">
-                  <div className="text-4xl">{event.image}</div>
+                  {/* Event Logo */}
+                  {event.logo ? (
+                    <img 
+                      src={getEventLogoUrl(event)}
+                      alt={event.name}
+                      className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className="w-16 h-16 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 text-gray-500 dark:text-gray-400 font-bold text-xl"
+                    style={{ display: event.logo ? 'none' : 'flex' }}
+                  >
+                    EVT
+                  </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-xl font-bold text-gray-900 dark:text-white">
@@ -277,7 +265,7 @@ function AdminEvents({ navigateTo }) {
                         {event.status.toUpperCase()}
                       </span>
                       <span className={`px-2 py-1 rounded text-xs font-medium ${getTypeColor(event.type)}`}>
-                        {event.type}
+                        {event.type ? event.type.toUpperCase() : 'TOURNAMENT'}
                       </span>
                       {event.registration_open && (
                         <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 text-xs font-medium rounded">
@@ -292,26 +280,33 @@ function AdminEvents({ navigateTo }) {
                       <div>
                         <span className="text-gray-500 dark:text-gray-500">Date:</span>
                         <div className="font-medium text-gray-900 dark:text-white">
-                          {new Date(event.start_date).toLocaleDateString()} - {new Date(event.end_date).toLocaleDateString()}
+                          {event.start_date ? new Date(event.start_date).toLocaleDateString() : 'TBD'}
+                          {event.end_date && event.start_date !== event.end_date ? ` - ${new Date(event.end_date).toLocaleDateString()}` : ''}
                         </div>
                       </div>
                       <div>
                         <span className="text-gray-500 dark:text-gray-500">Prize Pool:</span>
-                        <div className="font-medium text-green-600 dark:text-green-400">{event.prize_pool}</div>
+                        <div className="font-medium text-green-600 dark:text-green-400">
+                          {event.prize_pool ? `$${Number(event.prize_pool).toLocaleString()} ${event.currency || 'USD'}` : 'TBD'}
+                        </div>
                       </div>
                       <div>
                         <span className="text-gray-500 dark:text-gray-500">Teams:</span>
-                        <div className="font-medium text-gray-900 dark:text-white">{event.team_count}</div>
+                        <div className="font-medium text-gray-900 dark:text-white">
+                          {event.current_teams || 0}/{event.max_teams || '?'}
+                        </div>
                       </div>
                       <div>
                         <span className="text-gray-500 dark:text-gray-500">Format:</span>
-                        <div className="font-medium text-gray-900 dark:text-white">{event.format}</div>
+                        <div className="font-medium text-gray-900 dark:text-white">
+                          {event.format ? event.format.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'TBD'}
+                        </div>
                       </div>
                     </div>
 
                     <div className="mt-4 text-sm">
                       <span className="text-gray-500 dark:text-gray-500">Organizer:</span>
-                      <span className="ml-2 font-medium text-gray-900 dark:text-white">{event.organizer}</span>
+                      <span className="ml-2 font-medium text-gray-900 dark:text-white">{typeof event.organizer === 'string' ? event.organizer : event.organizer?.name || 'Unknown Organizer'}</span>
                       <span className="mx-2 text-gray-400">•</span>
                       <span className="text-gray-500 dark:text-gray-500">Location:</span>
                       <span className="ml-2 font-medium text-gray-900 dark:text-white">{event.location}</span>
@@ -324,13 +319,13 @@ function AdminEvents({ navigateTo }) {
               <div className="flex flex-col gap-3 lg:w-48">
                 {event.status === 'upcoming' && (
                   <button
-                    onClick={() => updateEventStatus(event.id, 'live')}
+                    onClick={() => updateEventStatus(event.id, 'ongoing')}
                     className="btn bg-red-600 hover:bg-red-700 text-white"
                   >
                      Start Event
                   </button>
                 )}
-                {event.status === 'live' && (
+                {(event.status === 'live' || event.status === 'ongoing') && (
                   <button
                     onClick={() => updateEventStatus(event.id, 'completed')}
                     className="btn bg-green-600 hover:bg-green-700 text-white"

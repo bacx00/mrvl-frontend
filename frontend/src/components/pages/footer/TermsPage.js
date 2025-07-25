@@ -12,16 +12,18 @@ function TermsPage() {
       content: (
         <div className="space-y-4">
           <p className="text-gray-600 dark:text-gray-400">
-            By accessing and using the MRVL Esports Platform ("Platform", "Service"), you accept and agree 
-            to be bound by the terms and provision of this agreement. If you do not agree to abide by the 
-            above, please do not use this service.
+            By accessing, browsing, or using the MRVL Esports Platform ("Platform", "Service", "MRVL"), 
+            you acknowledge that you have read, understood, and agree to be legally bound by these Terms of Service 
+            and our Privacy Policy. If you do not agree with any part of these terms, you must immediately 
+            discontinue use of our platform and services.
           </p>
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Binding Agreement</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
-            <li>These terms constitute a legally binding agreement between you and MRVL</li>
-            <li>Use of the platform indicates your acceptance of these terms</li>
-            <li>If you are using the platform on behalf of an organization, you represent that you have authority to bind that organization</li>
-            <li>These terms apply to all users, including visitors, registered users, and premium subscribers</li>
+            <li>These terms create a legally enforceable contract between you and MRVL Esports Platform</li>
+            <li>Continued use of the platform constitutes ongoing acceptance of these terms and any updates</li>
+            <li>If accessing on behalf of a company or organization, you warrant that you have full legal authority to bind that entity</li>
+            <li>These terms apply universally to all users, including anonymous visitors, registered members, premium subscribers, and tournament participants</li>
+            <li>Certain features may have additional terms that supplement but do not replace these general terms</li>
           </ul>
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Eligibility</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
@@ -40,22 +42,25 @@ function TermsPage() {
         <div className="space-y-4">
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Service Description</h4>
           <p className="text-gray-600 dark:text-gray-400">
-            MRVL provides a comprehensive esports platform for Marvel Rivals, including but not limited to:
+            MRVL operates as the premier esports platform dedicated to Marvel Rivals, providing comprehensive services including:
           </p>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
-            <li>Match statistics, results, and live tracking</li>
-            <li>Team and player profiles and rankings</li>
-            <li>Tournament and event information</li>
-            <li>Community forums and discussion features</li>
-            <li>News and analysis content</li>
-            <li>Premium analytics and insights (subscription-based)</li>
+            <li>Real-time match tracking, detailed statistics, and comprehensive results database</li>
+            <li>Professional team management, player profiles, competitive rankings, and leaderboards</li>
+            <li>Tournament organization, event scheduling, and competition management tools</li>
+            <li>Community engagement features including forums, discussions, and social networking</li>
+            <li>Editorial content, news coverage, expert analysis, and strategic insights</li>
+            <li>Advanced analytics, performance metrics, and professional-grade data insights (premium subscription required)</li>
+            <li>Educational resources, guides, and training materials for competitive improvement</li>
+            <li>Integration with official Marvel Rivals APIs and external gaming platforms</li>
           </ul>
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Service Availability</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
-            <li>We strive to maintain 99.9% uptime but cannot guarantee uninterrupted service</li>
-            <li>Scheduled maintenance will be announced in advance when possible</li>
-            <li>Emergency maintenance may occur without prior notice</li>
-            <li>Some features may be temporarily unavailable during updates</li>
+            <li>We maintain enterprise-level infrastructure targeting 99.9% uptime, though we cannot guarantee completely uninterrupted service</li>
+            <li>Planned maintenance will be announced at least 24 hours in advance through platform notifications and social media</li>
+            <li>Emergency maintenance for security or critical issues may occur with minimal notice</li>
+            <li>Platform features may be temporarily limited during major updates, with advance notification when possible</li>
+            <li>Third-party integrations (gaming platforms, social media) may experience independent service interruptions</li>
           </ul>
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Account Registration</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
@@ -84,14 +89,16 @@ function TermsPage() {
           </ul>
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Prohibited Activities</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
-            <li>Harassment, hate speech, or discriminatory language</li>
-            <li>Spam, advertising, or commercial promotion without permission</li>
-            <li>Sharing false or misleading information</li>
-            <li>Attempting to hack, exploit, or disrupt platform security</li>
-            <li>Using automated tools to scrape data or create fake accounts</li>
-            <li>Sharing personal information of others without consent</li>
-            <li>Content that violates intellectual property rights</li>
-            <li>Illegal activities or content that violates applicable laws</li>
+            <li>Harassment, cyberbullying, hate speech, or any form of discriminatory language based on race, gender, religion, or other protected characteristics</li>
+            <li>Spam, unsolicited advertising, commercial promotion, or affiliate marketing without explicit platform authorization</li>
+            <li>Deliberately sharing false information, misinformation, or engaging in defamatory statements about players, teams, or organizations</li>
+            <li>Attempting to hack, exploit vulnerabilities, circumvent security measures, or disrupt platform infrastructure</li>
+            <li>Using bots, automated scripts, data scraping tools, or creating multiple fake accounts to manipulate platform features</li>
+            <li>Doxxing, sharing personal information of others without consent, or violating privacy rights</li>
+            <li>Copyright infringement, trademark violations, or unauthorized use of intellectual property</li>
+            <li>Any illegal activities, promotion of illegal substances, or content that violates local, national, or international laws</li>
+            <li>Impersonating other users, teams, organizations, or MRVL staff members</li>
+            <li>Manipulating match results, engaging in match-fixing, or other forms of competitive fraud</li>
           </ul>
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">User-Generated Content</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
@@ -125,7 +132,7 @@ function TermsPage() {
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">DMCA Compliance</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
             <li>We respect copyright and respond to valid DMCA takedown notices</li>
-            <li>Copyright holders may report infringement to dmca@mrvl.gg</li>
+            <li>Copyright holders may report infringement through our DMCA contact form available on the platform</li>
             <li>Users who repeatedly infringe copyright may have their accounts terminated</li>
             <li>Counter-notices may be filed for content removed in error</li>
           </ul>
@@ -171,24 +178,27 @@ function TermsPage() {
         <div className="space-y-4">
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Premium Services</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
-            <li>Some platform features require a paid subscription</li>
-            <li>Subscription fees are charged in advance on a recurring basis</li>
-            <li>Prices are subject to change with 30 days' notice</li>
-            <li>Premium features are only available to active subscribers</li>
+            <li>Premium platform features require an active paid subscription with tiered pricing options</li>
+            <li>Subscription fees are charged in advance on a monthly or annual recurring basis as selected during signup</li>
+            <li>Pricing is subject to change with 30 days' advance notice to existing subscribers</li>
+            <li>Premium features including advanced analytics, priority support, and exclusive content are only available to active subscribers</li>
+            <li>Free trial periods may be offered for new subscribers with automatic conversion to paid plans unless cancelled</li>
           </ul>
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Payment Processing</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
-            <li>Payments are processed by secure third-party payment processors</li>
-            <li>We do not store credit card information on our servers</li>
-            <li>You authorize us to charge your payment method for recurring subscriptions</li>
-            <li>Failed payments may result in suspension of premium features</li>
+            <li>All payments are processed through PCI-compliant third-party payment processors including Stripe and PayPal</li>
+            <li>MRVL does not store, process, or have access to your complete credit card information</li>
+            <li>By subscribing, you authorize automatic recurring charges to your selected payment method until cancellation</li>
+            <li>Failed payment attempts will result in email notifications and potential suspension of premium features after a grace period</li>
+            <li>We accept major credit cards, PayPal, and other regionally available payment methods</li>
           </ul>
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Refunds and Cancellation</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
-            <li>Subscriptions can be cancelled at any time through account settings</li>
-            <li>Cancellation takes effect at the end of the current billing period</li>
-            <li>Refunds are generally not provided for partial billing periods</li>
-            <li>Exceptional refunds may be considered on a case-by-case basis</li>
+            <li>Subscriptions can be cancelled at any time through your account settings or by contacting customer support</li>
+            <li>Cancellations take effect at the end of your current billing cycle, allowing access to premium features until that date</li>
+            <li>Refunds are generally not provided for unused portions of billing periods, consistent with industry standards</li>
+            <li>Exceptional circumstances may warrant partial refunds, evaluated on a case-by-case basis by our customer support team</li>
+            <li>Chargebacks or disputed payments may result in immediate account suspension pending resolution</li>
           </ul>
         </div>
       )
@@ -270,10 +280,10 @@ function TermsPage() {
           </ul>
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Contact Information</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
-            <li>Legal notices should be sent to legal@mrvl.gg</li>
-            <li>General inquiries can be directed to support@mrvl.gg</li>
-            <li>DMCA notices should be sent to dmca@mrvl.gg</li>
-            <li>Postal address: 123 Esports Avenue, Los Angeles, CA 90210</li>
+            <li>Legal notices should be sent through our official contact form</li>
+            <li>General inquiries can be directed to our support team via the platform</li>
+            <li>DMCA notices should be submitted through our dedicated DMCA contact form</li>
+            <li>Official correspondence address available upon request through our platform</li>
           </ul>
         </div>
       )
@@ -286,8 +296,9 @@ function TermsPage() {
       <div className="text-center max-w-4xl mx-auto">
         <h1 className="text-heading-1 gradient-text mb-4">Terms of Service</h1>
         <p className="text-gray-600 dark:text-gray-400 mb-4">
-          These terms govern your use of the MRVL Esports Platform. Please read them carefully 
-          as they contain important information about your rights and obligations.
+          These comprehensive Terms of Service ("Terms") constitute a legally binding agreement between you and MRVL 
+          governing your access to and use of the MRVL Esports Platform. Please read these terms carefully as they 
+          contain important information about your rights, obligations, and limitations of liability.
         </p>
         <div className="text-sm text-gray-500 dark:text-gray-500">
           Last updated: {lastUpdated}
@@ -371,7 +382,7 @@ function TermsPage() {
           understood, and agree to be bound by these Terms of Service.
         </p>
         <div className="text-sm text-blue-600 dark:text-blue-400">
-          <p>Questions about these terms? Contact us at <strong>legal@mrvl.gg</strong></p>
+          <p>Questions about these terms? Contact our legal team through the official support channels on our platform</p>
         </div>
       </div>
     </div>

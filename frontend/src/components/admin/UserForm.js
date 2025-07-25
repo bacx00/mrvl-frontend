@@ -9,11 +9,14 @@ function UserForm({ navigateTo, userId = null }) {
     password: '',
     roles: ['user'], // Default to user role
     avatar: null,
+    hero_flair: '',
+    use_hero_as_avatar: false,
     status: 'active'
   });
 
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [availableHeroes, setAvailableHeroes] = useState({});
   const { api } = useAuth();
 
   const isEdit = !!userId;
@@ -22,7 +25,42 @@ function UserForm({ navigateTo, userId = null }) {
     if (isEdit) {
       fetchUser();
     }
+    fetchAvailableHeroes();
   }, [userId]);
+
+  const fetchAvailableHeroes = async () => {
+    try {
+      const response = await api.get('/user/profile/available-flairs');
+      const flairsData = response.data?.data || response.data || { heroes: {} };
+      setAvailableHeroes(flairsData.heroes || {});
+    } catch (error) {
+      console.error('Error fetching heroes:', error);
+      // Fallback heroes data
+      setAvailableHeroes({
+        "Vanguard": [
+          {name: "Captain America", role: "Vanguard"},
+          {name: "Doctor Strange", role: "Vanguard"},
+          {name: "Emma Frost", role: "Vanguard"},
+          {name: "Hulk", role: "Vanguard"},
+          {name: "Magneto", role: "Vanguard"},
+          {name: "Thor", role: "Vanguard"},
+          {name: "Venom", role: "Vanguard"}
+        ],
+        "Duelist": [
+          {name: "Black Panther", role: "Duelist"},
+          {name: "Black Widow", role: "Duelist"},
+          {name: "Iron Man", role: "Duelist"},
+          {name: "Spider-Man", role: "Duelist"},
+          {name: "Wolverine", role: "Duelist"}
+        ],
+        "Strategist": [
+          {name: "Loki", role: "Strategist"},
+          {name: "Luna Snow", role: "Strategist"},
+          {name: "Mantis", role: "Strategist"}
+        ]
+      });
+    }
+  };
 
   const fetchUser = async () => {
     try {
@@ -68,6 +106,9 @@ function UserForm({ navigateTo, userId = null }) {
         dataToSend.role = dataToSend.roles[0]; // Take first role as primary
         delete dataToSend.roles; // Remove roles array to avoid confusion
       }
+
+      // The backend will handle hero avatar path generation
+      // Just ensure use_hero_as_avatar is set correctly
 
       let response;
       if (isEdit) {
@@ -245,11 +286,68 @@ function UserForm({ navigateTo, userId = null }) {
               
               <div>
                 <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-                  Avatar
+                  Hero Avatar
                 </label>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Users select their hero avatar from their profile settings page. Admin cannot set user avatars.
-                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="use_hero_as_avatar"
+                      checked={formData.use_hero_as_avatar}
+                      onChange={(e) => handleChange('use_hero_as_avatar', e.target.checked)}
+                      className="form-checkbox"
+                    />
+                    <label htmlFor="use_hero_as_avatar" className="text-gray-900 dark:text-white">
+                      Use hero as avatar
+                    </label>
+                  </div>
+                  
+                  {formData.use_hero_as_avatar && (
+                    <div className="space-y-3">
+                      <select
+                        value={formData.hero_flair || ''}
+                        onChange={(e) => handleChange('hero_flair', e.target.value)}
+                        className="form-input"
+                      >
+                        <option value="">Select a hero...</option>
+                        {Object.entries(availableHeroes).map(([role, heroes]) => (
+                          <optgroup key={role} label={role}>
+                            {Array.isArray(heroes) && heroes.map(hero => (
+                              <option key={hero.name} value={hero.name}>
+                                {hero.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                      
+                      {formData.hero_flair && (
+                        <div className="mt-3">
+                          <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+                            Preview
+                          </label>
+                          <img 
+                            src={getImageUrl(`/images/heroes/${formData.hero_flair.toLowerCase().replace(/\s+/g, '-').replace(/[&.]/g, '')}-headbig.webp`)}
+                            alt={formData.hero_flair}
+                            className="w-20 h-20 rounded-full border-2 border-gray-300 dark:border-gray-600"
+                            onError={(e) => {
+                              // Handle special cases for hero image names
+                              const specialCases = {
+                                'cloak & dagger': 'cloak-dagger',
+                                'mr. fantastic': 'mister-fantastic',
+                                'the punisher': 'the-punisher',
+                                'the thing': 'the-thing'
+                              };
+                              const heroNameLower = formData.hero_flair.toLowerCase();
+                              const slug = specialCases[heroNameLower] || heroNameLower.replace(/\s+/g, '-').replace(/[&.]/g, '');
+                              e.target.src = getImageUrl(`/images/heroes/${slug}-headbig.webp`);
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

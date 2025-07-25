@@ -51,12 +51,23 @@ const api = {
       const responseText = await response.text();
       console.log(`📄 Raw Response:`, responseText.substring(0, 500));
       
+      // Handle successful responses with no content (204, empty body)
+      if (response.ok && (!responseText || responseText.trim() === '')) {
+        console.log(`✅ API Success: No content (${response.status})`);
+        return { success: true, status: response.status };
+      }
+      
       // Try to parse as JSON
       let data;
       try {
         data = JSON.parse(responseText);
       } catch (parseError) {
-        console.warn('⚠️ Non-JSON response received:', responseText.substring(0, 200));
+        // If response is OK but not JSON, return success
+        if (response.ok) {
+          console.log(`✅ API Success: Non-JSON response (${response.status})`);
+          return { success: true, message: responseText, status: response.status };
+        }
+        console.warn('⚠️ Non-JSON error response received:', responseText.substring(0, 200));
         throw new Error(`Server returned non-JSON response: ${responseText.substring(0, 100)}`);
       }
       

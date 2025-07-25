@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks';
 import { useMentionAutocomplete } from '../../hooks/useMentionAutocomplete';
 import ImageUpload from '../shared/ImageUpload';
 import MentionDropdown from '../shared/MentionDropdown';
+import EnhancedContentEditor from './EnhancedContentEditor';
 
 function NewsForm({ newsId, navigateTo }) {
   const [formData, setFormData] = useState({
@@ -46,6 +47,20 @@ function NewsForm({ newsId, navigateTo }) {
     handleInputChange: handleContentInputChange,
     handleKeyDown: handleContentKeyDown,
     selectMention: selectContentMention
+  } = useMentionAutocomplete();
+
+  // Mention autocomplete for title
+  const {
+    textareaRef: titleTextareaRef,
+    dropdownRef: titleDropdownRef,
+    showDropdown: showTitleDropdown,
+    mentionResults: titleMentionResults,
+    selectedIndex: titleSelectedIndex,
+    loading: titleMentionLoading,
+    dropdownPosition: titleDropdownPosition,
+    handleInputChange: handleTitleInputChange,
+    handleKeyDown: handleTitleKeyDown,
+    selectMention: selectTitleMention
   } = useMentionAutocomplete();
 
   // Mention autocomplete for excerpt
@@ -105,6 +120,11 @@ function NewsForm({ newsId, navigateTo }) {
   const handleContentChange = (e) => {
     handleInputChange(e);
     handleContentInputChange(e, null);
+  };
+
+  const handleTitleChange = (e) => {
+    handleInputChange(e);
+    handleTitleInputChange(e, null);
   };
 
   const handleExcerptChange = (e) => {
@@ -278,15 +298,40 @@ function NewsForm({ newsId, navigateTo }) {
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                 Title *
               </label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                className="form-input"
-                placeholder="Enter article title..."
-                required
-              />
+              <div className="relative">
+                <input
+                  ref={titleTextareaRef}
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleTitleChange}
+                  onKeyDown={(e) => {
+                    const result = handleTitleKeyDown(e, null);
+                    if (result?.selectMention) {
+                      selectTitleMention(result.selectMention, (newValue) => {
+                        setFormData(prev => ({ ...prev, title: newValue }));
+                      }, formData.title);
+                    }
+                  }}
+                  className="form-input"
+                  placeholder="Enter article title... (Type @ to mention teams/players)"
+                  required
+                />
+                <MentionDropdown
+                  show={showTitleDropdown}
+                  results={titleMentionResults}
+                  selectedIndex={titleSelectedIndex}
+                  loading={titleMentionLoading}
+                  position={titleDropdownPosition}
+                  onSelect={(mention) => selectTitleMention(mention, (newValue) => {
+                    setFormData(prev => ({ ...prev, title: newValue }));
+                  }, formData.title)}
+                  dropdownRef={titleDropdownRef}
+                />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Type @ to mention teams, players, or users in the title!
+              </p>
             </div>
 
             {/* Excerpt */}
@@ -332,40 +377,16 @@ function NewsForm({ newsId, navigateTo }) {
 
             {/* Content */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Content *
-              </label>
-              <div className="relative">
-                <textarea
-                  ref={contentTextareaRef}
-                  name="content"
-                  value={formData.content}
-                  onChange={handleContentChange}
-                  onKeyDown={(e) => {
-                    const result = handleContentKeyDown(e, null);
-                    if (result?.selectMention) {
-                      selectContentMention(result.selectMention, (newValue) => {
-                        setFormData(prev => ({ ...prev, content: newValue }));
-                      }, formData.content);
-                    }
-                  }}
-                  rows={12}
-                  className="form-input"
-                  placeholder="Write your article content here... (Type @ to mention teams, players, or users)"
-                  required
-                />
-                <MentionDropdown
-                  show={showContentDropdown}
-                  results={contentMentionResults}
-                  selectedIndex={contentSelectedIndex}
-                  loading={contentMentionLoading}
-                  position={contentDropdownPosition}
-                  onSelect={(mention) => selectContentMention(mention, (newValue) => {
-                    setFormData(prev => ({ ...prev, content: newValue }));
-                  }, formData.content)}
-                  dropdownRef={contentDropdownRef}
-                />
-              </div>
+              <EnhancedContentEditor
+                value={formData.content}
+                onChange={(newContent) => {
+                  setFormData(prev => ({ ...prev, content: newContent }));
+                  // Update word count
+                  const words = newContent.trim().split(/\s+/).filter(word => word.length > 0);
+                  setWordCount(words.length);
+                }}
+                placeholder="Write your article content here... Paste YouTube, Twitch, or Twitter/X URLs to embed them!"
+              />
             </div>
           </div>
         </div>

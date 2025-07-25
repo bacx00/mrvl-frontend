@@ -58,35 +58,8 @@ function AdminPlayers({ navigateTo }) {
       console.log(' AdminPlayers: Players and teams loaded successfully');
     } catch (error) {
       console.error(' AdminPlayers: Error fetching data:', error);
-      // Set fallback data with REAL backend structure
-      setPlayers([
-        {
-          id: 28, // Use real backend IDs
-          username: 'testplayer789',
-          real_name: 'Test Player 3',
-          team: { id: 30, short_name: 'ALF', region: 'NA' },
-          role: 'Duelist',
-          rating: 2945.2,
-          main_hero: 'Iron Man',
-          country: 'USA',
-          avatar_url: 'players/avatars/example.jpg'
-        },
-        {
-          id: 27, // Use real backend IDs
-          username: 'testplayer456',
-          real_name: 'Test Player 2',
-          team: { id: 31, short_name: 'BET', region: 'EU' },
-          role: 'Support',
-          rating: 2892.7,
-          main_hero: 'Mantis',
-          country: 'Germany',
-          avatar_url: 'players/avatars/example2.jpg'
-        }
-      ]);
-      setTeams([
-        { id: 30, short_name: 'ALF', region: 'NA' },
-        { id: 31, short_name: 'BET', region: 'EU' }
-      ]);
+      setPlayers([]);
+      setTeams([]);
     } finally {
       setLoading(false);
     }

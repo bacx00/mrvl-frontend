@@ -33,17 +33,19 @@ function AdvancedAnalytics({ api }) {
       }
       
       // FALLBACK: Generate analytics from real available data
-      const [statsResponse, teamsResponse, playersResponse, matchesResponse] = await Promise.all([
+      const [statsResponse, teamsResponse, playersResponse, matchesResponse, popularDataResponse] = await Promise.all([
         api.get('/admin/stats'),
         api.get('/teams'),
         api.get('/players'),
-        api.get('/matches')
+        api.get('/matches'),
+        api.get(`/admin/analytics/popular?period=${timeRange}`)
       ]);
       
       const stats = statsResponse?.data?.data || statsResponse?.data || {};
       const teams = teamsResponse?.data?.data || teamsResponse?.data || [];
       const players = playersResponse?.data?.data || playersResponse?.data || [];
       const matches = matchesResponse?.data?.data || matchesResponse?.data || [];
+      const popularData = popularDataResponse?.data?.data || popularDataResponse?.data || {};
       
       //  Generate real analytics from backend data
       const realAnalytics = {
@@ -151,9 +153,10 @@ function AdvancedAnalytics({ api }) {
         ],
         roleDistribution: [
           { role: 'Duelist', count: 48, percentage: 40.3 },
-          { role: 'Tank', count: 36, percentage: 30.3 },
-          { role: 'Support', count: 35, percentage: 29.4 }
-        ]
+          { role: 'Vanguard', count: 36, percentage: 30.3 },
+          { role: 'Strategist', count: 35, percentage: 29.4 }
+        ],
+        heroStatistics: []
       },
       matches: {
         totalMatches: 89,
@@ -181,6 +184,10 @@ function AdvancedAnalytics({ api }) {
           { country: 'Germany', users: 1520, flag: '🇩🇪' },
           { country: 'Australia', users: 1340, flag: '🇦🇺' }
         ]
+      },
+      maps: {
+        popularMaps: [],
+        totalMatchesAnalyzed: 0
       }
     };
   };
@@ -197,7 +204,8 @@ function AdvancedAnalytics({ api }) {
     { id: 'players', label: 'Players', icon: '' },
     { id: 'matches', label: 'Matches', icon: '' },
     { id: 'events', label: 'Events', icon: '' },
-    { id: 'users', label: 'Users', icon: '' }
+    { id: 'users', label: 'Users', icon: '' },
+    { id: 'maps', label: 'Maps', icon: '🗺️' }
   ];
 
   const renderOverviewCharts = () => (
@@ -278,20 +286,86 @@ function AdvancedAnalytics({ api }) {
         );
       case 'players':
         return (
-          <div className="card p-6">
-            <h3 className="text-lg font-bold mb-4">Player Analytics</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{analytics?.players?.totalPlayers || 0}</div>
-                <div className="text-sm text-gray-600">Total Players</div>
+          <div className="space-y-6">
+            <div className="card p-6">
+              <h3 className="text-lg font-bold mb-4">Player Analytics</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">{analytics?.players?.totalPlayers || 0}</div>
+                  <div className="text-sm text-gray-600">Total Players</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{analytics?.players?.activePlayers || 0}</div>
+                  <div className="text-sm text-gray-600">Active Players</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {analytics?.players?.topHeroes?.[0]?.picks || 0}
+                  </div>
+                  <div className="text-sm text-gray-600">Top Hero Picks</div>
+                </div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{analytics?.players?.activePlayers || 0}</div>
-                <div className="text-sm text-gray-600">Active Players</div>
+            </div>
+            
+            <div className="card p-6">
+              <h3 className="text-lg font-bold mb-4">Popular Heroes</h3>
+              <div className="space-y-3">
+                {(analytics?.players?.topHeroes || []).slice(0, 5).map((hero, index) => (
+                  <div key={hero.hero} className="flex justify-between items-center">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-sm font-bold text-red-600">#{index + 1}</span>
+                      <span className="text-gray-900 dark:text-white">{hero.hero}</span>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <span className="text-sm text-gray-600">{hero.picks} picks</span>
+                      <span className="text-sm font-medium text-green-600">{hero.winRate}% WR</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">156</div>
-                <div className="text-sm text-gray-600">Avg Picks</div>
+            </div>
+            
+            <div className="card p-6">
+              <h3 className="text-lg font-bold mb-4">Role Distribution</h3>
+              <div className="space-y-3">
+                {(analytics?.players?.roleDistribution || []).map((role) => (
+                  <div key={role.role} className="flex justify-between items-center">
+                    <span className="text-gray-900 dark:text-white">{role.role}</span>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full"
+                          style={{ width: `${role.percentage}%` }}
+                        />
+                      </div>
+                      <span className="text-sm text-gray-600">{role.percentage}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      case 'maps':
+        return (
+          <div className="space-y-6">
+            <div className="card p-6">
+              <h3 className="text-lg font-bold mb-4">Map Analytics</h3>
+              <div className="mb-4">
+                <p className="text-sm text-gray-600">
+                  Data from {analytics?.maps?.totalMatchesAnalyzed || 0} matches analyzed
+                </p>
+              </div>
+              <div className="space-y-3">
+                {(analytics?.maps?.popularMaps || []).map((map) => (
+                  <div key={map.name} className="flex justify-between items-center">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-sm font-bold text-blue-600">#{map.rank}</span>
+                      <span className="text-gray-900 dark:text-white">{map.name}</span>
+                    </div>
+                    <span className="font-medium text-green-600">{map.plays} plays</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

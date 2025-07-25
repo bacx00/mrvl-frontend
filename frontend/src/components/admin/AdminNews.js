@@ -39,7 +39,9 @@ function AdminNews({ navigateTo }) {
       }
 
       if (filters.category !== 'all') {
-        newsData = newsData.filter(article => article.category === filters.category);
+        newsData = newsData.filter(article => 
+          (typeof article.category === 'string' ? article.category : article.category.name) === filters.category
+        );
       }
 
       setNews(newsData);
@@ -67,7 +69,25 @@ function AdminNews({ navigateTo }) {
 
   const updateNewsStatus = async (newsId, newStatus) => {
     try {
-      await api.put(`/admin/news/${newsId}`, { status: newStatus });
+      // Find the article to get all its data
+      const article = news.find(a => a.id === newsId);
+      if (!article) {
+        throw new Error('Article not found');
+      }
+      
+      // Send complete article data with updated status
+      await api.put(`/admin/news/${newsId}`, { 
+        title: article.title,
+        excerpt: article.excerpt || article.summary || '',
+        content: article.content || article.body || '',
+        category: article.category || 'General',
+        status: newStatus,
+        featured_image: article.featured_image || null,
+        tags: article.tags || '',
+        featured: article.featured || false,
+        meta_title: article.meta_title || null,
+        meta_description: article.meta_description || null
+      });
       await fetchNews(); // Refresh the list
       alert(`News article ${newStatus} successfully!`);
     } catch (error) {
@@ -271,8 +291,8 @@ function AdminNews({ navigateTo }) {
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
-                    <span className={`px-2 py-1 text-xs font-bold rounded ${getCategoryColor(article.category)}`}>
-                      {article.category.toUpperCase()}
+                    <span className={`px-2 py-1 text-xs font-bold rounded ${getCategoryColor(typeof article.category === 'string' ? article.category : article.category.name)}`}>
+                      {(typeof article.category === 'string' ? article.category : article.category.name).toUpperCase()}
                     </span>
                     <span className={`px-2 py-1 text-xs font-bold rounded ${getStatusColor(article.status)}`}>
                       {article.status.toUpperCase()}

@@ -132,8 +132,8 @@ function TeamsPage({ navigateTo }) {
         </div>
       </div>
 
-      {/* Teams Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+      {/* Teams Grid - Mobile First */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
         {filteredTeams.map(team => (
           <div key={team.id} className="glass rounded-xl p-6 hover:transform hover:scale-105 transition-all duration-300">
             <div className="text-center mb-6">

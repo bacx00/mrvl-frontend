@@ -13,25 +13,30 @@ function PrivacyPage() {
         <div className="space-y-4">
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Personal Information</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
-            <li>Account information (username, email address, password)</li>
-            <li>Profile information (display name, avatar, preferences)</li>
-            <li>Contact information when you reach out to support</li>
-            <li>Payment information for premium features (processed securely by third parties)</li>
+            <li>Account credentials and authentication data (username, email address, securely hashed passwords)</li>
+            <li>Profile and personalization data (display name, avatar, user preferences, notification settings)</li>
+            <li>Communication records when you interact with our support team or community features</li>
+            <li>Financial information for premium subscriptions (processed through PCI-compliant third-party payment processors)</li>
+            <li>Identity verification data when required for competitive tournaments or age verification</li>
           </ul>
           
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Usage Information</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
-            <li>Pages visited, features used, and time spent on the platform</li>
-            <li>Search queries and preferences</li>
-            <li>Device information (browser type, operating system, IP address)</li>
-            <li>Gaming statistics and match history when you connect your gaming accounts</li>
+            <li>Platform usage analytics (pages visited, features accessed, session duration, click patterns)</li>
+            <li>Search queries, filter preferences, and content interaction data</li>
+            <li>Technical device information (browser type, version, operating system, IP address, unique device identifiers)</li>
+            <li>Gaming performance data and match statistics when you authorize account linking</li>
+            <li>Geolocation data (country/region level) for content localization and legal compliance</li>
+            <li>Error logs and diagnostic information to improve platform stability</li>
           </ul>
 
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Third-Party Information</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
-            <li>Information from social media platforms when you choose to connect accounts</li>
-            <li>Gaming platform data when you authorize integration</li>
-            <li>Analytics data from third-party services</li>
+            <li>Social media profile information when you authorize account linking (public profile data only)</li>
+            <li>Gaming platform statistics and achievements when you connect external gaming accounts</li>
+            <li>Aggregated analytics data from trusted third-party services (Google Analytics, etc.)</li>
+            <li>Tournament and event data from official Marvel Rivals competitions</li>
+            <li>Community-generated content and public match results from official game APIs</li>
           </ul>
         </div>
       )
@@ -43,26 +48,29 @@ function PrivacyPage() {
         <div className="space-y-4">
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Platform Operations</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
-            <li>Provide and maintain our esports platform services</li>
-            <li>Personalize your experience and content recommendations</li>
-            <li>Process transactions and manage subscriptions</li>
-            <li>Provide customer support and respond to inquiries</li>
+            <li>Deliver, maintain, and continuously improve our esports platform services</li>
+            <li>Personalize user experience through tailored content, match recommendations, and interface customization</li>
+            <li>Process secure payments, manage premium subscriptions, and handle billing inquiries</li>
+            <li>Provide comprehensive customer support, technical assistance, and respond to user inquiries</li>
+            <li>Ensure platform security, detect fraud, and prevent unauthorized access</li>
           </ul>
 
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Community Features</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
-            <li>Enable forum discussions and community interactions</li>
-            <li>Display match statistics and leaderboards</li>
-            <li>Facilitate team and player connections</li>
-            <li>Moderate content and ensure community safety</li>
+            <li>Enable community engagement through forums, discussions, and social features</li>
+            <li>Generate and display comprehensive match statistics, rankings, and competitive leaderboards</li>
+            <li>Facilitate professional networking between teams, players, and organizations</li>
+            <li>Implement content moderation and maintain a safe, inclusive community environment</li>
+            <li>Organize and manage esports tournaments, events, and competitions</li>
           </ul>
 
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Improvements and Analytics</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
-            <li>Analyze usage patterns to improve our services</li>
-            <li>Develop new features and functionality</li>
-            <li>Ensure platform security and prevent fraud</li>
-            <li>Comply with legal obligations and requests</li>
+            <li>Conduct data analytics to understand user behavior and optimize platform performance</li>
+            <li>Research and develop innovative features based on community feedback and industry trends</li>
+            <li>Maintain robust cybersecurity measures and protect against malicious activities</li>
+            <li>Fulfill legal obligations, regulatory compliance, and respond to lawful government requests</li>
+            <li>Generate insights for the esports industry while protecting individual privacy</li>
           </ul>
         </div>
       )
@@ -73,22 +81,24 @@ function PrivacyPage() {
       content: (
         <div className="space-y-4">
           <p className="text-gray-600 dark:text-gray-400">
-            We respect your privacy and do not sell your personal information. We may share information in the following circumstances:
+            MRVL is committed to protecting your privacy. We never sell, rent, or trade your personal information to third parties for commercial purposes. We may share limited information only in the specific circumstances outlined below:
           </p>
 
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">With Your Consent</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
-            <li>When you explicitly agree to share information with third parties</li>
-            <li>When you connect external gaming accounts or social media</li>
-            <li>When participating in tournaments or events that require data sharing</li>
+            <li>When you provide explicit, informed consent for specific data sharing purposes</li>
+            <li>When you voluntarily connect external gaming platforms or social media accounts</li>
+            <li>When participating in official tournaments, competitions, or events that require verification and results reporting</li>
+            <li>When you publicly share content through community features (forums, comments, public profiles)</li>
           </ul>
 
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Service Providers</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
-            <li>Cloud hosting and infrastructure providers</li>
-            <li>Payment processors for subscription services</li>
-            <li>Analytics services to improve platform performance</li>
-            <li>Email service providers for notifications</li>
+            <li>Trusted cloud hosting and infrastructure providers who maintain strict data protection standards</li>
+            <li>PCI-compliant payment processors for secure transaction processing</li>
+            <li>Analytics and monitoring services that help us improve platform performance and user experience</li>
+            <li>Communication service providers for essential platform notifications and updates</li>
+            <li>Security services that help protect against fraud, abuse, and cybersecurity threats</li>
           </ul>
 
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Legal Requirements</h4>
@@ -107,23 +117,27 @@ function PrivacyPage() {
       content: (
         <div className="space-y-4">
           <p className="text-gray-600 dark:text-gray-400">
-            We implement comprehensive security measures to protect your personal information:
+            MRVL employs enterprise-grade security measures and follows industry best practices to protect your personal information from unauthorized access, disclosure, alteration, or destruction:
           </p>
 
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Technical Safeguards</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
-            <li>End-to-end encryption for sensitive data transmission</li>
-            <li>Secure password hashing and storage</li>
-            <li>Regular security audits and vulnerability assessments</li>
-            <li>Multi-factor authentication options for accounts</li>
+            <li>Advanced encryption protocols (TLS 1.3+) for all data transmission and storage</li>
+            <li>Industry-standard password hashing using bcrypt with salt</li>
+            <li>Regular third-party security audits, penetration testing, and vulnerability assessments</li>
+            <li>Multi-factor authentication (MFA) support for enhanced account security</li>
+            <li>Real-time monitoring and intrusion detection systems</li>
+            <li>Secure API endpoints with rate limiting and authentication requirements</li>
           </ul>
 
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Operational Safeguards</h4>
           <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
-            <li>Limited access to personal data on a need-to-know basis</li>
-            <li>Regular employee training on data protection</li>
-            <li>Incident response procedures for security breaches</li>
-            <li>Regular backups and disaster recovery plans</li>
+            <li>Strict access controls with role-based permissions and need-to-know principles</li>
+            <li>Comprehensive employee training on data protection, GDPR compliance, and security protocols</li>
+            <li>Detailed incident response procedures with immediate breach notification protocols</li>
+            <li>Automated backup systems with encrypted off-site storage and tested disaster recovery procedures</li>
+            <li>Data retention policies that automatically purge unnecessary personal information</li>
+            <li>Regular security awareness training and phishing simulation exercises</li>
           </ul>
 
           <div className="p-4 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg">
@@ -167,8 +181,8 @@ function PrivacyPage() {
 
           <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
             <p className="text-blue-800 dark:text-blue-200 text-sm">
-              To exercise any of these rights, please contact us at privacy@mrvl.gg or use the 
-              data management tools in your account settings.
+              To exercise any of these rights, please use the data management tools in your account settings 
+              or contact our support team through the official channels provided on our platform.
             </p>
           </div>
         </div>
@@ -237,7 +251,7 @@ function PrivacyPage() {
           <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
             <p className="text-red-800 dark:text-red-200 text-sm">
               <strong>Parents:</strong> If you believe your child under 13 has created an account, 
-              please contact us immediately at privacy@mrvl.gg for account removal.
+              please contact our support team immediately through the official channels provided on our platform for account removal.
             </p>
           </div>
         </div>
@@ -279,8 +293,9 @@ function PrivacyPage() {
       <div className="text-center max-w-4xl mx-auto">
         <h1 className="text-heading-1 gradient-text mb-4">Privacy Policy</h1>
         <p className="text-gray-600 dark:text-gray-400 mb-4">
-          This privacy policy explains how MRVL Esports Platform collects, uses, and protects 
-          your personal information when you use our services.
+          This comprehensive privacy policy outlines how MRVL Esports Platform ("MRVL", "we", "us", or "our") 
+          collects, processes, stores, and protects your personal information when you access or use our 
+          Marvel Rivals esports platform and related services.
         </p>
         <div className="text-sm text-gray-500 dark:text-gray-500">
           Last updated: {lastUpdated}
@@ -363,14 +378,10 @@ function PrivacyPage() {
           If you have any questions about this privacy policy or how we handle your data, 
           we're here to help.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex justify-center">
           <div className="text-center">
-            <div className="font-semibold text-gray-900 dark:text-gray-100">Privacy Officer</div>
-            <div className="text-blue-600 dark:text-blue-400">privacy@mrvl.gg</div>
-          </div>
-          <div className="text-center">
-            <div className="font-semibold text-gray-900 dark:text-gray-100">General Inquiries</div>
-            <div className="text-blue-600 dark:text-blue-400">support@mrvl.gg</div>
+            <div className="font-semibold text-gray-900 dark:text-gray-100">Contact Support</div>
+            <div className="text-blue-600 dark:text-blue-400">Use the contact form or support chat available on our platform</div>
           </div>
         </div>
       </div>

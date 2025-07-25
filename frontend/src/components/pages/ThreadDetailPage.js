@@ -4,6 +4,7 @@ import UserDisplay from '../shared/UserDisplay';
 import VotingButtons from '../shared/VotingButtons';
 import MentionAutocomplete from '../shared/MentionAutocomplete';
 import MentionLink from '../shared/MentionLink';
+import { processContentWithMentions, extractMentionsFromContent } from '../../utils/mentionUtils';
 
 function ThreadDetailPage({ params, navigateTo }) {
   const threadId = params?.id;
@@ -16,10 +17,14 @@ function ThreadDetailPage({ params, navigateTo }) {
   const [submitting, setSubmitting] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
   const [editContent, setEditContent] = useState('');
+  const [selectedMentions, setSelectedMentions] = useState([]);
 
-  const fetchThreadData = useCallback(async () => {
+  const fetchThreadData = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true);
+      console.log('🔄 ThreadDetailPage: Starting fetchThreadData...');
+      if (showLoading) {
+        setLoading(true);
+      }
       
       // Add timestamp to prevent caching
       const timestamp = new Date().getTime();
@@ -33,6 +38,12 @@ function ThreadDetailPage({ params, navigateTo }) {
       const threadData = threadResponse.data?.data || threadResponse.data;
       const postsData = threadData.posts || [];
       
+      console.log('✅ ThreadDetailPage: Thread data fetched successfully', { 
+        posts: postsData.length,
+        locked: threadData.meta?.locked,
+        pinned: threadData.meta?.pinned 
+      });
+      
       // Thread data loaded successfully
       setThread(threadData);
       setPosts(postsData);
@@ -42,7 +53,9 @@ function ThreadDetailPage({ params, navigateTo }) {
       setThread(null);
       setPosts([]);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   }, [api, threadId]);
 
@@ -73,52 +86,15 @@ function ThreadDetailPage({ params, navigateTo }) {
     return `${years}y`;
   };
 
-  const renderContentWithMentions = (content, mentions = []) => {
-    if (!content) return null;
-    
-    // Create a map of mention texts to their data
-    const mentionMap = {};
-    mentions.forEach(mention => {
-      mentionMap[mention.mention_text] = mention;
-    });
-    
-    // Split content by mentions pattern
-    const mentionPattern = /(@\w+|@team:\w+|@player:\w+)/g;
-    const parts = content.split(mentionPattern);
-    
-    return parts.map((part, index) => {
-      const mentionData = mentionMap[part];
-      
-      if (mentionData) {
-        return (
-          <MentionLink
-            key={index}
-            mention={mentionData}
-            onClick={(mention) => {
-              const nav = {
-                player: () => navigateTo('player-detail', { id: mention.id }),
-                team: () => navigateTo('team-detail', { id: mention.id }),
-                user: () => navigateTo('user-profile', { id: mention.id })
-              };
-              
-              if (nav[mention.type]) {
-                nav[mention.type]();
-              }
-            }}
-          />
-        );
-      }
-      
-      // For unlinked mentions, still style them
-      if (part.match(mentionPattern)) {
-        return (
-          <span key={index} className="text-red-600 dark:text-red-400 font-medium">
-            {part}
-          </span>
-        );
-      }
-      
-      return part;
+  // Use the utility function to process content with mentions
+
+  const handleMentionSelect = (mention) => {
+    // Add the selected mention to our tracking array
+    setSelectedMentions(prev => {
+      // Avoid duplicates
+      const exists = prev.find(m => m.id === mention.id && m.type === mention.type);
+      if (exists) return prev;
+      return [...prev, mention];
     });
   };
 
@@ -137,17 +113,22 @@ function ThreadDetailPage({ params, navigateTo }) {
       
       const payload = {
         content: replyContent.trim(),
-        parent_id: replyToPost?.id || null
+        parent_id: replyToPost?.id || null,
+        mentions: selectedMentions // Use the tracked selected mentions
       };
       
       const response = await api.post(`/user/forums/threads/${threadId}/posts`, payload);
       
-      if (response.data?.success) {
+      if (response.success) {
+        console.log('✅ Reply posted successfully, clearing form...');
         setReplyContent('');
         setReplyToPost(null);
+        setSelectedMentions([]);
         
-        // Immediately fetch fresh data
-        await fetchThreadData();
+        console.log('🔄 Calling fetchThreadData to refresh UI...');
+        // Immediately fetch fresh data without showing loading spinner
+        await fetchThreadData(false);
+        console.log('✅ fetchThreadData completed');
       } else {
         alert('Failed to submit reply. Please try again.');
       }
@@ -159,7 +140,7 @@ function ThreadDetailPage({ params, navigateTo }) {
       if (error.message?.includes('Thread is locked')) {
         alert('This thread is locked and no longer accepts replies.');
         // Refresh thread data to update UI
-        await fetchThreadData();
+        await fetchThreadData(false);
       } else if (error.message?.includes('parent id is invalid')) {
         alert('The post you are replying to no longer exists. The page will refresh.');
         await fetchThreadData();
@@ -183,15 +164,17 @@ function ThreadDetailPage({ params, navigateTo }) {
       setSubmitting(true);
 
       const response = await api.put(`/user/forums/posts/${postId}`, {
-        content: editContent.trim()
+        content: editContent.trim(),
+        mentions: selectedMentions // Use the tracked selected mentions
       });
 
-      if (response.data?.success) {
+      if (response.success) {
         setEditingPost(null);
         setEditContent('');
+        setSelectedMentions([]);
         
         // Immediately fetch fresh data
-        await fetchThreadData();
+        await fetchThreadData(false);
       } else {
         alert('Failed to edit post. Please try again.');
       }
@@ -206,14 +189,20 @@ function ThreadDetailPage({ params, navigateTo }) {
   const handleDeletePost = async (postId) => {
     if (!window.confirm('Are you sure you want to delete this post?')) return;
 
+    // Prevent double-clicks
+    if (submitting) return;
+
     try {
       setSubmitting(true);
+      console.log('🗑️ Deleting post...', postId);
 
       const response = await api.delete(`/user/forums/posts/${postId}`);
 
-      if (response.data?.success) {
+      if (response.success) {
+        console.log('✅ Post deleted successfully, refreshing thread data...');
         // Immediately fetch fresh data
-        await fetchThreadData();
+        await fetchThreadData(false);
+        console.log('✅ fetchThreadData completed after delete');
       } else {
         alert('Failed to delete post. Please try again.');
       }
@@ -236,9 +225,9 @@ function ThreadDetailPage({ params, navigateTo }) {
       const response = await api.post(endpoint);
       
       // Check for success in response or successful message
-      if (response.data?.success || response.data?.message?.includes('successfully')) {
+      if (response.success || response.message?.includes('successfully')) {
         // Immediately fetch fresh data
-        await fetchThreadData();
+        await fetchThreadData(false);
       } else {
         alert('Failed to update thread pin status');
       }
@@ -259,9 +248,11 @@ function ThreadDetailPage({ params, navigateTo }) {
       const response = await api.post(endpoint);
       
       // Check for success in response or successful message
-      if (response.data?.success || response.data?.message?.includes('successfully')) {
+      if (response.success || response.message?.includes('successfully')) {
+        console.log('✅ Lock/unlock successful, refreshing thread data...');
         // Immediately fetch fresh data
-        await fetchThreadData();
+        await fetchThreadData(false);
+        console.log('✅ fetchThreadData completed after lock/unlock');
       } else {
         alert('Failed to update thread lock status');
       }
@@ -315,6 +306,10 @@ function ThreadDetailPage({ params, navigateTo }) {
               userVote={post.user_vote}
               direction="horizontal"
               size="xs"
+              onVoteChange={(data) => {
+                console.log('📊 Post vote changed:', data.action);
+                // VotingButtons handles UI updates internally, no need to refresh
+              }}
             />
           </div>
 
@@ -322,7 +317,7 @@ function ThreadDetailPage({ params, navigateTo }) {
           <div className="prose prose-sm dark:prose-invert max-w-none mb-4">
             {post.content.split('\n').map((paragraph, index) => (
               <p key={index} className="mb-2 last:mb-0">
-                {renderContentWithMentions(paragraph, post.mentions || [])}
+                {processContentWithMentions(paragraph, post.mentions || [], navigateTo)}
               </p>
             ))}
           </div>
@@ -353,9 +348,14 @@ function ThreadDetailPage({ params, navigateTo }) {
             {(post.author?.id === user?.id || isAdmin() || isModerator()) && (
               <button
                 onClick={() => handleDeletePost(post.id)}
-                className="text-xs text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                disabled={submitting}
+                className={`text-xs transition-colors ${
+                  submitting 
+                    ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' 
+                    : 'text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400'
+                }`}
               >
-                Delete
+                {submitting ? 'Deleting...' : 'Delete'}
               </button>
             )}
           </div>
@@ -379,6 +379,7 @@ function ThreadDetailPage({ params, navigateTo }) {
                 <MentionAutocomplete
                   value={replyContent}
                   onChange={(e) => setReplyContent(e.target.value)}
+                  onMentionSelect={handleMentionSelect}
                   placeholder="Write your reply..."
                   rows={3}
                   className="p-2"
@@ -515,7 +516,7 @@ function ThreadDetailPage({ params, navigateTo }) {
         </span>
         <span>/</span>
         <span className="text-gray-900 dark:text-white font-medium truncate">
-          {thread.title}
+          {processContentWithMentions(thread.title, thread.mentions || [], navigateTo)}
         </span>
       </div>
 
@@ -539,7 +540,7 @@ function ThreadDetailPage({ params, navigateTo }) {
 
             {/* Title */}
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-              {thread.title}
+              {processContentWithMentions(thread.title, thread.mentions || [], navigateTo)}
             </h1>
 
             {/* Author & Stats */}
@@ -566,6 +567,10 @@ function ThreadDetailPage({ params, navigateTo }) {
                   userVote={thread.user_vote}
                   direction="horizontal"
                   size="xs"
+                  onVoteChange={(data) => {
+                    console.log('📊 Thread vote changed:', data.action);
+                    // VotingButtons handles UI updates internally, no need to refresh
+                  }}
                 />
               </div>
 
@@ -583,7 +588,7 @@ function ThreadDetailPage({ params, navigateTo }) {
                 <div className="prose prose-sm dark:prose-invert max-w-none">
                   {thread.content.split('\n').map((paragraph, index) => (
                     <p key={index} className="mb-2 last:mb-0">
-                      {renderContentWithMentions(paragraph, thread.mentions || [])}
+                      {processContentWithMentions(paragraph, thread.mentions || [], navigateTo)}
                     </p>
                   ))}
                 </div>
@@ -641,6 +646,7 @@ function ThreadDetailPage({ params, navigateTo }) {
             <MentionAutocomplete
               value={replyContent}
               onChange={(e) => setReplyContent(e.target.value)}
+              onMentionSelect={handleMentionSelect}
               placeholder="Write your reply..."
               rows={4}
               className="p-3"

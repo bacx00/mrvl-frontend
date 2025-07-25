@@ -415,7 +415,7 @@ function TrendingThreadItem({ thread }: { thread: TrendingThread }) {
           </div>
           <div className="flex items-center justify-between text-xs text-[#768894] mt-1">
             <span className="px-1.5 py-0.5 bg-[#0f1419] rounded text-xs">
-              {thread.category}
+              {typeof thread.category === 'string' ? thread.category : thread.category?.name || 'General'}
             </span>
             <span>{formatDate(thread.lastActivity)}</span>
           </div>
