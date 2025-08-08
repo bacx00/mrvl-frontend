@@ -1,0 +1,11 @@
+Serving HTTP on 0.0.0.0 port 3000 (http://0.0.0.0:3000/) ...
+127.0.0.1 - - [25/May/2025 06:23:56] "HEAD /mrvl-ultimate.html HTTP/1.1" 200 -
+10.64.130.77 - - [25/May/2025 06:25:55] "GET / HTTP/1.1" 200 -
+10.64.132.78 - - [25/May/2025 06:27:13] "GET /mrvl-ultimate.html HTTP/1.1" 200 -
+10.64.130.247 - - [25/May/2025 06:27:31] "GET / HTTP/1.1" 200 -
+10.64.132.17 - - [25/May/2025 06:27:31] code 404, message File not found
+10.64.132.17 - - [25/May/2025 06:27:31] "GET /favicon.ico HTTP/1.1" 404 -
+10.64.130.77 - - [25/May/2025 06:27:34] "GET /resources/views/welcome.blade.php HTTP/1.1" 200 -
+10.64.132.78 - - [25/May/2025 06:27:44] "GET /mrvl-ultimate.html HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2025 06:27:46] "GET /mrvl-production.html HTTP/1.1" 200 -
+10.64.130.247 - - [25/May/2025 06:30:36] "GET / HTTP/1.1" 200 -

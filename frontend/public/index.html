@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0, viewport-fit=cover, user-scalable=yes, shrink-to-fit=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="MRVL" />
+    <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="theme-color" content="#dc2626" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#ef4444" media="(prefers-color-scheme: dark)" />
+    <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="pragma" content="no-cache" />
+    <meta http-equiv="expires" content="0" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
+    
+    <meta name="description" content="MRVL - The ultimate Marvel Rivals esports platform for competitive gaming, tournaments, teams, and community." />
+    <meta name="keywords" content="Marvel Rivals, esports, gaming, tournaments, competitive, Marvel, MRVL" />
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="MRVL - Marvel Rivals Platform" />
+    <meta property="og:description" content="The premier Marvel Rivals esports platform" />
+    <meta property="og:image" content="/favicon.svg" />
+    <meta property="og:type" content="website" />
+    
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="MRVL - Marvel Rivals Platform" />
+    <meta name="twitter:description" content="The premier Marvel Rivals esports platform" />
+    
+    <title>MRVL - Marvel Rivals Platform</title>
+    
+    <!-- Resource Hints for Performance -->
+    <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
+    <link rel="dns-prefetch" href="//fonts.bunny.net">
+    <link rel="dns-prefetch" href="//api.example.com">
+    
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="/favicon.svg" as="image" type="image/svg+xml">
+    <link rel="preload" href="https://fonts.bunny.net/css?family=inter:400,500,600,700&family=space-grotesk:400,500,600,700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.bunny.net/css?family=inter:400,500,600,700&family=space-grotesk:400,500,600,700&display=swap"></noscript>
+    
+    <!-- Fallback for font loading -->
+    <style>
+      /* Critical CSS - Font Loading */
+      @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: local('Inter'), local('Inter-Regular');
+      }
+      
+      /* Above-the-fold Critical Styles */
+      body { 
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+      }
+      
+      #root { 
+        min-height: 100vh; 
+        background: #0f0f23;
+        color: white;
+      }
+      
+      .mobile-optimized {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      
+      .touch-optimized {
+        min-height: 44px;
+        min-width: 44px;
+        touch-action: manipulation;
+      }
+      
+      /* Loading Animation */
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      .fade-in { animation: fadeIn 0.3s ease-out; }
+      
+      /* Optimize scrolling */
+      * {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    
+    <!-- Animated Background -->
+    <div class="animated-background"></div>
+    
+    <!-- React Root -->
+    <div id="root"></div>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js')
+            .then(function(registration) {
+              console.log('MRVL SW registered: ', registration.scope);
+              
+              // Check for updates
+              registration.addEventListener('updatefound', function() {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', function() {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    // Show update notification
+                    if (window.showUpdateNotification) {
+                      window.showUpdateNotification();
+                    }
+                  }
+                });
+              });
+            })
+            .catch(function(error) {
+              console.log('MRVL SW registration failed: ', error);
+            });
+          
+          // Handle service worker messages
+          navigator.serviceWorker.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'CACHE_UPDATED') {
+              console.log('Cache updated for:', event.data.url);
+            }
+          });
+        });
+      }
+
+      // PWA install prompt
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Show install button or banner
+        if (window.showInstallPrompt) {
+          window.showInstallPrompt(deferredPrompt);
+        }
+      });
+
+      // Track PWA install
+      window.addEventListener('appinstalled', function() {
+        console.log('MRVL PWA installed successfully');
+        deferredPrompt = null;
+        
+        // Analytics tracking
+        if (window.gtag) {
+          window.gtag('event', 'pwa_install', {
+            event_category: 'PWA',
+            event_label: 'MRVL'
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

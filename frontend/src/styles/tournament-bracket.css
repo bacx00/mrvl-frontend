@@ -1,0 +1,231 @@
+/* Tournament Bracket Styles */
+.tournament-bracket-container {
+  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.tournament-bracket-container.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  width: 100vw;
+  height: 100vh;
+}
+
+.bracket-header {
+  flex-shrink: 0;
+}
+
+.bracket-content {
+  flex: 1;
+  position: relative;
+}
+
+/* Swiss Stage Styles */
+.swiss-stage {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Double Elimination Styles */
+.double-elimination-view {
+  min-width: max-content;
+  padding: 2rem;
+}
+
+.bracket-round {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 220px;
+}
+
+.bracket-match {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.bracket-match:hover {
+  transform: translateY(-2px);
+}
+
+/* Match Connectors */
+.bracket-connector {
+  stroke: #e5e7eb;
+  stroke-width: 2;
+  fill: none;
+}
+
+.dark .bracket-connector {
+  stroke: #374151;
+}
+
+/* Swiss Match Grid */
+.swiss-match {
+  transition: all 0.2s ease;
+}
+
+.swiss-match:hover {
+  transform: translateY(-1px);
+}
+
+/* Team Logos */
+.team-logo {
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+/* Score Editing */
+.score-edit-input {
+  width: 3rem;
+  padding: 0.125rem 0.25rem;
+  font-size: 0.875rem;
+  text-align: center;
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+}
+
+.dark .score-edit-input {
+  background-color: #1f2937;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+/* Match Status Indicators */
+.match-live-indicator {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+  .double-elimination-view {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .bracket-round {
+    min-width: 180px;
+  }
+  
+  .bracket-match {
+    width: 180px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .swiss-stage {
+    padding: 1rem;
+  }
+  
+  .bracket-round {
+    min-width: 160px;
+  }
+  
+  .bracket-match {
+    width: 160px !important;
+  }
+  
+  .bracket-header h2 {
+    font-size: 1.25rem;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .tournament-bracket-container {
+    background: white !important;
+  }
+  
+  .bracket-header button {
+    display: none !important;
+  }
+  
+  .bracket-match {
+    border: 1px solid #000 !important;
+    page-break-inside: avoid;
+  }
+}
+
+/* Bracket Position Helpers */
+.bracket-position-upper-sf1 {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.bracket-position-upper-sf2 {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.bracket-position-upper-final {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.bracket-position-lower-r1-1 {
+  grid-column: 1;
+  grid-row: 5;
+}
+
+.bracket-position-lower-r1-2 {
+  grid-column: 1;
+  grid-row: 6;
+}
+
+.bracket-position-lower-r1-3 {
+  grid-column: 1;
+  grid-row: 7;
+}
+
+.bracket-position-lower-r1-4 {
+  grid-column: 1;
+  grid-row: 8;
+}
+
+.bracket-position-grand-final {
+  grid-column: 4;
+  grid-row: 4;
+}
+
+/* Smooth Transitions */
+.bracket-match,
+.swiss-match {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* Loading State */
+.bracket-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.bracket-loading-spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 3px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

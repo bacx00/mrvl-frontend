@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Live Sync</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .section { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .log { background: #f0f0f0; padding: 10px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+        button { margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Live Sync Test</h1>
+    
+    <div class="section">
+        <h2>Simulate SinglePageLiveScoring</h2>
+        <input type="number" id="matchId" placeholder="Match ID" value="37">
+        <button onclick="sendScoreUpdate()">Send Score Update</button>
+        <button onclick="sendHeroUpdate()">Send Hero Update</button>
+        <button onclick="sendStatUpdate()">Send Stat Update</button>
+    </div>
+    
+    <div class="section">
+        <h2>Events Log</h2>
+        <div id="log" class="log"></div>
+    </div>
+    
+    <script>
+        const log = (msg) => {
+            const logDiv = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${time}] ${msg}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        };
+        
+        // Listen for localStorage changes
+        window.addEventListener('storage', (event) => {
+            if (event.key?.startsWith('liveMatchUpdate_')) {
+                log(`📦 Storage event: ${event.key}`);
+                try {
+                    const data = JSON.parse(event.newValue);
+                    log(`  └─ Type: ${data.updateType}, Match: ${data.matchId}`);
+                } catch (e) {
+                    log(`  └─ Parse error: ${e.message}`);
+                }
+            }
+        });
+        
+        // Listen for custom events
+        window.addEventListener('liveMatchUpdate', (event) => {
+            log(`🎯 Custom event: ${event.detail.updateType}`);
+            log(`  └─ Match: ${event.detail.matchId}`);
+        });
+        
+        function sendScoreUpdate() {
+            const matchId = document.getElementById('matchId').value;
+            const data = {
+                matchId: matchId,
+                timestamp: Date.now(),
+                updateType: 'SCORE_UPDATE',
+                team1Score: Math.floor(Math.random() * 5),
+                team2Score: Math.floor(Math.random() * 5),
+                mapIndex: 0
+            };
+            
+            // Simulate SinglePageLiveScoring behavior
+            localStorage.setItem(`liveMatchUpdate_${matchId}`, JSON.stringify(data));
+            window.dispatchEvent(new CustomEvent('liveMatchUpdate', { detail: data }));
+            
+            log(`✅ Sent SCORE_UPDATE for match ${matchId}`);
+        }
+        
+        function sendHeroUpdate() {
+            const matchId = document.getElementById('matchId').value;
+            const data = {
+                matchId: matchId,
+                timestamp: Date.now(),
+                updateType: 'HERO_CHANGE',
+                team: 1,
+                player_id: 1000,
+                player_name: 'TestPlayer',
+                map_index: 0,
+                hero: 'Spider-Man',
+                role: 'Duelist'
+            };
+            
+            localStorage.setItem(`liveMatchUpdate_${matchId}`, JSON.stringify(data));
+            window.dispatchEvent(new CustomEvent('liveMatchUpdate', { detail: data }));
+            
+            log(`✅ Sent HERO_CHANGE for match ${matchId}`);
+        }
+        
+        function sendStatUpdate() {
+            const matchId = document.getElementById('matchId').value;
+            const data = {
+                matchId: matchId,
+                timestamp: Date.now(),
+                updateType: 'STAT_UPDATE',
+                team: 1,
+                player_id: 1000,
+                player_name: 'TestPlayer',
+                stat_type: 'eliminations',
+                value: Math.floor(Math.random() * 20),
+                map_index: 0
+            };
+            
+            localStorage.setItem(`liveMatchUpdate_${matchId}`, JSON.stringify(data));
+            window.dispatchEvent(new CustomEvent('liveMatchUpdate', { detail: data }));
+            
+            log(`✅ Sent STAT_UPDATE for match ${matchId}`);
+        }
+        
+        log('🚀 Test page loaded and listening for events');
+    </script>
+</body>
+</html>

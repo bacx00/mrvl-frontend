@@ -1,0 +1,1030 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useAuth } from '../../hooks';
+import { getCountryFlag, getTeamLogoUrl, getImageUrl } from '../../utils/imageUtils';
+import UserDisplay, { parseTextWithMentions } from '../shared/UserDisplay';
+import VotingButtons from '../shared/VotingButtons';
+import HeroImage from '../shared/HeroImage';
+import LiveScoringPanel from '../admin/LiveScoringPanel';
+import SimplifiedLiveScoring from '../admin/SimplifiedLiveScoring';
+
+function MatchDetailPage({ matchId, navigateTo }) {
+  const [match, setMatch] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [currentMapIndex, setCurrentMapIndex] = useState(0);
+  const [selectedMapId, setSelectedMapId] = useState(null);
+  
+  // CRITICAL: Force re-render when map changes
+  useEffect(() => {
+    console.log(`MatchDetailPage: Current map changed to index ${currentMapIndex}`);
+    if (match?.maps?.[currentMapIndex]) {
+      console.log('MatchDetailPage: Current map data:', match.maps[currentMapIndex]);
+    }
+  }, [currentMapIndex, match?.maps]);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [showLiveScoring, setShowLiveScoring] = useState(false);
+  const [liveUpdateConnection, setLiveUpdateConnection] = useState(null);
+  const eventSourceRef = useRef(null);
+  
+  const { user, isAuthenticated, api } = useAuth();
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://staging.mrvl.net';
+  
+  // Handle match updates from live scoring
+  const handleMatchUpdate = useCallback((updatedData) => {
+    console.log('MatchDetailPage: Handling match update:', updatedData);
+    setMatch(prevMatch => {
+      if (!prevMatch) return prevMatch;
+      
+      return {
+        ...prevMatch,
+        ...updatedData,
+        maps: updatedData.maps || prevMatch.maps,
+        team1_score: updatedData.team1_score !== undefined ? updatedData.team1_score : prevMatch.team1_score,
+        team2_score: updatedData.team2_score !== undefined ? updatedData.team2_score : prevMatch.team2_score,
+        status: updatedData.status || prevMatch.status,
+      };
+    });
+  }, []);
+
+  // SSE Connection for real-time updates
+  const connectToLiveUpdates = useCallback((matchId) => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+    }
+    
+    const eventSource = new EventSource(`${BACKEND_URL}/api/live-updates/${matchId}/stream`);
+    eventSourceRef.current = eventSource;
+    
+    eventSource.onopen = () => {
+      console.log('MatchDetailPage: Connected to live updates');
+      setLiveUpdateConnection('connected');
+    };
+    
+    eventSource.addEventListener('score-update', (event) => {
+      console.log('MatchDetailPage: Received score update:', event.data);
+      const data = JSON.parse(event.data);
+      handleMatchUpdate(data);
+    });
+    
+    eventSource.addEventListener('hero-update', (event) => {
+      console.log('MatchDetailPage: Received hero update:', event.data);
+      const data = JSON.parse(event.data);
+      handleMatchUpdate(data);
+    });
+    
+    eventSource.addEventListener('status-update', (event) => {
+      console.log('MatchDetailPage: Received status update:', event.data);
+      const data = JSON.parse(event.data);
+      handleMatchUpdate(data);
+    });
+    
+    eventSource.onerror = (error) => {
+      console.error('MatchDetailPage: SSE error:', error);
+      setLiveUpdateConnection('error');
+      // Attempt to reconnect after 5 seconds
+      setTimeout(() => {
+        if (match?.status === 'live') {
+          connectToLiveUpdates(matchId);
+        }
+      }, 5000);
+    };
+  }, [match?.status, handleMatchUpdate]);
+  
+  // Cleanup SSE connection on unmount
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
+  }, []);
+  
+  // Get match ID from props or URL
+  const getMatchId = () => {
+    if (matchId) return matchId;
+    const pathParts = window.location.pathname.split('/');
+    const matchIndex = pathParts.indexOf('match');
+    if (matchIndex !== -1 && pathParts[matchIndex + 1]) {
+      return pathParts[matchIndex + 1];
+    }
+    return null;
+  };
+
+  // CRITICAL: Load match data with SSE connection for real-time updates
+  useEffect(() => {
+    const loadMatch = async () => {
+      const id = getMatchId();
+      if (!id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        console.log('MatchDetailPage: Loading match data for ID:', id);
+        const response = await api.get(`/matches/${id}`);
+        const data = response?.data || response;
+        
+        console.log('MatchDetailPage: Loaded match data:', data);
+        
+        // CRITICAL: Handle the actual API response structure
+        let matchData;
+        if (data.data) {
+          // API returns { success: true, data: { match details } }
+          matchData = data.data;
+        } else if (data.match) {
+          matchData = data.match;
+        } else if (data.id) {
+          matchData = data;
+        }
+        
+        if (matchData) {
+          // Transform API response to frontend-expected format
+          const transformedMatch = {
+            ...matchData,
+            // Fix score mapping: API returns score.team1/team2, frontend expects team1_score/team2_score
+            team1_score: matchData.score?.team1 ?? matchData.team1_score ?? 0,
+            team2_score: matchData.score?.team2 ?? matchData.team2_score ?? 0,
+            // Ensure maps data is properly structured
+            maps: matchData.score?.maps || matchData.maps_data || matchData.maps || [],
+            // Handle URL structure: API returns broadcast object with arrays
+            stream_url: matchData.broadcast?.streams?.[0] || matchData.stream_url,
+            betting_url: matchData.broadcast?.betting?.[0] || matchData.betting_url, 
+            vod_url: matchData.broadcast?.vods?.[0] || matchData.vod_url,
+            // Preserve broadcast object for multiple URLs
+            broadcast: matchData.broadcast || {
+              streams: matchData.stream_url ? [matchData.stream_url] : [],
+              betting: matchData.betting_url ? [matchData.betting_url] : [],
+              vods: matchData.vod_url ? [matchData.vod_url] : []
+            },
+            // Ensure status and format are available
+            status: matchData.match_info?.status || matchData.status || 'upcoming',
+            format: matchData.format || 'BO3',
+            // Map current_map from match_info if available
+            current_map: matchData.match_info?.current_map || matchData.current_map || 1,
+            // Ensure event info is available
+            event: matchData.event || null,
+            // Schedule info
+            scheduled_at: matchData.match_info?.scheduled_at || matchData.scheduled_at,
+            // Round info
+            round: matchData.round || matchData.match_info?.round || null
+          };
+          
+          console.log('MatchDetailPage: Transformed match data:', transformedMatch);
+          setMatch(transformedMatch);
+        }
+        
+        // Initialize SSE connection for live updates
+        if (data.status === 'live' && (data.id || data.match?.id)) {
+          console.log('MatchDetailPage: Connecting to live updates...');
+          connectToLiveUpdates(data.id || data.match.id);
+        }
+      } catch (error) {
+        console.error('MatchDetailPage: Error loading match:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadMatch();
+  }, [matchId, api]);
+
+  // Load comments
+  useEffect(() => {
+    const loadComments = async () => {
+      const id = getMatchId();
+      if (!id) return;
+
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/matches/${id}/comments`);
+        if (!response.ok) {
+          console.log(`Comments endpoint returned ${response.status}`);
+          return;
+        }
+        const data = await response.json();
+        setComments(data.comments || []);
+      } catch (error) {
+        console.error('Error loading comments:', error);
+      }
+    };
+
+    loadComments();
+  }, [matchId]);
+
+  // Submit comment
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim() || !isAuthenticated) return;
+
+    setSubmittingComment(true);
+    try {
+      const response = await api.post(`/matches/${getMatchId()}/comments`, {
+        content: newComment
+      });
+      
+      if (response.data.comment) {
+        setComments([response.data.comment, ...comments]);
+        setNewComment('');
+      }
+    } catch (error) {
+      console.error('Error submitting comment:', error);
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="text-xl text-gray-600 dark:text-gray-400">Loading match...</div>
+      </div>
+    );
+  }
+
+  if (!match) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="text-xl text-gray-600 dark:text-gray-400">Match not found</div>
+      </div>
+    );
+  }
+
+  // Get current map data with fallbacks - ENHANCED for API response structure
+  const currentMapData = {
+    team1Players: match.maps?.[currentMapIndex]?.team1_composition || 
+                  match.maps?.[currentMapIndex]?.team1_players || 
+                  match.team1?.players || 
+                  match.team1?.roster || [],
+    team2Players: match.maps?.[currentMapIndex]?.team2_composition || 
+                  match.maps?.[currentMapIndex]?.team2_players || 
+                  match.team2?.players || 
+                  match.team2?.roster || [],
+    mapName: match.maps?.[currentMapIndex]?.map_name || 
+             match.maps?.[currentMapIndex]?.mapName || 
+             'TBD',
+    gameMode: match.maps?.[currentMapIndex]?.game_mode || 
+              match.maps?.[currentMapIndex]?.mode || 
+              'TBD',
+    team1Score: match.maps?.[currentMapIndex]?.team1_score || 0,
+    team2Score: match.maps?.[currentMapIndex]?.team2_score || 0
+  };
+
+  // Determine number of maps for format
+  const getMapCount = () => {
+    if (match.format === 'BO1') return 1;
+    if (match.format === 'BO3') return 3;
+    if (match.format === 'BO5') return 5;
+    if (match.format === 'BO7') return 7;
+    return 3; // Default to BO3
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* VLR.gg Style Container */}
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        
+        {/* Match Header - VLR Style */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => navigateTo && navigateTo('matches')}
+                className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
+              >
+                ← Back to Matches
+              </button>
+              <div className="flex items-center space-x-4">
+                {/* Live Update Status */}
+                {match?.status === 'live' && (
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-2 h-2 rounded-full ${
+                      liveUpdateConnection === 'connected' ? 'bg-green-500 animate-pulse' :
+                      liveUpdateConnection === 'error' ? 'bg-red-500' :
+                      'bg-yellow-500'
+                    }`}></div>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {liveUpdateConnection === 'connected' ? 'Live Updates Active' :
+                       liveUpdateConnection === 'error' ? 'Connection Error' :
+                       'Connecting...'}
+                    </span>
+                  </div>
+                )}
+                {/* Tournament/Event Info */}
+                {(match.event?.name || match.tournament?.name) && (
+                  <div 
+                    className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    onClick={() => match.event?.id && navigateTo && navigateTo('event-detail', match.event.id)}
+                  >
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {match.event?.name || match.tournament?.name}
+                    </span>
+                    {match.round && (
+                      <span className="text-xs text-gray-500 dark:text-gray-500 ml-2">
+                        • {match.round}
+                      </span>
+                    )}
+                  </div>
+                )}
+                <span className={`px-3 py-1 rounded text-xs font-semibold uppercase ${
+                  match.status === 'live' 
+                    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' 
+                    : match.status === 'completed' 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                    : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                }`}>
+                  {match.status || 'upcoming'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Teams Score Section - Centered VLR Style */}
+          <div className="py-8">
+            <div className="flex items-center justify-center">
+              <div className="flex items-center space-x-12">
+                
+                {/* Team 1 - Clickable */}
+                <div 
+                  className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => navigateTo && navigateTo('team-detail', match.team1?.id)}
+                >
+                  <div className="w-20 h-20 mb-3">
+                    <img
+                      src={getTeamLogoUrl(match.team1)}
+                      alt={match.team1?.name || 'Team 1'}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        console.log('🖼️ Team 1 logo failed to load, using fallback');
+                        e.target.src = getImageUrl(null, 'team-logo');
+                      }}
+                    />
+                  </div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400">
+                    {match.team1?.name || 'TBD'}
+                  </h2>
+                  {match.team1?.country && (
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      {getCountryFlag(match.team1.country)} {match.team1.country}
+                    </div>
+                  )}
+                </div>
+
+                {/* Score Display with Map Boxes */}
+                <div className="text-center px-8">
+                  {/* Main Score */}
+                  <div className="flex items-center justify-center space-x-6 mb-4">
+                    <span className="text-4xl font-bold text-gray-900 dark:text-white">
+                      {match.team1_score || 0}
+                    </span>
+                    <span className="text-2xl text-gray-400">:</span>
+                    <span className="text-4xl font-bold text-gray-900 dark:text-white">
+                      {match.team2_score || 0}
+                    </span>
+                  </div>
+                  
+                  {/* Format Info */}
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    {match.format || 'Best of 3'}
+                  </div>
+
+                  {/* Map Score Boxes */}
+                  <div className="flex items-center justify-center space-x-2">
+                    {Array.from({ length: getMapCount() }, (_, index) => {
+                      const map = match.maps?.[index];
+                      const isCurrentMap = index === currentMapIndex;
+                      const team1Won = map && map.team1_score > map.team2_score;
+                      const team2Won = map && map.team2_score > map.team1_score;
+                      const isPlayed = map && (map.team1_score || map.team2_score);
+                      
+                      return (
+                        <div
+                          key={index}
+                          onClick={() => {
+                            if (map) {
+                              console.log(`MatchDetailPage: Switching to map ${index + 1}:`, map);
+                              setCurrentMapIndex(index);
+                            }
+                          }}
+                          className={`relative cursor-pointer transition-all ${
+                            isCurrentMap ? 'scale-110' : 'hover:scale-105'
+                          }`}
+                        >
+                          {/* Enhanced Map Box */}
+                          <div className={`w-20 h-24 rounded-lg border-2 flex flex-col items-center justify-center transition-all cursor-pointer hover:shadow-md ${
+                            isCurrentMap 
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-lg scale-105' 
+                              : isPlayed
+                              ? 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-blue-300'
+                              : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:border-gray-300'
+                          }`}>
+                            <div className={`text-xs font-medium ${isCurrentMap ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                              Map {index + 1}
+                            </div>
+                            
+                            {/* Map Name */}
+                            {map?.map_name && (
+                              <div className="text-xs text-center px-1 text-gray-600 dark:text-gray-300 font-medium truncate w-full">
+                                {map.map_name}
+                              </div>
+                            )}
+                            
+                            {map ? (
+                              <>
+                                <div className={`text-sm font-bold ${isCurrentMap ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-white'}`}>
+                                  {map.team1_score || 0}-{map.team2_score || 0}
+                                </div>
+                                <div className={`text-xs ${
+                                  team1Won 
+                                    ? 'text-blue-600 dark:text-blue-400' 
+                                    : team2Won 
+                                    ? 'text-red-600 dark:text-red-400'
+                                    : 'text-gray-400'
+                                }`}>
+                                  {team1Won ? match.team1?.short_name || 'T1' : 
+                                   team2Won ? match.team2?.short_name || 'T2' : 
+                                   'Live'}
+                                </div>
+                              </>
+                            ) : (
+                              <div className="text-xs text-gray-400">
+                                TBD
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Date/Time */}
+                  {match.scheduled_at && (
+                    <div className="text-xs text-gray-500 dark:text-gray-500 mt-3">
+                      {new Date(match.scheduled_at).toLocaleDateString()} • {new Date(match.scheduled_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    </div>
+                  )}
+                </div>
+
+                {/* Team 2 - Clickable */}
+                <div 
+                  className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => navigateTo && navigateTo('team-detail', match.team2?.id)}
+                >
+                  <div className="w-20 h-20 mb-3">
+                    <img
+                      src={getTeamLogoUrl(match.team2)}
+                      alt={match.team2?.name || 'Team 2'}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        console.log('🖼️ Team 2 logo failed to load, using fallback');
+                        e.target.src = getImageUrl(null, 'team-logo');
+                      }}
+                    />
+                  </div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white hover:text-red-600 dark:hover:text-red-400">
+                    {match.team2?.name || 'TBD'}
+                  </h2>
+                  {match.team2?.country && (
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      {getCountryFlag(match.team2.country)} {match.team2.country}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Enhanced Current Map Info Bar */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-lg shadow-sm mb-4 p-4">
+          <div className="flex items-center justify-center space-x-6 text-sm">
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+              <span className="font-medium text-blue-700 dark:text-blue-300">Currently Viewing:</span>
+              <span className="font-bold text-blue-900 dark:text-blue-100 bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded">
+                Map {currentMapIndex + 1}
+              </span>
+            </div>
+            <div className="text-blue-300 dark:text-blue-600">|</div>
+            <div className="flex items-center space-x-2">
+              <span className="text-gray-500 dark:text-gray-400">Map:</span>
+              <span className="font-semibold text-gray-900 dark:text-white">
+                {currentMapData.mapName}
+              </span>
+            </div>
+            <div className="text-gray-300 dark:text-gray-600">|</div>
+            <div className="flex items-center space-x-2">
+              <span className="text-gray-500 dark:text-gray-400">Mode:</span>
+              <span className="font-semibold text-gray-900 dark:text-white">
+                {currentMapData.gameMode}
+              </span>
+            </div>
+            <div className="text-gray-300 dark:text-gray-600">|</div>
+            <div className="flex items-center space-x-2">
+              <span className="text-gray-500 dark:text-gray-400">Score:</span>
+              <span className="font-semibold text-gray-900 dark:text-white">
+                {currentMapData.team1Score} - {currentMapData.team2Score}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Match Statistics - Complete Marvel Rivals Stats */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Match Statistics - Map {currentMapIndex + 1}: {currentMapData.mapName}
+              </h3>
+              {user && (user.role === 'admin' || user.role === 'moderator') && (
+                <button
+                  onClick={() => setShowLiveScoring(!showLiveScoring)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
+                >
+                  Live Scoring
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            {/* Team 1 Stats Table */}
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <th colSpan="9" className="px-6 py-3 text-left">
+                    <span 
+                      className="text-sm font-semibold text-blue-600 dark:text-blue-400 cursor-pointer hover:underline"
+                      onClick={() => navigateTo && navigateTo('team-detail', match.team1?.id)}
+                    >
+                      {match.team1?.name || 'TBD'}
+                    </span>
+                  </th>
+                </tr>
+                <tr className="bg-gray-50 dark:bg-gray-700 text-xs uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                  <th className="px-6 py-3 text-left font-medium">Player</th>
+                  <th className="px-3 py-3 text-center font-medium">Hero</th>
+                  <th className="px-3 py-3 text-center font-medium">K</th>
+                  <th className="px-3 py-3 text-center font-medium">D</th>
+                  <th className="px-3 py-3 text-center font-medium">A</th>
+                  <th className="px-3 py-3 text-center font-medium">KDA</th>
+                  <th className="px-3 py-3 text-center font-medium">DMG</th>
+                  <th className="px-3 py-3 text-center font-medium">Heal</th>
+                  <th className="px-3 py-3 text-center font-medium">BLK</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {currentMapData.team1Players.length > 0 ? (
+                  currentMapData.team1Players.map((player, index) => {
+                    // ENHANCED: Handle multiple player data formats from API
+                    const playerData = {
+                      id: player.id || player.player_id,
+                      name: player.name || player.player_name || player.username || 'Unknown',
+                      country: player.country || player.nationality || 'US',
+                      hero: player.hero || player.current_hero || 'Captain America',
+                      eliminations: player.eliminations || player.kills || 0,
+                      deaths: player.deaths || 0,
+                      assists: player.assists || 0,
+                      damage: player.damage || 0,
+                      healing: player.healing || 0,
+                      damage_blocked: player.damage_blocked || player.damage_mitigated || player.damageBlocked || 0
+                    };
+                    
+                    return (
+                      <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        <td className="px-6 py-3">
+                          <div 
+                            className="flex items-center space-x-2 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+                            onClick={() => navigateTo && navigateTo('player-detail', playerData.id)}
+                          >
+                            <span className="text-sm">{getCountryFlag(playerData.country)}</span>
+                            <span className="font-medium text-sm">{playerData.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="flex justify-center">
+                            <HeroImage 
+                              heroName={playerData.hero}
+                              size="sm"
+                              showRole={false}
+                            />
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-center text-sm font-medium">{playerData.eliminations}</td>
+                        <td className="px-3 py-3 text-center text-sm">{playerData.deaths}</td>
+                        <td className="px-3 py-3 text-center text-sm">{playerData.assists}</td>
+                        <td className="px-3 py-3 text-center text-sm font-medium">
+                          {((playerData.eliminations + playerData.assists) / Math.max(playerData.deaths, 1)).toFixed(2)}
+                        </td>
+                        <td className="px-3 py-3 text-center text-sm">
+                          {playerData.damage ? `${(playerData.damage / 1000).toFixed(1)}k` : '-'}
+                        </td>
+                        <td className="px-3 py-3 text-center text-sm">
+                          {playerData.healing ? `${(playerData.healing / 1000).toFixed(1)}k` : '-'}
+                        </td>
+                        <td className="px-3 py-3 text-center text-sm">
+                          {playerData.damage_blocked ? `${(playerData.damage_blocked / 1000).toFixed(1)}k` : '-'}
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="9" className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                      No player data available for this map
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+
+            {/* Team 2 Stats Table */}
+            <table className="w-full mt-6">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <th colSpan="9" className="px-6 py-3 text-left">
+                    <span 
+                      className="text-sm font-semibold text-red-600 dark:text-red-400 cursor-pointer hover:underline"
+                      onClick={() => navigateTo && navigateTo('team-detail', match.team2?.id)}
+                    >
+                      {match.team2?.name || 'TBD'}
+                    </span>
+                  </th>
+                </tr>
+                <tr className="bg-gray-50 dark:bg-gray-700 text-xs uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                  <th className="px-6 py-3 text-left font-medium">Player</th>
+                  <th className="px-3 py-3 text-center font-medium">Hero</th>
+                  <th className="px-3 py-3 text-center font-medium">K</th>
+                  <th className="px-3 py-3 text-center font-medium">D</th>
+                  <th className="px-3 py-3 text-center font-medium">A</th>
+                  <th className="px-3 py-3 text-center font-medium">KDA</th>
+                  <th className="px-3 py-3 text-center font-medium">DMG</th>
+                  <th className="px-3 py-3 text-center font-medium">Heal</th>
+                  <th className="px-3 py-3 text-center font-medium">BLK</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {currentMapData.team2Players.length > 0 ? (
+                  currentMapData.team2Players.map((player, index) => {
+                    // ENHANCED: Handle multiple player data formats from API
+                    const playerData = {
+                      id: player.id || player.player_id,
+                      name: player.name || player.player_name || player.username || 'Unknown',
+                      country: player.country || player.nationality || 'US',
+                      hero: player.hero || player.current_hero || 'Captain America',
+                      eliminations: player.eliminations || player.kills || 0,
+                      deaths: player.deaths || 0,
+                      assists: player.assists || 0,
+                      damage: player.damage || 0,
+                      healing: player.healing || 0,
+                      damage_blocked: player.damage_blocked || player.damage_mitigated || player.damageBlocked || 0
+                    };
+                    
+                    return (
+                      <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        <td className="px-6 py-3">
+                          <div 
+                            className="flex items-center space-x-2 cursor-pointer hover:text-red-600 dark:hover:text-red-400"
+                            onClick={() => navigateTo && navigateTo('player-detail', playerData.id)}
+                          >
+                            <span className="text-sm">{getCountryFlag(playerData.country)}</span>
+                            <span className="font-medium text-sm">{playerData.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="flex justify-center">
+                            <HeroImage 
+                              heroName={playerData.hero}
+                              size="sm"
+                              showRole={false}
+                            />
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-center text-sm font-medium">{playerData.eliminations}</td>
+                        <td className="px-3 py-3 text-center text-sm">{playerData.deaths}</td>
+                        <td className="px-3 py-3 text-center text-sm">{playerData.assists}</td>
+                        <td className="px-3 py-3 text-center text-sm font-medium">
+                          {((playerData.eliminations + playerData.assists) / Math.max(playerData.deaths, 1)).toFixed(2)}
+                        </td>
+                        <td className="px-3 py-3 text-center text-sm">
+                          {playerData.damage ? `${(playerData.damage / 1000).toFixed(1)}k` : '-'}
+                        </td>
+                        <td className="px-3 py-3 text-center text-sm">
+                          {playerData.healing ? `${(playerData.healing / 1000).toFixed(1)}k` : '-'}
+                        </td>
+                        <td className="px-3 py-3 text-center text-sm">
+                          {playerData.damage_blocked ? `${(playerData.damage_blocked / 1000).toFixed(1)}k` : '-'}
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="9" className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                      No player data available for this map
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* URLs Display Above Blue Box - Horizontal Layout */}
+        {(match.broadcast?.streams?.length > 0 || match.broadcast?.betting?.length > 0 || match.broadcast?.vods?.length > 0 || match.stream_url || match.vod_url || match.betting_url) && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4 p-4">
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {/* Extract and display URLs with platform names */}
+              {(() => {
+                const formatUrlDisplay = (url) => {
+                  if (!url) return null;
+                  
+                  try {
+                    const urlObj = new URL(url);
+                    const hostname = urlObj.hostname.toLowerCase();
+                    
+                    if (hostname.includes('twitch.tv')) {
+                      const pathParts = urlObj.pathname.split('/').filter(p => p);
+                      const channel = pathParts[0] || 'Channel';
+                      return { platform: 'Twitch', display: channel.charAt(0).toUpperCase() + channel.slice(1), color: 'purple' };
+                    } else if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
+                      return { platform: 'YouTube', display: 'Watch', color: 'red' };
+                    } else if (hostname.includes('kick.com')) {
+                      const pathParts = urlObj.pathname.split('/').filter(p => p);
+                      const channel = pathParts[0] || 'Channel';
+                      return { platform: 'Kick', display: channel.charAt(0).toUpperCase() + channel.slice(1), color: 'green' };
+                    } else if (hostname.includes('bet') || hostname.includes('odds') || hostname.includes('stake')) {
+                      return { platform: 'Betting', display: hostname.split('.')[0].charAt(0).toUpperCase() + hostname.split('.')[0].slice(1), color: 'yellow' };
+                    } else {
+                      return { platform: hostname.split('.')[0].charAt(0).toUpperCase() + hostname.split('.')[0].slice(1), display: 'Link', color: 'blue' };
+                    }
+                  } catch {
+                    return { platform: 'Link', display: 'External', color: 'gray' };
+                  }
+                };
+                
+                const allUrls = [
+                  ...(match.broadcast?.streams || []),
+                  ...(match.broadcast?.betting || []),
+                  ...(match.broadcast?.vods || []),
+                  match.stream_url,
+                  match.betting_url,
+                  match.vod_url
+                ].filter(Boolean);
+                
+                return allUrls.map((url, index) => {
+                  const urlInfo = formatUrlDisplay(url);
+                  if (!urlInfo) return null;
+                  
+                  const colorClasses = {
+                    purple: 'bg-purple-600 hover:bg-purple-700',
+                    red: 'bg-red-600 hover:bg-red-700',
+                    green: 'bg-green-600 hover:bg-green-700',
+                    blue: 'bg-blue-600 hover:bg-blue-700',
+                    yellow: 'bg-yellow-600 hover:bg-yellow-700',
+                    gray: 'bg-gray-600 hover:bg-gray-700'
+                  };
+                  
+                  return (
+                    <a
+                      key={`url-${index}`}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`px-4 py-2 ${colorClasses[urlInfo.color]} text-white rounded-lg transition-colors text-sm font-medium flex items-center hover:shadow-md`}
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" />
+                      </svg>
+                      {urlInfo.platform}: {urlInfo.display}
+                    </a>
+                  );
+                });
+              })()}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+                    <span className="w-2 h-2 bg-red-500 rounded-full mr-2 animate-pulse"></span>
+                    Live Streams
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {/* Multiple stream URLs from new format */}
+                    {match.broadcast?.streams?.map((streamUrl, index) => (
+                      streamUrl && (
+                        <a
+                          key={`stream-${index}`}
+                          href={streamUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center"
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM5 8a1 1 0 000 2h8a1 1 0 100-2H5z"></path>
+                          </svg>
+                          Stream {index + 1}
+                        </a>
+                      )
+                    ))}
+                    
+                    {/* Legacy single stream URL support */}
+                    {match.stream_url && (
+                      <a
+                        href={match.stream_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM5 8a1 1 0 000 2h8a1 1 0 100-2H5z"></path>
+                        </svg>
+                        Watch Stream
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Betting Links */}
+              {(match.broadcast?.betting?.length > 0 || match.betting_url) && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                    Betting Sites
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {/* Multiple betting URLs from new format */}
+                    {match.broadcast?.betting?.map((bettingUrl, index) => (
+                      bettingUrl && (
+                        <a
+                          key={`betting-${index}`}
+                          href={bettingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center"
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zM14 6a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h8zM6 8a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 012-2h2z"></path>
+                          </svg>
+                          Betting {index + 1}
+                        </a>
+                      )
+                    ))}
+                    
+                    {/* Legacy single betting URL support */}
+                    {match.betting_url && (
+                      <a
+                        href={match.betting_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zM14 6a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h8zM6 8a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 012-2h2z"></path>
+                        </svg>
+                        Place Bet
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* VOD Links */}
+              {(match.broadcast?.vods?.length > 0 || match.vod_url) && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                    Video Replays
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {/* Multiple VOD URLs from new format */}
+                    {match.broadcast?.vods?.map((vodUrl, index) => (
+                      vodUrl && (
+                        <a
+                          key={`vod-${index}`}
+                          href={vodUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center"
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                            <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"></path>
+                          </svg>
+                          VOD {index + 1}
+                        </a>
+                      )
+                    ))}
+                    
+                    {/* Legacy single VOD URL support */}
+                    {match.vod_url && (
+                      <a
+                        href={match.vod_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                          <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"></path>
+                        </svg>
+                        Watch VOD
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Comments Section - VLR Style */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Comments</h3>
+          </div>
+          
+          <div className="p-6">
+            {/* Comment Form */}
+            {isAuthenticated ? (
+              <form onSubmit={handleCommentSubmit} className="mb-6">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Add a comment..."
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  rows="3"
+                />
+                <div className="mt-2 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={submittingComment || !newComment.trim()}
+                    className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                  >
+                    {submittingComment ? 'Posting...' : 'Post Comment'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="mb-6 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg text-center">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Join the Discussion</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  Sign in to comment on this match and share your thoughts with the community.
+                </p>
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('mrvl-show-auth-modal'))}
+                  className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                >
+                  Sign In to Comment
+                </button>
+              </div>
+            )}
+
+            {/* Comments List */}
+            <div className="space-y-4">
+              {comments.length > 0 ? (
+                comments.map((comment) => (
+                  <div key={comment.id} className="border-b border-gray-200 dark:border-gray-700 pb-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <UserDisplay user={comment.user} />
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {new Date(comment.created_at).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="text-gray-700 dark:text-gray-300 text-sm">
+                          {parseTextWithMentions(comment.content)}
+                        </div>
+                        <div className="mt-2">
+                          <VotingButtons
+                            type="comment"
+                            id={comment.id}
+                            initialUpvotes={comment.upvotes || 0}
+                            initialDownvotes={comment.downvotes || 0}
+                            userVote={comment.user_vote}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-gray-500 dark:text-gray-400">No comments yet. Be the first to comment!</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Enhanced Live Scoring Panel */}
+        <SimplifiedLiveScoring
+          isOpen={showLiveScoring}
+          match={match}
+          onClose={() => setShowLiveScoring(false)}
+          onUpdate={handleMatchUpdate}
+          initialMatchData={match} // Pass full match data for seamless integration
+        />
+      </div>
+    </div>
+  );
+}
+
+export default MatchDetailPage;

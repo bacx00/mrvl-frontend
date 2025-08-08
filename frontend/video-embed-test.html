@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Embedding Test - MRVL Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .test-section {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .test-result {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #f3f4f6;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.875rem;
+        }
+        .success { background-color: #dcfce7; color: #16a34a; }
+        .error { background-color: #fecaca; color: #dc2626; }
+    </style>
+</head>
+<body class="bg-gray-50 p-6">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Video Embedding Test Suite</h1>
+        
+        <div id="test-results"></div>
+        
+        <div class="mt-8 p-4 bg-blue-50 rounded-lg">
+            <h3 class="font-semibold text-blue-900 mb-2">Test URLs to Try:</h3>
+            <ul class="text-sm text-blue-800 space-y-1">
+                <li><strong>YouTube:</strong> https://www.youtube.com/watch?v=dQw4w9WgXcQ</li>
+                <li><strong>YouTube Short:</strong> https://youtu.be/dQw4w9WgXcQ</li>
+                <li><strong>Twitch Clip:</strong> https://clips.twitch.tv/ExampleClip</li>
+                <li><strong>Twitter:</strong> https://twitter.com/user/status/1234567890</li>
+                <li><strong>X.com:</strong> https://x.com/user/status/1234567890</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Import the video utilities (simulated for testing)
+        const VIDEO_PATTERNS = {
+            youtube: {
+                patterns: [
+                    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?(?:[^&]*&)*v=([a-zA-Z0-9_-]{11})(?:&[^&]*)*(?:#[^&]*)?/,
+                    /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]{11})(?:\?[^&]*)*(?:#[^&]*)?/,
+                    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})(?:\?[^&]*)*(?:#[^&]*)?/
+                ]
+            },
+            twitchClip: {
+                patterns: [
+                    /(?:https?:\/\/)?clips\.twitch\.tv\/([a-zA-Z0-9_-]+)(?:\?[^&]*)*(?:#[^&]*)?/,
+                    /(?:https?:\/\/)?(?:www\.)?twitch\.tv\/([^\/\s]+)\/clip\/([a-zA-Z0-9_-]+)(?:\?[^&]*)*(?:#[^&]*)?/
+                ]
+            },
+            twitter: {
+                patterns: [
+                    /(?:https?:\/\/)?(?:www\.)?twitter\.com\/(?:[^\/\s]+)\/status\/(\d+)(?:\?[^&]*)*(?:#[^&]*)?/,
+                    /(?:https?:\/\/)?(?:www\.)?x\.com\/(?:[^\/\s]+)\/status\/(\d+)(?:\?[^&]*)*(?:#[^&]*)?/
+                ]
+            }
+        };
+
+        function detectVideoUrl(url) {
+            if (!url || typeof url !== 'string') return null;
+            
+            url = url.trim();
+            
+            for (const [type, config] of Object.entries(VIDEO_PATTERNS)) {
+                for (const pattern of config.patterns) {
+                    const match = url.match(pattern);
+                    if (match) {
+                        let detectedId = match[1];
+                        let detectedType = type;
+                        
+                        if (type === 'twitchClip') {
+                            detectedId = match[2] || match[1];
+                            detectedType = 'twitch-clip';
+                        }
+                        
+                        return {
+                            type: detectedType,
+                            id: detectedId,
+                            originalUrl: url,
+                            platform: type.startsWith('twitch') ? 'twitch' : type
+                        };
+                    }
+                }
+            }
+            
+            return null;
+        }
+
+        function getVideoPlatformName(type) {
+            switch (type) {
+                case 'youtube': return 'YouTube';
+                case 'twitch-clip': return 'Twitch Clip';
+                case 'twitter': return 'X (Twitter)';
+                default: return 'Content';
+            }
+        }
+
+        function runTests() {
+            const testUrls = [
+                // YouTube tests
+                { url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', expected: { type: 'youtube', id: 'dQw4w9WgXcQ' }},
+                { url: 'https://youtu.be/dQw4w9WgXcQ', expected: { type: 'youtube', id: 'dQw4w9WgXcQ' }},
+                { url: 'https://www.youtube.com/shorts/dQw4w9WgXcQ', expected: { type: 'youtube', id: 'dQw4w9WgXcQ' }},
+                
+                // Twitch tests
+                { url: 'https://clips.twitch.tv/ExampleClip123', expected: { type: 'twitch-clip', id: 'ExampleClip123' }},
+                { url: 'https://www.twitch.tv/streamer/clip/ExampleClip456', expected: { type: 'twitch-clip', id: 'ExampleClip456' }},
+                
+                // Twitter/X tests
+                { url: 'https://twitter.com/user/status/1234567890', expected: { type: 'twitter', id: '1234567890' }},
+                { url: 'https://x.com/user/status/9876543210', expected: { type: 'twitter', id: '9876543210' }},
+                
+                // Edge cases
+                { url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=30s', expected: { type: 'youtube', id: 'dQw4w9WgXcQ' }},
+                { url: 'https://youtu.be/dQw4w9WgXcQ?t=30', expected: { type: 'youtube', id: 'dQw4w9WgXcQ' }},
+                
+                // Invalid URLs
+                { url: 'https://example.com/video', expected: null },
+                { url: 'not a url', expected: null }
+            ];
+
+            const resultsContainer = document.getElementById('test-results');
+            let passedTests = 0;
+            let totalTests = testUrls.length;
+
+            testUrls.forEach((test, index) => {
+                const result = detectVideoUrl(test.url);
+                const passed = JSON.stringify(result?.type) === JSON.stringify(test.expected?.type) &&
+                              JSON.stringify(result?.id) === JSON.stringify(test.expected?.id);
+                
+                if (passed) passedTests++;
+
+                const testDiv = document.createElement('div');
+                testDiv.className = 'test-section';
+                testDiv.innerHTML = `
+                    <h3 class="text-lg font-semibold mb-2">Test ${index + 1}: ${passed ? '✅ PASS' : '❌ FAIL'}</h3>
+                    <p><strong>URL:</strong> <code class="bg-gray-200 px-1 rounded">${test.url}</code></p>
+                    <div class="test-result ${passed ? 'success' : 'error'}">
+                        <strong>Expected:</strong> ${JSON.stringify(test.expected, null, 2)}<br>
+                        <strong>Got:</strong> ${JSON.stringify(result, null, 2)}
+                        ${result && result.type ? `<br><strong>Platform:</strong> ${getVideoPlatformName(result.type)}` : ''}
+                    </div>
+                `;
+                
+                resultsContainer.appendChild(testDiv);
+            });
+
+            // Summary
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = `test-section ${passedTests === totalTests ? 'success' : 'error'}`;
+            summaryDiv.innerHTML = `
+                <h2 class="text-xl font-bold mb-2">Test Summary</h2>
+                <p><strong>Passed:</strong> ${passedTests} / ${totalTests} tests</p>
+                <p><strong>Success Rate:</strong> ${Math.round((passedTests / totalTests) * 100)}%</p>
+            `;
+            resultsContainer.insertBefore(summaryDiv, resultsContainer.firstChild);
+        }
+
+        // Run tests when page loads
+        document.addEventListener('DOMContentLoaded', runTests);
+    </script>
+</body>
+</html>

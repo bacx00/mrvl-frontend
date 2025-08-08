@@ -1,0 +1,7 @@
+yarn run v1.22.22
+$ vite build
+vite v6.3.5 building for production...
+transforming...
+Killed
+error Command failed with exit code 137.
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Authentication Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .code { background: #f8f9fa; border: 1px solid #e9ecef; padding: 10px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Authentication Test</h1>
+        
+        <div id="loginSection">
+            <h2>Login</h2>
+            <input type="email" id="email" placeholder="Email" value="admin@test.local">
+            <input type="password" id="password" placeholder="Password" value="admin123">
+            <button onclick="testLogin()">Login</button>
+        </div>
+
+        <div id="results"></div>
+        
+        <div id="adminActions" style="display: none;">
+            <h2>Admin API Test</h2>
+            <button onclick="testAdminStats()">Test Admin Stats</button>
+            <button onclick="testAdminUsers()">Test Admin Users</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        let authToken = null;
+        
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+        
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            addResult('🔄 Attempting login...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    authToken = data.token;
+                    addResult('✅ Login successful!', 'success');
+                    addResult(`<pre class="code">${JSON.stringify(data.user, null, 2)}</pre>`, 'success');
+                    document.getElementById('adminActions').style.display = 'block';
+                } else {
+                    addResult(`❌ Login failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Login error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testAdminStats() {
+            if (!authToken) {
+                addResult('❌ Not authenticated', 'error');
+                return;
+            }
+            
+            addResult('🔄 Testing admin stats API...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/stats`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('✅ Admin stats API working!', 'success');
+                    addResult(`<pre class="code">${JSON.stringify(data.data.overview, null, 2)}</pre>`, 'success');
+                } else {
+                    addResult(`❌ Admin stats failed: ${data.message} (${response.status})`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Admin stats error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testAdminUsers() {
+            if (!authToken) {
+                addResult('❌ Not authenticated', 'error');
+                return;
+            }
+            
+            addResult('🔄 Testing admin users API...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/users`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('✅ Admin users API working!', 'success');
+                    addResult(`Found ${data.data?.length || 0} users`, 'success');
+                } else {
+                    addResult(`❌ Admin users failed: ${data.message} (${response.status})`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Admin users error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

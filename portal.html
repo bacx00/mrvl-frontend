@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MRVL - Marvel Rivals Esports Hub - Access Portal</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e3a8a, #3730a3, #7c3aed);
+            color: white;
+            margin: 0;
+            padding: 40px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            text-align: center;
+            max-width: 800px;
+        }
+        .logo {
+            font-size: 4rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+        .subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: center;
+        }
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            min-width: 300px;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .info {
+            margin-top: 2rem;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .info h3 {
+            margin-top: 0;
+            color: #60a5fa;
+        }
+        .code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">MRVL</div>
+        <div class="subtitle">Marvel Rivals Esports Hub</div>
+        
+        <div class="buttons">
+            <a href="/mrvl-ultimate.html" class="btn btn-primary">
+                🚀 Launch Ultimate MRVL Platform
+            </a>
+            
+            <a href="/resources/views/welcome.blade.php" class="btn btn-secondary">
+                🔧 View Laravel Integration Version
+            </a>
+        </div>
+
+        <div class="info">
+            <h3>🎮 How to Access Your MRVL Platform</h3>
+            <p><strong>Method 1 (Recommended):</strong> Click the "Launch Ultimate MRVL Platform" button above</p>
+            <p><strong>Method 2:</strong> Direct URL: <div class="code">http://localhost:8000/mrvl-ultimate.html</div></p>
+            <p><strong>Method 3:</strong> If using a preview tool, use: <div class="code">http://0.0.0.0:8000/mrvl-ultimate.html</div></p>
+            
+            <h3>🔥 What You'll See</h3>
+            <ul style="text-align: left; max-width: 500px; margin: 0 auto;">
+                <li>✅ Ultra-modern glassmorphism design</li>
+                <li>✅ Marvel Rivals branding and theme</li>
+                <li>✅ Live matches with real-time data</li>
+                <li>✅ Complete rankings system</li>
+                <li>✅ Team profiles and player rosters</li>
+                <li>✅ Admin dashboard functionality</li>
+                <li>✅ Perfect mobile responsiveness</li>
+            </ul>
+
+            <h3>📱 Test Responsiveness</h3>
+            <p>Once the site loads, resize your browser window or use browser dev tools to test mobile/tablet views!</p>
+        </div>
+    </div>
+
+    <script>
+        // Auto-redirect to ultimate version after 5 seconds if user doesn't click
+        setTimeout(() => {
+            if (confirm("Want to automatically load the Ultimate MRVL platform?")) {
+                window.location.href = "/mrvl-ultimate.html";
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

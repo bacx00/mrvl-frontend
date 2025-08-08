@@ -1,0 +1,353 @@
+/* Enhanced Liquipedia Bracket Styles */
+
+/* Container */
+.liquipedia-bracket-container {
+  @apply w-full relative;
+}
+
+/* Bracket Section */
+.bracket-section {
+  @apply bg-white dark:bg-gray-900 rounded-lg p-6 relative;
+}
+
+/* Bracket Content */
+.bracket-content {
+  @apply relative;
+  will-change: transform;
+}
+
+/* Bracket Round */
+.bracket-round {
+  @apply flex-shrink-0 relative;
+}
+
+/* Bracket Match */
+.bracket-match {
+  @apply cursor-pointer transition-all duration-200 relative;
+  min-width: 240px;
+}
+
+.bracket-match:hover {
+  @apply transform scale-[1.02] shadow-md;
+}
+
+/* Match Connectors */
+.bracket-connector {
+  stroke: #e5e7eb;
+  stroke-width: 2;
+  fill: none;
+  transition: stroke 0.2s ease;
+}
+
+.dark .bracket-connector {
+  stroke: #374151;
+}
+
+.bracket-connector:hover {
+  stroke: #3b82f6;
+}
+
+.dark .bracket-connector:hover {
+  stroke: #60a5fa;
+}
+
+/* Enhanced Live Indicators */
+.match-live-indicator {
+  @apply flex items-center space-x-1;
+}
+
+.match-live-dot {
+  @apply relative flex h-2 w-2;
+}
+
+.match-live-dot-ping {
+  @apply animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75;
+}
+
+.match-live-dot-core {
+  @apply relative inline-flex rounded-full h-2 w-2 bg-red-500;
+}
+
+/* Team Rows with Enhanced States */
+.team-row-winner {
+  @apply bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500;
+  animation: winner-glow 0.5s ease-in-out;
+}
+
+.team-row-loser {
+  @apply opacity-60 grayscale;
+}
+
+/* Score Display */
+.team-score {
+  @apply text-sm font-bold min-w-[28px] text-center transition-colors duration-200;
+}
+
+.team-score-winner {
+  @apply text-green-600 dark:text-green-400;
+  text-shadow: 0 0 4px rgba(34, 197, 94, 0.3);
+}
+
+.team-score-default {
+  @apply text-gray-500 dark:text-gray-400;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .bracket-section {
+    @apply p-4;
+  }
+  
+  .bracket-round {
+    min-width: 220px;
+  }
+  
+  .bracket-match {
+    min-width: 220px;
+  }
+}
+
+@media (max-width: 768px) {
+  .bracket-section {
+    @apply p-3;
+  }
+  
+  .bracket-round {
+    min-width: 200px;
+  }
+  
+  .bracket-match {
+    min-width: 200px;
+  }
+  
+  .bracket-match:hover {
+    @apply transform scale-[1.01];
+  }
+}
+
+@media (max-width: 640px) {
+  .bracket-round {
+    min-width: 180px;
+  }
+  
+  .bracket-match {
+    min-width: 180px;
+  }
+}
+
+/* Enhanced Scrollbar Styling */
+.bracket-section::-webkit-scrollbar {
+  height: 12px;
+}
+
+.bracket-section::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800 rounded-full;
+}
+
+.bracket-section::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 dark:bg-gray-600 rounded-full;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.bracket-section::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500 dark:bg-gray-500;
+}
+
+.bracket-section::-webkit-scrollbar-corner {
+  @apply bg-transparent;
+}
+
+/* Firefox scrollbar */
+.bracket-section {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(156, 163, 175) rgb(243, 244, 246);
+}
+
+.dark .bracket-section {
+  scrollbar-color: rgb(75, 85, 99) rgb(31, 41, 55);
+}
+
+/* Admin Controls */
+.bracket-admin-controls {
+  @apply flex items-center space-x-3 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800;
+}
+
+/* Skeleton Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.bracket-skeleton .animate-pulse > * {
+  background: linear-gradient(
+    90deg,
+    rgba(229, 231, 235, 0.4) 25%,
+    rgba(229, 231, 235, 0.8) 50%,
+    rgba(229, 231, 235, 0.4) 75%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+.dark .bracket-skeleton .animate-pulse > * {
+  background: linear-gradient(
+    90deg,
+    rgba(55, 65, 81, 0.4) 25%,
+    rgba(55, 65, 81, 0.8) 50%,
+    rgba(55, 65, 81, 0.4) 75%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Winner Animation */
+@keyframes winner-glow {
+  0% {
+    box-shadow: 0 0 0 rgba(34, 197, 94, 0);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+/* Match Status Indicators */
+.match-status-scheduled {
+  @apply border-blue-300 dark:border-blue-700;
+}
+
+.match-status-live {
+  @apply border-red-400 ring-2 ring-red-200 dark:ring-red-800;
+  animation: live-pulse 2s infinite;
+}
+
+.match-status-completed {
+  @apply border-green-300 dark:border-green-700;
+}
+
+@keyframes live-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Tournament Format Specific Styles */
+.single-elimination-bracket {
+  @apply relative;
+}
+
+.double-elimination-bracket {
+  @apply space-y-16;
+}
+
+.swiss-bracket {
+  @apply space-y-8;
+}
+
+.round-robin-bracket {
+  @apply space-y-8;
+}
+
+/* Advanced Match Card Styles */
+.bracket-match .team-logo {
+  @apply transition-transform duration-200;
+}
+
+.bracket-match:hover .team-logo {
+  @apply scale-110;
+}
+
+/* Zoom Controls */
+.zoom-controls {
+  @apply bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm;
+}
+
+.zoom-controls button:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Fullscreen Mode */
+.bracket-fullscreen {
+  @apply fixed inset-0 z-50 bg-white dark:bg-gray-900 overflow-auto;
+}
+
+.bracket-fullscreen .bracket-section {
+  @apply min-h-screen;
+}
+
+/* Touch Gestures (Mobile) */
+@media (hover: none) and (pointer: coarse) {
+  .bracket-match:hover {
+    @apply transform-none shadow-none;
+  }
+  
+  .bracket-match:active {
+    @apply transform scale-[0.98] bg-gray-100 dark:bg-gray-700;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .bracket-connector {
+    stroke-width: 3;
+  }
+  
+  .bracket-match {
+    border-width: 2px;
+  }
+  
+  .team-score-winner {
+    @apply font-black;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .bracket-match,
+  .bracket-connector,
+  .team-score,
+  .team-logo {
+    transition: none;
+  }
+  
+  .match-live-dot-ping,
+  .bracket-skeleton .animate-pulse > *,
+  .winner-glow,
+  .live-pulse {
+    animation: none;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .liquipedia-bracket-container {
+    @apply bg-white text-black;
+  }
+  
+  .bracket-section {
+    @apply bg-white border border-gray-400 shadow-none;
+  }
+  
+  .bracket-match {
+    @apply bg-white border border-gray-400;
+  }
+  
+  .bracket-connector {
+    stroke: #000 !important;
+  }
+  
+  .zoom-controls,
+  .bracket-admin-controls {
+    @apply hidden;
+  }
+}

@@ -1,0 +1,2633 @@
+/* Tablet-First Marvel Rivals Styles - vlr.gg Inspired */
+
+/* =================================
+   TABLET DEVICE DETECTION & SETUP
+   ================================= */
+
+/* iPad Pro 12.9" */
+@media only screen 
+  and (min-device-width: 1024px) 
+  and (max-device-width: 1366px) 
+  and (-webkit-min-device-pixel-ratio: 2) {
+  .ipad-pro-12-9 {
+    --tablet-padding: 24px;
+    --tablet-content-width: 1200px;
+  }
+}
+
+/* iPad Pro 11" / iPad Air */
+@media only screen 
+  and (min-device-width: 834px) 
+  and (max-device-width: 1194px) 
+  and (-webkit-min-device-pixel-ratio: 2) {
+  .ipad-pro-11 {
+    --tablet-padding: 20px;
+    --tablet-content-width: 1000px;
+  }
+}
+
+/* iPad 10.2" */
+@media only screen 
+  and (min-device-width: 768px) 
+  and (max-device-width: 1024px) 
+  and (-webkit-min-device-pixel-ratio: 2) {
+  .ipad-regular {
+    --tablet-padding: 16px;
+    --tablet-content-width: 900px;
+  }
+}
+
+/* =================================
+   TABLET CORE LAYOUT SYSTEM
+   ================================= */
+
+/* Tablet Viewport Optimization */
+@media (min-width: 768px) and (max-width: 1024px) {
+  
+  /* Main Container */
+  .tablet-container {
+    max-width: var(--tablet-content-width, 1000px);
+    margin: 0 auto;
+    padding: 0 var(--tablet-padding, 20px);
+  }
+
+  /* Two-Panel Layout for Landscape */
+  .tablet-two-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .tablet-two-panel.landscape {
+    grid-template-columns: 300px 1fr;
+  }
+
+  .tablet-panel-left {
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
+    padding-right: 24px;
+    overflow-y: auto;
+  }
+
+  .tablet-panel-right {
+    padding-left: 24px;
+    overflow-y: auto;
+  }
+
+  /* Three-Panel Layout for Large Tablets */
+  .tablet-three-panel {
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    gap: 24px;
+    height: 100vh;
+  }
+
+  .tablet-sidebar {
+    background: #f8f9fa;
+    border-radius: 0;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  .tablet-main-content {
+    background: white;
+    border-radius: 0;
+    padding: 24px;
+    overflow-y: auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .tablet-auxiliary {
+    background: #f8f9fa;
+    border-radius: 0;
+    padding: 20px;
+    overflow-y: auto;
+  }
+}
+
+/* =================================
+   TABLET NAVIGATION SYSTEM  
+   ================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  
+  /* Landscape Sidebar Navigation */
+  .tablet-nav-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 280px;
+    height: 100vh;
+    background: white;
+    border-right: 1px solid #e5e7eb;
+    transform: translateX(0);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+    overflow-y: auto;
+  }
+
+  .tablet-nav-sidebar.collapsed {
+    transform: translateX(-240px);
+    width: 40px;
+  }
+
+  .tablet-nav-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    margin: 4px 8px;
+    border-radius: 0;
+    font-weight: 500;
+    color: #374151;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    min-height: 48px; /* Touch target */
+  }
+
+  .tablet-nav-item:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+  }
+
+  .tablet-nav-item.active {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .tablet-nav-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Portrait Tab Navigation */
+  .tablet-tab-nav {
+    display: flex;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .tablet-tab-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tablet-tab-item {
+    flex-shrink: 0;
+    padding: 16px 24px;
+    font-weight: 500;
+    color: #6b7280;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+  }
+
+  .tablet-tab-item:hover {
+    color: #374151;
+    border-bottom-color: #d1d5db;
+  }
+
+  .tablet-tab-item.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+  }
+}
+
+/* =================================
+   TABLET BRACKET VISUALIZATION
+   ================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  
+  .tablet-bracket-container {
+    position: relative;
+    width: 100%;
+    height: 70vh;
+    min-height: 500px;
+    background: #f8f9fa;
+    border-radius: 0;
+    overflow: hidden;
+    touch-action: pan-x pan-y;
+  }
+
+  .tablet-bracket-viewport {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    cursor: grab;
+    user-select: none;
+  }
+
+  .tablet-bracket-viewport:active {
+    cursor: grabbing;
+  }
+
+  .tablet-bracket-content {
+    display: flex;
+    gap: 32px;
+    padding: 24px;
+    min-width: max-content;
+    transition: transform 0.2s ease;
+  }
+
+  .tablet-bracket-round {
+    min-width: 320px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tablet-bracket-round-header {
+    background: white;
+    padding: 16px;
+    border-radius: 12px 12px 0 0;
+    border-bottom: 2px solid #e5e7eb;
+    font-weight: 700;
+    font-size: 18px;
+    text-align: center;
+    color: #1f2937;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .tablet-bracket-matches {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+    background: white;
+    border-radius: 0 0 12px 12px;
+    min-height: 400px;
+  }
+
+  /* Tablet Match Cards */
+  .tablet-match-card {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 0;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    min-height: 120px;
+    cursor: pointer;
+  }
+
+  .tablet-match-card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .tablet-match-card.live {
+    border-color: #dc2626;
+    background: linear-gradient(45deg, #fef2f2, white);
+    animation: tablet-live-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes tablet-live-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+  }
+
+  .tablet-match-team {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .tablet-match-team:last-child {
+    border-bottom: none;
+  }
+
+  .tablet-match-team.winner {
+    background: #f0fdf4;
+    border-left: 4px solid #10b981;
+  }
+
+  .tablet-team-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .tablet-team-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 0;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .tablet-team-name {
+    font-weight: 600;
+    font-size: 16px;
+    color: #1f2937;
+    truncate: true;
+  }
+
+  .tablet-team-score {
+    font-size: 24px;
+    font-weight: 800;
+    color: #374151;
+    min-width: 40px;
+    text-align: center;
+  }
+
+  .tablet-team-score.winner {
+    color: #10b981;
+  }
+
+  /* Tablet Zoom Controls */
+  .tablet-zoom-controls {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 8px;
+    z-index: 20;
+  }
+
+  .tablet-zoom-button {
+    width: 48px;
+    height: 48px;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .tablet-zoom-button:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+  }
+
+  .tablet-zoom-button:active {
+    transform: scale(0.95);
+  }
+}
+
+/* =================================
+   TABLET MATCH CARDS & LISTINGS
+   ================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  
+  .tablet-match-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    padding: 20px;
+  }
+
+  .tablet-match-card-enhanced {
+    background: white;
+    border-radius: 0;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    min-height: 180px;
+  }
+
+  .tablet-match-card-enhanced:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    transform: translateY(-4px);
+  }
+
+  .tablet-match-header {
+    background: linear-gradient(135deg, #f8f9fa, #e5e7eb);
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .tablet-match-status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .tablet-match-status.live {
+    background: #dc2626;
+    color: white;
+    animation: tablet-status-pulse 1.5s ease-in-out infinite;
+  }
+
+  .tablet-match-status.completed {
+    background: #10b981;
+    color: white;
+  }
+
+  .tablet-match-status.upcoming {
+    background: #3b82f6;
+    color: white;
+  }
+
+  @keyframes tablet-status-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  .tablet-match-format {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 500;
+  }
+
+  .tablet-match-teams {
+    padding: 20px;
+  }
+
+  .tablet-team-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .tablet-team-row:last-child {
+    border-bottom: none;
+  }
+
+  .tablet-team-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .tablet-team-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #f3f4f6;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .tablet-team-details {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .tablet-team-name-large {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 2px;
+    truncate: true;
+  }
+
+  .tablet-team-region {
+    font-size: 14px;
+    color: #6b7280;
+  }
+
+  .tablet-score-large {
+    font-size: 32px;
+    font-weight: 900;
+    color: #374151;
+    min-width: 50px;
+    text-align: center;
+  }
+
+  .tablet-score-large.winner {
+    color: #10b981;
+  }
+
+  /* VS Divider */
+  .tablet-vs-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 8px 0;
+  }
+
+  .tablet-vs-circle {
+    width: 40px;
+    height: 40px;
+    background: #f3f4f6;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: #6b7280;
+  }
+}
+
+/* =================================
+   TABLET LIVE SCORING SYSTEM
+   ================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  
+  .tablet-live-scoring {
+    background: linear-gradient(135deg, #1f2937, #111827);
+    border-radius: 20px;
+    overflow: hidden;
+    margin: 16px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+    min-height: 400px;
+  }
+
+  .tablet-live-header {
+    background: linear-gradient(90deg, #dc2626, #ef4444);
+    padding: 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tablet-live-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+    animation: tablet-live-scan 3s ease-in-out infinite;
+  }
+
+  @keyframes tablet-live-scan {
+    0% { left: -100%; }
+    100% { left: 100%; }
+  }
+
+  .tablet-live-title {
+    color: white;
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .tablet-live-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .tablet-live-content {
+    padding: 32px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 32px;
+    align-items: center;
+    min-height: 300px;
+  }
+
+  .tablet-live-team {
+    text-align: center;
+    color: white;
+  }
+
+  .tablet-live-team-logo {
+    width: 80px;
+    height: 80px;
+    border-radius: 0;
+    margin: 0 auto 16px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    object-fit: cover;
+  }
+
+  .tablet-live-team-name {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: white;
+  }
+
+  .tablet-live-team-record {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .tablet-live-score-section {
+    text-align: center;
+  }
+
+  .tablet-live-scores {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 16px;
+  }
+
+  .tablet-live-score {
+    font-size: 64px;
+    font-weight: 900;
+    color: #dc2626;
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    min-width: 80px;
+    text-align: center;
+  }
+
+  .tablet-live-vs {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 600;
+  }
+
+  .tablet-live-map-info {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0;
+    padding: 16px;
+    margin-top: 24px;
+  }
+
+  .tablet-live-map-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 8px;
+  }
+
+  .tablet-live-map-mode {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  /* Map Progress Bar */
+  .tablet-map-progress {
+    margin: 16px 0;
+    background: rgba(255, 255, 255, 0.1);
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .tablet-map-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #dc2626, #ef4444);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+}
+
+/* =================================
+   TABLET TOUCH OPTIMIZATIONS
+   ================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  
+  /* Enhanced Touch Targets */
+  .tablet-touch-target {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tablet-touch-target-large {
+    min-height: 56px;
+    min-width: 56px;
+    padding: 16px;
+  }
+
+  /* Touch Feedback */
+  .tablet-touchable {
+    position: relative;
+    -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1);
+    transition: transform 0.1s ease;
+  }
+
+  .tablet-touchable:active {
+    transform: scale(0.98);
+  }
+
+  .tablet-touchable::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.3s ease;
+  }
+
+  .tablet-touchable:active::before {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* Scroll Indicators */
+  .tablet-scroll-container {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(59, 130, 246, 0.3) transparent;
+  }
+
+  .tablet-scroll-container::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .tablet-scroll-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+  }
+
+  .tablet-scroll-container::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.3);
+    border-radius: 4px;
+  }
+
+  .tablet-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(59, 130, 246, 0.5);
+  }
+}
+
+/* =================================
+   TABLET GESTURE SUPPORT
+   ================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  
+  .tablet-pinch-zoom {
+    touch-action: pan-x pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tablet-pan-container {
+    cursor: grab;
+    transition: transform 0.2s ease;
+  }
+
+  .tablet-pan-container:active {
+    cursor: grabbing;
+  }
+
+  .tablet-pan-container.dragging {
+    transition: none;
+  }
+
+  /* Gesture Hints */
+  .tablet-gesture-hint {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 100;
+    animation: tablet-hint-fade 0.3s ease;
+  }
+
+  @keyframes tablet-hint-fade {
+    from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+}
+
+/* =================================
+   TABLET LANDSCAPE OPTIMIZATIONS
+   ================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+  
+  .tablet-landscape-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .tablet-landscape-sidebar {
+    background: #f8f9fa;
+    border-right: 1px solid #e5e7eb;
+    overflow-y: auto;
+    padding: 20px;
+  }
+
+  .tablet-landscape-main {
+    overflow-y: auto;
+    padding: 20px;
+  }
+
+  /* Landscape Match Cards */
+  .tablet-landscape-match-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 20px;
+    align-items: center;
+    padding: 16px 20px;
+    background: white;
+    border-radius: 0;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+  }
+
+  .tablet-landscape-match-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #3b82f6;
+  }
+
+  .tablet-landscape-status {
+    width: 8px;
+    height: 60px;
+    border-radius: 4px;
+  }
+
+  .tablet-landscape-status.live {
+    background: #dc2626;
+    animation: tablet-status-glow 2s ease-in-out infinite;
+  }
+
+  .tablet-landscape-status.completed {
+    background: #10b981;
+  }
+
+  .tablet-landscape-status.upcoming {
+    background: #3b82f6;
+  }
+
+  @keyframes tablet-status-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+    50% { box-shadow: 0 0 0 4px rgba(220, 38, 38, 0); }
+  }
+
+  .tablet-landscape-teams {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 16px;
+    align-items: center;
+    flex: 1;
+  }
+
+  .tablet-landscape-team {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .tablet-landscape-team.team-2 {
+    flex-direction: row-reverse;
+    text-align: right;
+  }
+
+  .tablet-landscape-vs {
+    font-size: 14px;
+    font-weight: 600;
+    color: #6b7280;
+    text-align: center;
+  }
+
+  .tablet-landscape-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    min-width: 120px;
+  }
+
+  .tablet-landscape-time {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 500;
+  }
+
+  .tablet-landscape-format {
+    font-size: 11px;
+    color: #9ca3af;
+    background: #f3f4f6;
+    padding: 2px 8px;
+    border-radius: 0;
+  }
+}
+
+/* =================================
+   TABLET PORTRAIT OPTIMIZATIONS
+   ================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+  
+  .tablet-portrait-header {
+    position: sticky;
+    top: 0;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 16px 20px;
+    z-index: 100;
+  }
+
+  .tablet-portrait-content {
+    padding: 20px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .tablet-portrait-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* Portrait Navigation Tabs */
+  .tablet-portrait-tabs {
+    display: flex;
+    background: #f8f9fa;
+    border-radius: 0;
+    padding: 4px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tablet-portrait-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tablet-portrait-tab {
+    flex: 1;
+    padding: 12px 20px;
+    text-align: center;
+    border-radius: 0;
+    font-weight: 500;
+    color: #6b7280;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tablet-portrait-tab.active {
+    background: white;
+    color: #3b82f6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .tablet-portrait-tab:not(.active):hover {
+    color: #374151;
+  }
+}
+
+/* =================================
+   TABLET PERFORMANCE OPTIMIZATIONS
+   ================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  
+  .tablet-optimized {
+    will-change: transform, opacity;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-perspective: 1000px;
+    perspective: 1000px;
+    transform: translateZ(0);
+  }
+
+  .tablet-gpu-accelerated {
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+  }
+
+  /* Reduce animations on lower-end tablets */
+  @media (prefers-reduced-motion: reduce) {
+    .tablet-optimized * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* =================================
+   TABLET DARK MODE SUPPORT
+   ================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  
+  .dark .tablet-container {
+    background: #111827;
+    color: #f9fafb;
+  }
+
+  .dark .tablet-match-card {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .dark .tablet-match-card:hover {
+    border-color: #ef4444;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+  }
+
+  .dark .tablet-nav-sidebar {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .dark .tablet-nav-item {
+    color: #d1d5db;
+  }
+
+  .dark .tablet-nav-item:hover {
+    background: #374151;
+    color: #f9fafb;
+  }
+
+  .dark .tablet-nav-item.active {
+    background: #ef4444;
+    color: white;
+  }
+
+  .dark .tablet-live-scoring {
+    background: linear-gradient(135deg, #111827, #0f172a);
+  }
+
+  .dark .tablet-sidebar {
+    background: #1f2937;
+  }
+
+  .dark .tablet-main-content {
+    background: #1f2937;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .dark .tablet-data-table {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .dark .tablet-data-table thead {
+    background: #111827;
+    border-color: #374151;
+  }
+
+  .dark .tablet-data-table tbody tr:hover {
+    background: #374151;
+  }
+
+  .dark .tablet-btn-primary {
+    background: #ef4444;
+    border-color: #ef4444;
+  }
+
+  .dark .tablet-btn-primary:hover {
+    background: #dc2626;
+    border-color: #dc2626;
+  }
+
+  .dark .tablet-btn-secondary {
+    background: #374151;
+    color: #f9fafb;
+    border-color: #4b5563;
+  }
+
+  .dark .tablet-btn-secondary:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+}
+
+/* =================================
+   TABLET MAIN CONTENT LAYOUTS
+   ================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  
+  /* Main Content Container */
+  .tablet-content {
+    transition: all 0.3s ease;
+    min-height: calc(100vh - 80px);
+  }
+  
+  .tablet-landscape-content {
+    margin-left: 280px; /* Account for sidebar */
+    padding: 24px;
+    max-width: calc(100vw - 320px);
+  }
+  
+  .tablet-portrait-content {
+    padding: 16px 20px;
+    margin-top: 60px; /* Account for top navigation */
+    max-width: 100vw;
+  }
+  
+  /* VLR.gg Style Tournament Grid */
+  .tablet-tournament-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+  }
+  
+  /* Enhanced tournament grid for optimal tablet real estate */
+  .tablet-tournament-grid.enhanced {
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 16px;
+    padding: 16px;
+  }
+  
+  /* Multi-column optimization for different tablet sizes */
+  @media (min-width: 768px) and (max-width: 834px) {
+    /* iPad Portrait - optimal 2 columns */
+    .tablet-tournament-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+  }
+  
+  @media (min-width: 1024px) and (max-width: 1366px) {
+    /* iPad/Tablet Landscape - optimal 3 columns */
+    .tablet-tournament-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+  }
+  
+  /* VLR.gg Style Match Listing */
+  .tablet-match-listing {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .tablet-match-listing .tablet-match-card {
+    min-height: 140px;
+    border: 1px solid #e5e7eb;
+    border-radius: 0;
+    transition: all 0.2s ease;
+  }
+  
+  .tablet-match-listing .tablet-match-card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    transform: translateY(-1px);
+  }
+  
+  /* VLR.gg Style Team Cards Grid */
+  .tablet-teams-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+  }
+  
+  .tablet-team-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0;
+    padding: 24px;
+    text-align: center;
+    transition: all 0.2s ease;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .tablet-team-card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.12);
+    transform: translateY(-2px);
+  }
+  
+  /* VLR.gg Style Statistics Cards */
+  .tablet-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+  }
+  
+  .tablet-stat-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.2s ease;
+  }
+  
+  .tablet-stat-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* =================================
+   VLR.GG STYLE MULTI-COLUMN LAYOUTS
+   ================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  
+  /* Tournament Listing Multi-Column Grid */
+  .tablet-tournament-multi-column {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  
+  .tablet-tournament-card-enhanced {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    min-height: 240px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .tablet-tournament-card-enhanced:hover {
+    box-shadow: 0 12px 40px rgba(239, 68, 68, 0.15);
+    transform: translateY(-4px);
+    border-color: #3b82f6;
+  }
+  
+  .tablet-tournament-card-header {
+    position: relative;
+    height: 120px;
+    background: linear-gradient(135deg, #1f2937, #111827);
+    overflow: hidden;
+  }
+  
+  .tablet-tournament-card-header::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+  }
+  
+  .tablet-tournament-logo {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+  }
+  
+  .tablet-tournament-status {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    backdrop-filter: blur(8px);
+  }
+  
+  .tablet-tournament-status.live {
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    animation: tablet-pulse 2s infinite;
+  }
+  
+  .tablet-tournament-status.upcoming {
+    background: rgba(59, 130, 246, 0.9);
+    color: white;
+  }
+  
+  .tablet-tournament-status.completed {
+    background: rgba(16, 185, 129, 0.9);
+    color: white;
+  }
+  
+  .tablet-tournament-card-body {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .tablet-tournament-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 8px;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .tablet-tournament-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .tablet-tournament-date {
+    font-size: 14px;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .tablet-tournament-prize {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+  
+  .tablet-tournament-teams-preview {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid #f3f4f6;
+  }
+  
+  .tablet-tournament-teams-count {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 8px;
+  }
+  
+  .tablet-tournament-teams-logos {
+    display: flex;
+    gap: 4px;
+    overflow: hidden;
+  }
+  
+  .tablet-tournament-team-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: #f3f4f6;
+    flex-shrink: 0;
+  }
+  
+  /* Match Display Multi-Column */
+  .tablet-match-multi-column {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    padding: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  
+  .tablet-match-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .tablet-match-column-header {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    font-weight: 600;
+    color: #1f2937;
+    text-align: center;
+    position: sticky;
+    top: 20px;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .tablet-match-compact {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  
+  .tablet-match-compact:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+  }
+  
+  .tablet-match-compact-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  
+  .tablet-match-time {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 500;
+  }
+  
+  .tablet-match-format {
+    font-size: 11px;
+    background: #f3f4f6;
+    color: #6b7280;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  
+  .tablet-match-teams-compact {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .tablet-match-team-compact {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .tablet-match-team-compact.team2 {
+    flex-direction: row-reverse;
+    text-align: right;
+  }
+  
+  .tablet-match-team-logo-small {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    background: #f3f4f6;
+    flex-shrink: 0;
+  }
+  
+  .tablet-match-team-name-small {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+    truncate: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  
+  .tablet-match-score-vs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 16px;
+    font-weight: 700;
+  }
+  
+  .tablet-match-score-number {
+    font-size: 18px;
+    color: #1f2937;
+    min-width: 24px;
+    text-align: center;
+  }
+  
+  .tablet-match-vs-divider {
+    font-size: 12px;
+    color: #9ca3af;
+  }
+  
+  /* VLR.gg Style Side-by-Side Content Layout */
+  .tablet-side-by-side {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 24px;
+    min-height: calc(100vh - 120px);
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .tablet-sidebar-primary {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+    overflow-y: auto;
+    max-height: calc(100vh - 160px);
+  }
+  
+  .tablet-main-content-area {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 24px;
+    overflow-y: auto;
+  }
+  
+  /* Enhanced VLR.gg Tournament Bracket Layout */
+  .tablet-bracket-multi-view {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 16px;
+    height: calc(100vh - 120px);
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .tablet-bracket-controls {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .tablet-bracket-view-modes {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .tablet-bracket-view-mode {
+    padding: 8px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: white;
+    color: #6b7280;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  
+  .tablet-bracket-view-mode.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+  }
+  
+  .tablet-bracket-view-mode:not(.active):hover {
+    border-color: #9ca3af;
+    background: #f9fafb;
+  }
+  
+  .tablet-bracket-main {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  /* Three-Column Tournament Layout */
+  .tablet-tournament-three-column {
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    gap: 20px;
+    min-height: calc(100vh - 120px);
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .tablet-tournament-left-sidebar {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+  }
+  
+  .tablet-tournament-main-content {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 24px;
+    overflow-y: auto;
+  }
+  
+  .tablet-tournament-right-sidebar {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  /* Tablet Rankings Multi-Column */
+  .tablet-rankings-multi-column {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .tablet-rankings-main {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .tablet-rankings-sidebar {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+  }
+}
+
+/* =================================
+   VLR.GG STYLE INFORMATION DENSITY
+   ================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  
+  /* Dense Information Layout */
+  .tablet-info-dense {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  
+  .tablet-info-dense .title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  
+  .tablet-info-dense .subtitle {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 16px;
+  }
+  
+  /* VLR.gg Style Data Tables */
+  .tablet-data-table {
+    width: 100%;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0;
+    overflow: hidden;
+  }
+  
+  .tablet-data-table thead {
+    background: #f8f9fa;
+    border-bottom: 2px solid #e5e7eb;
+  }
+  
+  .tablet-data-table th,
+  .tablet-data-table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  
+  .tablet-data-table th {
+    font-weight: 600;
+    font-size: 13px;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .tablet-data-table tbody tr:hover {
+    background: #f9fafb;
+  }
+  
+  /* VLR.gg Style Rankings */
+  .tablet-ranking-item {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0;
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+  }
+  
+  .tablet-ranking-item:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+  }
+  
+  .tablet-ranking-number {
+    font-size: 24px;
+    font-weight: 800;
+    color: #6b7280;
+    min-width: 40px;
+    text-align: center;
+    margin-right: 20px;
+  }
+  
+  .tablet-ranking-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+}
+
+/* =================================
+   TABLET ACCESSIBILITY
+   ================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  
+  /* Focus Indicators */
+  .tablet-focus-visible:focus-visible {
+    outline: 3px solid #3b82f6;
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  /* High Contrast Mode */
+  @media (prefers-contrast: high) {
+    .tablet-match-card {
+      border-width: 2px;
+      border-color: #000;
+    }
+    
+    .tablet-nav-item:hover {
+      background: #000;
+      color: #fff;
+    }
+  }
+
+  /* Motion Preferences */
+  @media (prefers-reduced-motion: reduce) {
+    .tablet-match-card,
+    .tablet-nav-item,
+    .tablet-touchable {
+      transition: none;
+    }
+    
+    .tablet-live-pulse,
+    .tablet-status-pulse,
+    .tablet-live-scan {
+      animation: none;
+    }
+  }
+
+  /* Enhanced Layout Manager Classes */
+  .tablet-layout-container {
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .tablet-single-column {
+    flex-direction: column;
+  }
+
+  .tablet-two-panel {
+    flex-direction: row;
+    gap: 1.5rem;
+  }
+
+  .tablet-three-panel {
+    flex-direction: row;
+    gap: 1.5rem;
+  }
+
+  .tablet-grid-layout {
+    flex-direction: column;
+  }
+
+  .tablet-sidebar-layout {
+    flex-direction: row;
+    gap: 1.5rem;
+  }
+
+  .tablet-sidebar {
+    min-width: 280px;
+    max-width: 320px;
+    background: #f8f9fa;
+    border-right: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+  }
+
+  .tablet-sidebar-collapsed {
+    min-width: 60px;
+    max-width: 60px;
+  }
+
+  .tablet-auxiliary {
+    min-width: 280px;
+    max-width: 320px;
+    background: #f8f9fa;
+    border-left: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+  }
+
+  .tablet-auxiliary-collapsed {
+    min-width: 60px;
+    max-width: 60px;
+  }
+
+  .tablet-main-content {
+    flex: 1;
+    min-width: 0;
+    background: white;
+  }
+
+  /* Dark mode support for layout components */
+  .dark .tablet-sidebar,
+  .dark .tablet-auxiliary {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .dark .tablet-main-content {
+    background: #1f2937;
+  }
+
+  /* Grid container */
+  .tablet-grid-container {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Enhanced card styles */
+  .tablet-card {
+    padding: 1.5rem;
+    transition: all 0.2s ease;
+    contain: layout style paint;
+  }
+
+  .tablet-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(239, 68, 68, 0.15);
+  }
+
+  /* Sidebar component styles */
+  .tablet-sidebar-component {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transition: all 0.3s ease;
+  }
+
+  .tablet-sidebar-component.collapsed {
+    width: 60px;
+    min-width: 60px;
+  }
+
+  .tablet-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f8f9fa;
+  }
+
+  .dark .tablet-sidebar-header {
+    border-color: #374151;
+    background: #111827;
+  }
+
+  .tablet-sidebar-title {
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  .dark .tablet-sidebar-title {
+    color: #f9fafb;
+  }
+
+  .tablet-sidebar-toggle {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s ease;
+  }
+
+  .tablet-sidebar-toggle:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  .dark .tablet-sidebar-toggle:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .tablet-sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 1rem;
+  }
+
+  /* Data table styles */
+  .tablet-data-table-container {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    background: white;
+  }
+
+  .dark .tablet-data-table-container {
+    border-color: #374151;
+    background: #1f2937;
+  }
+
+  .tablet-data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .tablet-data-table th {
+    padding: 1rem 1.5rem;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    background: #f8f9fa;
+    border-bottom: 2px solid #e5e7eb;
+    white-space: nowrap;
+  }
+
+  .dark .tablet-data-table th {
+    color: #d1d5db;
+    background: #111827;
+    border-color: #374151;
+  }
+
+  .tablet-data-table td {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #f3f4f6;
+    color: #1f2937;
+  }
+
+  .dark .tablet-data-table td {
+    border-color: #374151;
+    color: #f9fafb;
+  }
+
+  .tablet-sortable-header {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease;
+  }
+
+  .tablet-sortable-header:hover {
+    background: #f3f4f6;
+  }
+
+  .dark .tablet-sortable-header:hover {
+    background: #374151;
+  }
+
+  .tablet-sortable-header.sorted {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+
+  .dark .tablet-sortable-header.sorted {
+    background: #1f1815;
+    color: #f87171;
+  }
+
+  .tablet-sort-indicator {
+    font-size: 0.75rem;
+    color: #dc2626;
+  }
+
+  .tablet-clickable-row {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .tablet-clickable-row:hover {
+    background: #f9fafb;
+  }
+
+  .dark .tablet-clickable-row:hover {
+    background: #374151;
+  }
+
+  /* Tab styles for tablet */
+  .tablet-tabs {
+    display: flex;
+    background: #f8f9fa;
+    border-radius: 0.75rem;
+    padding: 0.25rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .tablet-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dark .tablet-tabs {
+    background: #1f2937;
+  }
+
+  .tablet-tab {
+    flex: 1;
+    min-width: 120px;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    color: #6b7280;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    min-height: 48px;
+    cursor: pointer;
+  }
+
+  .tablet-tab:hover {
+    color: #374151;
+    background: rgba(255, 255, 255, 0.5);
+  }
+
+  .dark .tablet-tab {
+    color: #9ca3af;
+  }
+
+  .dark .tablet-tab:hover {
+    color: #d1d5db;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .tablet-tab.active {
+    background: white;
+    color: #dc2626;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .dark .tablet-tab.active {
+    background: #374151;
+    color: #f87171;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .tablet-tab-badge {
+    background: #dc2626;
+    color: white;
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    min-width: 1.25rem;
+    text-align: center;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 900px) {
+    .tablet-three-panel {
+      flex-direction: column;
+    }
+    
+    .tablet-auxiliary {
+      min-width: auto;
+      max-width: none;
+      border-left: none;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .dark .tablet-auxiliary {
+      border-color: #374151;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .tablet-two-panel,
+    .tablet-sidebar-layout {
+      flex-direction: column;
+    }
+    
+    .tablet-sidebar {
+      min-width: auto;
+      max-width: none;
+      border-right: none;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .dark .tablet-sidebar {
+      border-color: #374151;
+    }
+  }
+
+  /* Performance optimizations for tablet */
+  .tablet-performance-optimized {
+    contain: layout style paint;
+    will-change: transform;
+    transform: translateZ(0);
+  }
+
+  .tablet-gpu-layer {
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+  }
+
+  /* Accessibility improvements */
+  .tablet-focus-ring:focus-visible {
+    outline: 2px solid #dc2626;
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+
+  @media (prefers-reduced-data: reduce) {
+    .tablet-card {
+      box-shadow: none;
+      border: 1px solid #e5e7eb;
+    }
+    
+    .dark .tablet-card {
+      border-color: #374151;
+    }
+  }
+}
+
+/* =================================
+   ENHANCED TOUCH TARGETS & INTERACTIONS
+   ================================= */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  
+  /* VLR.gg Style Button Enhancements - Improved Touch Response */
+  .tablet-btn {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    touch-action: manipulation;
+    position: relative;
+    overflow: hidden;
+    transform: translateZ(0);
+  }
+
+  .tablet-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.3s ease;
+  }
+
+  .tablet-btn:active::before {
+    opacity: 1;
+    transform: scale(1);
+  }
+  
+  .tablet-btn-primary {
+    background: #3b82f6;
+    color: white;
+    border: 2px solid #3b82f6;
+  }
+  
+  .tablet-btn-primary:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+  
+  .tablet-btn-secondary {
+    background: white;
+    color: #374151;
+    border: 2px solid #e5e7eb;
+  }
+  
+  .tablet-btn-secondary:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Enhanced Tab Controls */
+  .tablet-tabs {
+    display: flex;
+    background: #f8f9fa;
+    border-radius: 0;
+    padding: 4px;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  
+  .tablet-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .tablet-tab {
+    flex: 1;
+    min-width: 120px;
+    padding: 12px 20px;
+    text-align: center;
+    border-radius: 0;
+    font-weight: 500;
+    color: #6b7280;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    white-space: nowrap;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .tablet-tab.active {
+    background: white;
+    color: #3b82f6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .tablet-tab:not(.active):hover {
+    color: #374151;
+    background: rgba(255, 255, 255, 0.5);
+  }
+  
+  /* Enhanced Input Fields */
+  .tablet-input {
+    min-height: 48px;
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 0;
+    font-size: 16px; /* Prevent zoom on iOS */
+    transition: all 0.2s ease;
+  }
+  
+  .tablet-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  /* Enhanced Search Bar */
+  .tablet-search {
+    position: relative;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  
+  .tablet-search input {
+    width: 100%;
+    min-height: 52px;
+    padding: 14px 50px 14px 20px;
+    border: 2px solid #e5e7eb;
+    border-radius: 26px;
+    font-size: 16px;
+    background: white;
+    transition: all 0.2s ease;
+  }
+  
+  .tablet-search input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  }
+  
+  .tablet-search-icon {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    color: #6b7280;
+  }
+
+  /* Layout Manager Styles */
+  .tablet-layout-manager {
+    will-change: transform;
+    contain: layout style;
+  }
+
+  .tablet-layout-controls {
+    z-index: 1000;
+  }
+
+  .tablet-layout-container {
+    transition: grid-template-columns 0.3s ease;
+    min-height: 100%;
+  }
+
+  .tablet-layout-panel {
+    will-change: transform;
+    contain: layout style paint;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .tablet-panel-collapsed {
+    min-width: 60px !important;
+    overflow: hidden;
+  }
+
+  .tablet-panel-collapsed > * {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Split View Styles */
+  .tablet-split-view {
+    contain: layout style;
+  }
+
+  .tablet-split-left,
+  .tablet-split-right {
+    will-change: width;
+    transition: width 0.1s ease-out;
+  }
+
+  .tablet-split-resizer {
+    touch-action: none;
+    user-select: none;
+    position: relative;
+    z-index: 10;
+  }
+
+  .tablet-split-resizer:hover {
+    background: linear-gradient(to bottom, #ef4444, #dc2626);
+  }
+
+  .tablet-split-resizer::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    right: -2px;
+    top: 0;
+    bottom: 0;
+    cursor: col-resize;
+  }
+
+  /* Adaptive Grid Styles */
+  .tablet-adaptive-grid {
+    contain: layout style;
+    will-change: grid-template-columns;
+    transition: grid-template-columns 0.3s ease;
+  }
+
+  .tablet-grid-item {
+    contain: layout style paint;
+    will-change: transform;
+  }
+
+  /* Sidebar Styles */
+  .tablet-sidebar-collapsed {
+    will-change: width;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .tablet-sidebar-expanded {
+    will-change: width;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Performance Optimizations for Tablet */
+  .tablet-gpu-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+
+  /* Advanced Multi-Column Layouts */
+  .tablet-multi-column {
+    column-gap: 2rem;
+    column-fill: balance;
+    break-inside: avoid;
+  }
+
+  .tablet-multi-column-2 {
+    columns: 2;
+  }
+
+  .tablet-multi-column-3 {
+    columns: 3;
+  }
+
+  /* Landscape Orientation Optimizations */
+  @media screen and (orientation: landscape) and (min-width: 768px) {
+    .tablet-landscape-optimize {
+      max-height: 100vh;
+      overflow-y: auto;
+    }
+
+    .tablet-landscape-split {
+      grid-template-columns: 320px 1fr 280px;
+    }
+
+    .tablet-landscape-content {
+      padding: 1.5rem;
+    }
+
+    /* Enhanced navigation for landscape */
+    .tablet-landscape-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      z-index: 1000;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    /* Sidebar auto-hide in landscape */
+    .tablet-landscape-sidebar-auto {
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+    }
+
+    .tablet-landscape-sidebar-auto.active {
+      transform: translateX(0);
+    }
+  }
+
+  /* Portrait Orientation Optimizations */
+  @media screen and (orientation: portrait) and (min-width: 768px) {
+    .tablet-portrait-stack {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .tablet-portrait-header {
+      flex-shrink: 0;
+      height: 80px;
+    }
+
+    .tablet-portrait-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+    }
+
+    .tablet-portrait-split {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      height: 100%;
+    }
+  }
+
+  /* High DPI Display Optimizations */
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx) {
+    .tablet-high-dpi {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .tablet-high-dpi img {
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+  }
+
+  /* Animation Classes for Tablet */
+  .tablet-slide-in-left {
+    animation: tabletSlideInLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .tablet-slide-in-right {
+    animation: tabletSlideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .tablet-fade-in {
+    animation: tabletFadeIn 0.4s ease-out;
+  }
+
+  .tablet-scale-in {
+    animation: tabletScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes tabletSlideInLeft {
+    from {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes tabletSlideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes tabletFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes tabletScaleIn {
+    from {
+      transform: scale(0.8);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  /* Hover State Adaptations for Tablets */
+  @media (hover: hover) {
+    .tablet-hover-lift:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .tablet-hover-glow:hover {
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+    }
+
+    .tablet-hover-scale:hover {
+      transform: scale(1.02);
+    }
+  }
+
+  /* Touch-specific styles (no hover support) */
+  @media (hover: none) {
+    .tablet-touch-feedback:active {
+      transform: scale(0.98);
+      transition: transform 0.1s ease;
+    }
+
+    .tablet-touch-highlight:active {
+      background-color: rgba(239, 68, 68, 0.1);
+    }
+  }
+}

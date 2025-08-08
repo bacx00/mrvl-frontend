@@ -1,0 +1,560 @@
+{
+  "timestamp": "2025-08-07T19:23:40.030Z",
+  "testConfig": {
+    "matchId": "test-match-12345",
+    "format": "BO3",
+    "teams": {
+      "team1": {
+        "id": "sentinels",
+        "name": "Sentinels",
+        "players": [
+          {
+            "id": "tenz",
+            "name": "TenZ",
+            "country": "CA"
+          },
+          {
+            "id": "sick",
+            "name": "SicK",
+            "country": "US"
+          },
+          {
+            "id": "dapr",
+            "name": "dapr",
+            "country": "CA"
+          },
+          {
+            "id": "shaz",
+            "name": "ShahZaM",
+            "country": "US"
+          },
+          {
+            "id": "zombs",
+            "name": "zombs",
+            "country": "US"
+          },
+          {
+            "id": "kanpeki",
+            "name": "Kanpeki",
+            "country": "US"
+          }
+        ]
+      },
+      "team2": {
+        "id": "g2",
+        "name": "G2 Esports",
+        "players": [
+          {
+            "id": "nukkye",
+            "name": "nukkye",
+            "country": "ES"
+          },
+          {
+            "id": "avova",
+            "name": "AVOVA",
+            "country": "LT"
+          },
+          {
+            "id": "mixwell",
+            "name": "mixwell",
+            "country": "ES"
+          },
+          {
+            "id": "hoody",
+            "name": "hoody",
+            "country": "BE"
+          },
+          {
+            "id": "patitek",
+            "name": "paTiTek",
+            "country": "PL"
+          },
+          {
+            "id": "meddo",
+            "name": "meddo",
+            "country": "FI"
+          }
+        ]
+      }
+    }
+  },
+  "mapData": {
+    "map0": {
+      "mapName": "Hellfire Gala: Krakoa",
+      "gameMode": "Domination",
+      "team1Score": 2,
+      "team2Score": 1,
+      "team1Players": [
+        {
+          "id": "tenz",
+          "name": "TenZ",
+          "country": "CA",
+          "hero": "Spider-Man",
+          "eliminations": 23,
+          "deaths": 8,
+          "assists": 12,
+          "damage": 15420,
+          "healing": 0,
+          "damage_blocked": 2100
+        },
+        {
+          "id": "sick",
+          "name": "SicK",
+          "country": "US",
+          "hero": "Iron Man",
+          "eliminations": 18,
+          "deaths": 10,
+          "assists": 15,
+          "damage": 12800,
+          "healing": 0,
+          "damage_blocked": 1800
+        },
+        {
+          "id": "dapr",
+          "name": "dapr",
+          "country": "CA",
+          "hero": "Captain America",
+          "eliminations": 12,
+          "deaths": 11,
+          "assists": 20,
+          "damage": 8900,
+          "healing": 0,
+          "damage_blocked": 8500
+        },
+        {
+          "id": "shaz",
+          "name": "ShahZaM",
+          "country": "US",
+          "hero": "Mantis",
+          "eliminations": 5,
+          "deaths": 7,
+          "assists": 25,
+          "damage": 4200,
+          "healing": 18600,
+          "damage_blocked": 0
+        },
+        {
+          "id": "zombs",
+          "name": "zombs",
+          "country": "US",
+          "hero": "Luna Snow",
+          "eliminations": 3,
+          "deaths": 9,
+          "assists": 22,
+          "damage": 3800,
+          "healing": 16900,
+          "damage_blocked": 0
+        },
+        {
+          "id": "kanpeki",
+          "name": "Kanpeki",
+          "country": "US",
+          "hero": "Venom",
+          "eliminations": 8,
+          "deaths": 12,
+          "assists": 18,
+          "damage": 6100,
+          "healing": 0,
+          "damage_blocked": 7200
+        }
+      ],
+      "team2Players": [
+        {
+          "id": "nukkye",
+          "name": "nukkye",
+          "country": "ES",
+          "hero": "Black Panther",
+          "eliminations": 20,
+          "deaths": 12,
+          "assists": 8,
+          "damage": 13500,
+          "healing": 0,
+          "damage_blocked": 1200
+        },
+        {
+          "id": "avova",
+          "name": "AVOVA",
+          "country": "LT",
+          "hero": "Storm",
+          "eliminations": 17,
+          "deaths": 11,
+          "assists": 14,
+          "damage": 11800,
+          "healing": 0,
+          "damage_blocked": 900
+        },
+        {
+          "id": "mixwell",
+          "name": "mixwell",
+          "country": "ES",
+          "hero": "Magneto",
+          "eliminations": 10,
+          "deaths": 13,
+          "assists": 16,
+          "damage": 7800,
+          "healing": 0,
+          "damage_blocked": 9200
+        },
+        {
+          "id": "hoody",
+          "name": "hoody",
+          "country": "BE",
+          "hero": "Adam Warlock",
+          "eliminations": 6,
+          "deaths": 8,
+          "assists": 20,
+          "damage": 4900,
+          "healing": 15800,
+          "damage_blocked": 0
+        },
+        {
+          "id": "patitek",
+          "name": "paTiTek",
+          "country": "PL",
+          "hero": "Cloak & Dagger",
+          "eliminations": 4,
+          "deaths": 10,
+          "assists": 18,
+          "damage": 3600,
+          "healing": 14200,
+          "damage_blocked": 0
+        },
+        {
+          "id": "meddo",
+          "name": "meddo",
+          "country": "FI",
+          "hero": "Groot",
+          "eliminations": 7,
+          "deaths": 15,
+          "assists": 12,
+          "damage": 5200,
+          "healing": 0,
+          "damage_blocked": 8800
+        }
+      ]
+    },
+    "map1": {
+      "mapName": "Empire of Eternal Night: Central Park",
+      "gameMode": "Convoy",
+      "team1Score": 1,
+      "team2Score": 3,
+      "team1Players": [
+        {
+          "id": "tenz",
+          "name": "TenZ",
+          "country": "CA",
+          "hero": "Hawkeye",
+          "eliminations": 19,
+          "deaths": 14,
+          "assists": 9,
+          "damage": 16800,
+          "healing": 0,
+          "damage_blocked": 1100
+        },
+        {
+          "id": "sick",
+          "name": "SicK",
+          "country": "US",
+          "hero": "Punisher",
+          "eliminations": 21,
+          "deaths": 12,
+          "assists": 7,
+          "damage": 18200,
+          "healing": 0,
+          "damage_blocked": 800
+        },
+        {
+          "id": "dapr",
+          "name": "dapr",
+          "country": "CA",
+          "hero": "Hulk",
+          "eliminations": 15,
+          "deaths": 16,
+          "assists": 11,
+          "damage": 11400,
+          "healing": 0,
+          "damage_blocked": 12500
+        },
+        {
+          "id": "shaz",
+          "name": "ShahZaM",
+          "country": "US",
+          "hero": "Rocket Raccoon",
+          "eliminations": 8,
+          "deaths": 13,
+          "assists": 19,
+          "damage": 7200,
+          "healing": 12400,
+          "damage_blocked": 0
+        },
+        {
+          "id": "zombs",
+          "name": "zombs",
+          "country": "US",
+          "hero": "Jeff the Land Shark",
+          "eliminations": 2,
+          "deaths": 15,
+          "assists": 24,
+          "damage": 2800,
+          "healing": 19800,
+          "damage_blocked": 0
+        },
+        {
+          "id": "kanpeki",
+          "name": "Kanpeki",
+          "country": "US",
+          "hero": "Thor",
+          "eliminations": 11,
+          "deaths": 18,
+          "assists": 14,
+          "damage": 8900,
+          "healing": 0,
+          "damage_blocked": 9800
+        }
+      ],
+      "team2Players": [
+        {
+          "id": "nukkye",
+          "name": "nukkye",
+          "country": "ES",
+          "hero": "Wolverine",
+          "eliminations": 25,
+          "deaths": 10,
+          "assists": 12,
+          "damage": 19200,
+          "healing": 0,
+          "damage_blocked": 1800
+        },
+        {
+          "id": "avova",
+          "name": "AVOVA",
+          "country": "LT",
+          "hero": "Scarlet Witch",
+          "eliminations": 22,
+          "deaths": 9,
+          "assists": 15,
+          "damage": 17400,
+          "healing": 0,
+          "damage_blocked": 600
+        },
+        {
+          "id": "mixwell",
+          "name": "mixwell",
+          "country": "ES",
+          "hero": "Doctor Strange",
+          "eliminations": 14,
+          "deaths": 14,
+          "assists": 18,
+          "damage": 9800,
+          "healing": 0,
+          "damage_blocked": 11200
+        },
+        {
+          "id": "hoody",
+          "name": "hoody",
+          "country": "BE",
+          "hero": "Loki",
+          "eliminations": 9,
+          "deaths": 11,
+          "assists": 22,
+          "damage": 6400,
+          "healing": 16800,
+          "damage_blocked": 0
+        },
+        {
+          "id": "patitek",
+          "name": "paTiTek",
+          "country": "PL",
+          "hero": "Mantis",
+          "eliminations": 5,
+          "deaths": 8,
+          "assists": 26,
+          "damage": 4100,
+          "healing": 21200,
+          "damage_blocked": 0
+        },
+        {
+          "id": "meddo",
+          "name": "meddo",
+          "country": "FI",
+          "hero": "Peni Parker",
+          "eliminations": 12,
+          "deaths": 12,
+          "assists": 16,
+          "damage": 7800,
+          "healing": 0,
+          "damage_blocked": 15200
+        }
+      ]
+    },
+    "map2": {
+      "mapName": "Intergalactic Empire of Wakanda: Birnin T'Challa",
+      "gameMode": "Domination",
+      "team1Score": 2,
+      "team2Score": 0,
+      "team1Players": [
+        {
+          "id": "tenz",
+          "name": "TenZ",
+          "country": "CA",
+          "hero": "Moon Knight",
+          "eliminations": 28,
+          "deaths": 6,
+          "assists": 14,
+          "damage": 21200,
+          "healing": 0,
+          "damage_blocked": 2400
+        },
+        {
+          "id": "sick",
+          "name": "SicK",
+          "country": "US",
+          "hero": "Namor",
+          "eliminations": 24,
+          "deaths": 8,
+          "assists": 16,
+          "damage": 18900,
+          "healing": 0,
+          "damage_blocked": 1600
+        },
+        {
+          "id": "dapr",
+          "name": "dapr",
+          "country": "CA",
+          "hero": "Mr. Fantastic",
+          "eliminations": 16,
+          "deaths": 9,
+          "assists": 20,
+          "damage": 12400,
+          "healing": 0,
+          "damage_blocked": 14800
+        },
+        {
+          "id": "shaz",
+          "name": "ShahZaM",
+          "country": "US",
+          "hero": "Adam Warlock",
+          "eliminations": 7,
+          "deaths": 5,
+          "assists": 28,
+          "damage": 5800,
+          "healing": 24600,
+          "damage_blocked": 0
+        },
+        {
+          "id": "zombs",
+          "name": "zombs",
+          "country": "US",
+          "hero": "Cloak & Dagger",
+          "eliminations": 4,
+          "deaths": 7,
+          "assists": 30,
+          "damage": 4200,
+          "healing": 22800,
+          "damage_blocked": 0
+        },
+        {
+          "id": "kanpeki",
+          "name": "Kanpeki",
+          "country": "US",
+          "hero": "Emma Frost",
+          "eliminations": 12,
+          "deaths": 10,
+          "assists": 22,
+          "damage": 9600,
+          "healing": 0,
+          "damage_blocked": 12400
+        }
+      ],
+      "team2Players": [
+        {
+          "id": "nukkye",
+          "name": "nukkye",
+          "country": "ES",
+          "hero": "Iron Fist",
+          "eliminations": 18,
+          "deaths": 15,
+          "assists": 10,
+          "damage": 14800,
+          "healing": 0,
+          "damage_blocked": 2200
+        },
+        {
+          "id": "avova",
+          "name": "AVOVA",
+          "country": "LT",
+          "hero": "Psylocke",
+          "eliminations": 15,
+          "deaths": 16,
+          "assists": 12,
+          "damage": 13200,
+          "healing": 0,
+          "damage_blocked": 800
+        },
+        {
+          "id": "mixwell",
+          "name": "mixwell",
+          "country": "ES",
+          "hero": "Magneto",
+          "eliminations": 9,
+          "deaths": 18,
+          "assists": 14,
+          "damage": 7400,
+          "healing": 0,
+          "damage_blocked": 10800
+        },
+        {
+          "id": "hoody",
+          "name": "hoody",
+          "country": "BE",
+          "hero": "Luna Snow",
+          "eliminations": 3,
+          "deaths": 12,
+          "assists": 16,
+          "damage": 3800,
+          "healing": 18400,
+          "damage_blocked": 0
+        },
+        {
+          "id": "patitek",
+          "name": "paTiTek",
+          "country": "PL",
+          "hero": "Rocket Raccoon",
+          "eliminations": 2,
+          "deaths": 14,
+          "assists": 18,
+          "damage": 2900,
+          "healing": 16200,
+          "damage_blocked": 0
+        },
+        {
+          "id": "meddo",
+          "name": "meddo",
+          "country": "FI",
+          "hero": "Hulk",
+          "eliminations": 6,
+          "deaths": 20,
+          "assists": 8,
+          "damage": 4600,
+          "healing": 0,
+          "damage_blocked": 9200
+        }
+      ]
+    }
+  },
+  "results": {
+    "mapSeparation": true,
+    "heroSelectionPerMap": true,
+    "statUpdates": true,
+    "realTimeSync": true,
+    "dataStructure": true,
+    "overall": true
+  },
+  "errors": [],
+  "warnings": [],
+  "summary": {
+    "totalTests": 5,
+    "passed": 5,
+    "failed": 0
+  }
+}

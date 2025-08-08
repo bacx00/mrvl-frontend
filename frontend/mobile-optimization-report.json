@@ -1,0 +1,117 @@
+{
+  "timestamp": "2025-08-05T20:34:59.242Z",
+  "summary": {
+    "total": 14,
+    "passed": 10,
+    "failed": 1,
+    "warnings": 3,
+    "passRate": "90.91%"
+  },
+  "results": [
+    {
+      "name": "Mobile CSS Classes",
+      "passed": true,
+      "message": "Found 5/5 required mobile classes",
+      "type": "test",
+      "timestamp": "2025-08-05T20:34:59.205Z"
+    },
+    {
+      "name": "Touch Target Sizes",
+      "passed": true,
+      "message": "Found 3 properly sized touch targets (≥44px)",
+      "type": "test",
+      "timestamp": "2025-08-05T20:34:59.206Z"
+    },
+    {
+      "name": "Touch Optimization",
+      "passed": null,
+      "message": "MobileGestures.js may be missing touch optimization classes",
+      "type": "warning",
+      "timestamp": "2025-08-05T20:34:59.207Z"
+    },
+    {
+      "name": "Touch Optimization",
+      "passed": null,
+      "message": "MobileEnhancements.js may be missing touch optimization classes",
+      "type": "warning",
+      "timestamp": "2025-08-05T20:34:59.211Z"
+    },
+    {
+      "name": "Mobile Components",
+      "passed": true,
+      "message": "Found 5/5 required mobile components",
+      "type": "test",
+      "timestamp": "2025-08-05T20:34:59.211Z"
+    },
+    {
+      "name": "Responsive Breakpoints",
+      "passed": true,
+      "message": "Found 5/5 valid mobile breakpoints",
+      "type": "test",
+      "timestamp": "2025-08-05T20:34:59.225Z"
+    },
+    {
+      "name": "Image Optimization Features",
+      "passed": true,
+      "message": "Found 5/5 optimization features: lazy loading, srcSet, responsive sizing, placeholder, IntersectionObserver",
+      "type": "test",
+      "timestamp": "2025-08-05T20:34:59.226Z"
+    },
+    {
+      "name": "Image Assets",
+      "passed": true,
+      "message": "Found 4 image assets",
+      "type": "test",
+      "timestamp": "2025-08-05T20:34:59.232Z"
+    },
+    {
+      "name": "Performance Utilities",
+      "passed": true,
+      "message": "Found 5/5 performance functions",
+      "type": "test",
+      "timestamp": "2025-08-05T20:34:59.233Z"
+    },
+    {
+      "name": "Device Detection Features",
+      "passed": true,
+      "message": "Found 7/7 detection features",
+      "type": "test",
+      "timestamp": "2025-08-05T20:34:59.234Z"
+    },
+    {
+      "name": "Mobile Accessibility",
+      "passed": false,
+      "message": "3/9 components have accessibility features",
+      "type": "test",
+      "timestamp": "2025-08-05T20:34:59.239Z"
+    },
+    {
+      "name": "Bundle Analysis",
+      "passed": null,
+      "message": "Build directory not found. Run npm run build first.",
+      "type": "warning",
+      "timestamp": "2025-08-05T20:34:59.240Z"
+    },
+    {
+      "name": "Viewport Meta Tag",
+      "passed": true,
+      "message": "Viewport configuration: width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=5",
+      "type": "test",
+      "timestamp": "2025-08-05T20:34:59.241Z"
+    },
+    {
+      "name": "Mobile-First App Structure",
+      "passed": true,
+      "message": "Found 4/5 mobile-first features",
+      "type": "test",
+      "timestamp": "2025-08-05T20:34:59.242Z"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "high",
+      "category": "critical",
+      "message": "1 critical mobile optimization tests failed. Address these issues for better mobile performance."
+    }
+  ]
+}

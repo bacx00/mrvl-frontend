@@ -1,0 +1,196 @@
+/* VLR.gg Style Bracket CSS */
+
+.vlr-bracket-container {
+  @apply bg-gray-50 dark:bg-gray-900 min-h-screen;
+}
+
+.vlr-bracket-container.fullscreen {
+  @apply fixed inset-0 z-50 overflow-auto;
+}
+
+/* Bracket Header */
+.bracket-header {
+  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.dark .bracket-header {
+  background-color: rgba(17, 24, 39, 0.9);
+}
+
+/* Swiss Stage Styles */
+.swiss-stage {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.swiss-match {
+  transition: all 0.2s ease;
+}
+
+.swiss-match:hover {
+  transform: translateY(-2px);
+}
+
+/* Playoff Bracket Styles */
+.playoff-bracket {
+  min-width: 1200px;
+}
+
+.bracket-section {
+  position: relative;
+}
+
+.bracket-round {
+  min-width: 320px;
+}
+
+.playoff-match {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.playoff-match::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  width: 40px;
+  height: 2px;
+  background-color: #e5e7eb;
+  transform: translateY(-50%);
+}
+
+.dark .playoff-match::after {
+  background-color: #374151;
+}
+
+.bracket-round:last-child .playoff-match::after {
+  display: none;
+}
+
+/* Match Connectors */
+.bracket-connector {
+  position: absolute;
+  stroke: #e5e7eb;
+  fill: none;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.dark .bracket-connector {
+  stroke: #374151;
+}
+
+/* Score Input Styles */
+.score-input {
+  @apply bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded focus:ring-2 focus:ring-red-500 focus:border-red-500;
+  -moz-appearance: textfield;
+}
+
+.score-input::-webkit-outer-spin-button,
+.score-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Team Logo Placeholder */
+.team-logo-placeholder {
+  @apply bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center;
+}
+
+/* Match Status Indicators */
+.match-live {
+  @apply border-red-500 shadow-lg;
+  animation: pulse-border 2s infinite;
+}
+
+@keyframes pulse-border {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .swiss-stage {
+    @apply px-4;
+  }
+  
+  .playoff-bracket {
+    @apply px-4;
+    min-width: auto;
+    overflow-x: auto;
+  }
+  
+  .bracket-section {
+    @apply flex-col space-x-0 space-y-8;
+  }
+  
+  .bracket-round {
+    min-width: 280px;
+  }
+}
+
+/* Grand Final Highlight */
+.grand-final-match {
+  @apply border-2 border-yellow-500;
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+}
+
+/* Qualification Indicators */
+.qualified-upper {
+  @apply bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500;
+}
+
+.qualified-lower {
+  @apply bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500;
+}
+
+/* Team Progression Styles */
+.team-progression {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Loading States */
+.bracket-loading {
+  @apply flex items-center justify-center h-96;
+}
+
+.bracket-loading::after {
+  content: 'Loading bracket data...';
+  @apply text-gray-500 dark:text-gray-400 mt-4;
+}
+
+/* Empty States */
+.bracket-empty {
+  @apply text-center py-12;
+}
+
+/* Hover Effects */
+.bracket-match-hover {
+  @apply shadow-xl scale-105 z-20;
+}
+
+/* Print Styles */
+@media print {
+  .bracket-header {
+    @apply relative;
+    page-break-after: avoid;
+  }
+  
+  .playoff-bracket {
+    @apply overflow-visible;
+  }
+  
+  .score-input {
+    @apply border-0;
+  }
+}

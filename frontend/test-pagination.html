@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagination Test</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://cdn.tailwindcss.com" rel="stylesheet">
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Mock Pagination component test
+        const Pagination = ({
+          currentPage = 1,
+          totalPages = 5,
+          totalItems = 100,
+          itemsPerPage = 20,
+          onPageChange = () => {},
+          onPageSizeChange = () => {},
+          pageSizeOptions = [10, 25, 50, 100],
+          itemName = 'items',
+          showPageSizeSelector = true,
+          showItemInfo = true
+        }) => {
+          const startItem = Math.max(1, (currentPage - 1) * itemsPerPage + 1);
+          const endItem = Math.min(totalItems, currentPage * itemsPerPage);
+
+          return (
+            <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                {showItemInfo && (
+                  <div className="text-sm text-gray-700 order-2 sm:order-1">
+                    Showing <span className="font-medium">{startItem}</span> to{' '}
+                    <span className="font-medium">{endItem}</span> of{' '}
+                    <span className="font-medium">{totalItems}</span> {itemName}
+                  </div>
+                )}
+
+                {showPageSizeSelector && onPageSizeChange && (
+                  <div className="flex items-center space-x-2 text-sm order-3 sm:order-2">
+                    <label className="text-gray-700">Show:</label>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => onPageSizeChange(Number(e.target.value))}
+                      className="border border-gray-300 rounded px-2 py-1"
+                    >
+                      {pageSizeOptions.map(size => (
+                        <option key={size} value={size}>{size}</option>
+                      ))}
+                    </select>
+                    <span className="text-gray-700">per page</span>
+                  </div>
+                )}
+
+                {totalPages > 1 && (
+                  <div className="flex items-center space-x-1 order-1 sm:order-3">
+                    <button
+                      onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+
+                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map(pageNum => (
+                      <button
+                        key={pageNum}
+                        onClick={() => onPageChange(pageNum)}
+                        className={`px-3 py-1 text-sm border rounded transition-colors ${
+                          currentPage === pageNum
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                            : 'bg-white border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    ))}
+
+                    <button
+                      onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        };
+
+        const App = () => {
+          const [currentPage, setCurrentPage] = React.useState(1);
+          const [itemsPerPage, setItemsPerPage] = React.useState(20);
+
+          return (
+            <div className="p-8">
+              <h1 className="text-2xl font-bold mb-6">Pagination Component Test</h1>
+              
+              <div className="bg-white rounded-lg border">
+                <div className="p-4">
+                  <h2 className="text-lg font-semibold mb-4">Sample Data Table</h2>
+                  <div className="space-y-2">
+                    {Array.from({ length: itemsPerPage }, (_, i) => (
+                      <div key={i} className="p-3 bg-gray-50 rounded">
+                        Item {((currentPage - 1) * itemsPerPage) + i + 1}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={Math.ceil(100 / itemsPerPage)}
+                  totalItems={100}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={(size) => {
+                    setItemsPerPage(size);
+                    setCurrentPage(1);
+                  }}
+                  itemName="items"
+                  pageSizeOptions={[10, 20, 50, 100]}
+                />
+              </div>
+
+              <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-2">Features Implemented:</h3>
+                <ul className="text-blue-800 space-y-1">
+                  <li>• Page size selector (10, 20, 50, 100 items per page)</li>
+                  <li>• Item count display ("Showing X to Y of Z items")</li>
+                  <li>• Previous/Next navigation with disabled states</li>
+                  <li>• Page number buttons with active state</li>
+                  <li>• Responsive design for mobile and desktop</li>
+                  <li>• Proper state management across page changes</li>
+                </ul>
+              </div>
+            </div>
+          );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

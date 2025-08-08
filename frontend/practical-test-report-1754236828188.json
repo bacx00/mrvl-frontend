@@ -1,0 +1,248 @@
+{
+  "testSuite": "Practical Live Scoring System Test",
+  "timestamp": "2025-08-03T16:00:28.187Z",
+  "testMatch": {
+    "id": 50,
+    "format": "BO3",
+    "status": "live",
+    "teams": "Sentinels vs LOUD"
+  },
+  "summary": {
+    "totalTests": 18,
+    "passed": 12,
+    "failed": 6,
+    "errors": [
+      {
+        "category": "Live Scoring",
+        "testName": "Team1 scores first point",
+        "error": "Request failed with status code 500",
+        "details": {}
+      },
+      {
+        "category": "Live Scoring",
+        "testName": "Team2 equalizes",
+        "error": "Request failed with status code 500",
+        "details": {}
+      },
+      {
+        "category": "Live Scoring",
+        "testName": "Team1 takes lead",
+        "error": "Request failed with status code 500",
+        "details": {}
+      },
+      {
+        "category": "Live Scoring",
+        "testName": "Teams tied",
+        "error": "Request failed with status code 500",
+        "details": {}
+      },
+      {
+        "category": "Live Scoring",
+        "testName": "Team1 wins first map",
+        "error": "Request failed with status code 500",
+        "details": {}
+      },
+      {
+        "category": "Real-time Updates",
+        "testName": "Data consistency after rapid updates",
+        "error": "Request failed with status code 500",
+        "details": {}
+      }
+    ]
+  },
+  "categories": {
+    "Status Transitions": {
+      "passed": 2,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "Pause live match",
+          "passed": true,
+          "details": {
+            "matchId": 50,
+            "fromStatus": "live",
+            "toStatus": "paused"
+          },
+          "error": "Request failed with status code 500",
+          "timestamp": "2025-08-03T16:00:23.041Z"
+        },
+        {
+          "name": "Resume paused match",
+          "passed": true,
+          "details": {
+            "matchId": 50,
+            "fromStatus": "live",
+            "toStatus": "live"
+          },
+          "timestamp": "2025-08-03T16:00:23.642Z"
+        }
+      ]
+    },
+    "Live Scoring": {
+      "passed": 2,
+      "failed": 5,
+      "tests": [
+        {
+          "name": "Team1 scores first point",
+          "passed": false,
+          "details": {},
+          "error": "Request failed with status code 500",
+          "timestamp": "2025-08-03T16:00:24.341Z"
+        },
+        {
+          "name": "Team2 equalizes",
+          "passed": false,
+          "details": {},
+          "error": "Request failed with status code 500",
+          "timestamp": "2025-08-03T16:00:24.521Z"
+        },
+        {
+          "name": "Team1 takes lead",
+          "passed": false,
+          "details": {},
+          "error": "Request failed with status code 500",
+          "timestamp": "2025-08-03T16:00:24.699Z"
+        },
+        {
+          "name": "Teams tied",
+          "passed": false,
+          "details": {},
+          "error": "Request failed with status code 500",
+          "timestamp": "2025-08-03T16:00:24.864Z"
+        },
+        {
+          "name": "Team1 wins first map",
+          "passed": false,
+          "details": {},
+          "error": "Request failed with status code 500",
+          "timestamp": "2025-08-03T16:00:25.021Z"
+        },
+        {
+          "name": "Score correction (decrement)",
+          "passed": true,
+          "details": {
+            "action": "Team1 score corrected from 3 to 2"
+          },
+          "timestamp": "2025-08-03T16:00:25.143Z"
+        },
+        {
+          "name": "Complete map and advance",
+          "passed": true,
+          "details": {
+            "action": "Map 1 completed, advanced to Map 2",
+            "seriesScore": "1-0"
+          },
+          "timestamp": "2025-08-03T16:00:25.293Z"
+        }
+      ]
+    },
+    "Player Stats": {
+      "passed": 2,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "Comprehensive player stats (6v6)",
+          "passed": true,
+          "details": {
+            "team1Players": 6,
+            "team2Players": 6,
+            "totalStats": 12
+          },
+          "timestamp": "2025-08-03T16:00:25.443Z"
+        },
+        {
+          "name": "Stats isolation between maps",
+          "passed": true,
+          "details": {
+            "mapsWithStats": 2,
+            "statsIsolated": "Each map maintains separate player statistics"
+          },
+          "timestamp": "2025-08-03T16:00:25.602Z"
+        }
+      ]
+    },
+    "Hero Selection": {
+      "passed": 2,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "Initial hero selection",
+          "passed": true,
+          "details": {
+            "team1Heroes": 6,
+            "team2Heroes": 6,
+            "uniqueHeroes": 12
+          },
+          "timestamp": "2025-08-03T16:00:25.751Z"
+        },
+        {
+          "name": "Mid-game hero swaps",
+          "passed": true,
+          "details": {
+            "action": "Player1 switched from Spider-Man to Wolverine",
+            "statsPreserved": "Eliminations: 5, Deaths: 2, Assists: 3"
+          },
+          "timestamp": "2025-08-03T16:00:25.885Z"
+        }
+      ]
+    },
+    "Real-time Updates": {
+      "passed": 1,
+      "failed": 1,
+      "tests": [
+        {
+          "name": "Update latency test",
+          "passed": true,
+          "details": {
+            "averageLatency": "157.60ms",
+            "maxLatency": "203ms",
+            "minLatency": "109ms",
+            "totalTests": 5
+          },
+          "timestamp": "2025-08-03T16:00:26.674Z"
+        },
+        {
+          "name": "Data consistency after rapid updates",
+          "passed": false,
+          "details": {},
+          "error": "Request failed with status code 500",
+          "timestamp": "2025-08-03T16:00:27.885Z"
+        }
+      ]
+    },
+    "Edge Cases": {
+      "passed": 3,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "0-0 score handling",
+          "passed": true,
+          "details": {
+            "scenario": "Zero-zero score accepted"
+          },
+          "timestamp": "2025-08-03T16:00:28.003Z"
+        },
+        {
+          "name": "High score (overtime) handling",
+          "passed": true,
+          "details": {
+            "scenario": "Overtime score 7-6 accepted"
+          },
+          "timestamp": "2025-08-03T16:00:28.112Z"
+        },
+        {
+          "name": "Invalid data rejection",
+          "passed": true,
+          "details": {
+            "correctlyRejected": true,
+            "errorMessage": 500
+          },
+          "timestamp": "2025-08-03T16:00:28.187Z"
+        }
+      ]
+    }
+  },
+  "testData": {
+    "matchId": 50
+  }
+}

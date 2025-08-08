@@ -1,0 +1,587 @@
+{
+  "timestamp": "2025-08-03T16:28:33.362Z",
+  "summary": {
+    "structureStatus": "Good",
+    "liveScoringComponents": 4,
+    "pageComponents": 8,
+    "mobileComponents": 8,
+    "totalIssues": 0,
+    "frontendAccessible": true
+  },
+  "detailedResults": {
+    "structure": {
+      "components": {
+        "exists": true,
+        "fileCount": 25,
+        "files": [
+          "AuthModal.js",
+          "BracketPickems.js",
+          "BracketVisualization.js",
+          "EventCard.js",
+          "Footer.js",
+          "HeroAvatarSelector.js",
+          "LiquipediaBracketVisualization.js",
+          "MarvelRivalsBracketVisualization.js",
+          "MarvelRivalsMapVeto.js",
+          "MatchCard.js",
+          "MatchCard.tsx",
+          "Navigation.js",
+          "RoleBasedDashboard.js",
+          "SimpleBracket.js",
+          "SimplifiedLiquipediaBracket.js",
+          "SwissDoubleElimBracket.js",
+          "TournamentBracketVisualization.js",
+          "UniversalBracketVisualization.js",
+          "VLRBracketVisualization.js"
+        ]
+      },
+      "pages": {
+        "exists": false,
+        "error": "ENOENT: no such file or directory, stat '/var/www/mrvl-frontend/frontend/src/pages'"
+      },
+      "hooks": {
+        "exists": true,
+        "fileCount": 5,
+        "files": [
+          "index.js",
+          "useDeviceType.js",
+          "useLiveProfileUpdates.js",
+          "useMentionAutocomplete.js",
+          "useUserDisplay.js"
+        ]
+      },
+      "utils": {
+        "exists": true,
+        "fileCount": 8,
+        "files": [
+          "countryFix.js",
+          "dateUtils.js",
+          "imageUrlUtils.js",
+          "imageUtils.js",
+          "marvelRivalsAlignment.js",
+          "marvelRivalsSync.js",
+          "mentionUtils.js",
+          "test-websocket-sync.ts"
+        ]
+      },
+      "services": {
+        "exists": true,
+        "fileCount": 1,
+        "files": [
+          "heroService.js"
+        ]
+      },
+      "styles": {
+        "exists": true,
+        "fileCount": 6,
+        "files": []
+      }
+    },
+    "components": {
+      "liveScoring": {
+        "components/admin/SinglePageLiveScoring.js": {
+          "exists": true,
+          "filename": "components/admin/SinglePageLiveScoring.js",
+          "size": 62833,
+          "features": {
+            "hasWebSocket": false,
+            "hasSSE": false,
+            "hasRealTimeUpdates": true,
+            "hasScoreUpdates": true,
+            "hasPlayerStats": true,
+            "hasHeroSelection": true,
+            "hasMapTransitions": false,
+            "hasMatchStatus": true,
+            "hasButtons": true,
+            "hasInputs": true,
+            "hasSelects": true,
+            "hasErrorHandling": true,
+            "hasLoading": false,
+            "usesUseState": true,
+            "usesUseEffect": true,
+            "usesCustomHooks": true
+          },
+          "issues": [
+            "No loading states detected"
+          ]
+        },
+        "components/admin/ComprehensiveLiveScoring.js": {
+          "exists": true,
+          "filename": "components/admin/ComprehensiveLiveScoring.js",
+          "size": 85816,
+          "features": {
+            "hasWebSocket": true,
+            "hasSSE": false,
+            "hasRealTimeUpdates": true,
+            "hasScoreUpdates": true,
+            "hasPlayerStats": true,
+            "hasHeroSelection": true,
+            "hasMapTransitions": true,
+            "hasMatchStatus": true,
+            "hasButtons": true,
+            "hasInputs": true,
+            "hasSelects": true,
+            "hasErrorHandling": true,
+            "hasLoading": true,
+            "usesUseState": true,
+            "usesUseEffect": true,
+            "usesCustomHooks": true
+          },
+          "issues": []
+        },
+        "components/admin/SimplifiedLiveScoring.js": {
+          "exists": true,
+          "filename": "components/admin/SimplifiedLiveScoring.js",
+          "size": 35416,
+          "features": {
+            "hasWebSocket": false,
+            "hasSSE": false,
+            "hasRealTimeUpdates": false,
+            "hasScoreUpdates": true,
+            "hasPlayerStats": true,
+            "hasHeroSelection": false,
+            "hasMapTransitions": true,
+            "hasMatchStatus": true,
+            "hasButtons": true,
+            "hasInputs": true,
+            "hasSelects": true,
+            "hasErrorHandling": true,
+            "hasLoading": false,
+            "usesUseState": true,
+            "usesUseEffect": true,
+            "usesCustomHooks": true
+          },
+          "issues": [
+            "No loading states detected",
+            "Live component without real-time features"
+          ]
+        },
+        "components/pages/MatchDetailPage.js": {
+          "exists": true,
+          "filename": "components/pages/MatchDetailPage.js",
+          "size": 115749,
+          "features": {
+            "hasWebSocket": true,
+            "hasSSE": true,
+            "hasRealTimeUpdates": true,
+            "hasScoreUpdates": true,
+            "hasPlayerStats": true,
+            "hasHeroSelection": true,
+            "hasMapTransitions": false,
+            "hasMatchStatus": true,
+            "hasButtons": true,
+            "hasInputs": true,
+            "hasSelects": true,
+            "hasErrorHandling": true,
+            "hasLoading": true,
+            "usesUseState": true,
+            "usesUseEffect": true,
+            "usesCustomHooks": true
+          },
+          "issues": []
+        }
+      },
+      "pages": {
+        "components/pages/HomePage.js": {
+          "exists": true,
+          "filename": "components/pages/HomePage.js",
+          "size": 33298,
+          "features": {
+            "isReactComponent": true,
+            "usesJSX": true,
+            "hasProps": false,
+            "hasLocalState": true,
+            "hasEffects": true,
+            "hasContext": false,
+            "hasButtons": true,
+            "hasForms": true,
+            "hasTables": false,
+            "hasCards": true,
+            "hasResponsive": true,
+            "hasCSS": true
+          },
+          "routing": {
+            "hasNavigation": true,
+            "hasParams": true,
+            "hasQueryParams": false
+          },
+          "dataFetching": {
+            "usesFetch": false,
+            "usesAxios": true,
+            "usesAPI": true,
+            "hasAsyncData": true
+          },
+          "issues": []
+        },
+        "components/pages/MatchesPage.js": {
+          "exists": true,
+          "filename": "components/pages/MatchesPage.js",
+          "size": 21386,
+          "features": {
+            "isReactComponent": true,
+            "usesJSX": true,
+            "hasProps": false,
+            "hasLocalState": true,
+            "hasEffects": true,
+            "hasContext": false,
+            "hasButtons": true,
+            "hasForms": true,
+            "hasTables": false,
+            "hasCards": true,
+            "hasResponsive": true,
+            "hasCSS": true
+          },
+          "routing": {
+            "hasNavigation": true,
+            "hasParams": false,
+            "hasQueryParams": false
+          },
+          "dataFetching": {
+            "usesFetch": false,
+            "usesAxios": true,
+            "usesAPI": true,
+            "hasAsyncData": true
+          },
+          "issues": []
+        },
+        "components/pages/MatchDetailPage.js": {
+          "exists": true,
+          "filename": "components/pages/MatchDetailPage.js",
+          "size": 115749,
+          "features": {
+            "isReactComponent": true,
+            "usesJSX": true,
+            "hasProps": false,
+            "hasLocalState": true,
+            "hasEffects": true,
+            "hasContext": false,
+            "hasButtons": true,
+            "hasForms": true,
+            "hasTables": true,
+            "hasCards": true,
+            "hasResponsive": false,
+            "hasCSS": true
+          },
+          "routing": {
+            "hasNavigation": true,
+            "hasParams": false,
+            "hasQueryParams": false
+          },
+          "dataFetching": {
+            "usesFetch": false,
+            "usesAxios": true,
+            "usesAPI": true,
+            "hasAsyncData": true
+          },
+          "issues": []
+        },
+        "components/pages/EventsPage.js": {
+          "exists": true,
+          "filename": "components/pages/EventsPage.js",
+          "size": 12385,
+          "features": {
+            "isReactComponent": true,
+            "usesJSX": true,
+            "hasProps": false,
+            "hasLocalState": true,
+            "hasEffects": true,
+            "hasContext": false,
+            "hasButtons": true,
+            "hasForms": true,
+            "hasTables": false,
+            "hasCards": true,
+            "hasResponsive": false,
+            "hasCSS": true
+          },
+          "routing": {
+            "hasNavigation": true,
+            "hasParams": false,
+            "hasQueryParams": true
+          },
+          "dataFetching": {
+            "usesFetch": false,
+            "usesAxios": true,
+            "usesAPI": true,
+            "hasAsyncData": true
+          },
+          "issues": []
+        },
+        "components/pages/TeamsPage.js": {
+          "exists": true,
+          "filename": "components/pages/TeamsPage.js",
+          "size": 16799,
+          "features": {
+            "isReactComponent": true,
+            "usesJSX": true,
+            "hasProps": false,
+            "hasLocalState": true,
+            "hasEffects": true,
+            "hasContext": false,
+            "hasButtons": true,
+            "hasForms": true,
+            "hasTables": false,
+            "hasCards": true,
+            "hasResponsive": true,
+            "hasCSS": true
+          },
+          "routing": {
+            "hasNavigation": true,
+            "hasParams": true,
+            "hasQueryParams": true
+          },
+          "dataFetching": {
+            "usesFetch": false,
+            "usesAxios": true,
+            "usesAPI": true,
+            "hasAsyncData": true
+          },
+          "issues": []
+        },
+        "components/pages/PlayersPage.js": {
+          "exists": true,
+          "filename": "components/pages/PlayersPage.js",
+          "size": 15665,
+          "features": {
+            "isReactComponent": true,
+            "usesJSX": true,
+            "hasProps": false,
+            "hasLocalState": true,
+            "hasEffects": true,
+            "hasContext": false,
+            "hasButtons": true,
+            "hasForms": true,
+            "hasTables": false,
+            "hasCards": false,
+            "hasResponsive": true,
+            "hasCSS": true
+          },
+          "routing": {
+            "hasNavigation": true,
+            "hasParams": true,
+            "hasQueryParams": true
+          },
+          "dataFetching": {
+            "usesFetch": false,
+            "usesAxios": true,
+            "usesAPI": true,
+            "hasAsyncData": true
+          },
+          "issues": []
+        },
+        "components/pages/RankingsPage.js": {
+          "exists": true,
+          "filename": "components/pages/RankingsPage.js",
+          "size": 12866,
+          "features": {
+            "isReactComponent": true,
+            "usesJSX": true,
+            "hasProps": false,
+            "hasLocalState": true,
+            "hasEffects": true,
+            "hasContext": false,
+            "hasButtons": true,
+            "hasForms": true,
+            "hasTables": true,
+            "hasCards": true,
+            "hasResponsive": false,
+            "hasCSS": true
+          },
+          "routing": {
+            "hasNavigation": true,
+            "hasParams": false,
+            "hasQueryParams": false
+          },
+          "dataFetching": {
+            "usesFetch": false,
+            "usesAxios": true,
+            "usesAPI": true,
+            "hasAsyncData": true
+          },
+          "issues": []
+        },
+        "components/pages/AdminDashboard.js": {
+          "exists": true,
+          "filename": "components/pages/AdminDashboard.js",
+          "size": 21522,
+          "features": {
+            "isReactComponent": true,
+            "usesJSX": true,
+            "hasProps": false,
+            "hasLocalState": true,
+            "hasEffects": true,
+            "hasContext": false,
+            "hasButtons": true,
+            "hasForms": true,
+            "hasTables": true,
+            "hasCards": false,
+            "hasResponsive": false,
+            "hasCSS": true
+          },
+          "routing": {
+            "hasNavigation": false,
+            "hasParams": false,
+            "hasQueryParams": false
+          },
+          "dataFetching": {
+            "usesFetch": false,
+            "usesAxios": true,
+            "usesAPI": true,
+            "hasAsyncData": true
+          },
+          "issues": []
+        }
+      },
+      "mobile": {
+        "MobileBracketVisualization.js": {
+          "exists": true,
+          "filename": "MobileBracketVisualization.js",
+          "features": {
+            "hasTouchEvents": true,
+            "hasResponsiveDesign": true,
+            "hasViewportHandling": true,
+            "hasSwipeGestures": true
+          }
+        },
+        "MobileEnhancements.js": {
+          "exists": true,
+          "filename": "MobileEnhancements.js",
+          "features": {
+            "hasTouchEvents": true,
+            "hasResponsiveDesign": true,
+            "hasViewportHandling": false,
+            "hasSwipeGestures": true
+          }
+        },
+        "MobileGestures.js": {
+          "exists": true,
+          "filename": "MobileGestures.js",
+          "features": {
+            "hasTouchEvents": true,
+            "hasResponsiveDesign": false,
+            "hasViewportHandling": false,
+            "hasSwipeGestures": true
+          }
+        },
+        "MobileLiveScoring.js": {
+          "exists": true,
+          "filename": "MobileLiveScoring.js",
+          "features": {
+            "hasTouchEvents": true,
+            "hasResponsiveDesign": true,
+            "hasViewportHandling": false,
+            "hasSwipeGestures": true
+          }
+        },
+        "MobileMatchCard.js": {
+          "exists": true,
+          "filename": "MobileMatchCard.js",
+          "features": {
+            "hasTouchEvents": true,
+            "hasResponsiveDesign": true,
+            "hasViewportHandling": false,
+            "hasSwipeGestures": true
+          }
+        },
+        "MobileMatchDetail.js": {
+          "exists": true,
+          "filename": "MobileMatchDetail.js",
+          "features": {
+            "hasTouchEvents": true,
+            "hasResponsiveDesign": true,
+            "hasViewportHandling": true,
+            "hasSwipeGestures": true
+          }
+        },
+        "MobileNavigation.js": {
+          "exists": true,
+          "filename": "MobileNavigation.js",
+          "features": {
+            "hasTouchEvents": false,
+            "hasResponsiveDesign": true,
+            "hasViewportHandling": true,
+            "hasSwipeGestures": true
+          }
+        },
+        "MobileTeamCard.js": {
+          "exists": true,
+          "filename": "MobileTeamCard.js",
+          "features": {
+            "hasTouchEvents": false,
+            "hasResponsiveDesign": true,
+            "hasViewportHandling": false,
+            "hasSwipeGestures": true
+          }
+        }
+      }
+    },
+    "pages": {},
+    "api": {
+      "config.js": {
+        "exists": true,
+        "filename": "config.js",
+        "endpoints": [],
+        "configuration": {
+          "hasBaseURL": true,
+          "hasTimeout": false,
+          "hasErrorHandling": false,
+          "hasInterceptors": false,
+          "hasAuth": false,
+          "hasHeaders": false
+        },
+        "issues": []
+      },
+      "lib/api.ts": {
+        "exists": true,
+        "filename": "lib/api.ts",
+        "endpoints": [
+          "endpoint).replace(/^\\/+/, '')}`;\n  const timeout = isMobile() ? MOBILE_TIMEOUT : DEFAULT_TIMEOUT;\n  \n  const config = {\n    ...getRequestConfig(),\n    ...options,\n    headers: {\n      ...getRequestConfig().headers,\n      ...options.headers,\n    },\n  };\n\n  // Add timeout with AbortController\n  const controller = new AbortController();\n  const timeoutId = setTimeout(() => controller.abort(), timeout);\n  config.signal = controller.signal;\n\n  try {\n    const response = await fetch(url, config);\n    clearTimeout(timeoutId);\n\n    if (!response.ok) {\n      let errorMessage = `",
+          "endpoint, { method: 'GET' });\n\nexport const apiPost = <T>(endpoint: string, data?: any): Promise<T> => \n  apiRequest<T>(endpoint, {\n    method: '",
+          "endpoint, { method: 'DELETE' });\n\n// ═══════════════════════════════════════════════════════════════\n//                        AUTHENTICATION API\n// ═══════════════════════════════════════════════════════════════\n\nexport const authAPI = {\n  login: async (credentials: LoginCredentials): Promise<{ user: User; token: string }> => {\n    const response = await apiPost<{ user: User; token: string }>('",
+          "endpoint = queryParams.toString() ? `matches?${queryParams}` : 'matches';\n    return apiGet<Match[]>(endpoint);\n  },\n\n  getById: (id: string | number): Promise<MatchDetails> => \n    apiGet<MatchDetails>(`",
+          "endpoint = page ? `matches/completed?page=${page}` : 'matches/completed';\n    return apiGet<Match[]>(endpoint);\n  },\n};\n\n// ═══════════════════════════════════════════════════════════════\n//                          EVENTS API\n// ═══════════════════════════════════════════════════════════════\n\nexport const eventsAPI = {\n  getAll: (): Promise<Event[]> => apiGet<Event[]>('",
+          "endpoint = region ? `teams/rankings?region=${region}` : 'teams/rankings';\n    return apiGet<Ranking[]>(endpoint);\n  },\n};\n\nexport const playersAPI = {\n  getAll: (): Promise<Player[]> => apiGet<Player[]>('",
+          "endpoint = page ? `forums/threads/${threadId}/posts?page=${page}` : `forums/threads/${threadId}/posts`;\n    return apiGet<ForumPost[]>(endpoint);\n  },\n  \n  createThread: (categoryId: string, data: { title: string; content: string }): Promise<ForumThread> => \n    apiPost<ForumThread>(`",
+          "endpoint = page ? `news?page=${page}` : 'news';\n    return apiGet<NewsArticle[]>(endpoint);\n  },\n  getById: (id: string | number): Promise<NewsArticle> => apiGet<NewsArticle>(`",
+          "endpoint = region ? `rankings/teams?region=${region}` : 'rankings/teams';\n    return apiGet<Ranking[]>(endpoint);\n  },\n  getPlayers: (region?: string): Promise<Ranking[]> => {\n    const endpoint = region ? `"
+        ],
+        "configuration": {
+          "hasBaseURL": true,
+          "hasTimeout": true,
+          "hasErrorHandling": true,
+          "hasInterceptors": true,
+          "hasAuth": true,
+          "hasHeaders": true
+        },
+        "issues": []
+      },
+      "api/MatchAPI.js": {
+        "exists": true,
+        "filename": "api/MatchAPI.js",
+        "endpoints": [
+          "endpoint:', liveControlData);\n      \n      const response = await apiHelper.put(`"
+        ],
+        "configuration": {
+          "hasBaseURL": false,
+          "hasTimeout": false,
+          "hasErrorHandling": true,
+          "hasInterceptors": true,
+          "hasAuth": true,
+          "hasHeaders": true
+        },
+        "issues": []
+      }
+    },
+    "configuration": {
+      "frontend": {
+        "accessible": true,
+        "statusCode": 200,
+        "hasReactApp": true,
+        "hasTitle": true,
+        "responseSize": 2043
+      }
+    },
+    "issues": [],
+    "recommendations": []
+  },
+  "recommendations": []
+}

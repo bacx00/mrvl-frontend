@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>URL Field Test - MatchForm Bug Fix Verification</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .field { margin: 10px 0; }
+        input { width: 300px; padding: 5px; margin: 5px; }
+        button { padding: 5px 10px; margin: 5px; cursor: pointer; }
+        .add-btn { background: #28a745; color: white; }
+        .remove-btn { background: #dc3545; color: white; }
+        .section { border: 1px solid #ccc; padding: 15px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>URL Field Test - MatchForm Bug Fix Verification</h1>
+    <p>This test simulates the URL field functionality that was fixed in MatchForm.js</p>
+    
+    <div class="section">
+        <h3>Stream URLs</h3>
+        <div id="stream-container"></div>
+        <button class="add-btn" onclick="addUrlField('stream')">+ Add Stream</button>
+    </div>
+    
+    <div class="section">
+        <h3>Betting URLs</h3>
+        <div id="betting-container"></div>
+        <button class="add-btn" onclick="addUrlField('betting')">+ Add Betting</button>
+    </div>
+    
+    <div class="section">
+        <h3>VOD URLs</h3>
+        <div id="vod-container"></div>
+        <button class="add-btn" onclick="addUrlField('vod')">+ Add VOD</button>
+    </div>
+    
+    <div class="section">
+        <h3>Current State:</h3>
+        <pre id="state-display"></pre>
+        <button onclick="showState()">Show Current State</button>
+    </div>
+
+    <script>
+        // Simulate the formData structure from React
+        let formData = {
+            stream_urls: [''],
+            betting_urls: [''], 
+            vod_urls: ['']
+        };
+        
+        // Field mapping (matches the React component)
+        const fieldMap = {
+            'stream': 'stream_urls',
+            'betting': 'betting_urls',
+            'vod': 'vod_urls'
+        };
+        
+        function addUrlField(type) {
+            console.log(`Adding URL field for type: ${type}`);
+            const fieldName = fieldMap[type];
+            if (!fieldName) {
+                console.error('Unknown URL type:', type);
+                return;
+            }
+            
+            formData[fieldName] = [...(formData[fieldName] || ['']), ''];
+            renderFields();
+        }
+        
+        function removeUrlField(type, index) {
+            console.log(`Removing URL field for type: ${type}, index: ${index}`);
+            const fieldName = fieldMap[type];
+            if (!fieldName) {
+                console.error('Unknown URL type:', type);
+                return;
+            }
+            
+            const currentUrls = formData[fieldName] || [''];
+            if (currentUrls.length <= 1) return; // Prevent removing last field
+            
+            formData[fieldName] = currentUrls.filter((_, i) => i !== index);
+            renderFields();
+        }
+        
+        function handleUrlChange(type, index, value) {
+            console.log(`URL change: ${type}[${index}] = ${value}`);
+            const fieldName = fieldMap[type];
+            if (!fieldName) {
+                console.error('Unknown URL type:', type);
+                return;
+            }
+            
+            formData[fieldName] = (formData[fieldName] || ['']).map((url, i) => i === index ? value : url);
+            showState();
+        }
+        
+        function renderFields() {
+            // Render stream fields
+            const streamContainer = document.getElementById('stream-container');
+            streamContainer.innerHTML = '';
+            formData.stream_urls.forEach((url, index) => {
+                streamContainer.innerHTML += `
+                    <div class="field">
+                        <input type="url" value="${url}" placeholder="https://twitch.tv/stream${index + 1}" 
+                               oninput="handleUrlChange('stream', ${index}, this.value)">
+                        ${formData.stream_urls.length > 1 ? 
+                            `<button class="remove-btn" onclick="removeUrlField('stream', ${index})">Remove</button>` : ''}
+                    </div>
+                `;
+            });
+            
+            // Render betting fields
+            const bettingContainer = document.getElementById('betting-container');
+            bettingContainer.innerHTML = '';
+            formData.betting_urls.forEach((url, index) => {
+                bettingContainer.innerHTML += `
+                    <div class="field">
+                        <input type="url" value="${url}" placeholder="https://bet365.com/match${index + 1}" 
+                               oninput="handleUrlChange('betting', ${index}, this.value)">
+                        ${formData.betting_urls.length > 1 ? 
+                            `<button class="remove-btn" onclick="removeUrlField('betting', ${index})">Remove</button>` : ''}
+                    </div>
+                `;
+            });
+            
+            // Render vod fields
+            const vodContainer = document.getElementById('vod-container');
+            vodContainer.innerHTML = '';
+            formData.vod_urls.forEach((url, index) => {
+                vodContainer.innerHTML += `
+                    <div class="field">
+                        <input type="url" value="${url}" placeholder="https://youtube.com/vod${index + 1}" 
+                               oninput="handleUrlChange('vod', ${index}, this.value)">
+                        ${formData.vod_urls.length > 1 ? 
+                            `<button class="remove-btn" onclick="removeUrlField('vod', ${index})">Remove</button>` : ''}
+                    </div>
+                `;
+            });
+            
+            showState();
+        }
+        
+        function showState() {
+            document.getElementById('state-display').textContent = JSON.stringify(formData, null, 2);
+        }
+        
+        // Initial render
+        renderFields();
+    </script>
+</body>
+</html>

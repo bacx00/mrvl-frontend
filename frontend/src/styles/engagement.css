@@ -1,0 +1,580 @@
+/* User Engagement Optimization System Styles */
+
+/* Accessibility Features */
+.high-contrast {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --text-primary: #000000;
+  --text-secondary: #333333;
+  --border-color: #000000;
+  --accent-color: #000000;
+}
+
+.high-contrast * {
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.high-contrast .bg-red-500,
+.high-contrast .bg-red-600,
+.high-contrast .bg-red-700 {
+  background-color: var(--accent-color) !important;
+}
+
+.large-text {
+  font-size: 1.125rem !important;
+  line-height: 1.6 !important;
+}
+
+.large-text h1 { font-size: 2.5rem !important; }
+.large-text h2 { font-size: 2rem !important; }
+.large-text h3 { font-size: 1.75rem !important; }
+.large-text h4 { font-size: 1.5rem !important; }
+.large-text .text-xs { font-size: 0.875rem !important; }
+.large-text .text-sm { font-size: 1rem !important; }
+
+.reduced-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  transition-delay: 0s !important;
+}
+
+.reduced-motion .animate-bounce,
+.reduced-motion .animate-pulse,
+.reduced-motion .animate-ping,
+.reduced-motion .animate-spin {
+  animation: none !important;
+}
+
+/* Touch Feedback and Gestures */
+.touch-feedback {
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-feedback:active {
+  transform: scale(0.98);
+}
+
+/* Pull to Refresh */
+.pull-refresh-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.pull-refresh-indicator {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.refresh-spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Swipeable Items */
+.swipeable {
+  position: relative;
+  touch-action: pan-y;
+}
+
+.swipe-actions {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.swipe-item {
+  position: relative;
+  z-index: 2;
+  background: white;
+  transition: transform 0.3s ease;
+}
+
+/* Achievement Animations */
+.achievement-unlock {
+  animation: achievementPulse 2s ease-in-out;
+}
+
+@keyframes achievementPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
+}
+
+.level-up-animation {
+  animation: levelUpBounce 1s ease-in-out;
+}
+
+@keyframes levelUpBounce {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-10px) scale(1.1); }
+  50% { transform: translateY(-20px) scale(1.2); }
+  75% { transform: translateY(-10px) scale(1.1); }
+}
+
+/* Particle Effects */
+.particle-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.particle {
+  position: absolute;
+  pointer-events: none;
+}
+
+.particle-star {
+  width: 8px;
+  height: 8px;
+  background: linear-gradient(45deg, #fbbf24, #f59e0b);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  animation: particleFade 2s ease-out forwards;
+}
+
+.particle-sparkle {
+  width: 6px;
+  height: 6px;
+  background: radial-gradient(circle, #60a5fa, #3b82f6);
+  border-radius: 50%;
+  animation: particleSparkle 1.5s ease-out forwards;
+}
+
+.particle-confetti {
+  width: 4px;
+  height: 10px;
+  animation: particleConfetti 3s ease-out forwards;
+}
+
+@keyframes particleFade {
+  0% { 
+    opacity: 1; 
+    transform: translateY(0) scale(0); 
+  }
+  50% { 
+    opacity: 0.8; 
+    transform: translateY(-50px) scale(1); 
+  }
+  100% { 
+    opacity: 0; 
+    transform: translateY(-100px) scale(0.5); 
+  }
+}
+
+@keyframes particleSparkle {
+  0% { 
+    opacity: 1; 
+    transform: scale(0) rotate(0deg); 
+  }
+  50% { 
+    opacity: 0.9; 
+    transform: scale(1.2) rotate(180deg); 
+  }
+  100% { 
+    opacity: 0; 
+    transform: scale(0) rotate(360deg); 
+  }
+}
+
+@keyframes particleConfetti {
+  0% { 
+    transform: translateY(0) rotateZ(0deg); 
+    opacity: 1; 
+  }
+  100% { 
+    transform: translateY(200px) rotateZ(720deg); 
+    opacity: 0; 
+  }
+}
+
+/* Social Engagement Effects */
+.reaction-bounce {
+  animation: reactionBounce 0.6s ease-in-out;
+}
+
+@keyframes reactionBounce {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.3); }
+  75% { transform: scale(0.9); }
+}
+
+.friendship-glow {
+  animation: friendshipGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes friendshipGlow {
+  from { box-shadow: 0 0 5px rgba(34, 197, 94, 0.3); }
+  to { box-shadow: 0 0 20px rgba(34, 197, 94, 0.6); }
+}
+
+/* Gamification Elements */
+.xp-gain {
+  animation: xpGain 1s ease-out;
+}
+
+@keyframes xpGain {
+  0% { 
+    transform: translateY(0) scale(1); 
+    opacity: 1; 
+  }
+  100% { 
+    transform: translateY(-30px) scale(1.2); 
+    opacity: 0; 
+  }
+}
+
+.streak-fire {
+  animation: streakFire 2s ease-in-out infinite alternate;
+}
+
+@keyframes streakFire {
+  0% { 
+    transform: scale(1) rotate(-2deg); 
+    filter: hue-rotate(0deg); 
+  }
+  50% { 
+    transform: scale(1.1) rotate(2deg); 
+    filter: hue-rotate(15deg); 
+  }
+  100% { 
+    transform: scale(1) rotate(-2deg); 
+    filter: hue-rotate(0deg); 
+  }
+}
+
+.card-flip {
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+}
+
+.card-flip.flipped {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+/* 3D Transforms */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Loading Mini-Games */
+.loading-game-target {
+  animation: targetPulse 1s ease-in-out infinite;
+  cursor: pointer;
+}
+
+@keyframes targetPulse {
+  0%, 100% { 
+    transform: scale(1); 
+    opacity: 0.8; 
+  }
+  50% { 
+    transform: scale(1.1); 
+    opacity: 1; 
+  }
+}
+
+.loading-game-target:hover {
+  animation-play-state: paused;
+  transform: scale(1.2);
+}
+
+/* Performance Optimizations */
+.optimized-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+.gpu-acceleration {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Heatmap Visualization */
+.heatmap-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  mix-blend-mode: multiply;
+}
+
+.heatmap-point {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 0, 0, 0.6) 0%, rgba(255, 0, 0, 0) 100%);
+  animation: heatmapPulse 2s ease-in-out infinite;
+}
+
+@keyframes heatmapPulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+/* Accessibility Slider Customization */
+.slider {
+  background: transparent;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #ef4444;
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.slider::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #ef4444;
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.high-contrast .slider::-webkit-slider-thumb,
+.high-contrast .slider::-moz-range-thumb {
+  background: #000000;
+  border-color: #ffffff;
+}
+
+/* Screen Reader Only Content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus Management */
+.focus-trap {
+  position: relative;
+}
+
+.focus-visible {
+  outline: 2px solid #ef4444;
+  outline-offset: 2px;
+}
+
+/* Voice Input Visualization */
+.voice-input-active {
+  animation: voicePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes voicePulse {
+  0%, 100% { 
+    background-color: rgba(239, 68, 68, 0.1);
+    transform: scale(1);
+  }
+  50% { 
+    background-color: rgba(239, 68, 68, 0.3);
+    transform: scale(1.05);
+  }
+}
+
+.voice-waveform {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  space: 2px;
+}
+
+.voice-bar {
+  width: 3px;
+  background: #ef4444;
+  animation: voiceWave 1s ease-in-out infinite alternate;
+}
+
+.voice-bar:nth-child(2) { animation-delay: 0.1s; height: 10px; }
+.voice-bar:nth-child(3) { animation-delay: 0.2s; height: 20px; }
+.voice-bar:nth-child(4) { animation-delay: 0.3s; height: 15px; }
+.voice-bar:nth-child(5) { animation-delay: 0.4s; height: 25px; }
+
+@keyframes voiceWave {
+  from { transform: scaleY(0.3); }
+  to { transform: scaleY(1); }
+}
+
+/* Battery Optimization Indicators */
+.battery-saver {
+  filter: grayscale(0.3);
+  animation-duration: 0.5s !important;
+  transition-duration: 0.2s !important;
+}
+
+.battery-saver .particle,
+.battery-saver .animate-bounce,
+.battery-saver .animate-pulse {
+  display: none;
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 768px) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .mobile-optimized {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/* Tablet-specific optimizations */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .tablet-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High contrast preferences */
+@media (prefers-contrast: high) {
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --text-primary: #000000;
+    --text-secondary: #333333;
+    --border-color: #000000;
+    --accent-color: #000000;
+  }
+}
+
+/* Color scheme preferences */
+@media (prefers-color-scheme: dark) {
+  .auto-dark {
+    --bg-primary: #1f2937;
+    --bg-secondary: #374151;
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --border-color: #4b5563;
+    --accent-color: #ef4444;
+  }
+}
+
+/* Utility classes */
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+  from { 
+    transform: translateY(20px); 
+    opacity: 0; 
+  }
+  to { 
+    transform: translateY(0); 
+    opacity: 1; 
+  }
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.3s ease-out;
+}
+
+@keyframes scaleIn {
+  from { 
+    transform: scale(0.9); 
+    opacity: 0; 
+  }
+  to { 
+    transform: scale(1); 
+    opacity: 1; 
+  }
+}
+
+/* Engagement-specific responsive breakpoints */
+@media (max-height: 600px) {
+  .engagement-hub {
+    height: 100vh;
+    border-radius: 0;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .engagement-hub {
+    height: 90vh;
+  }
+  
+  .engagement-tab-content {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+}

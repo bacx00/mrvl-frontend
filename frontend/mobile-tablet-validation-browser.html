@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile/Tablet Optimization Validation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            border-bottom: 2px solid #ef4444;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px 15px;
+            border-radius: 6px;
+            border-left: 4px solid;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .passed {
+            background: #f0fdf4;
+            border-color: #22c55e;
+        }
+        .failed {
+            background: #fef2f2;
+            border-color: #ef4444;
+        }
+        .warning {
+            background: #fffbeb;
+            border-color: #f59e0b;
+        }
+        .test-button {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            margin: 10px 10px 10px 0;
+        }
+        .test-button:hover {
+            background: #dc2626;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .metric {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #ef4444;
+        }
+        .metric-label {
+            color: #666;
+            margin-top: 10px;
+        }
+        .viewport-info {
+            background: #e0f2fe;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+        .results-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        pre {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.85em;
+        }
+        .status-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-pass { background: #22c55e; }
+        .status-fail { background: #ef4444; }
+        .status-warning { background: #f59e0b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Mobile/Tablet Optimization Validation</h1>
+            <p>Real-time validation of mobile and tablet optimizations for MRVL Tournament Platform</p>
+        </div>
+
+        <div class="metrics" id="metrics">
+            <div class="metric">
+                <div class="metric-value" id="viewport-width">-</div>
+                <div class="metric-label">Viewport Width</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="viewport-height">-</div>
+                <div class="metric-label">Viewport Height</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="device-type">-</div>
+                <div class="metric-label">Device Type</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="orientation">-</div>
+                <div class="metric-label">Orientation</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 Automated Tests</h2>
+            <button class="test-button" onclick="runAllTests()">Run All Tests</button>
+            <button class="test-button" onclick="runResponsiveTests()">Test Responsiveness</button>
+            <button class="test-button" onclick="runPerformanceTests()">Test Performance</button>
+            <button class="test-button" onclick="runAccessibilityTests()">Test Accessibility</button>
+            
+            <div class="results-container" id="test-results">
+                <p style="color: #666; font-style: italic;">Click "Run All Tests" to start validation</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>👆 Touch and Gesture Testing</h2>
+            <div id="touch-test-area" style="width: 100%; height: 200px; background: #f0f9ff; border: 2px dashed #0ea5e9; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                <p>Touch, swipe, or pinch this area to test gestures</p>
+            </div>
+            <div id="gesture-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📱 Responsive Layout Preview</h2>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0;">
+                <button class="test-button" onclick="simulateViewport(375, 667)">iPhone SE</button>
+                <button class="test-button" onclick="simulateViewport(390, 844)">iPhone 12</button>
+                <button class="test-button" onclick="simulateViewport(768, 1024)">iPad Mini</button>
+                <button class="test-button" onclick="simulateViewport(1024, 768)">iPad Landscape</button>
+            </div>
+            <div id="viewport-preview" style="border: 2px solid #e5e7eb; border-radius: 8px; margin: 20px 0; min-height: 100px; padding: 20px;">
+                Current viewport information will be displayed here
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global test results
+        let testResults = [];
+        let gestureEvents = [];
+
+        // Update viewport metrics
+        function updateMetrics() {
+            document.getElementById('viewport-width').textContent = window.innerWidth + 'px';
+            document.getElementById('viewport-height').textContent = window.innerHeight + 'px';
+            
+            const deviceType = window.innerWidth >= 1024 ? 'Desktop' : 
+                              window.innerWidth >= 768 ? 'Tablet' : 'Mobile';
+            document.getElementById('device-type').textContent = deviceType;
+            
+            const orientation = window.innerHeight > window.innerWidth ? 'Portrait' : 'Landscape';
+            document.getElementById('orientation').textContent = orientation;
+
+            // Update viewport preview
+            updateViewportPreview();
+        }
+
+        function updateViewportPreview() {
+            const preview = document.getElementById('viewport-preview');
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            
+            preview.innerHTML = `
+                <div class="viewport-info">
+                    <strong>Current Viewport:</strong> ${width}x${height}px<br>
+                    <strong>Device Pixel Ratio:</strong> ${window.devicePixelRatio}<br>
+                    <strong>Touch Support:</strong> ${'ontouchstart' in window ? 'Yes' : 'No'}<br>
+                    <strong>User Agent:</strong> ${navigator.userAgent.substring(0, 100)}...
+                </div>
+            `;
+        }
+
+        // Run all tests
+        async function runAllTests() {
+            const resultsContainer = document.getElementById('test-results');
+            resultsContainer.innerHTML = '<p>Running tests...</p>';
+            
+            testResults = [];
+            
+            // Run different test categories
+            await runResponsiveTests();
+            await runPerformanceTests();
+            await runAccessibilityTests();
+            await runComponentTests();
+            
+            displayResults();
+        }
+
+        // Responsive tests
+        function runResponsiveTests() {
+            const tests = [
+                {
+                    name: 'Viewport Meta Tag',
+                    test: () => {
+                        const metaViewport = document.querySelector('meta[name="viewport"]');
+                        return metaViewport && metaViewport.content.includes('width=device-width');
+                    }
+                },
+                {
+                    name: 'Mobile CSS Loaded',
+                    test: () => {
+                        const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+                        return links.some(link => link.href.includes('mobile.css'));
+                    }
+                },
+                {
+                    name: 'Tablet CSS Loaded',
+                    test: () => {
+                        const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+                        return links.some(link => link.href.includes('tablet.css'));
+                    }
+                },
+                {
+                    name: 'Touch Targets Size',
+                    test: () => {
+                        const touchTargets = document.querySelectorAll('button, a, [role="button"], input, select');
+                        let validTargets = 0;
+                        
+                        touchTargets.forEach(element => {
+                            const rect = element.getBoundingClientRect();
+                            if (rect.width >= 44 && rect.height >= 44) {
+                                validTargets++;
+                            }
+                        });
+                        
+                        return touchTargets.length > 0 && (validTargets / touchTargets.length) >= 0.8;
+                    }
+                },
+                {
+                    name: 'Responsive Images',
+                    test: () => {
+                        const images = document.querySelectorAll('img');
+                        return Array.from(images).some(img => 
+                            img.hasAttribute('srcset') || 
+                            img.style.maxWidth === '100%' ||
+                            img.style.width === '100%'
+                        );
+                    }
+                }
+            ];
+
+            tests.forEach(test => {
+                try {
+                    const result = test.test();
+                    testResults.push({
+                        category: 'Responsive',
+                        name: test.name,
+                        passed: result,
+                        details: typeof result === 'object' ? JSON.stringify(result) : result.toString()
+                    });
+                } catch (error) {
+                    testResults.push({
+                        category: 'Responsive',
+                        name: test.name,
+                        passed: false,
+                        details: error.message
+                    });
+                }
+            });
+        }
+
+        // Performance tests
+        function runPerformanceTests() {
+            const tests = [
+                {
+                    name: 'Lazy Loading Images',
+                    test: () => {
+                        const lazyImages = document.querySelectorAll('img[loading="lazy"]');
+                        return lazyImages.length > 0;
+                    }
+                },
+                {
+                    name: 'Skeleton Screens',
+                    test: () => {
+                        const skeletonElements = document.querySelectorAll('[class*="skeleton"]');
+                        return skeletonElements.length > 0;
+                    }
+                },
+                {
+                    name: 'Progressive Enhancement',
+                    test: () => {
+                        const progressiveElements = document.querySelectorAll('[class*="progressive"]');
+                        return progressiveElements.length > 0;
+                    }
+                },
+                {
+                    name: 'GPU Acceleration',
+                    test: () => {
+                        const gpuElements = document.querySelectorAll('[class*="gpu"], [class*="transform-gpu"]');
+                        return gpuElements.length > 0;
+                    }
+                },
+                {
+                    name: 'Critical CSS',
+                    test: () => {
+                        const styleSheets = Array.from(document.styleSheets);
+                        return styleSheets.some(sheet => {
+                            try {
+                                return sheet.href && !sheet.href.includes('non-critical');
+                            } catch (e) {
+                                return false;
+                            }
+                        });
+                    }
+                }
+            ];
+
+            tests.forEach(test => {
+                try {
+                    const result = test.test();
+                    testResults.push({
+                        category: 'Performance',
+                        name: test.name,
+                        passed: result,
+                        details: typeof result === 'object' ? JSON.stringify(result) : result.toString()
+                    });
+                } catch (error) {
+                    testResults.push({
+                        category: 'Performance',
+                        name: test.name,
+                        passed: false,
+                        details: error.message
+                    });
+                }
+            });
+        }
+
+        // Accessibility tests
+        function runAccessibilityTests() {
+            const tests = [
+                {
+                    name: 'Alt Text on Images',
+                    test: () => {
+                        const images = document.querySelectorAll('img');
+                        const imagesWithAlt = Array.from(images).filter(img => img.alt && img.alt.trim());
+                        return images.length === 0 || (imagesWithAlt.length / images.length) >= 0.8;
+                    }
+                },
+                {
+                    name: 'ARIA Labels',
+                    test: () => {
+                        const interactiveElements = document.querySelectorAll('button, a, input, select, textarea, [role="button"]');
+                        const elementsWithLabels = Array.from(interactiveElements).filter(el => 
+                            el.hasAttribute('aria-label') || 
+                            el.hasAttribute('aria-labelledby') || 
+                            el.hasAttribute('title')
+                        );
+                        return interactiveElements.length === 0 || (elementsWithLabels.length / interactiveElements.length) >= 0.5;
+                    }
+                },
+                {
+                    name: 'Heading Structure',
+                    test: () => {
+                        const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+                        return headings.length > 0;
+                    }
+                },
+                {
+                    name: 'Focus Management',
+                    test: () => {
+                        const focusableElements = document.querySelectorAll('[tabindex], button, a, input, select, textarea');
+                        return focusableElements.length > 0;
+                    }
+                }
+            ];
+
+            tests.forEach(test => {
+                try {
+                    const result = test.test();
+                    testResults.push({
+                        category: 'Accessibility',
+                        name: test.name,
+                        passed: result,
+                        details: typeof result === 'object' ? JSON.stringify(result) : result.toString()
+                    });
+                } catch (error) {
+                    testResults.push({
+                        category: 'Accessibility',
+                        name: test.name,
+                        passed: false,
+                        details: error.message
+                    });
+                }
+            });
+        }
+
+        // Component-specific tests
+        function runComponentTests() {
+            const tests = [
+                {
+                    name: 'Mobile Navigation',
+                    test: () => {
+                        return !!(document.querySelector('.mobile-nav') || 
+                                document.querySelector('[class*="mobile-nav"]') ||
+                                document.querySelector('.hamburger') ||
+                                document.querySelector('[class*="hamburger"]'));
+                    }
+                },
+                {
+                    name: 'Tablet Layout Manager',
+                    test: () => {
+                        return !!(document.querySelector('.tablet-layout-manager') ||
+                                document.querySelector('[class*="tablet-layout"]'));
+                    }
+                },
+                {
+                    name: 'Swipeable Elements',
+                    test: () => {
+                        return !!(document.querySelector('[class*="swipeable"]') ||
+                                document.querySelector('[class*="swipe"]'));
+                    }
+                },
+                {
+                    name: 'Touch Gestures Support',
+                    test: () => {
+                        return !!(document.querySelector('[class*="gesture"]') ||
+                                document.querySelector('[class*="touch"]'));
+                    }
+                }
+            ];
+
+            tests.forEach(test => {
+                try {
+                    const result = test.test();
+                    testResults.push({
+                        category: 'Components',
+                        name: test.name,
+                        passed: result,
+                        details: typeof result === 'object' ? JSON.stringify(result) : result.toString()
+                    });
+                } catch (error) {
+                    testResults.push({
+                        category: 'Components',
+                        name: test.name,
+                        passed: false,
+                        details: error.message
+                    });
+                }
+            });
+        }
+
+        // Display test results
+        function displayResults() {
+            const resultsContainer = document.getElementById('test-results');
+            const groupedResults = {};
+
+            testResults.forEach(result => {
+                if (!groupedResults[result.category]) {
+                    groupedResults[result.category] = [];
+                }
+                groupedResults[result.category].push(result);
+            });
+
+            let html = '';
+            const totalTests = testResults.length;
+            const passedTests = testResults.filter(r => r.passed).length;
+
+            html += `
+                <div style="margin-bottom: 20px; padding: 15px; background: #f1f5f9; border-radius: 6px;">
+                    <strong>Summary:</strong> ${passedTests}/${totalTests} tests passed (${(passedTests/totalTests*100).toFixed(1)}%)
+                </div>
+            `;
+
+            Object.keys(groupedResults).forEach(category => {
+                html += `<h3>${category}</h3>`;
+                groupedResults[category].forEach(result => {
+                    const statusClass = result.passed ? 'passed' : 'failed';
+                    const statusIndicator = result.passed ? 'status-pass' : 'status-fail';
+                    html += `
+                        <div class="test-result ${statusClass}">
+                            <span>
+                                <span class="status-indicator ${statusIndicator}"></span>
+                                ${result.name}
+                            </span>
+                            <small>${result.details}</small>
+                        </div>
+                    `;
+                });
+            });
+
+            resultsContainer.innerHTML = html;
+        }
+
+        // Touch and gesture testing
+        function setupGestureTests() {
+            const touchArea = document.getElementById('touch-test-area');
+            const gestureResults = document.getElementById('gesture-results');
+            
+            let touchStartTime = 0;
+            let initialTouchDistance = 0;
+            
+            touchArea.addEventListener('touchstart', (e) => {
+                touchStartTime = Date.now();
+                gestureEvents.push({ type: 'touchstart', touches: e.touches.length, timestamp: touchStartTime });
+                
+                if (e.touches.length === 2) {
+                    const touch1 = e.touches[0];
+                    const touch2 = e.touches[1];
+                    initialTouchDistance = Math.sqrt(
+                        Math.pow(touch2.clientX - touch1.clientX, 2) + 
+                        Math.pow(touch2.clientY - touch1.clientY, 2)
+                    );
+                }
+                updateGestureResults();
+            });
+            
+            touchArea.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2 && initialTouchDistance > 0) {
+                    const touch1 = e.touches[0];
+                    const touch2 = e.touches[1];
+                    const currentDistance = Math.sqrt(
+                        Math.pow(touch2.clientX - touch1.clientX, 2) + 
+                        Math.pow(touch2.clientY - touch1.clientY, 2)
+                    );
+                    
+                    const scale = currentDistance / initialTouchDistance;
+                    gestureEvents.push({ 
+                        type: scale > 1 ? 'pinch-zoom-out' : 'pinch-zoom-in', 
+                        scale: scale.toFixed(2),
+                        timestamp: Date.now() 
+                    });
+                }
+            });
+            
+            touchArea.addEventListener('touchend', (e) => {
+                const duration = Date.now() - touchStartTime;
+                if (duration < 200) {
+                    gestureEvents.push({ type: 'tap', duration, timestamp: Date.now() });
+                } else if (duration < 600) {
+                    gestureEvents.push({ type: 'press', duration, timestamp: Date.now() });
+                } else {
+                    gestureEvents.push({ type: 'long-press', duration, timestamp: Date.now() });
+                }
+                updateGestureResults();
+            });
+
+            // Mouse events for desktop testing
+            let mouseDown = false;
+            touchArea.addEventListener('mousedown', () => {
+                mouseDown = true;
+                touchStartTime = Date.now();
+            });
+            
+            touchArea.addEventListener('mouseup', () => {
+                if (mouseDown) {
+                    const duration = Date.now() - touchStartTime;
+                    gestureEvents.push({ type: 'mouse-click', duration, timestamp: Date.now() });
+                    updateGestureResults();
+                }
+                mouseDown = false;
+            });
+        }
+
+        function updateGestureResults() {
+            const gestureResults = document.getElementById('gesture-results');
+            const recentGestures = gestureEvents.slice(-5);
+            
+            let html = '<h4>Recent Gestures:</h4>';
+            recentGestures.forEach(gesture => {
+                html += `<div style="padding: 5px; margin: 5px 0; background: #f0fdf4; border-radius: 4px;">
+                    ${gesture.type} ${gesture.duration ? `(${gesture.duration}ms)` : ''} 
+                    ${gesture.scale ? `- Scale: ${gesture.scale}` : ''}
+                </div>`;
+            });
+            
+            gestureResults.innerHTML = html;
+        }
+
+        // Simulate different viewports
+        function simulateViewport(width, height) {
+            // This can't actually change the viewport size, but we can provide information
+            const preview = document.getElementById('viewport-preview');
+            preview.innerHTML = `
+                <div class="viewport-info">
+                    <strong>Simulated Viewport:</strong> ${width}x${height}px<br>
+                    <strong>Current Viewport:</strong> ${window.innerWidth}x${window.innerHeight}px<br>
+                    <strong>Note:</strong> To actually test at ${width}x${height}px, resize your browser window or use developer tools device emulation.
+                </div>
+            `;
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            updateMetrics();
+            setupGestureTests();
+        });
+
+        window.addEventListener('resize', updateMetrics);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(updateMetrics, 100);
+        });
+    </script>
+</body>
+</html>

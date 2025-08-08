@@ -1,0 +1,465 @@
+{
+  "testSuite": "Final Comprehensive Live Scoring System Test",
+  "timestamp": "2025-08-03T16:06:30.886Z",
+  "duration": "16.39 seconds",
+  "testMatch": {
+    "id": 50,
+    "format": "BO3",
+    "status": "live",
+    "teams": "Sentinels vs LOUD"
+  },
+  "summary": {
+    "totalTests": 26,
+    "passed": 24,
+    "failed": 2,
+    "errors": [
+      {
+        "category": "Edge Cases",
+        "testName": "Invalid data rejection: Negative scores",
+        "error": "Unknown error",
+        "details": {
+          "expectedError": "Should reject invalid data"
+        }
+      },
+      {
+        "category": "Edge Cases",
+        "testName": "Invalid data rejection: Invalid map number",
+        "error": "Unknown error",
+        "details": {
+          "expectedError": "Should reject invalid data"
+        }
+      }
+    ],
+    "warnings": []
+  },
+  "categories": {
+    "Match Lifecycle": {
+      "passed": 5,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "Initialize BO3 structure",
+          "passed": true,
+          "details": {
+            "maps": 3,
+            "initialStatus": "upcoming"
+          },
+          "timestamp": "2025-08-03T16:06:15.185Z"
+        },
+        {
+          "name": "Start match",
+          "passed": true,
+          "details": {
+            "action": "start",
+            "newStatus": "live"
+          },
+          "timestamp": "2025-08-03T16:06:15.292Z"
+        },
+        {
+          "name": "Complete Map 1 (Team1 wins)",
+          "passed": true,
+          "details": {
+            "mapScore": "3-1",
+            "seriesScore": "1-0"
+          },
+          "timestamp": "2025-08-03T16:06:15.419Z"
+        },
+        {
+          "name": "Complete Map 2 (Team2 wins)",
+          "passed": true,
+          "details": {
+            "mapScore": "2-3",
+            "seriesScore": "1-1"
+          },
+          "timestamp": "2025-08-03T16:06:15.536Z"
+        },
+        {
+          "name": "Complete Map 3 and Series (Team1 wins)",
+          "passed": true,
+          "details": {
+            "mapScore": "3-0",
+            "finalSeriesScore": "2-1",
+            "winner": "team1"
+          },
+          "timestamp": "2025-08-03T16:06:15.647Z"
+        }
+      ]
+    },
+    "Player Stats": {
+      "passed": 4,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "Map 1 comprehensive stats",
+          "passed": true,
+          "details": {
+            "map": 1,
+            "team1Players": 6,
+            "team2Players": 6,
+            "totalPlayers": 12,
+            "avgEliminations": 17
+          },
+          "timestamp": "2025-08-03T16:06:15.766Z"
+        },
+        {
+          "name": "Map 2 comprehensive stats",
+          "passed": true,
+          "details": {
+            "map": 2,
+            "team1Players": 6,
+            "team2Players": 6,
+            "totalPlayers": 12,
+            "avgEliminations": 15
+          },
+          "timestamp": "2025-08-03T16:06:15.864Z"
+        },
+        {
+          "name": "Map 3 comprehensive stats",
+          "passed": true,
+          "details": {
+            "map": 3,
+            "team1Players": 6,
+            "team2Players": 6,
+            "totalPlayers": 12,
+            "avgEliminations": 14
+          },
+          "timestamp": "2025-08-03T16:06:15.960Z"
+        },
+        {
+          "name": "Mid-match stats update",
+          "passed": true,
+          "details": {
+            "action": "Updated Player1 stats and hero",
+            "newHero": "Wolverine",
+            "newEliminations": 25
+          },
+          "timestamp": "2025-08-03T16:06:16.069Z"
+        }
+      ]
+    },
+    "Hero Selection": {
+      "passed": 6,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "Balanced 2-2-2 composition",
+          "passed": true,
+          "details": {
+            "compositionType": "balanced",
+            "team1Heroes": [
+              "Hulk",
+              "Captain America",
+              "Spider-Man",
+              "Iron Man",
+              "Mantis",
+              "Rocket Raccoon"
+            ],
+            "team2Heroes": [
+              "Thor",
+              "Groot",
+              "Black Widow",
+              "Hawkeye",
+              "Doctor Strange",
+              "Scarlet Witch"
+            ],
+            "uniqueHeroes": 12
+          },
+          "timestamp": "2025-08-03T16:06:16.166Z"
+        },
+        {
+          "name": "Aggressive DPS-heavy composition",
+          "passed": true,
+          "details": {
+            "compositionType": "aggressive",
+            "team1Heroes": [
+              "Hulk",
+              "Spider-Man",
+              "Iron Man",
+              "Winter Soldier",
+              "Storm",
+              "Mantis"
+            ],
+            "team2Heroes": [
+              "Thor",
+              "Black Widow",
+              "Hawkeye",
+              "Wolverine",
+              "Star-Lord",
+              "Doctor Strange"
+            ],
+            "uniqueHeroes": 12
+          },
+          "timestamp": "2025-08-03T16:06:16.271Z"
+        },
+        {
+          "name": "Defensive tank/support heavy",
+          "passed": true,
+          "details": {
+            "compositionType": "defensive",
+            "team1Heroes": [
+              "Hulk",
+              "Captain America",
+              "Groot",
+              "Mantis",
+              "Rocket Raccoon",
+              "Doctor Strange"
+            ],
+            "team2Heroes": [
+              "Thor",
+              "Groot",
+              "Iron Man",
+              "Mantis",
+              "Scarlet Witch",
+              "Storm"
+            ],
+            "uniqueHeroes": 10
+          },
+          "timestamp": "2025-08-03T16:06:16.374Z"
+        },
+        {
+          "name": "Hero swap: Spider-Man → Wolverine",
+          "passed": true,
+          "details": {
+            "swap": "Spider-Man → Wolverine",
+            "reason": "Counter enemy composition",
+            "statsPreserved": true
+          },
+          "timestamp": "2025-08-03T16:06:16.461Z"
+        },
+        {
+          "name": "Hero swap: Mantis → Doctor Strange",
+          "passed": true,
+          "details": {
+            "swap": "Mantis → Doctor Strange",
+            "reason": "More aggressive support",
+            "statsPreserved": true
+          },
+          "timestamp": "2025-08-03T16:06:16.554Z"
+        },
+        {
+          "name": "Hero swap: Hulk → Captain America",
+          "passed": true,
+          "details": {
+            "swap": "Hulk → Captain America",
+            "reason": "Better shield tank",
+            "statsPreserved": true
+          },
+          "timestamp": "2025-08-03T16:06:16.633Z"
+        }
+      ]
+    },
+    "Performance": {
+      "passed": 3,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "Update latency measurement",
+          "passed": true,
+          "details": {
+            "averageLatency": "94.30ms",
+            "maxLatency": "106ms",
+            "minLatency": "84ms",
+            "totalMeasurements": 10
+          },
+          "timestamp": "2025-08-03T16:06:17.577Z"
+        },
+        {
+          "name": "Concurrent operations",
+          "passed": true,
+          "details": {
+            "totalOperations": 10,
+            "successes": 10,
+            "failures": 0,
+            "successRate": "100.0%"
+          },
+          "timestamp": "2025-08-03T16:06:17.936Z"
+        },
+        {
+          "name": "Rapid successive updates",
+          "passed": true,
+          "details": {
+            "duration": "10 seconds",
+            "successes": 52,
+            "failures": 0,
+            "successRate": "100.0%",
+            "updatesPerSecond": "5.2"
+          },
+          "timestamp": "2025-08-03T16:06:28.000Z"
+        }
+      ]
+    },
+    "Edge Cases": {
+      "passed": 4,
+      "failed": 2,
+      "tests": [
+        {
+          "name": "Extreme scores (99-98)",
+          "passed": true,
+          "details": {
+            "scenario": "Very high scores accepted"
+          },
+          "timestamp": "2025-08-03T16:06:28.097Z"
+        },
+        {
+          "name": "Zero score consistency",
+          "passed": true,
+          "details": {
+            "scenario": "0-0 score maintained"
+          },
+          "timestamp": "2025-08-03T16:06:28.183Z"
+        },
+        {
+          "name": "Unicode and special characters",
+          "passed": true,
+          "details": {
+            "scenario": "Unicode characters in names accepted"
+          },
+          "timestamp": "2025-08-03T16:06:28.271Z"
+        },
+        {
+          "name": "Invalid data rejection: Negative scores",
+          "passed": false,
+          "details": {
+            "expectedError": "Should reject invalid data"
+          },
+          "timestamp": "2025-08-03T16:06:28.350Z"
+        },
+        {
+          "name": "Invalid data rejection: Invalid status",
+          "passed": true,
+          "details": {
+            "correctlyRejected": true,
+            "errorStatus": 500
+          },
+          "timestamp": "2025-08-03T16:06:28.409Z"
+        },
+        {
+          "name": "Invalid data rejection: Invalid map number",
+          "passed": false,
+          "details": {
+            "expectedError": "Should reject invalid data"
+          },
+          "timestamp": "2025-08-03T16:06:28.495Z"
+        }
+      ]
+    },
+    "Data Persistence": {
+      "passed": 2,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "Complex state persistence",
+          "passed": true,
+          "details": {
+            "saved": true,
+            "retrieved": true,
+            "consistent": true,
+            "seriesScore": "1-1"
+          },
+          "timestamp": "2025-08-03T16:06:29.647Z"
+        },
+        {
+          "name": "Multiple rapid saves consistency",
+          "passed": true,
+          "details": {
+            "rapidSaves": 5,
+            "allSuccessful": true,
+            "finalStateRetrieved": true
+          },
+          "timestamp": "2025-08-03T16:06:30.885Z"
+        }
+      ]
+    }
+  },
+  "performance": {
+    "updateLatencies": [
+      99,
+      84,
+      85,
+      101,
+      106,
+      94,
+      91,
+      93,
+      97,
+      93
+    ],
+    "concurrentSuccesses": 10,
+    "concurrentFailures": 0,
+    "rapidUpdateSuccesses": 52,
+    "rapidUpdateFailures": 0
+  },
+  "insights": [
+    {
+      "type": "success",
+      "message": "Live scoring system is highly reliable and functional",
+      "data": {
+        "successRate": "92.3"
+      }
+    },
+    {
+      "type": "success",
+      "message": "Excellent update performance with low latency",
+      "data": {
+        "averageLatency": "94.30ms"
+      }
+    },
+    {
+      "type": "success",
+      "message": "Match Lifecycle functionality is fully operational",
+      "data": {
+        "category": "Match Lifecycle",
+        "successRate": "100%"
+      }
+    },
+    {
+      "type": "success",
+      "message": "Player Stats functionality is fully operational",
+      "data": {
+        "category": "Player Stats",
+        "successRate": "100%"
+      }
+    },
+    {
+      "type": "success",
+      "message": "Hero Selection functionality is fully operational",
+      "data": {
+        "category": "Hero Selection",
+        "successRate": "100%"
+      }
+    },
+    {
+      "type": "success",
+      "message": "Performance functionality is fully operational",
+      "data": {
+        "category": "Performance",
+        "successRate": "100%"
+      }
+    },
+    {
+      "type": "success",
+      "message": "Data Persistence functionality is fully operational",
+      "data": {
+        "category": "Data Persistence",
+        "successRate": "100%"
+      }
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "high",
+      "category": "System Reliability",
+      "message": "Address 2 failing tests to improve system reliability"
+    },
+    {
+      "priority": "medium",
+      "category": "Input Validation",
+      "message": "Strengthen input validation to handle edge cases more robustly"
+    },
+    {
+      "priority": "low",
+      "category": "Maintenance",
+      "message": "System is performing well - maintain current monitoring and testing practices"
+    }
+  ]
+}

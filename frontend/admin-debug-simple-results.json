@@ -1,0 +1,70 @@
+{
+  "timestamp": "2025-08-07T07:48:41.627Z",
+  "tests": [
+    {
+      "name": "Mock Data Removal - AdminStatsController",
+      "status": "PASSED",
+      "details": {
+        "hasRandomCalls": false,
+        "hasProperDuration": true
+      },
+      "timestamp": "2025-08-07T07:48:41.635Z"
+    },
+    {
+      "name": "AdvancedAnalytics API Integration",
+      "status": "PASSED",
+      "details": {
+        "hasCorrectEndpoint": true,
+        "hasErrorHandling": true,
+        "hasFallback": true
+      },
+      "timestamp": "2025-08-07T07:48:41.637Z"
+    },
+    {
+      "name": "AdminTeams Pagination",
+      "status": "PASSED",
+      "details": {
+        "hasPaginationState": true,
+        "hasPaginationControls": true,
+        "hasPaginatedData": true
+      },
+      "timestamp": "2025-08-07T07:48:41.638Z"
+    },
+    {
+      "name": "AdminPlayers Pagination",
+      "status": "PASSED",
+      "details": {
+        "hasPaginationState": true,
+        "hasPaginationControls": true,
+        "hasPaginatedData": true
+      },
+      "timestamp": "2025-08-07T07:48:41.638Z"
+    },
+    {
+      "name": "AdminStats UI Improvements",
+      "status": "PASSED",
+      "details": {
+        "hasNullSafety": true,
+        "hasIcons": true,
+        "hasErrorHandling": true
+      },
+      "timestamp": "2025-08-07T07:48:41.639Z"
+    },
+    {
+      "name": "API Routes Configuration",
+      "status": "PASSED",
+      "details": {
+        "hasStatsRoute": true,
+        "hasAnalyticsRoute": true
+      },
+      "timestamp": "2025-08-07T07:48:41.639Z"
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "errors": [],
+    "successRate": "100.0"
+  }
+}

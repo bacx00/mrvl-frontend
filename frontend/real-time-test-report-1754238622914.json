@@ -1,0 +1,258 @@
+{
+  "timestamp": "2025-08-03T16:30:22.913Z",
+  "summary": {
+    "apiEndpointsWorking": 5,
+    "totalAPIEndpoints": 5,
+    "liveScoringComponents": 4,
+    "realTimeCapable": 4,
+    "webSocketConfigured": false,
+    "localStorageSync": true,
+    "performanceGood": true,
+    "totalIssues": 0
+  },
+  "detailed": {
+    "liveScoring": {
+      "/var/www/mrvl-frontend/frontend/src/components/admin/SinglePageLiveScoring.js": {
+        "exists": true,
+        "features": {
+          "hasWebSocket": false,
+          "hasSSE": false,
+          "hasPusher": false,
+          "hasLocalStorageSync": true,
+          "hasScoreUpdates": true,
+          "hasPlayerStats": true,
+          "hasHeroSelection": true,
+          "hasMapTransitions": true,
+          "hasMatchStatus": true,
+          "hasTimer": true,
+          "hasButtons": true,
+          "hasInputs": true,
+          "hasSelects": true,
+          "hasModals": true,
+          "hasStateManagement": true,
+          "hasEffects": true,
+          "hasErrorHandling": true,
+          "hasLoading": false,
+          "hasAPICallsScoreUpdate": false,
+          "hasAPICallsPlayerStats": true,
+          "hasAPICallsMatchStatus": false,
+          "hasOptimizations": false,
+          "hasDebouncing": true,
+          "hasAutoSave": true,
+          "hasConflictResolution": true,
+          "hasOfflineSupport": true
+        },
+        "issues": [
+          "No loading states detected"
+        ],
+        "capabilities": {
+          "realTime": true,
+          "fullFeatured": true,
+          "userFriendly": true,
+          "performant": true
+        }
+      },
+      "/var/www/mrvl-frontend/frontend/src/components/admin/ComprehensiveLiveScoring.js": {
+        "exists": true,
+        "features": {
+          "hasWebSocket": false,
+          "hasSSE": false,
+          "hasPusher": true,
+          "hasLocalStorageSync": true,
+          "hasScoreUpdates": true,
+          "hasPlayerStats": true,
+          "hasHeroSelection": true,
+          "hasMapTransitions": true,
+          "hasMatchStatus": true,
+          "hasTimer": true,
+          "hasButtons": true,
+          "hasInputs": true,
+          "hasSelects": true,
+          "hasModals": false,
+          "hasStateManagement": true,
+          "hasEffects": true,
+          "hasErrorHandling": true,
+          "hasLoading": true,
+          "hasAPICallsScoreUpdate": true,
+          "hasAPICallsPlayerStats": true,
+          "hasAPICallsMatchStatus": false,
+          "hasOptimizations": true,
+          "hasDebouncing": true,
+          "hasAutoSave": false,
+          "hasConflictResolution": true,
+          "hasOfflineSupport": true
+        },
+        "issues": [],
+        "capabilities": {
+          "realTime": true,
+          "fullFeatured": true,
+          "userFriendly": true,
+          "performant": true
+        }
+      },
+      "/var/www/mrvl-frontend/frontend/src/components/admin/ComprehensiveMatchControl.js": {
+        "exists": true,
+        "features": {
+          "hasWebSocket": true,
+          "hasSSE": false,
+          "hasPusher": false,
+          "hasLocalStorageSync": true,
+          "hasScoreUpdates": true,
+          "hasPlayerStats": true,
+          "hasHeroSelection": true,
+          "hasMapTransitions": true,
+          "hasMatchStatus": true,
+          "hasTimer": true,
+          "hasButtons": true,
+          "hasInputs": true,
+          "hasSelects": true,
+          "hasModals": false,
+          "hasStateManagement": true,
+          "hasEffects": true,
+          "hasErrorHandling": true,
+          "hasLoading": false,
+          "hasAPICallsScoreUpdate": false,
+          "hasAPICallsPlayerStats": false,
+          "hasAPICallsMatchStatus": false,
+          "hasOptimizations": true,
+          "hasDebouncing": true,
+          "hasAutoSave": true,
+          "hasConflictResolution": true,
+          "hasOfflineSupport": false
+        },
+        "issues": [
+          "No loading states detected"
+        ],
+        "capabilities": {
+          "realTime": true,
+          "fullFeatured": true,
+          "userFriendly": true,
+          "performant": true
+        }
+      },
+      "/var/www/mrvl-frontend/frontend/src/components/pages/MatchDetailPage.js": {
+        "exists": true,
+        "features": {
+          "hasWebSocket": false,
+          "hasSSE": true,
+          "hasPusher": true,
+          "hasLocalStorageSync": true,
+          "hasScoreUpdates": true,
+          "hasPlayerStats": true,
+          "hasHeroSelection": true,
+          "hasMapTransitions": true,
+          "hasMatchStatus": true,
+          "hasTimer": true,
+          "hasButtons": true,
+          "hasInputs": true,
+          "hasSelects": true,
+          "hasModals": true,
+          "hasStateManagement": true,
+          "hasEffects": true,
+          "hasErrorHandling": true,
+          "hasLoading": true,
+          "hasAPICallsScoreUpdate": true,
+          "hasAPICallsPlayerStats": false,
+          "hasAPICallsMatchStatus": true,
+          "hasOptimizations": true,
+          "hasDebouncing": true,
+          "hasAutoSave": false,
+          "hasConflictResolution": true,
+          "hasOfflineSupport": false
+        },
+        "issues": [],
+        "capabilities": {
+          "realTime": true,
+          "fullFeatured": true,
+          "userFriendly": true,
+          "performant": true
+        }
+      }
+    },
+    "realTimeSync": {},
+    "matchControl": {
+      "matchCreation": {
+        "hasCreateButton": true,
+        "hasFormValidation": true,
+        "hasTeamSelection": false,
+        "hasFormatSelection": true,
+        "hasAPIIntegration": true
+      },
+      "liveScoring": {
+        "hasScoreIncrement": true,
+        "hasScoreDecrement": false,
+        "hasPlayerStatUpdate": true,
+        "hasHeroChange": true,
+        "hasMapTransition": true,
+        "hasAutoSave": true,
+        "hasManualSave": true
+      },
+      "matchCompletion": {
+        "hasCompleteButton": true,
+        "hasWinnerSelection": true,
+        "hasStatsFinalization": false,
+        "hasResultsDisplay": true
+      }
+    },
+    "webSocket": {
+      "hasPusherConfig": false,
+      "hasWSConfig": false,
+      "configFound": true
+    },
+    "localStorage": {
+      "hasStorageHelpers": true,
+      "hasStorageKeys": true,
+      "hasStorageCleanup": true,
+      "hasStorageValidation": true,
+      "hasStorageSync": true,
+      "syncMechanism": "localStorage-based"
+    },
+    "api": {
+      "/matches": {
+        "status": "success",
+        "statusCode": 200,
+        "responseTime": 114,
+        "hasData": false
+      },
+      "/matches/1": {
+        "status": "success",
+        "statusCode": 404,
+        "responseTime": 35,
+        "hasData": false
+      },
+      "/teams": {
+        "status": "success",
+        "statusCode": 200,
+        "responseTime": 93,
+        "hasData": false
+      },
+      "/players": {
+        "status": "success",
+        "statusCode": 200,
+        "responseTime": 63,
+        "hasData": false
+      },
+      "/events": {
+        "status": "success",
+        "statusCode": 200,
+        "responseTime": 32,
+        "hasData": false
+      }
+    },
+    "issues": [],
+    "recommendations": [],
+    "performance": {
+      "frontendResponseTime": 24,
+      "frontendAccessible": true,
+      "frontendSize": 2043
+    }
+  },
+  "recommendations": [
+    {
+      "category": "WebSocket Configuration",
+      "priority": "Medium",
+      "issue": "No WebSocket configuration found",
+      "recommendation": "Configure Pusher or native WebSocket for optimal real-time performance"
+    }
+  ]
+}

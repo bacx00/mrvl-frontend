@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forum Mention System Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f9fafb;
+        }
+        
+        .test-passed {
+            border-color: #10b981;
+            background: #ecfdf5;
+        }
+        
+        .test-failed {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+        
+        .api-result {
+            margin: 10px 0;
+            padding: 10px;
+            background: #1f2937;
+            color: #e5e7eb;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+        
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #2563eb;
+        }
+        
+        .status {
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin: 0 5px;
+        }
+        
+        .status.pass {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status.fail {
+            background: #fecaca;
+            color: #dc2626;
+        }
+        
+        .mention-preview {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        
+        h2 {
+            color: #1f2937;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+        
+        .test-summary {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Forum Mention System Test</h1>
+    
+    <div class="test-summary">
+        <h3>Test Summary</h3>
+        <p><strong>Purpose:</strong> Verify that the forum mention system correctly handles user, team, and player searches without displaying [object Object]</p>
+        <p><strong>Components:</strong> ForumMentionAutocomplete, SearchController API</p>
+        <p><strong>Fixed Issues:</strong> ❌ [object Object] display, ✅ String handling, 🔗 API endpoints</p>
+    </div>
+
+    <div id="testResults"></div>
+
+    <script>
+        class MentionSystemTester {
+            constructor() {
+                this.apiBase = 'http://localhost:8000/api';
+                this.testResults = document.getElementById('testResults');
+                this.allTestsPassed = true;
+            }
+
+            async runAllTests() {
+                this.addTestSection('🚀 Starting Forum Mention System Tests...');
+                
+                // Test API endpoints
+                await this.testUserSearch();
+                await this.testTeamSearch();
+                await this.testPlayerSearch();
+                
+                // Test edge cases
+                await this.testSingleCharacterSearch();
+                await this.testEmptySearch();
+                
+                // Test data structure validation
+                await this.testDataStructure();
+                
+                this.addSummary();
+            }
+
+            async testUserSearch() {
+                const section = this.addTestSection('👤 Testing User Search API');
+                
+                try {
+                    const response = await fetch(`${this.apiBase}/public/search/users?q=admin&limit=5`);
+                    const data = await response.json();
+                    
+                    if (response.ok && data.success && data.data.length > 0) {
+                        const user = data.data[0];
+                        
+                        // Check for required fields
+                        const requiredFields = ['id', 'name', 'display_name', 'mention_text', 'type'];
+                        const hasAllFields = requiredFields.every(field => field in user);
+                        
+                        // Check for [object Object] issues
+                        const noObjectIssues = !this.hasObjectObjectIssues(user);
+                        
+                        if (hasAllFields && noObjectIssues) {
+                            this.markTestPassed(section);
+                            section.innerHTML += `<div class="api-result">✅ User Search Results:\n${JSON.stringify(data.data.slice(0, 2), null, 2)}</div>`;
+                        } else {
+                            this.markTestFailed(section);
+                            section.innerHTML += `<div class="api-result">❌ Missing fields or object issues:\nRequired: ${requiredFields}\nActual: ${Object.keys(user)}</div>`;
+                        }
+                    } else {
+                        this.markTestFailed(section);
+                        section.innerHTML += `<div class="api-result">❌ API Error: ${JSON.stringify(data, null, 2)}</div>`;
+                    }
+                } catch (error) {
+                    this.markTestFailed(section);
+                    section.innerHTML += `<div class="api-result">❌ Network Error: ${error.message}</div>`;
+                }
+            }
+
+            async testTeamSearch() {
+                const section = this.addTestSection('🏆 Testing Team Search API');
+                
+                try {
+                    const response = await fetch(`${this.apiBase}/public/search/teams?q=t&limit=3`);
+                    const data = await response.json();
+                    
+                    if (response.ok && data.success && data.data.length > 0) {
+                        const team = data.data[0];
+                        
+                        // Check if mention_text format is correct for teams
+                        const mentionTextCorrect = team.mention_text && team.mention_text.startsWith('@team:');
+                        const hasDisplayName = team.display_name && typeof team.display_name === 'string';
+                        
+                        if (mentionTextCorrect && hasDisplayName && !this.hasObjectObjectIssues(team)) {
+                            this.markTestPassed(section);
+                            section.innerHTML += `<div class="api-result">✅ Team Search Results:\n${JSON.stringify(data.data.slice(0, 2), null, 2)}</div>`;
+                        } else {
+                            this.markTestFailed(section);
+                            section.innerHTML += `<div class="api-result">❌ Team format issues:\nMention text: ${team.mention_text}\nDisplay name: ${team.display_name}</div>`;
+                        }
+                    } else {
+                        this.markTestFailed(section);
+                        section.innerHTML += `<div class="api-result">❌ API Error: ${JSON.stringify(data, null, 2)}</div>`;
+                    }
+                } catch (error) {
+                    this.markTestFailed(section);
+                    section.innerHTML += `<div class="api-result">❌ Network Error: ${error.message}</div>`;
+                }
+            }
+
+            async testPlayerSearch() {
+                const section = this.addTestSection('⚡ Testing Player Search API');
+                
+                try {
+                    const response = await fetch(`${this.apiBase}/public/search/players?q=p&limit=3`);
+                    const data = await response.json();
+                    
+                    if (response.ok && data.success && data.data.length > 0) {
+                        const player = data.data[0];
+                        
+                        // Check if mention_text format is correct for players
+                        const mentionTextCorrect = player.mention_text && player.mention_text.startsWith('@player:');
+                        const hasDisplayName = player.display_name && typeof player.display_name === 'string';
+                        
+                        if (mentionTextCorrect && hasDisplayName && !this.hasObjectObjectIssues(player)) {
+                            this.markTestPassed(section);
+                            section.innerHTML += `<div class="api-result">✅ Player Search Results:\n${JSON.stringify(data.data.slice(0, 2), null, 2)}</div>`;
+                        } else {
+                            this.markTestFailed(section);
+                            section.innerHTML += `<div class="api-result">❌ Player format issues:\nMention text: ${player.mention_text}\nDisplay name: ${player.display_name}</div>`;
+                        }
+                    } else {
+                        this.markTestFailed(section);
+                        section.innerHTML += `<div class="api-result">❌ API Error: ${JSON.stringify(data, null, 2)}</div>`;
+                    }
+                } catch (error) {
+                    this.markTestFailed(section);
+                    section.innerHTML += `<div class="api-result">❌ Network Error: ${error.message}</div>`;
+                }
+            }
+
+            async testSingleCharacterSearch() {
+                const section = this.addTestSection('🔤 Testing Single Character Search');
+                
+                try {
+                    const response = await fetch(`${this.apiBase}/public/search/users?q=a&limit=3`);
+                    const data = await response.json();
+                    
+                    if (response.ok && data.success) {
+                        // Single character searches should work but may return fewer results
+                        const hasResults = data.data.length > 0;
+                        const allStringsValid = data.data.every(user => 
+                            typeof user.name === 'string' && 
+                            typeof user.display_name === 'string' &&
+                            typeof user.mention_text === 'string'
+                        );
+                        
+                        if (allStringsValid) {
+                            this.markTestPassed(section);
+                            section.innerHTML += `<div class="api-result">✅ Single character search: ${data.data.length} results\n${JSON.stringify(data.data.slice(0, 1), null, 2)}</div>`;
+                        } else {
+                            this.markTestFailed(section);
+                            section.innerHTML += `<div class="api-result">❌ String validation failed</div>`;
+                        }
+                    } else {
+                        this.markTestFailed(section);
+                        section.innerHTML += `<div class="api-result">❌ API Error: ${JSON.stringify(data, null, 2)}</div>`;
+                    }
+                } catch (error) {
+                    this.markTestFailed(section);
+                    section.innerHTML += `<div class="api-result">❌ Network Error: ${error.message}</div>`;
+                }
+            }
+
+            async testEmptySearch() {
+                const section = this.addTestSection('🔍 Testing Empty Search');
+                
+                try {
+                    const response = await fetch(`${this.apiBase}/public/search/users?q=&limit=3`);
+                    const data = await response.json();
+                    
+                    if (response.ok && data.success) {
+                        // Empty searches should return empty results with proper message
+                        const noResults = data.data.length === 0;
+                        const hasMessage = data.message;
+                        
+                        if (noResults && hasMessage) {
+                            this.markTestPassed(section);
+                            section.innerHTML += `<div class="api-result">✅ Empty search handled correctly:\n${JSON.stringify(data, null, 2)}</div>`;
+                        } else {
+                            this.markTestFailed(section);
+                            section.innerHTML += `<div class="api-result">❌ Empty search behavior incorrect</div>`;
+                        }
+                    } else {
+                        this.markTestFailed(section);
+                        section.innerHTML += `<div class="api-result">❌ API Error: ${JSON.stringify(data, null, 2)}</div>`;
+                    }
+                } catch (error) {
+                    this.markTestFailed(section);
+                    section.innerHTML += `<div class="api-result">❌ Network Error: ${error.message}</div>`;
+                }
+            }
+
+            async testDataStructure() {
+                const section = this.addTestSection('📊 Testing Data Structure Validation');
+                
+                try {
+                    const userResponse = await fetch(`${this.apiBase}/public/search/users?q=admin&limit=1`);
+                    const userData = await userResponse.json();
+                    
+                    if (userData.success && userData.data.length > 0) {
+                        const user = userData.data[0];
+                        
+                        // Test all expected fields and their types
+                        const fieldTests = {
+                            'id': (val) => typeof val === 'number' || typeof val === 'string',
+                            'name': (val) => typeof val === 'string' && val.length > 0,
+                            'display_name': (val) => typeof val === 'string' && val.length > 0,
+                            'mention_text': (val) => typeof val === 'string' && val.startsWith('@'),
+                            'type': (val) => val === 'user',
+                            'subtitle': (val) => typeof val === 'string',
+                            'url': (val) => typeof val === 'string' && val.startsWith('/')
+                        };
+                        
+                        const failedTests = [];
+                        for (const [field, test] of Object.entries(fieldTests)) {
+                            if (!(field in user) || !test(user[field])) {
+                                failedTests.push(`${field}: ${JSON.stringify(user[field])}`);
+                            }
+                        }
+                        
+                        if (failedTests.length === 0) {
+                            this.markTestPassed(section);
+                            section.innerHTML += `<div class="api-result">✅ All data structure tests passed:\n${JSON.stringify(user, null, 2)}</div>`;
+                        } else {
+                            this.markTestFailed(section);
+                            section.innerHTML += `<div class="api-result">❌ Failed tests:\n${failedTests.join('\n')}</div>`;
+                        }
+                    } else {
+                        this.markTestFailed(section);
+                        section.innerHTML += `<div class="api-result">❌ No user data available for testing</div>`;
+                    }
+                } catch (error) {
+                    this.markTestFailed(section);
+                    section.innerHTML += `<div class="api-result">❌ Network Error: ${error.message}</div>`;
+                }
+            }
+
+            hasObjectObjectIssues(obj) {
+                const jsonStr = JSON.stringify(obj);
+                return jsonStr.includes('[object Object]') || 
+                       Object.values(obj).some(val => 
+                           typeof val === 'object' && val !== null && !Array.isArray(val) && 
+                           val.constructor === Object && Object.keys(val).length > 0
+                       );
+            }
+
+            addTestSection(title) {
+                const section = document.createElement('div');
+                section.className = 'test-section';
+                section.innerHTML = `<h2>${title}</h2><div class="status">⏳ Running...</div>`;
+                this.testResults.appendChild(section);
+                return section;
+            }
+
+            markTestPassed(section) {
+                const status = section.querySelector('.status');
+                status.className = 'status pass';
+                status.textContent = '✅ PASSED';
+                section.className += ' test-passed';
+            }
+
+            markTestFailed(section) {
+                const status = section.querySelector('.status');
+                status.className = 'status fail';
+                status.textContent = '❌ FAILED';
+                section.className += ' test-failed';
+                this.allTestsPassed = false;
+            }
+
+            addSummary() {
+                const summary = document.createElement('div');
+                summary.className = `test-section ${this.allTestsPassed ? 'test-passed' : 'test-failed'}`;
+                
+                const icon = this.allTestsPassed ? '🎉' : '⚠️';
+                const status = this.allTestsPassed ? 'All tests passed!' : 'Some tests failed!';
+                
+                summary.innerHTML = `
+                    <h2>${icon} Test Summary</h2>
+                    <div class="status ${this.allTestsPassed ? 'pass' : 'fail'}">${status}</div>
+                    <div class="api-result">
+Forum Mention System Status: ${this.allTestsPassed ? 'READY FOR PRODUCTION' : 'NEEDS ATTENTION'}
+
+Key Fixes Implemented:
+✅ ForumMentionAutocomplete uses correct public API endpoints
+✅ String handling prevents [object Object] display  
+✅ Backend returns properly structured mention data
+✅ Support for @user, @team:name, @player:name formats
+
+Frontend Components:
+- CreateThreadPage.js: ✅ Fixed onChange handlers
+- ForumMentionAutocomplete.js: ✅ Fixed API calls and mention selection
+
+Backend Components:  
+- SearchController.php: ✅ Returns structured mention data
+- API Routes: ✅ Public endpoints working correctly
+
+User Experience:
+- Typing "@a" in thread creation now shows user suggestions
+- Selecting a mention inserts proper text like "@Admin Test"
+- No more [object Object] display issues
+- Works in both title and content fields
+                    </div>
+                `;
+                
+                this.testResults.appendChild(summary);
+            }
+        }
+
+        // Run tests when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            const tester = new MentionSystemTester();
+            tester.runAllTests();
+        });
+    </script>
+</body>
+</html>

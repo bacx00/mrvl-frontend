@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Navigation Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .admin { background: #ffebee; }
+        .moderator { background: #fff3e0; }
+        .user { background: #e8f5e8; }
+        .code { background: #f5f5f5; padding: 10px; font-family: monospace; white-space: pre-wrap; }
+        button { margin: 5px; padding: 10px 15px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Admin Navigation Debug Tool</h1>
+    
+    <div class="debug-section">
+        <h2>Role Simulation</h2>
+        <button onclick="simulateRole('admin')">Simulate Admin User</button>
+        <button onclick="simulateRole('moderator')">Simulate Moderator User</button>
+        <button onclick="simulateRole('user')">Simulate Regular User</button>
+        <button onclick="simulateRole(null)">Simulate No User</button>
+    </div>
+    
+    <div id="currentUser" class="debug-section">
+        <h2>Current User State</h2>
+        <div id="userInfo"></div>
+    </div>
+    
+    <div id="navigationTest" class="debug-section">
+        <h2>Navigation Items Test</h2>
+        <div id="navItems"></div>
+    </div>
+
+    <script>
+        // Simulate role utilities (matching the frontend roleUtils.js)
+        const ROLES = {
+            ADMIN: 'admin',
+            MODERATOR: 'moderator', 
+            USER: 'user'
+        };
+        
+        function hasRole(user, role) {
+            if (!user) return false;
+            if (user.roles && Array.isArray(user.roles)) {
+                return user.roles.includes(role);
+            } else if (user.role) {
+                return user.role === role;
+            }
+            return false;
+        }
+        
+        let currentUser = null;
+        
+        function simulateRole(role) {
+            if (role === null) {
+                currentUser = null;
+            } else {
+                currentUser = {
+                    id: 1,
+                    name: `Test ${role.charAt(0).toUpperCase() + role.slice(1)}`,
+                    email: `test@${role}.com`,
+                    role: role,
+                    roles: [role]
+                };
+            }
+            
+            updateDisplay();
+        }
+        
+        function updateDisplay() {
+            // Update user info
+            const userInfo = document.getElementById('userInfo');
+            if (currentUser) {
+                userInfo.className = `code ${currentUser.role}`;
+                userInfo.textContent = JSON.stringify(currentUser, null, 2);
+            } else {
+                userInfo.className = 'code';
+                userInfo.textContent = 'No user logged in';
+            }
+            
+            // Test navigation logic
+            const navItems = document.getElementById('navItems');
+            const specialNavItems = [];
+            
+            // Add admin dashboard for admin users
+            if (currentUser && hasRole(currentUser, ROLES.ADMIN)) {
+                specialNavItems.push({ id: 'admin-dashboard', label: 'Admin Panel' });
+            }
+            
+            // Add moderator dashboard for moderator users (but not admins)
+            if (currentUser && hasRole(currentUser, ROLES.MODERATOR) && !hasRole(currentUser, ROLES.ADMIN)) {
+                specialNavItems.push({ id: 'moderator-dashboard', label: 'Mod Panel' });
+            }
+            
+            const mainNavItems = [
+                { id: 'forums', label: 'Forums' },
+                { id: 'matches', label: 'Matches' },
+                { id: 'events', label: 'Events' },
+                { id: 'rankings', label: 'Rankings' }
+            ];
+            
+            let navDisplay = '<h3>Main Navigation:</h3>';
+            mainNavItems.forEach(item => {
+                navDisplay += `<div>• ${item.label}</div>`;
+            });
+            
+            navDisplay += '<h3>Special Navigation:</h3>';
+            if (specialNavItems.length > 0) {
+                specialNavItems.forEach(item => {
+                    navDisplay += `<div style="color: red;">• ${item.label}</div>`;
+                });
+            } else {
+                navDisplay += '<div style="color: gray;">No special navigation items</div>';
+            }
+            
+            navDisplay += '<h3>Role Checks:</h3>';
+            navDisplay += `<div>hasRole(ADMIN): ${currentUser ? hasRole(currentUser, ROLES.ADMIN) : false}</div>`;
+            navDisplay += `<div>hasRole(MODERATOR): ${currentUser ? hasRole(currentUser, ROLES.MODERATOR) : false}</div>`;
+            navDisplay += `<div>hasRole(USER): ${currentUser ? hasRole(currentUser, ROLES.USER) : false}</div>`;
+            
+            navItems.innerHTML = navDisplay;
+        }
+        
+        // Initialize
+        updateDisplay();
+    </script>
+</body>
+</html>

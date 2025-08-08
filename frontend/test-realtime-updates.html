@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Updates Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .event {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .success {
+            border-left-color: #28a745;
+        }
+        .error {
+            border-left-color: #dc3545;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #events {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Real-time Updates Test</h1>
+    
+    <h2>Test Actions:</h2>
+    <button onclick="testScoreUpdate()">Test Score Update</button>
+    <button onclick="testHeroUpdate()">Test Hero Update</button>
+    <button onclick="testStatsUpdate()">Test Stats Update</button>
+    <button onclick="clearEvents()">Clear Events</button>
+    
+    <h2>Events Received:</h2>
+    <div id="events"></div>
+    
+    <script>
+        const eventsDiv = document.getElementById('events');
+        let eventCount = 0;
+        
+        // Listen for window events
+        window.addEventListener('mrvl-match-updated', (event) => {
+            addEvent('Window Event', event.detail, 'success');
+        });
+        
+        // Listen for localStorage events
+        window.addEventListener('storage', (event) => {
+            if (event.key && event.key.startsWith('mrvl-match-')) {
+                try {
+                    const data = JSON.parse(event.newValue);
+                    addEvent('Storage Event', data, 'success');
+                } catch (e) {
+                    addEvent('Storage Event Error', e.message, 'error');
+                }
+            }
+        });
+        
+        function addEvent(type, data, className = '') {
+            eventCount++;
+            const eventDiv = document.createElement('div');
+            eventDiv.className = `event ${className}`;
+            eventDiv.innerHTML = `
+                <strong>#${eventCount} ${type}</strong> at ${new Date().toLocaleTimeString()}
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            eventsDiv.insertBefore(eventDiv, eventsDiv.firstChild);
+        }
+        
+        function testScoreUpdate() {
+            const data = {
+                matchId: '9',
+                updateType: 'score',
+                data: {
+                    mapIndex: 0,
+                    team1Score: Math.floor(Math.random() * 10),
+                    team2Score: Math.floor(Math.random() * 10)
+                },
+                timestamp: Date.now()
+            };
+            
+            // Dispatch window event
+            window.dispatchEvent(new CustomEvent('mrvl-match-updated', {
+                detail: data
+            }));
+            
+            // Also save to localStorage for cross-tab
+            const key = `mrvl-match-${data.matchId}-${Date.now()}`;
+            localStorage.setItem(key, JSON.stringify(data));
+            
+            // Clean up after 5 seconds
+            setTimeout(() => localStorage.removeItem(key), 5000);
+        }
+        
+        function testHeroUpdate() {
+            const data = {
+                matchId: '9',
+                updateType: 'hero',
+                data: {
+                    mapIndex: 0,
+                    playerId: 1,
+                    playerName: 'TestPlayer',
+                    team: 1,
+                    hero: 'Spider-Man',
+                    role: 'Duelist'
+                },
+                timestamp: Date.now()
+            };
+            
+            // Dispatch window event
+            window.dispatchEvent(new CustomEvent('mrvl-match-updated', {
+                detail: data
+            }));
+            
+            // Also save to localStorage for cross-tab
+            const key = `mrvl-match-${data.matchId}-${Date.now()}`;
+            localStorage.setItem(key, JSON.stringify(data));
+            
+            // Clean up after 5 seconds
+            setTimeout(() => localStorage.removeItem(key), 5000);
+        }
+        
+        function testStatsUpdate() {
+            const data = {
+                matchId: '9',
+                updateType: 'stats',
+                data: {
+                    mapIndex: 0,
+                    playerId: 1,
+                    playerName: 'TestPlayer',
+                    team: 1,
+                    statType: 'kills',
+                    value: Math.floor(Math.random() * 20)
+                },
+                timestamp: Date.now()
+            };
+            
+            // Dispatch window event
+            window.dispatchEvent(new CustomEvent('mrvl-match-updated', {
+                detail: data
+            }));
+            
+            // Also save to localStorage for cross-tab
+            const key = `mrvl-match-${data.matchId}-${Date.now()}`;
+            localStorage.setItem(key, JSON.stringify(data));
+            
+            // Clean up after 5 seconds
+            setTimeout(() => localStorage.removeItem(key), 5000);
+        }
+        
+        function clearEvents() {
+            eventsDiv.innerHTML = '';
+            eventCount = 0;
+        }
+        
+        // Initial message
+        addEvent('System', 'Test page loaded. Click buttons to test real-time updates.');
+    </script>
+</body>
+</html>

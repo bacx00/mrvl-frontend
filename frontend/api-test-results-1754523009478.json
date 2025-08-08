@@ -1,0 +1,76 @@
+{
+  "timestamp": "2025-08-06T23:30:09.012Z",
+  "tests": [
+    {
+      "name": "Heroes API Status",
+      "passed": true,
+      "details": "Returned 39 heroes",
+      "timestamp": "2025-08-06T23:30:09.187Z"
+    },
+    {
+      "name": "Heroes Data Structure",
+      "passed": true,
+      "details": "All required fields present",
+      "timestamp": "2025-08-06T23:30:09.187Z"
+    },
+    {
+      "name": "Heroes Role Coverage",
+      "passed": true,
+      "details": "Found all roles: Duelist, Vanguard, Strategist",
+      "timestamp": "2025-08-06T23:30:09.188Z"
+    },
+    {
+      "name": "Heroes Grouping Function",
+      "passed": true,
+      "details": "Successfully grouped into 3 roles",
+      "timestamp": "2025-08-06T23:30:09.188Z"
+    },
+    {
+      "name": "Teams API Status",
+      "passed": true,
+      "details": "Returned 50 teams",
+      "timestamp": "2025-08-06T23:30:09.370Z"
+    },
+    {
+      "name": "Teams Data Structure",
+      "passed": true,
+      "details": "Required fields present",
+      "timestamp": "2025-08-06T23:30:09.370Z"
+    },
+    {
+      "name": "Teams Fallback Support",
+      "passed": true,
+      "details": "50/50 teams have fallback text",
+      "timestamp": "2025-08-06T23:30:09.371Z"
+    },
+    {
+      "name": "Teams Logo Support",
+      "passed": true,
+      "details": "50/50 teams have logos defined",
+      "timestamp": "2025-08-06T23:30:09.371Z"
+    },
+    {
+      "name": "User Profile Auth Protection",
+      "passed": true,
+      "details": "Endpoint correctly requires authentication",
+      "timestamp": "2025-08-06T23:30:09.410Z"
+    },
+    {
+      "name": "Non-existent Hero Handling",
+      "passed": true,
+      "details": "Returns 404 for non-existent hero",
+      "timestamp": "2025-08-06T23:30:09.444Z"
+    },
+    {
+      "name": "Malformed Request Handling",
+      "passed": true,
+      "details": "Properly rejects malformed JSON",
+      "timestamp": "2025-08-06T23:30:09.477Z"
+    }
+  ],
+  "summary": {
+    "total": 11,
+    "passed": 11,
+    "failed": 0
+  }
+}

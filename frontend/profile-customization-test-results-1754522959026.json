@@ -1,0 +1,21 @@
+{
+  "timestamp": "2025-08-06T23:29:18.986Z",
+  "testResults": [],
+  "errors": [
+    {
+      "timestamp": "2025-08-06T23:29:19.025Z",
+      "message": "Failed to initialize browser: Failed to launch the browser process!\n/root/.cache/puppeteer/chrome/linux-138.0.7204.168/chrome-linux64/chrome: error while loading shared libraries: libnspr4.so: cannot open shared object file: No such file or directory\n\n\nTROUBLESHOOTING: https://pptr.dev/troubleshooting\n"
+    },
+    {
+      "timestamp": "2025-08-06T23:29:19.025Z",
+      "message": "Failed to initialize test environment"
+    }
+  ],
+  "warnings": [],
+  "summary": {
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "warnings": 0
+  }
+}

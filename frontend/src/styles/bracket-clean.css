@@ -1,0 +1,362 @@
+/* Clean Bracket Visualization Styles - VLR.gg Inspired */
+
+.bracket-visualization-clean {
+  @apply w-full;
+}
+
+.bracket-content {
+  @apply min-w-max;
+}
+
+.single-elimination-bracket,
+.double-elimination-bracket {
+  @apply relative;
+}
+
+.bracket-round {
+  @apply flex-shrink-0;
+  min-width: 320px;
+}
+
+.bracket-match {
+  @apply relative;
+  width: 300px;
+}
+
+/* Match Styling */
+.bracket-match .match-container {
+  @apply bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden;
+  @apply transition-all duration-200;
+  @apply hover:shadow-md hover:border-gray-400 dark:hover:border-gray-500;
+}
+
+.bracket-match.live .match-container {
+  @apply border-red-500 shadow-lg;
+  animation: live-pulse 2s infinite;
+}
+
+.bracket-match.hovered .match-container {
+  @apply border-blue-500 shadow-lg scale-105;
+  @apply transform;
+}
+
+/* Team Row Styling */
+.team-row {
+  @apply flex items-center justify-between p-4;
+  @apply transition-colors duration-200;
+}
+
+.team-row.winner {
+  @apply bg-green-50 dark:bg-green-900/20;
+}
+
+.team-row.loser {
+  @apply opacity-60;
+}
+
+.team-info {
+  @apply flex items-center space-x-3 flex-1 min-w-0;
+}
+
+.team-name {
+  @apply font-medium truncate;
+}
+
+.team-name.winner {
+  @apply text-gray-900 dark:text-white;
+}
+
+.team-name.default {
+  @apply text-gray-700 dark:text-gray-300;
+}
+
+.team-score {
+  @apply text-lg font-bold ml-4;
+}
+
+.team-score.winner {
+  @apply text-green-600 dark:text-green-400;
+}
+
+.team-score.default {
+  @apply text-gray-500 dark:text-gray-400;
+}
+
+/* Match Header */
+.match-header {
+  @apply px-4 py-2 bg-gray-50 dark:bg-gray-800;
+  @apply border-b border-gray-200 dark:border-gray-700;
+  @apply flex items-center justify-between;
+}
+
+.match-info {
+  @apply text-xs font-medium text-gray-600 dark:text-gray-400;
+}
+
+.live-indicator {
+  @apply flex items-center space-x-2;
+}
+
+.live-dot {
+  @apply w-2 h-2 bg-red-500 rounded-full animate-pulse;
+}
+
+.live-text {
+  @apply text-xs font-bold text-red-600 dark:text-red-400;
+}
+
+/* Round Headers */
+.round-header {
+  @apply text-center mb-6;
+}
+
+.round-title {
+  @apply text-sm font-bold text-gray-700 dark:text-gray-300 tracking-wider;
+}
+
+.round-date {
+  @apply text-xs text-gray-500 dark:text-gray-400 mt-1;
+}
+
+/* Section Headers */
+.bracket-section-title {
+  @apply text-sm font-bold text-gray-700 dark:text-gray-300 mb-6 text-center tracking-wider;
+}
+
+/* Swiss System Styles */
+.swiss-standings-table {
+  @apply w-full;
+}
+
+.standings-header {
+  @apply border-b border-gray-200 dark:border-gray-700;
+}
+
+.standings-header th {
+  @apply text-left py-3 px-2 font-medium text-gray-700 dark:text-gray-300;
+}
+
+.standings-row {
+  @apply border-b border-gray-100 dark:border-gray-700;
+  @apply hover:bg-gray-50 dark:hover:bg-gray-800;
+  @apply transition-colors duration-200;
+}
+
+.standings-row td {
+  @apply py-3 px-2;
+}
+
+.standings-rank {
+  @apply font-medium;
+}
+
+.standings-team {
+  @apply flex items-center space-x-3;
+}
+
+.standings-record {
+  @apply text-center text-gray-700 dark:text-gray-300;
+}
+
+.standings-points {
+  @apply text-center font-medium text-gray-900 dark:text-white;
+}
+
+/* Connector Lines */
+.bracket-connectors {
+  @apply absolute inset-0 pointer-events-none;
+  z-index: 1;
+}
+
+.connector-line {
+  @apply text-gray-300 dark:text-gray-600;
+  stroke-width: 2;
+  fill: none;
+}
+
+.connector-line.highlighted {
+  @apply text-blue-500 dark:text-blue-400;
+  stroke-width: 3;
+}
+
+/* Admin Controls */
+.admin-controls {
+  @apply px-4 py-2 bg-gray-50 dark:bg-gray-800;
+  @apply border-t border-gray-200 dark:border-gray-700;
+}
+
+.score-edit-controls {
+  @apply flex justify-end space-x-2;
+}
+
+.score-input {
+  @apply w-12 px-2 py-1 text-center border border-gray-300 dark:border-gray-600 rounded text-sm;
+  @apply bg-white dark:bg-gray-700 text-gray-900 dark:text-white;
+}
+
+.admin-button {
+  @apply px-3 py-1 text-sm font-medium rounded;
+  @apply transition-colors duration-200;
+}
+
+.admin-button.primary {
+  @apply bg-blue-600 text-white hover:bg-blue-700;
+}
+
+.admin-button.secondary {
+  @apply text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200;
+}
+
+.update-score-button {
+  @apply w-full text-sm text-blue-600 hover:text-blue-700 font-medium;
+  @apply transition-colors duration-200;
+}
+
+/* Zoom Controls */
+.zoom-controls {
+  @apply flex items-center space-x-2;
+}
+
+.zoom-button {
+  @apply p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white;
+  @apply rounded-md hover:bg-gray-100 dark:hover:bg-gray-700;
+  @apply transition-colors duration-200;
+}
+
+.zoom-display {
+  @apply text-sm text-gray-600 dark:text-gray-400 min-w-[50px] text-center;
+}
+
+/* TBD and Empty States */
+.tbd-text {
+  @apply text-gray-400 dark:text-gray-600 italic;
+}
+
+.empty-bracket {
+  @apply text-center py-12;
+}
+
+.empty-bracket-icon {
+  @apply mx-auto h-12 w-12 text-gray-400 mb-4;
+}
+
+.empty-bracket-text {
+  @apply text-gray-500 dark:text-gray-400;
+}
+
+/* Animations */
+@keyframes live-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+  }
+}
+
+.animate-live-pulse {
+  animation: live-pulse 2s infinite;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .bracket-match {
+    width: 280px;
+  }
+  
+  .bracket-round {
+    min-width: 300px;
+  }
+  
+  .team-row {
+    @apply px-3 py-3;
+  }
+  
+  .team-info {
+    @apply space-x-2;
+  }
+  
+  .team-score {
+    @apply text-base ml-2;
+  }
+  
+  .match-header {
+    @apply px-3 py-1;
+  }
+  
+  .admin-controls {
+    @apply px-3 py-2;
+  }
+}
+
+@media (max-width: 640px) {
+  .bracket-match {
+    width: 260px;
+  }
+  
+  .bracket-round {
+    min-width: 280px;
+  }
+  
+  .round-title {
+    @apply text-xs;
+  }
+  
+  .match-info {
+    @apply text-[10px];
+  }
+  
+  .team-name {
+    @apply text-sm;
+  }
+  
+  .team-score {
+    @apply text-sm;
+  }
+}
+
+/* Dark Mode Enhancements */
+@media (prefers-color-scheme: dark) {
+  .bracket-match .match-container {
+    @apply shadow-sm shadow-gray-900/10;
+  }
+  
+  .bracket-match.hovered .match-container {
+    @apply shadow-xl shadow-blue-500/20;
+  }
+  
+  .bracket-match.live .match-container {
+    @apply shadow-xl shadow-red-500/20;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .connector-line {
+    stroke-width: 3;
+  }
+  
+  .bracket-match .match-container {
+    @apply border-2;
+  }
+  
+  .team-score {
+    @apply font-extrabold;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .zoom-controls,
+  .admin-controls {
+    @apply hidden;
+  }
+  
+  .bracket-match .match-container {
+    @apply border-black;
+  }
+  
+  .connector-line {
+    stroke: black;
+  }
+}

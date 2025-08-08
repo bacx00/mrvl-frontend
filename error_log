@@ -1,0 +1,255 @@
+[17-Jul-2025 23:52:48 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[17-Jul-2025 23:52:48 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[17-Jul-2025 23:53:08 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[17-Jul-2025 23:53:08 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[17-Jul-2025 23:53:13 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[17-Jul-2025 23:53:13 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[17-Jul-2025 23:53:18 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[17-Jul-2025 23:53:18 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[17-Jul-2025 23:58:11 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[17-Jul-2025 23:58:11 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[22-Jul-2025 08:53:43 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[22-Jul-2025 08:53:43 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[25-Jul-2025 01:07:42 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[25-Jul-2025 01:07:42 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[25-Jul-2025 01:07:46 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[25-Jul-2025 01:07:46 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[25-Jul-2025 01:07:50 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[25-Jul-2025 01:07:50 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[25-Jul-2025 01:07:54 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[25-Jul-2025 01:07:54 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 17:08:19 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 17:08:19 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 17:08:19 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 17:08:19 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 17:08:19 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 17:08:19 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 17:08:20 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 17:08:20 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 17:08:20 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 17:12:25 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 17:12:25 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 17:12:25 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 17:12:28 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 17:12:28 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 17:12:28 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 17:12:30 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 17:12:30 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 17:12:30 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 17:12:36 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 17:12:36 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 17:12:36 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 17:12:36 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 17:12:36 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 17:12:36 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 19:16:38 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:16:39 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 19:16:39 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 19:17:24 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:17:24 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 19:17:24 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 19:17:28 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:17:28 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 19:17:28 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 19:18:35 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:18:35 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 19:18:35 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 19:18:38 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:18:38 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 19:18:38 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 19:18:47 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:18:47 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 19:18:47 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 19:19:33 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:19:33 UTC] PHP Warning:  require_once(vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/safe_event_cleanup.php on line 10
+[06-Aug-2025 19:19:33 UTC] PHP Fatal error:  Uncaught Error: Failed opening required 'vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/safe_event_cleanup.php:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/safe_event_cleanup.php on line 10
+[06-Aug-2025 19:19:37 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:19:37 UTC] PHP Warning:  require_once(vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/safe_event_cleanup.php on line 10
+[06-Aug-2025 19:19:37 UTC] PHP Fatal error:  Uncaught Error: Failed opening required 'vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/safe_event_cleanup.php:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/safe_event_cleanup.php on line 10
+[06-Aug-2025 19:20:19 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:21:16 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:21:34 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:22:03 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:22:04 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:22:05 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:24:47 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:24:48 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 19:24:48 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 19:24:52 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:24:52 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 19:24:52 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 19:24:56 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:25:00 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:25:41 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:26:00 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:26:12 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:26:31 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 19:26:31 UTC] PHP Warning:  require(vendor/autoload.php): Failed to open stream: No such file or directory in Command line code on line 2
+[06-Aug-2025 19:26:31 UTC] PHP Fatal error:  Uncaught Error: Failed opening required 'vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in Command line code:2
+Stack trace:
+#0 {main}
+  thrown in Command line code on line 2
+[06-Aug-2025 19:26:36 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 23:16:32 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 23:16:32 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:16:32 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:17:59 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 23:17:59 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:17:59 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:03 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 23:18:03 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:03 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:06 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 23:18:07 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:07 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:10 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 23:18:10 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:10 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:13 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 23:18:13 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:13 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:16 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 23:18:16 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:16 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:19 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 23:18:19 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:19 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:22 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 23:18:22 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:22 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:25 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 23:18:25 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:25 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:29 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 23:18:32 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 23:18:32 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:32 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:36 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 23:18:36 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:36 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:36 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[06-Aug-2025 23:18:36 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[06-Aug-2025 23:18:36 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10

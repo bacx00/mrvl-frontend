@@ -1,0 +1,82 @@
+{
+  "timestamp": "2025-08-06T23:31:10.090Z",
+  "tests": [
+    {
+      "name": "SimpleUserProfile.js - Array Safety Checks",
+      "passed": true,
+      "details": "Found 4 array operations with safety checks"
+    },
+    {
+      "name": "SimpleUserProfile.js - Async Error Handling",
+      "passed": true,
+      "details": "9 async functions, 11 try blocks, 11 catch blocks"
+    },
+    {
+      "name": "SimpleUserProfile.js - Null Safety",
+      "passed": true,
+      "details": "229 property accesses, 107 safety checks"
+    },
+    {
+      "name": "SimpleUserProfile.js - Error Logging",
+      "passed": true,
+      "details": "10 console.error calls, 11 catch blocks"
+    },
+    {
+      "name": "SimpleUserProfile.js - Team Logo Fallback",
+      "passed": true,
+      "details": "Has proper team logo fallback handling"
+    },
+    {
+      "name": "SimpleUserProfile.js - Hero Image Fallback",
+      "passed": true,
+      "details": "Has hero image handling"
+    },
+    {
+      "name": "ComprehensiveUserProfile.js - Array Safety Checks",
+      "passed": true,
+      "details": "Found 4 array operations with safety checks"
+    },
+    {
+      "name": "ComprehensiveUserProfile.js - Async Error Handling",
+      "passed": true,
+      "details": "5 async functions, 5 try blocks, 10 catch blocks"
+    },
+    {
+      "name": "ComprehensiveUserProfile.js - Null Safety",
+      "passed": true,
+      "details": "175 property accesses, 64 safety checks"
+    },
+    {
+      "name": "ComprehensiveUserProfile.js - Error Logging",
+      "passed": true,
+      "details": "5 console.error calls, 10 catch blocks"
+    },
+    {
+      "name": "ComprehensiveUserProfile.js - Team Logo Fallback",
+      "passed": false,
+      "details": "Missing team logo fallback handling"
+    },
+    {
+      "name": "ComprehensiveUserProfile.js - Hero Image Fallback",
+      "passed": true,
+      "details": "Has hero image handling"
+    },
+    {
+      "name": "imageUtils.js - Null Safety",
+      "passed": true,
+      "details": "197 property accesses, 66 safety checks"
+    }
+  ],
+  "issues": [
+    {
+      "type": "warning",
+      "message": "SimpleUserProfile.js has 3 useEffect calls - ensure cleanup where needed"
+    }
+  ],
+  "summary": {
+    "total": 13,
+    "passed": 12,
+    "failed": 1,
+    "warnings": 1
+  }
+}

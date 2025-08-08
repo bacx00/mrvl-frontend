@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Fallback Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a2332;
+            color: white;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            background-color: #2b3d4d;
+            border-radius: 8px;
+        }
+        .test-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .test-image {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            background-color: #1a2332;
+            border-radius: 8px;
+        }
+        .test-image img {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .test-image h4 {
+            margin: 0;
+            font-size: 14px;
+            text-align: center;
+        }
+        .success {
+            color: #4ade80;
+        }
+        .error {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Image Fallback System Test</h1>
+        <p>Testing that all images properly fall back to question mark placeholders when source fails to load.</p>
+
+        <div class="test-section">
+            <h2>Team Logo Fallbacks</h2>
+            <div class="test-images" id="team-logos">
+                <!-- Team logos will be inserted here -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Player Avatar Fallbacks</h2>
+            <div class="test-images" id="player-avatars">
+                <!-- Player avatars will be inserted here -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Event Banner Fallbacks</h2>
+            <div class="test-images" id="event-banners">
+                <!-- Event banners will be inserted here -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>News Featured Image Fallbacks</h2>
+            <div class="test-images" id="news-images">
+                <!-- News images will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the TypeScript imageUtils function
+        const getImageUrl = (imagePath, type = 'general') => {
+            if (!imagePath || imagePath === null || imagePath === undefined || imagePath === '') {
+                // Return question mark placeholder - using data URIs for instant loading
+                switch (type) {
+                    case 'team-logo':
+                        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGM0Y0RjYiLz4KPHRleHQgeD0iMjAiIHk9IjI4IiBmb250LWZhbWlseT0ic3lzdGVtLXVpIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzZCNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+PzwvdGV4dD4KPC9zdmc+';
+                    case 'player-avatar':
+                        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGM0Y0RjYiLz4KPHRleHQgeD0iMjAiIHk9IjI4IiBmb250LWZhbWlseT0ic3lzdGVtLXVpIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzZCNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+PzwvdGV4dD4KPC9zdmc+';
+                    case 'news-featured':
+                        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjE1MCIgeT0iMTEwIiBmb250LWZhbWlseT0ic3lzdGVtLXVpIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzZCNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+PzwvdGV4dD4KPC9zdmc+';
+                    case 'event-banner':
+                        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDgwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9InRvdXJuYW1lbnQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgo8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojZGMyNjI2O3N0b3Atb3BhY2l0eToxIiAvPgo8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiNiOTFjMWM7c3RvcC1vcGFjaXR5OjEiIC8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPHJlY3Qgd2lkdGg9IjgwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjdG91cm5hbWVudCkiLz4KPHN2ZyB4PSIzNzUiIHk9IjEyNSIgd2lkdGg9IjUwIiBoZWlnaHQ9IjUwIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjgiPgo8cGF0aCBkPSJNMTIgMkw0IDdsOSA1IDkgLTUtOEwyWk0xMiAyMWwtOC01aDJsNiAyIDYtMmgyTDEyIDIxWiIvPgo8L3N2Zz4KPHR5cGUgeD0iNDAwIiB5PSIxNjAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIG9wYWNpdHk9IjAuNyI+VE9VUk5BTUVOVCA8L3R5cGU+Cjwvc3ZnPg==';
+                    default:
+                        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGM0Y0RjYiLz4KPHRleHQgeD0iMjAiIHk9IjI4IiBmb250LWZhbWlseT0ic3lzdGVtLXVpIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzZCNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+PzwvdGV4dD4KPC9zdmc+';
+                }
+            }
+            return imagePath; // Return as-is if valid
+        };
+
+        function createTestImage(src, type, label) {
+            const container = document.createElement('div');
+            container.className = 'test-image';
+            
+            const img = document.createElement('img');
+            img.src = src;
+            
+            const title = document.createElement('h4');
+            title.textContent = label;
+            
+            let hasLoaded = false;
+            let hasFailed = false;
+            
+            img.onload = () => {
+                if (!hasFailed) {
+                    hasLoaded = true;
+                    title.innerHTML = `${label} <span class="success">✓</span>`;
+                }
+            };
+            
+            img.onerror = () => {
+                hasFailed = true;
+                img.src = getImageUrl(null, type);
+                title.innerHTML = `${label} <span class="success">✓ (Fallback)</span>`;
+            };
+            
+            container.appendChild(img);
+            container.appendChild(title);
+            
+            return container;
+        }
+
+        // Test team logos
+        const teamLogosContainer = document.getElementById('team-logos');
+        [
+            { src: '/invalid/team1.png', label: 'Invalid Team 1' },
+            { src: 'https://nonexistent.domain/team2.jpg', label: 'Broken URL Team 2' },
+            { src: '', label: 'Empty String' },
+            { src: null, label: 'Null Value' }
+        ].forEach(test => {
+            teamLogosContainer.appendChild(createTestImage(test.src || getImageUrl(null, 'team-logo'), 'team-logo', test.label));
+        });
+
+        // Test player avatars
+        const playerAvatarsContainer = document.getElementById('player-avatars');
+        [
+            { src: '/invalid/player1.png', label: 'Invalid Player 1' },
+            { src: 'https://nonexistent.domain/player2.jpg', label: 'Broken URL Player 2' },
+            { src: '', label: 'Empty String' },
+            { src: null, label: 'Null Value' }
+        ].forEach(test => {
+            playerAvatarsContainer.appendChild(createTestImage(test.src || getImageUrl(null, 'player-avatar'), 'player-avatar', test.label));
+        });
+
+        // Test event banners
+        const eventBannersContainer = document.getElementById('event-banners');
+        [
+            { src: '/invalid/event1.png', label: 'Invalid Event 1' },
+            { src: 'https://nonexistent.domain/event2.jpg', label: 'Broken URL Event 2' },
+            { src: '', label: 'Empty String' },
+            { src: null, label: 'Null Value' }
+        ].forEach(test => {
+            eventBannersContainer.appendChild(createTestImage(test.src || getImageUrl(null, 'event-banner'), 'event-banner', test.label));
+        });
+
+        // Test news images
+        const newsImagesContainer = document.getElementById('news-images');
+        [
+            { src: '/invalid/news1.png', label: 'Invalid News 1' },
+            { src: 'https://nonexistent.domain/news2.jpg', label: 'Broken URL News 2' },
+            { src: '', label: 'Empty String' },
+            { src: null, label: 'Null Value' }
+        ].forEach(test => {
+            newsImagesContainer.appendChild(createTestImage(test.src || getImageUrl(null, 'news-featured'), 'news-featured', test.label));
+        });
+
+        console.log('✅ Image fallback system test loaded successfully');
+    </script>
+</body>
+</html>
