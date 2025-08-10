@@ -1,0 +1,1134 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MRVL Events & Brackets Frontend Test Report</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f5f7fa; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; }
+        .header h1 { margin: 0 0 10px 0; font-size: 2.5em; }
+        .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-left: 5px solid #667eea; }
+        .stat-card h3 { margin: 0 0 15px 0; color: #333; font-size: 1.1em; }
+        .stat-card .value { font-size: 2.5em; font-weight: bold; color: #667eea; margin-bottom: 5px; }
+        .section { background: white; margin-bottom: 30px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .section-header { background: #f8f9fb; padding: 20px; border-bottom: 1px solid #e1e8ed; }
+        .section-content { padding: 20px; }
+        .component-card { background: #f8f9fb; margin: 15px 0; padding: 20px; border-radius: 8px; border-left: 4px solid #ddd; }
+        .pass { border-left-color: #28a745; }
+        .warning { border-left-color: #ffc107; }
+        .fail { border-left-color: #dc3545; }
+        .good { border-left-color: #28a745; }
+        .needs-improvement { border-left-color: #ffc107; }
+        .needs-optimization { border-left-color: #fd7e14; }
+        .recommendations { background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%); padding: 25px; border-radius: 12px; margin-bottom: 30px; }
+        .rec-item { background: rgba(255,255,255,0.9); margin: 10px 0; padding: 15px; border-radius: 8px; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; border: 1px solid #e9ecef; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; margin-right: 5px; }
+        .badge-high { background: #dc3545; color: white; }
+        .badge-medium { background: #ffc107; color: #212529; }
+        .badge-low { background: #28a745; color: white; }
+        .progress-bar { width: 100%; height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; transition: width 0.3s ease; }
+        .progress-high { background: #28a745; }
+        .progress-medium { background: #ffc107; }
+        .progress-low { background: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Frontend Test Report</h1>
+            <p>MRVL Events & Brackets Components Analysis</p>
+            <p>Generated: 2025-08-10T18:39:55.944Z</p>
+        </div>
+
+        <div class="summary">
+            <div class="stat-card">
+                <h3>Components Analyzed</h3>
+                <div class="value">3</div>
+            </div>
+            <div class="stat-card">
+                <h3>Structure Issues</h3>
+                <div class="value">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Accessibility Score</h3>
+                <div class="value">90%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill progress-high" 
+                         style="width: 90%"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <h3>Performance Score</h3>
+                <div class="value">80%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill progress-high" 
+                         style="width: 80%"></div>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="recommendations">
+            <h2>🔧 Recommendations</h2>
+            
+                <div class="rec-item">
+                    <span class="badge badge-medium">MEDIUM</span>
+                    <strong>Performance:</strong> 2 component(s) need performance optimization
+                </div>
+            
+        </div>
+        
+
+        
+            <div class="section">
+                <div class="section-header">
+                    <h2>Components Analysis</h2>
+                </div>
+                <div class="section-content">
+                    
+                </div>
+            </div>
+        
+            <div class="section">
+                <div class="section-header">
+                    <h2>Structure Analysis</h2>
+                </div>
+                <div class="section-content">
+                    
+                        <div class="component-card pass">
+                            <h3>adminEvents - Component Structure</h3>
+                            <p><strong>Status:</strong> <span class="badge badge-high">PASS</span></p>
+                            
+                            
+                                <details>
+                                    <summary>View Details</summary>
+                                    <pre>{
+  "name": "adminEvents",
+  "type": "Functional Component",
+  "hooks": [
+    "useAuth",
+    "useState",
+    "useState",
+    "useState",
+    "useState",
+    "useState",
+    "useState",
+    "useState",
+    "useState",
+    "useState",
+    "useState",
+    "useState",
+    "useEffect",
+    "useMemo",
+    "useMemo",
+    "useEffect"
+  ],
+  "props": [],
+  "methods": [
+    "fetchEvents",
+    "handleDeleteEvent",
+    "handleCreateEvent",
+    "handleEditEvent",
+    "handleSubmitEvent",
+    "handleSelectEvent",
+    "handleSelectAllEvents",
+    "handleBulkStatusChange",
+    "handleBulkDelete",
+    "getStatusColor",
+    "formatDate",
+    "fetchEvents",
+    "handleDeleteEvent",
+    "handleCreateEvent",
+    "handleEditEvent",
+    "handleSubmitEvent",
+    "handleSelectEvent",
+    "handleSelectAllEvents",
+    "handleBulkStatusChange",
+    "handleBulkDelete",
+    "getStatusColor",
+    "formatDate"
+  ],
+  "dependencies": [
+    "react",
+    "../../hooks"
+  ],
+  "stateManagement": {
+    "useState": 11,
+    "useEffect": 2,
+    "useContext": 0,
+    "customHooks": [],
+    "stateVariables": []
+  },
+  "apiCalls": [
+    {
+      "method": "get",
+      "endpoint": "/api/admin/events?page=${page}&limit=${limit}"
+    },
+    {
+      "method": "delete",
+      "endpoint": "/api/admin/events/${eventId}"
+    },
+    {
+      "method": "put",
+      "endpoint": "/api/admin/events/${editingEvent.id}"
+    },
+    {
+      "method": "post",
+      "endpoint": "/api/admin/events"
+    },
+    {
+      "method": "post",
+      "endpoint": "/api/admin/events/bulk-update"
+    },
+    {
+      "method": "post",
+      "endpoint": "/api/admin/events/bulk-delete"
+    }
+  ],
+  "eventHandlers": [
+    "fetchEvents",
+    "handleCreateEvent",
+    "(e) => setFilters({...filters, search: e.target.value",
+    "(e) => setFilters({...filters, status: e.target.value",
+    "(e) => setFilters({...filters, type: e.target.value",
+    "(e) => setFilters({...filters, sortBy: e.target.value",
+    "() => setFilters({ search: '', status: 'all', type: 'all', sortBy: 'date'",
+    "() => handleBulkStatusChange('upcoming')",
+    "() => handleBulkStatusChange('live')",
+    "() => handleBulkStatusChange('completed')",
+    "handleBulkDelete",
+    "() => {\n                setSelectedEvents(new Set());\n                setShowBulkActions(false);",
+    "handleSelectAllEvents",
+    "() => handleSelectEvent(event.id)",
+    "() => handleEditEvent(event)",
+    "() => handleDeleteEvent(event.id, event.name)",
+    "() => setCurrentPage(Math.max(1, currentPage - 1))",
+    "() => setCurrentPage(pageNum)",
+    "() => setCurrentPage(Math.min(totalPages, currentPage + 1))",
+    "handleCreateEvent",
+    "() => setShowEventModal(false)",
+    "handleSubmitEvent",
+    "(e) => setEventFormData({...eventFormData, name: e.target.value",
+    "(e) => setEventFormData({...eventFormData, description: e.target.value",
+    "(e) => setEventFormData({...eventFormData, start_date: e.target.value",
+    "(e) => setEventFormData({...eventFormData, end_date: e.target.value",
+    "(e) => setEventFormData({...eventFormData, location: e.target.value",
+    "(e) => setEventFormData({...eventFormData, type: e.target.value",
+    "(e) => setEventFormData({...eventFormData, status: e.target.value",
+    "() => setShowEventModal(false)"
+  ],
+  "errors": [
+    {
+      "type": "POTENTIAL_MEMORY_LEAK",
+      "description": "useEffect without cleanup function"
+    },
+    {
+      "type": "DEBUG_CODE",
+      "description": "Console statements found in component"
+    },
+    {
+      "type": "LARGE_COMPONENT",
+      "description": "Component has 765 lines - consider splitting"
+    }
+  ]
+}</pre>
+                                </details>
+                            
+                        </div>
+                    
+                        <div class="component-card pass">
+                            <h3>bracketManagement - Component Structure</h3>
+                            <p><strong>Status:</strong> <span class="badge badge-high">PASS</span></p>
+                            
+                            
+                                <details>
+                                    <summary>View Details</summary>
+                                    <pre>{
+  "name": "bracketManagement",
+  "type": "Functional Component",
+  "hooks": [
+    "useState",
+    "useState",
+    "useState",
+    "useState",
+    "useEffect",
+    "useState"
+  ],
+  "props": [
+    "event",
+    "bracket",
+    "teams = []",
+    "onBracketUpdate",
+    "onMatchUpdate",
+    "isLoading = false"
+  ],
+  "methods": [
+    "handleGenerateBracket",
+    "handleTeamReplace",
+    "handleSeedChange",
+    "handleGenerateBracket",
+    "handleTeamReplace",
+    "handleSeedChange"
+  ],
+  "dependencies": [
+    "react",
+    "../../utils/imageUtils"
+  ],
+  "stateManagement": {
+    "useState": 5,
+    "useEffect": 1,
+    "useContext": 0,
+    "customHooks": [],
+    "stateVariables": []
+  },
+  "apiCalls": [],
+  "eventHandlers": [
+    "() => setActiveTab(tab.key)",
+    "setBracketConfig",
+    "handleGenerateBracket",
+    "setTeamSeeds",
+    "onMatchUpdate",
+    "onMatchUpdate",
+    "setBracketConfig",
+    "() => onChange({ ...config, format: format.value",
+    "(e) => onChange({ ...config, teams_count: parseInt(e.target.value)",
+    "(e) => onChange({ ...config, seeding_method: e.target.value",
+    "onGenerate",
+    "(newTeam) => handleTeamReplace(index, newTeam)",
+    "() => setShowSelector(true)",
+    "(selectedTeam) => {\n            onReplace(selectedTeam);\n            setShowSelector(false);",
+    "() => setShowSelector(false)",
+    "() => onSelect(team)"
+  ],
+  "errors": [
+    {
+      "type": "POTENTIAL_MEMORY_LEAK",
+      "description": "useEffect without cleanup function"
+    },
+    {
+      "type": "DEBUG_CODE",
+      "description": "Console statements found in component"
+    }
+  ]
+}</pre>
+                                </details>
+                            
+                        </div>
+                    
+                        <div class="component-card pass">
+                            <h3>bracketManagementDashboard - Component Structure</h3>
+                            <p><strong>Status:</strong> <span class="badge badge-high">PASS</span></p>
+                            
+                            
+                                <details>
+                                    <summary>View Details</summary>
+                                    <pre>{
+  "name": "bracketManagementDashboard",
+  "type": "Functional Component",
+  "hooks": [
+    "useState",
+    "useState",
+    "useState",
+    "useState",
+    "useState",
+    "useAuth",
+    "useEffect"
+  ],
+  "props": [
+    "eventId",
+    "onBracketGenerated"
+  ],
+  "methods": [
+    "fetchBracketData",
+    "fetchEventTeams",
+    "fetchBracketAnalysis",
+    "handleGenerateBracket",
+    "handleGenerateNextSwissRound",
+    "getFormatDescription",
+    "getSeedingDescription",
+    "fetchBracketData",
+    "fetchEventTeams",
+    "fetchBracketAnalysis",
+    "handleGenerateBracket",
+    "handleGenerateNextSwissRound",
+    "getFormatDescription",
+    "getSeedingDescription"
+  ],
+  "dependencies": [
+    "react",
+    "../../hooks"
+  ],
+  "stateManagement": {
+    "useState": 5,
+    "useEffect": 1,
+    "useContext": 0,
+    "customHooks": [],
+    "stateVariables": []
+  },
+  "apiCalls": [
+    {
+      "method": "get",
+      "endpoint": "/events/${eventId}/comprehensive-bracket"
+    },
+    {
+      "method": "get",
+      "endpoint": "/events/${eventId}"
+    },
+    {
+      "method": "get",
+      "endpoint": "/events/${eventId}/bracket-analysis"
+    },
+    {
+      "method": "post",
+      "endpoint": "/admin/events/${eventId}/comprehensive-bracket"
+    },
+    {
+      "method": "post",
+      "endpoint": "/admin/events/${eventId}/swiss/next-round"
+    }
+  ],
+  "eventHandlers": [
+    "(e) => setGenerateForm({...generateForm, format: e.target.value",
+    "(e) => setGenerateForm({...generateForm, seeding_method: e.target.value",
+    "(e) => setGenerateForm({...generateForm, best_of: e.target.value",
+    "(e) => setGenerateForm({...generateForm, swiss_rounds: parseInt(e.target.value)",
+    "(e) => setGenerateForm({...generateForm, groups: parseInt(e.target.value)",
+    "(e) => setGenerateForm({...generateForm, teams_per_group: parseInt(e.target.value)",
+    "(e) => setGenerateForm({...generateForm, randomize_seeds: e.target.checked",
+    "(e) => setGenerateForm({...generateForm, third_place_match: e.target.checked",
+    "(e) => setGenerateForm({...generateForm, bracket_reset: e.target.checked",
+    "handleGenerateNextSwissRound",
+    "handleGenerateBracket"
+  ],
+  "errors": [
+    {
+      "type": "POTENTIAL_MEMORY_LEAK",
+      "description": "useEffect without cleanup function"
+    },
+    {
+      "type": "DEBUG_CODE",
+      "description": "Console statements found in component"
+    },
+    {
+      "type": "INLINE_STYLES",
+      "description": "Inline styles found - consider CSS classes"
+    }
+  ]
+}</pre>
+                                </details>
+                            
+                        </div>
+                    
+                </div>
+            </div>
+        
+            <div class="section">
+                <div class="section-header">
+                    <h2>Validation Analysis</h2>
+                </div>
+                <div class="section-content">
+                    
+                        <div class="component-card pass">
+                            <h3>adminEvents - Logic Validation</h3>
+                            <p><strong>Status:</strong> <span class="badge badge-high">PASS</span></p>
+                            
+                            
+                                <details>
+                                    <summary>View Details</summary>
+                                    <pre>{
+  "issues": [],
+  "suggestions": [
+    {
+      "type": "PERFORMANCE",
+      "suggestion": "Consider using useCallback for event handlers to prevent unnecessary re-renders"
+    },
+    {
+      "type": "ACCESSIBILITY",
+      "suggestion": "Consider adding ARIA attributes for better accessibility"
+    }
+  ],
+  "bestPractices": [
+    {
+      "type": "UX",
+      "practice": "Good: Component implements loading states"
+    }
+  ]
+}</pre>
+                                </details>
+                            
+                        </div>
+                    
+                        <div class="component-card pass">
+                            <h3>bracketManagement - Logic Validation</h3>
+                            <p><strong>Status:</strong> <span class="badge badge-high">PASS</span></p>
+                            
+                            
+                                <details>
+                                    <summary>View Details</summary>
+                                    <pre>{
+  "issues": [],
+  "suggestions": [
+    {
+      "type": "ACCESSIBILITY",
+      "suggestion": "Consider adding ARIA attributes for better accessibility"
+    }
+  ],
+  "bestPractices": []
+}</pre>
+                                </details>
+                            
+                        </div>
+                    
+                        <div class="component-card pass">
+                            <h3>bracketManagementDashboard - Logic Validation</h3>
+                            <p><strong>Status:</strong> <span class="badge badge-high">PASS</span></p>
+                            
+                            
+                                <details>
+                                    <summary>View Details</summary>
+                                    <pre>{
+  "issues": [],
+  "suggestions": [
+    {
+      "type": "ACCESSIBILITY",
+      "suggestion": "Consider adding ARIA attributes for better accessibility"
+    }
+  ],
+  "bestPractices": [
+    {
+      "type": "UX",
+      "practice": "Good: Component implements loading states"
+    }
+  ]
+}</pre>
+                                </details>
+                            
+                        </div>
+                    
+                </div>
+            </div>
+        
+            <div class="section">
+                <div class="section-header">
+                    <h2>Accessibility Analysis</h2>
+                </div>
+                <div class="section-content">
+                    
+                        <div class="component-card pass">
+                            <h3>adminEvents - Accessibility Analysis</h3>
+                            <p><strong>Status:</strong> <span class="badge badge-high">PASS</span></p>
+                            
+                            
+                                <details>
+                                    <summary>View Details</summary>
+                                    <pre>{
+  "score": 90,
+  "issues": [
+    "Interactive elements may not be keyboard accessible"
+  ],
+  "recommendations": []
+}</pre>
+                                </details>
+                            
+                        </div>
+                    
+                        <div class="component-card pass">
+                            <h3>bracketManagement - Accessibility Analysis</h3>
+                            <p><strong>Status:</strong> <span class="badge badge-high">PASS</span></p>
+                            
+                            
+                                <details>
+                                    <summary>View Details</summary>
+                                    <pre>{
+  "score": 90,
+  "issues": [
+    "Interactive elements may not be keyboard accessible"
+  ],
+  "recommendations": []
+}</pre>
+                                </details>
+                            
+                        </div>
+                    
+                        <div class="component-card pass">
+                            <h3>bracketManagementDashboard - Accessibility Analysis</h3>
+                            <p><strong>Status:</strong> <span class="badge badge-high">PASS</span></p>
+                            
+                            
+                                <details>
+                                    <summary>View Details</summary>
+                                    <pre>{
+  "score": 90,
+  "issues": [
+    "Interactive elements may not be keyboard accessible"
+  ],
+  "recommendations": []
+}</pre>
+                                </details>
+                            
+                        </div>
+                    
+                </div>
+            </div>
+        
+            <div class="section">
+                <div class="section-header">
+                    <h2>Performance Analysis</h2>
+                </div>
+                <div class="section-content">
+                    
+                        <div class="component-card good">
+                            <h3>adminEvents - Performance Analysis</h3>
+                            <p><strong>Status:</strong> <span class="badge badge-high">GOOD</span></p>
+                            
+                            
+                                <details>
+                                    <summary>View Details</summary>
+                                    <pre>{
+  "score": 90,
+  "optimizations": [
+    "Uses useMemo for expensive calculations"
+  ],
+  "warnings": [
+    "Large inline objects detected - consider extracting"
+  ],
+  "bundleSize": 30907,
+  "complexity": 85
+}</pre>
+                                </details>
+                            
+                        </div>
+                    
+                        <div class="component-card needs-optimization">
+                            <h3>bracketManagement - Performance Analysis</h3>
+                            <p><strong>Status:</strong> <span class="badge badge-medium">NEEDS_OPTIMIZATION</span></p>
+                            
+                            
+                                <details>
+                                    <summary>View Details</summary>
+                                    <pre>{
+  "score": 75,
+  "optimizations": [],
+  "warnings": [
+    "Component may have unnecessary re-renders",
+    "Large inline objects detected - consider extracting"
+  ],
+  "bundleSize": 15219,
+  "complexity": 18
+}</pre>
+                                </details>
+                            
+                        </div>
+                    
+                        <div class="component-card needs-optimization">
+                            <h3>bracketManagementDashboard - Performance Analysis</h3>
+                            <p><strong>Status:</strong> <span class="badge badge-medium">NEEDS_OPTIMIZATION</span></p>
+                            
+                            
+                                <details>
+                                    <summary>View Details</summary>
+                                    <pre>{
+  "score": 75,
+  "optimizations": [],
+  "warnings": [
+    "Component may have unnecessary re-renders",
+    "Large inline objects detected - consider extracting"
+  ],
+  "bundleSize": 20455,
+  "complexity": 43
+}</pre>
+                                </details>
+                            
+                        </div>
+                    
+                </div>
+            </div>
+        
+
+        <div class="section">
+            <div class="section-header">
+                <h2>Raw Test Data</h2>
+            </div>
+            <div class="section-content">
+                <pre>{
+  "components": [],
+  "structure": [
+    {
+      "component": "adminEvents",
+      "test": "Component Structure",
+      "status": "PASS",
+      "details": {
+        "name": "adminEvents",
+        "type": "Functional Component",
+        "hooks": [
+          "useAuth",
+          "useState",
+          "useState",
+          "useState",
+          "useState",
+          "useState",
+          "useState",
+          "useState",
+          "useState",
+          "useState",
+          "useState",
+          "useState",
+          "useEffect",
+          "useMemo",
+          "useMemo",
+          "useEffect"
+        ],
+        "props": [],
+        "methods": [
+          "fetchEvents",
+          "handleDeleteEvent",
+          "handleCreateEvent",
+          "handleEditEvent",
+          "handleSubmitEvent",
+          "handleSelectEvent",
+          "handleSelectAllEvents",
+          "handleBulkStatusChange",
+          "handleBulkDelete",
+          "getStatusColor",
+          "formatDate",
+          "fetchEvents",
+          "handleDeleteEvent",
+          "handleCreateEvent",
+          "handleEditEvent",
+          "handleSubmitEvent",
+          "handleSelectEvent",
+          "handleSelectAllEvents",
+          "handleBulkStatusChange",
+          "handleBulkDelete",
+          "getStatusColor",
+          "formatDate"
+        ],
+        "dependencies": [
+          "react",
+          "../../hooks"
+        ],
+        "stateManagement": {
+          "useState": 11,
+          "useEffect": 2,
+          "useContext": 0,
+          "customHooks": [],
+          "stateVariables": []
+        },
+        "apiCalls": [
+          {
+            "method": "get",
+            "endpoint": "/api/admin/events?page=${page}&limit=${limit}"
+          },
+          {
+            "method": "delete",
+            "endpoint": "/api/admin/events/${eventId}"
+          },
+          {
+            "method": "put",
+            "endpoint": "/api/admin/events/${editingEvent.id}"
+          },
+          {
+            "method": "post",
+            "endpoint": "/api/admin/events"
+          },
+          {
+            "method": "post",
+            "endpoint": "/api/admin/events/bulk-update"
+          },
+          {
+            "method": "post",
+            "endpoint": "/api/admin/events/bulk-delete"
+          }
+        ],
+        "eventHandlers": [
+          "fetchEvents",
+          "handleCreateEvent",
+          "(e) => setFilters({...filters, search: e.target.value",
+          "(e) => setFilters({...filters, status: e.target.value",
+          "(e) => setFilters({...filters, type: e.target.value",
+          "(e) => setFilters({...filters, sortBy: e.target.value",
+          "() => setFilters({ search: '', status: 'all', type: 'all', sortBy: 'date'",
+          "() => handleBulkStatusChange('upcoming')",
+          "() => handleBulkStatusChange('live')",
+          "() => handleBulkStatusChange('completed')",
+          "handleBulkDelete",
+          "() => {\n                setSelectedEvents(new Set());\n                setShowBulkActions(false);",
+          "handleSelectAllEvents",
+          "() => handleSelectEvent(event.id)",
+          "() => handleEditEvent(event)",
+          "() => handleDeleteEvent(event.id, event.name)",
+          "() => setCurrentPage(Math.max(1, currentPage - 1))",
+          "() => setCurrentPage(pageNum)",
+          "() => setCurrentPage(Math.min(totalPages, currentPage + 1))",
+          "handleCreateEvent",
+          "() => setShowEventModal(false)",
+          "handleSubmitEvent",
+          "(e) => setEventFormData({...eventFormData, name: e.target.value",
+          "(e) => setEventFormData({...eventFormData, description: e.target.value",
+          "(e) => setEventFormData({...eventFormData, start_date: e.target.value",
+          "(e) => setEventFormData({...eventFormData, end_date: e.target.value",
+          "(e) => setEventFormData({...eventFormData, location: e.target.value",
+          "(e) => setEventFormData({...eventFormData, type: e.target.value",
+          "(e) => setEventFormData({...eventFormData, status: e.target.value",
+          "() => setShowEventModal(false)"
+        ],
+        "errors": [
+          {
+            "type": "POTENTIAL_MEMORY_LEAK",
+            "description": "useEffect without cleanup function"
+          },
+          {
+            "type": "DEBUG_CODE",
+            "description": "Console statements found in component"
+          },
+          {
+            "type": "LARGE_COMPONENT",
+            "description": "Component has 765 lines - consider splitting"
+          }
+        ]
+      }
+    },
+    {
+      "component": "bracketManagement",
+      "test": "Component Structure",
+      "status": "PASS",
+      "details": {
+        "name": "bracketManagement",
+        "type": "Functional Component",
+        "hooks": [
+          "useState",
+          "useState",
+          "useState",
+          "useState",
+          "useEffect",
+          "useState"
+        ],
+        "props": [
+          "event",
+          "bracket",
+          "teams = []",
+          "onBracketUpdate",
+          "onMatchUpdate",
+          "isLoading = false"
+        ],
+        "methods": [
+          "handleGenerateBracket",
+          "handleTeamReplace",
+          "handleSeedChange",
+          "handleGenerateBracket",
+          "handleTeamReplace",
+          "handleSeedChange"
+        ],
+        "dependencies": [
+          "react",
+          "../../utils/imageUtils"
+        ],
+        "stateManagement": {
+          "useState": 5,
+          "useEffect": 1,
+          "useContext": 0,
+          "customHooks": [],
+          "stateVariables": []
+        },
+        "apiCalls": [],
+        "eventHandlers": [
+          "() => setActiveTab(tab.key)",
+          "setBracketConfig",
+          "handleGenerateBracket",
+          "setTeamSeeds",
+          "onMatchUpdate",
+          "onMatchUpdate",
+          "setBracketConfig",
+          "() => onChange({ ...config, format: format.value",
+          "(e) => onChange({ ...config, teams_count: parseInt(e.target.value)",
+          "(e) => onChange({ ...config, seeding_method: e.target.value",
+          "onGenerate",
+          "(newTeam) => handleTeamReplace(index, newTeam)",
+          "() => setShowSelector(true)",
+          "(selectedTeam) => {\n            onReplace(selectedTeam);\n            setShowSelector(false);",
+          "() => setShowSelector(false)",
+          "() => onSelect(team)"
+        ],
+        "errors": [
+          {
+            "type": "POTENTIAL_MEMORY_LEAK",
+            "description": "useEffect without cleanup function"
+          },
+          {
+            "type": "DEBUG_CODE",
+            "description": "Console statements found in component"
+          }
+        ]
+      }
+    },
+    {
+      "component": "bracketManagementDashboard",
+      "test": "Component Structure",
+      "status": "PASS",
+      "details": {
+        "name": "bracketManagementDashboard",
+        "type": "Functional Component",
+        "hooks": [
+          "useState",
+          "useState",
+          "useState",
+          "useState",
+          "useState",
+          "useAuth",
+          "useEffect"
+        ],
+        "props": [
+          "eventId",
+          "onBracketGenerated"
+        ],
+        "methods": [
+          "fetchBracketData",
+          "fetchEventTeams",
+          "fetchBracketAnalysis",
+          "handleGenerateBracket",
+          "handleGenerateNextSwissRound",
+          "getFormatDescription",
+          "getSeedingDescription",
+          "fetchBracketData",
+          "fetchEventTeams",
+          "fetchBracketAnalysis",
+          "handleGenerateBracket",
+          "handleGenerateNextSwissRound",
+          "getFormatDescription",
+          "getSeedingDescription"
+        ],
+        "dependencies": [
+          "react",
+          "../../hooks"
+        ],
+        "stateManagement": {
+          "useState": 5,
+          "useEffect": 1,
+          "useContext": 0,
+          "customHooks": [],
+          "stateVariables": []
+        },
+        "apiCalls": [
+          {
+            "method": "get",
+            "endpoint": "/events/${eventId}/comprehensive-bracket"
+          },
+          {
+            "method": "get",
+            "endpoint": "/events/${eventId}"
+          },
+          {
+            "method": "get",
+            "endpoint": "/events/${eventId}/bracket-analysis"
+          },
+          {
+            "method": "post",
+            "endpoint": "/admin/events/${eventId}/comprehensive-bracket"
+          },
+          {
+            "method": "post",
+            "endpoint": "/admin/events/${eventId}/swiss/next-round"
+          }
+        ],
+        "eventHandlers": [
+          "(e) => setGenerateForm({...generateForm, format: e.target.value",
+          "(e) => setGenerateForm({...generateForm, seeding_method: e.target.value",
+          "(e) => setGenerateForm({...generateForm, best_of: e.target.value",
+          "(e) => setGenerateForm({...generateForm, swiss_rounds: parseInt(e.target.value)",
+          "(e) => setGenerateForm({...generateForm, groups: parseInt(e.target.value)",
+          "(e) => setGenerateForm({...generateForm, teams_per_group: parseInt(e.target.value)",
+          "(e) => setGenerateForm({...generateForm, randomize_seeds: e.target.checked",
+          "(e) => setGenerateForm({...generateForm, third_place_match: e.target.checked",
+          "(e) => setGenerateForm({...generateForm, bracket_reset: e.target.checked",
+          "handleGenerateNextSwissRound",
+          "handleGenerateBracket"
+        ],
+        "errors": [
+          {
+            "type": "POTENTIAL_MEMORY_LEAK",
+            "description": "useEffect without cleanup function"
+          },
+          {
+            "type": "DEBUG_CODE",
+            "description": "Console statements found in component"
+          },
+          {
+            "type": "INLINE_STYLES",
+            "description": "Inline styles found - consider CSS classes"
+          }
+        ]
+      }
+    }
+  ],
+  "validation": [
+    {
+      "component": "adminEvents",
+      "test": "Logic Validation",
+      "status": "PASS",
+      "details": {
+        "issues": [],
+        "suggestions": [
+          {
+            "type": "PERFORMANCE",
+            "suggestion": "Consider using useCallback for event handlers to prevent unnecessary re-renders"
+          },
+          {
+            "type": "ACCESSIBILITY",
+            "suggestion": "Consider adding ARIA attributes for better accessibility"
+          }
+        ],
+        "bestPractices": [
+          {
+            "type": "UX",
+            "practice": "Good: Component implements loading states"
+          }
+        ]
+      }
+    },
+    {
+      "component": "bracketManagement",
+      "test": "Logic Validation",
+      "status": "PASS",
+      "details": {
+        "issues": [],
+        "suggestions": [
+          {
+            "type": "ACCESSIBILITY",
+            "suggestion": "Consider adding ARIA attributes for better accessibility"
+          }
+        ],
+        "bestPractices": []
+      }
+    },
+    {
+      "component": "bracketManagementDashboard",
+      "test": "Logic Validation",
+      "status": "PASS",
+      "details": {
+        "issues": [],
+        "suggestions": [
+          {
+            "type": "ACCESSIBILITY",
+            "suggestion": "Consider adding ARIA attributes for better accessibility"
+          }
+        ],
+        "bestPractices": [
+          {
+            "type": "UX",
+            "practice": "Good: Component implements loading states"
+          }
+        ]
+      }
+    }
+  ],
+  "accessibility": [
+    {
+      "component": "adminEvents",
+      "test": "Accessibility Analysis",
+      "status": "PASS",
+      "details": {
+        "score": 90,
+        "issues": [
+          "Interactive elements may not be keyboard accessible"
+        ],
+        "recommendations": []
+      }
+    },
+    {
+      "component": "bracketManagement",
+      "test": "Accessibility Analysis",
+      "status": "PASS",
+      "details": {
+        "score": 90,
+        "issues": [
+          "Interactive elements may not be keyboard accessible"
+        ],
+        "recommendations": []
+      }
+    },
+    {
+      "component": "bracketManagementDashboard",
+      "test": "Accessibility Analysis",
+      "status": "PASS",
+      "details": {
+        "score": 90,
+        "issues": [
+          "Interactive elements may not be keyboard accessible"
+        ],
+        "recommendations": []
+      }
+    }
+  ],
+  "performance": [
+    {
+      "component": "adminEvents",
+      "test": "Performance Analysis",
+      "status": "GOOD",
+      "details": {
+        "score": 90,
+        "optimizations": [
+          "Uses useMemo for expensive calculations"
+        ],
+        "warnings": [
+          "Large inline objects detected - consider extracting"
+        ],
+        "bundleSize": 30907,
+        "complexity": 85
+      }
+    },
+    {
+      "component": "bracketManagement",
+      "test": "Performance Analysis",
+      "status": "NEEDS_OPTIMIZATION",
+      "details": {
+        "score": 75,
+        "optimizations": [],
+        "warnings": [
+          "Component may have unnecessary re-renders",
+          "Large inline objects detected - consider extracting"
+        ],
+        "bundleSize": 15219,
+        "complexity": 18
+      }
+    },
+    {
+      "component": "bracketManagementDashboard",
+      "test": "Performance Analysis",
+      "status": "NEEDS_OPTIMIZATION",
+      "details": {
+        "score": 75,
+        "optimizations": [],
+        "warnings": [
+          "Component may have unnecessary re-renders",
+          "Large inline objects detected - consider extracting"
+        ],
+        "bundleSize": 20455,
+        "complexity": 43
+      }
+    }
+  ]
+}</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add interactive features
+        document.querySelectorAll('details').forEach(detail => {
+            detail.addEventListener('toggle', function() {
+                if (this.open) {
+                    this.style.background = '#f8f9fa';
+                } else {
+                    this.style.background = 'transparent';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

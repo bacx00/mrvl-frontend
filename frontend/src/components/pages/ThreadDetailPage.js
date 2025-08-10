@@ -158,8 +158,8 @@ function ThreadDetailPage({ params, navigateTo }) {
       });
     }
     
-    // Split content by mentions pattern
-    const mentionPattern = /(@\w+|@team:\w+|@player:\w+)/g;
+    // Split content by mentions pattern - fixed regex to properly match all mention formats
+    const mentionPattern = /(@[a-zA-Z0-9_]+|@team:[a-zA-Z0-9_]+|@player:[a-zA-Z0-9_]+)/g;
     const parts = safeContent.split(mentionPattern);
     
     return parts.map((part, index) => {

@@ -1,0 +1,71 @@
+{
+  "timestamp": "2025-08-10T17:49:25.122Z",
+  "totalTests": 26,
+  "passed": 15,
+  "failed": 11,
+  "errors": [
+    {
+      "test": "Match Object Present",
+      "error": null,
+      "timestamp": "2025-08-10T17:49:25.388Z"
+    },
+    {
+      "test": "Hero Object Structure",
+      "error": null,
+      "timestamp": "2025-08-10T17:49:25.531Z"
+    },
+    {
+      "test": "SSE Endpoint Accessible",
+      "error": "stream has been aborted",
+      "timestamp": "2025-08-10T17:49:30.603Z"
+    },
+    {
+      "test": "Live Stats Update API",
+      "error": "Request failed with status code 500",
+      "timestamp": "2025-08-10T17:49:30.667Z"
+    },
+    {
+      "test": "Live Control API",
+      "error": "Request failed with status code 500",
+      "timestamp": "2025-08-10T17:49:30.747Z"
+    },
+    {
+      "test": "Comment Object Structure",
+      "error": null,
+      "timestamp": "2025-08-10T17:49:30.805Z"
+    },
+    {
+      "test": "Comments POST API Status",
+      "error": null,
+      "timestamp": "2025-08-10T17:49:30.850Z"
+    },
+    {
+      "test": "Create Match API",
+      "error": "Request failed with status code 500",
+      "timestamp": "2025-08-10T17:49:30.902Z"
+    },
+    {
+      "test": "Game Data - Heroes API",
+      "error": "Request failed with status code 500",
+      "timestamp": "2025-08-10T17:49:30.965Z"
+    },
+    {
+      "test": "Game Data - Maps API",
+      "error": "Request failed with status code 500",
+      "timestamp": "2025-08-10T17:49:31.027Z"
+    },
+    {
+      "test": "Tournaments List API",
+      "error": "Request failed with status code 500",
+      "timestamp": "2025-08-10T17:49:31.209Z"
+    }
+  ],
+  "details": {
+    "Heroes Count > 0": {
+      "count": 39
+    },
+    "Comments Array Format": {
+      "count": 1
+    }
+  }
+}

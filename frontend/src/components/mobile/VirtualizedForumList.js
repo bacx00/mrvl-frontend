@@ -4,7 +4,7 @@ import {
   MessageCircle, Clock, User, TrendingUp, Pin, 
   ChevronRight, Eye, Heart, Bookmark, Share2 
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatTimeAgo } from '../../lib/utils.js';
 
 // Optimized thread item component with React.memo
 const ThreadItem = React.memo(({ index, style, data }) => {
@@ -22,13 +22,7 @@ const ThreadItem = React.memo(({ index, style, data }) => {
   const thread = threads[index];
   if (!thread) return null;
 
-  const formatTimeAgo = (date) => {
-    try {
-      return formatDistanceToNow(new Date(date), { addSuffix: true });
-    } catch (error) {
-      return 'Unknown time';
-    }
-  };
+  // Using imported formatTimeAgo from utils.js for consistency
 
   const handleThreadClick = useCallback((e) => {
     e.preventDefault();

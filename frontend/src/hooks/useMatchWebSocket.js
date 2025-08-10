@@ -47,15 +47,6 @@ export const useMatchWebSocket = (matchId, onMatchUpdate) => {
           onMatchUpdate && onMatchUpdate('match.started', data);
         });
 
-        matchChannel.bind('match.paused', (data) => {
-          console.log('Received match paused:', data);
-          onMatchUpdate && onMatchUpdate('match.paused', data);
-        });
-
-        matchChannel.bind('match.resumed', (data) => {
-          console.log('Received match resumed:', data);
-          onMatchUpdate && onMatchUpdate('match.resumed', data);
-        });
 
         pusher.connection.bind('connected', () => {
           console.log('Pusher connected successfully');

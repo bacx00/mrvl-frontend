@@ -102,7 +102,7 @@ const MobileLiveScoring = ({
     
     setMatchState(prev => ({
       ...prev,
-      status: prev.status === 'live' ? 'paused' : 'live'
+      status: prev.status === 'live' ? 'completed' : 'live'
     }));
   };
 

@@ -47,7 +47,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token, onUpdate }) =
     team2: 0,
     capturingTeam: null
   });
-  const [isPaused, setIsPaused] = useState(false);
 
   // 🚀 KEYBOARD SHORTCUTS FOR SPEED (tracker.gg style)
   useEffect(() => {
@@ -1276,33 +1275,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token, onUpdate }) =
     });
   };
   
-  // ENHANCED: Pause/Resume match
-  const togglePauseMatch = async () => {
-    const newPausedState = !isPaused;
-    setIsPaused(newPausedState);
-    
-    if (newPausedState) {
-      pauseTimer();
-      
-      try {
-        await api.post(`/admin/matches/${match.id}/pause`, {
-          reason: 'Admin pause'
-        });
-      } catch (error) {
-        console.error('Error pausing match:', error);
-      }
-    } else {
-      startTimer();
-      
-      try {
-        await api.post(`/admin/matches/${match.id}/resume`);
-      } catch (error) {
-        console.error('Error resuming match:', error);
-      }
-    }
-    
-    triggerRealTimeSync('MATCH_PAUSE', { isPaused: newPausedState });
-  };
 
   // Timer controls with enhanced sync
   const startTimer = async () => {
@@ -1577,7 +1549,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token, onUpdate }) =
                 >
                   <option value="upcoming"> Upcoming</option>
                   <option value="live"> Live</option>
-                  <option value="paused"> Paused</option>
                   <option value="completed"> Completed</option>
                   <option value="cancelled"> Cancelled</option>
                 </select>
@@ -1846,19 +1817,6 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token, onUpdate }) =
                     <span className="mr-2"></span> Objective Progress
                   </h3>
                   
-                  {/* Pause/Resume Match */}
-                  <div className="mb-4">
-                    <button
-                      onClick={togglePauseMatch}
-                      className={`w-full px-4 py-2 rounded font-medium transition-colors ${
-                        isPaused 
-                          ? 'bg-green-600 hover:bg-green-700 text-white' 
-                          : 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                      }`}
-                    >
-                      {isPaused ? '▶️ Resume Match' : '⏸️ Pause Match'}
-                    </button>
-                  </div>
                   
                   {/* Objective Controls based on Game Mode */}
                   {currentMapData?.mode && (

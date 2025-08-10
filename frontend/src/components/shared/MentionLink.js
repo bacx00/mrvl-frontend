@@ -65,35 +65,50 @@ const MentionLink = ({
     }
   };
 
-  // Get colors based on mention type
+  // Get colors based on mention type with enhanced highlighting
   const getColors = () => {
     switch (type) {
       case 'player':
-        return 'text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300';
+        return 'text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20';
       case 'team':
-        return 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300';
+        return 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20';
       case 'user':
-        return 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300';
+        return 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20';
       default:
-        return 'text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300';
+        return 'text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/20';
     }
   };
 
   const handleClick = (e) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event bubbling
+    
     const navigation = getNavigation();
     
+    // Add visual feedback for the click
+    const element = e.currentTarget;
+    element.classList.add('transform', 'scale-95');
+    setTimeout(() => {
+      element.classList.remove('transform', 'scale-95');
+    }, 150);
+    
     if (navigation && navigateTo) {
-      // Use React Router style navigation
+      // Use React Router style navigation with proper routing
       switch (navigation.page) {
         case 'player-detail':
-          navigateTo('player-detail', navigation.params);
+          if (typeof window !== 'undefined') {
+            window.location.href = `/players/${navigation.params.id}`;
+          }
           break;
         case 'team-detail':
-          navigateTo('team-detail', navigation.params);
+          if (typeof window !== 'undefined') {
+            window.location.href = `/teams/${navigation.params.id}`;
+          }
           break;
         case 'user-profile':
-          navigateTo('user-profile', navigation.params);
+          if (typeof window !== 'undefined') {
+            window.location.href = `/users/${navigation.params.id}`;
+          }
           break;
         default:
           console.warn('Unknown navigation page:', navigation.page);
@@ -102,7 +117,9 @@ const MentionLink = ({
       // Fallback to window location if navigateTo not provided
       const url = getUrlFromNavigation(navigation);
       if (url && url !== '#') {
-        window.location.href = url;
+        if (typeof window !== 'undefined') {
+          window.location.href = url;
+        }
       }
     }
     
@@ -131,7 +148,7 @@ const MentionLink = ({
   if (!navigation) {
     return (
       <span 
-        className={`inline-flex items-center font-medium ${getColors()} ${className}`}
+        className={`inline-flex items-center font-medium px-2 py-1 rounded-md transition-all duration-200 ${getColors()} ${className}`}
         onClick={handleClick}
       >
         {getIcon()}
@@ -143,7 +160,7 @@ const MentionLink = ({
   return (
     <button
       onClick={handleClick}
-      className={`inline-flex items-center font-medium hover:underline transition-colors cursor-pointer ${getColors()} ${className}`}
+      className={`inline-flex items-center font-medium px-2 py-1 rounded-md hover:underline transition-all duration-200 cursor-pointer transform hover:scale-105 active:scale-95 ${getColors()} ${className}`}
       title={`View ${type}: ${displayText}`}
     >
       {getIcon()}

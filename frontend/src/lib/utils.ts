@@ -37,7 +37,7 @@ export const safeParseDate = (date: any, fallback: string = 'Unknown'): Date | s
 };
 
 /**
- * Format time ago with proper validation (VLR.gg style)
+ * Format time ago with proper validation and enhanced precision
  */
 export const formatTimeAgo = (dateString: any): string => {
   if (!dateString || !isValidDate(dateString)) {
@@ -50,24 +50,36 @@ export const formatTimeAgo = (dateString: any): string => {
   const diffMins = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
 
   // Handle future dates
   if (diffMs < 0) {
+    const futureSecs = Math.abs(Math.floor(diffMs / 1000));
     const futureMins = Math.abs(diffMins);
     const futureHours = Math.abs(diffHours);
     const futureDays = Math.abs(diffDays);
     
+    if (futureSecs < 60) return 'in a moment';
     if (futureMins < 60) return `in ${futureMins}m`;
     if (futureHours < 24) return `in ${futureHours}h`;
     if (futureDays < 7) return `in ${futureDays}d`;
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 
-  // VLR.gg style relative time for past dates
-  if (diffMins < 1) return 'now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
+  // Enhanced relative time for past dates
+  if (diffMs < 30000) return 'just now'; // Less than 30 seconds
+  if (diffMins < 1) return 'moments ago';
+  if (diffMins === 1) return '1 minute ago';
+  if (diffMins < 60) return `${diffMins} minutes ago`;
+  if (diffHours === 1) return '1 hour ago';
+  if (diffHours < 24) return `${diffHours} hours ago`;
+  if (diffDays === 1) return 'yesterday';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffWeeks === 1) return '1 week ago';
+  if (diffWeeks < 4) return `${diffWeeks} weeks ago`;
+  if (diffMonths === 1) return '1 month ago';
+  if (diffMonths < 12) return `${diffMonths} months ago`;
 
   // Format for older dates
   return date.toLocaleDateString('en-US', {
@@ -120,6 +132,33 @@ export const formatDate = (date: string | Date, locale: string = 'en'): string =
     month: 'short',
     day: 'numeric',
     year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+  });
+};
+
+/**
+ * Format date for mobile devices (more compact)
+ */
+export const formatDateMobile = (date: string | Date): string => {
+  if (!isValidDate(date)) return 'Unknown';
+  
+  const d = new Date(date);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  // Ultra-compact relative time for mobile
+  if (diffMins < 1) return 'now';
+  if (diffMins < 60) return `${diffMins}m`;
+  if (diffHours < 24) return `${diffHours}h`;
+  if (diffDays < 7) return `${diffDays}d`;
+  if (diffDays < 30) return `${Math.floor(diffDays/7)}w`;
+
+  // Very compact format for older dates
+  return d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric'
   });
 };
 

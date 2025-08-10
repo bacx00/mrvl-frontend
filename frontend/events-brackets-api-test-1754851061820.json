@@ -1,0 +1,256 @@
+{
+  "testSuite": "MRVL Events & Brackets API Testing",
+  "timestamp": "2025-08-10T18:37:41.820Z",
+  "summary": {
+    "totalTests": 11,
+    "passed": 9,
+    "failed": 2,
+    "successRate": 82
+  },
+  "results": {
+    "publicEndpoints": [
+      {
+        "test": "Public Events List",
+        "url": "/events",
+        "status": "PASS",
+        "httpStatus": 200,
+        "responseTime": 112,
+        "dataType": "object",
+        "hasData": true,
+        "dataStructure": {
+          "type": "object",
+          "keys": [
+            "data",
+            "pagination",
+            "success"
+          ],
+          "keyCount": 3
+        }
+      },
+      {
+        "test": "Public Brackets List",
+        "url": "/brackets",
+        "status": "PASS",
+        "httpStatus": 200,
+        "responseTime": 44,
+        "dataType": "array",
+        "hasData": true,
+        "dataStructure": {
+          "type": "array",
+          "length": 0,
+          "empty": true
+        }
+      },
+      {
+        "test": "Public Rankings",
+        "url": "/rankings",
+        "status": "FAIL",
+        "httpStatus": 500,
+        "error": {
+          "success": false,
+          "message": "The route api/rankings could not be found.",
+          "error": "NotFoundHttpException",
+          "file": "/var/www/mrvl-backend/vendor/laravel/framework/src/Illuminate/Routing/AbstractRouteCollection.php",
+          "line": 45
+        },
+        "responseTime": 0
+      },
+      {
+        "test": "Public Players",
+        "url": "/players",
+        "status": "PASS",
+        "httpStatus": 200,
+        "responseTime": 96,
+        "dataType": "object",
+        "hasData": true,
+        "dataStructure": {
+          "type": "object",
+          "keys": [
+            "data",
+            "total",
+            "success"
+          ],
+          "keyCount": 3
+        }
+      },
+      {
+        "test": "Public Teams",
+        "url": "/teams",
+        "status": "PASS",
+        "httpStatus": 200,
+        "responseTime": 145,
+        "dataType": "object",
+        "hasData": true,
+        "dataStructure": {
+          "type": "object",
+          "keys": [
+            "data",
+            "total",
+            "success"
+          ],
+          "keyCount": 3
+        }
+      }
+    ],
+    "eventEndpoints": [
+      {
+        "test": "Events List",
+        "url": "/events",
+        "status": "PASS",
+        "httpStatus": 200,
+        "responseTime": 59,
+        "dataType": "object",
+        "hasData": true,
+        "dataStructure": {
+          "type": "object",
+          "keys": [
+            "data",
+            "pagination",
+            "success"
+          ],
+          "keyCount": 3
+        }
+      },
+      {
+        "test": "Single Event (may not exist)",
+        "url": "/events/1",
+        "status": "EXPECTED",
+        "httpStatus": 404,
+        "error": {
+          "success": false,
+          "message": "Event not found"
+        },
+        "responseTime": 0
+      },
+      {
+        "test": "Public Events Alternative",
+        "url": "/public/events",
+        "status": "PASS",
+        "httpStatus": 200,
+        "responseTime": 64,
+        "dataType": "object",
+        "hasData": true,
+        "dataStructure": {
+          "type": "object",
+          "keys": [
+            "data",
+            "pagination",
+            "success"
+          ],
+          "keyCount": 3
+        }
+      }
+    ],
+    "bracketEndpoints": [
+      {
+        "test": "Brackets List",
+        "url": "/brackets",
+        "status": "PASS",
+        "httpStatus": 200,
+        "responseTime": 38,
+        "dataType": "array",
+        "hasData": true,
+        "dataStructure": {
+          "type": "array",
+          "length": 0,
+          "empty": true
+        }
+      },
+      {
+        "test": "Single Bracket (may not exist)",
+        "url": "/brackets/1",
+        "status": "EXPECTED",
+        "httpStatus": 404,
+        "error": {
+          "error": "Bracket not found"
+        },
+        "responseTime": 0
+      },
+      {
+        "test": "Live Matches",
+        "url": "/live-matches",
+        "status": "FAIL",
+        "httpStatus": 500,
+        "error": {
+          "success": false,
+          "message": "The route api/live-matches could not be found.",
+          "error": "NotFoundHttpException",
+          "file": "/var/www/mrvl-backend/vendor/laravel/framework/src/Illuminate/Routing/AbstractRouteCollection.php",
+          "line": 45
+        },
+        "responseTime": 0
+      }
+    ],
+    "dataStructure": [
+      {
+        "test": "Events Data Structure",
+        "status": "PASS",
+        "valid": true,
+        "sampleFields": [
+          "id",
+          "name",
+          "slug",
+          "description",
+          "logo",
+          "organizer",
+          "details",
+          "schedule",
+          "participation",
+          "status",
+          "meta",
+          "stats"
+        ],
+        "eventCount": 8
+      },
+      {
+        "test": "Brackets Data Structure",
+        "status": "PASS",
+        "valid": true,
+        "bracketCount": 0,
+        "sampleFields": []
+      }
+    ],
+    "errors": []
+  },
+  "analysis": {
+    "endpointStatus": {
+      "working": [
+        "Public Events List",
+        "Public Brackets List",
+        "Public Players",
+        "Public Teams",
+        "Events List",
+        "Public Events Alternative",
+        "Brackets List"
+      ],
+      "notFound": [
+        "Single Event (may not exist)",
+        "Single Bracket (may not exist)"
+      ],
+      "errors": [
+        "Public Rankings",
+        "Live Matches"
+      ]
+    },
+    "responseTypes": {
+      "object": 5,
+      "array": 2
+    },
+    "avgResponseTimes": {
+      "Public Events List": 112,
+      "Public Brackets List": 44,
+      "Public Players": 96,
+      "Public Teams": 145,
+      "Events List": 59,
+      "Public Events Alternative": 64,
+      "Brackets List": 38
+    },
+    "recommendations": [
+      {
+        "priority": "HIGH",
+        "issue": "2 endpoints returning errors",
+        "action": "Investigate and fix failing endpoints"
+      }
+    ]
+  }
+}

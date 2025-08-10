@@ -1,0 +1,50 @@
+{
+  "test_suite": "Match Moderation Tab Functionality",
+  "timestamp": "2025-08-10T18:33:38.926Z",
+  "duration_ms": 234,
+  "summary": {
+    "total_tests": 1,
+    "passed": 0,
+    "failed": 1,
+    "success_rate": "0.00%"
+  },
+  "test_results": {
+    "Admin Authentication": {
+      "status": "failed",
+      "error": "Authentication failed: Invalid credentials"
+    }
+  },
+  "errors": [
+    {
+      "test": "Admin Authentication",
+      "error": "Authentication failed: Invalid credentials",
+      "stack": "Error: Authentication failed: Invalid credentials\n    at /var/www/mrvl-frontend/frontend/match-moderation-comprehensive-test.js:91:23\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async MatchModerationTester.runTest (/var/www/mrvl-frontend/frontend/match-moderation-comprehensive-test.js:65:28)\n    at async MatchModerationTester.runAllTests (/var/www/mrvl-frontend/frontend/match-moderation-comprehensive-test.js:1030:13)\n    at async main (/var/www/mrvl-frontend/frontend/match-moderation-comprehensive-test.js:1170:5)"
+    }
+  ],
+  "test_data": {
+    "adminToken": null,
+    "testMatchId": null,
+    "testPlayerIds": [],
+    "testHeroes": [
+      "Captain America",
+      "Iron Man",
+      "Thor",
+      "Hulk",
+      "Spider-Man",
+      "Venom"
+    ]
+  },
+  "environment": {
+    "backend_url": "https://staging.mrvl.net/api",
+    "frontend_url": "https://staging.mrvl.net",
+    "node_version": "v18.20.8"
+  },
+  "detailed_findings": {
+    "match_moderation_access": false,
+    "live_control_buttons": false,
+    "live_stats_updates": false,
+    "hero_selection": false,
+    "score_management": false,
+    "map_management": false
+  }
+}

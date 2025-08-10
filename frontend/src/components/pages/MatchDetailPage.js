@@ -260,11 +260,11 @@ function MatchDetailPage({ matchId, navigateTo }) {
           
           console.log('MatchDetailPage: Transformed match data:', transformedMatch);
           setMatch(transformedMatch);
+          
+          // Real-time updates will be automatically enabled via LiveScoreManager
+          console.log('Match loaded. Live updates enabled via LiveScoreManager for status:', transformedMatch.status);
+          setLiveUpdateConnection(transformedMatch.status === 'live' ? 'live-manager' : 'ready');
         }
-        
-        // Real-time updates will be automatically enabled via LiveScoreManager
-        console.log('Match loaded. Live updates enabled via LiveScoreManager for status:', transformedMatch.status);
-        setLiveUpdateConnection(transformedMatch.status === 'live' ? 'live-manager' : 'ready');
       } catch (error) {
         console.error('MatchDetailPage: Error loading match:', error);
       } finally {

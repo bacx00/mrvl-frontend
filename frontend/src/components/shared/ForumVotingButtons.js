@@ -34,10 +34,16 @@ function ForumVotingButtons({
 
     setLoading(true);
     
-    // Optimistic UI update for instant feedback
+    // Optimistic UI update for instant feedback with enhanced animations
     const oldUpvotes = upvotes;
     const oldDownvotes = downvotes;
     const oldVote = currentVote;
+    
+    // Add visual feedback classes for button animations
+    const buttonElement = document.querySelector(`[data-vote-type="${voteType}"]`);
+    if (buttonElement) {
+      buttonElement.classList.add('animate-pulse');
+    }
     
     // Predict the outcome for immediate visual feedback
     if (currentVote === voteType) {
@@ -133,6 +139,12 @@ function ForumVotingButtons({
       alert(errorMessage);
     } finally {
       setLoading(false);
+      
+      // Remove animation classes after completion
+      const buttonElement = document.querySelector(`[data-vote-type="${voteType}"]`);
+      if (buttonElement) {
+        buttonElement.classList.remove('animate-pulse');
+      }
     }
   };
 
@@ -154,11 +166,12 @@ function ForumVotingButtons({
         <button
           onClick={() => handleVote('upvote')}
           disabled={loading}
+          data-vote-type="upvote"
           className={`${sizeClasses[size]} rounded transition-all duration-200 flex items-center justify-center touch-manipulation ${
             currentVote === 'upvote'
-              ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400 transform scale-110'
+              ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400 transform scale-110 shadow-lg'
               : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-green-600 dark:hover:text-green-400 active:scale-95'
-          } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          } ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-md'}`}
           style={{ WebkitTapHighlightColor: 'rgba(34, 197, 94, 0.1)' }}
           title="Upvote"
         >
@@ -174,11 +187,12 @@ function ForumVotingButtons({
         <button
           onClick={() => handleVote('downvote')}
           disabled={loading}
+          data-vote-type="downvote"
           className={`${sizeClasses[size]} rounded transition-all duration-200 flex items-center justify-center touch-manipulation ${
             currentVote === 'downvote'
-              ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400 transform scale-110'
+              ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400 transform scale-110 shadow-lg'
               : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-red-600 dark:hover:text-red-400 active:scale-95'
-          } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          } ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-md'}`}
           style={{ WebkitTapHighlightColor: 'rgba(239, 68, 68, 0.1)' }}
           title="Downvote"
         >
@@ -195,11 +209,12 @@ function ForumVotingButtons({
       <button
         onClick={() => handleVote('upvote')}
         disabled={loading}
+        data-vote-type="upvote"
         className={`${sizeClasses[size]} rounded transition-all duration-200 flex items-center justify-center space-x-1 touch-manipulation ${
           currentVote === 'upvote'
-            ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400 transform scale-105'
+            ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400 transform scale-105 shadow-lg'
             : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-green-600 dark:hover:text-green-400 active:scale-95'
-        } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+        } ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-md'}`}
         style={{ WebkitTapHighlightColor: 'rgba(34, 197, 94, 0.1)' }}
         title="Upvote"
       >
@@ -218,11 +233,12 @@ function ForumVotingButtons({
       <button
         onClick={() => handleVote('downvote')}
         disabled={loading}
+        data-vote-type="downvote"
         className={`${sizeClasses[size]} rounded transition-all duration-200 flex items-center justify-center space-x-1 touch-manipulation ${
           currentVote === 'downvote'
-            ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400 transform scale-105'
+            ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400 transform scale-105 shadow-lg'
             : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-red-600 dark:hover:text-red-400 active:scale-95'
-        } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+        } ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-md'}`}
         style={{ WebkitTapHighlightColor: 'rgba(239, 68, 68, 0.1)' }}
         title="Downvote"
       >

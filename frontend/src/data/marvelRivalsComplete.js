@@ -173,7 +173,6 @@ export const MARVEL_RIVALS_HEROES = {
 export const MARVEL_RIVALS_STATUSES = [
   { value: 'upcoming', label: '📅 Upcoming', color: 'blue' },
   { value: 'live', label: '🔴 Live', color: 'red' },
-  { value: 'paused', label: '⏸️ Paused', color: 'yellow' },
   { value: 'completed', label: '✅ Completed', color: 'green' },
   { value: 'cancelled', label: '❌ Cancelled', color: 'gray' },
   { value: 'postponed', label: '⏳ Postponed', color: 'yellow' }

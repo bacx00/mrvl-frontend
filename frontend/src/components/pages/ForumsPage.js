@@ -6,6 +6,7 @@ import MobileForumNavigation from '../mobile/MobileForumNavigation';
 import VirtualizedForumList from '../mobile/VirtualizedForumList';
 import TabletForumLayout from '../tablet/TabletForumLayout';
 import TabletSplitView from '../tablet/TabletSplitView';
+import { formatTimeAgo } from '../../lib/utils.js';
 import { Search, Filter, TrendingUp, MessageCircle, Eye, ChevronDown, RefreshCw, Bookmark, Share2, MoreVertical } from 'lucide-react';
 
 function ForumsPage({ navigateTo }) {
@@ -325,28 +326,7 @@ function ForumsPage({ navigateTo }) {
     }
   };
 
-  const formatTimeAgo = (dateString) => {
-    if (!dateString) return 'Unknown';
-    
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Unknown';
-    
-    const now = new Date();
-    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours}h`;
-    if (diffInHours < 48) return 'Yesterday';
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 30) return `${diffInDays}d`;
-    
-    const diffInMonths = Math.floor(diffInDays / 30);
-    if (diffInMonths < 12) return `${diffInMonths}mo`;
-    
-    const years = Math.floor(diffInMonths / 12);
-    return `${years}y`;
-  };
+  // Removed local formatTimeAgo function - now using the imported one from utils.js for consistency
 
   const getSortIcon = (type) => {
     if (sortBy === type) {

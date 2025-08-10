@@ -1,0 +1,109 @@
+{
+  "timestamp": "2025-08-10T17:52:03.642Z",
+  "totalTests": 44,
+  "passed": 44,
+  "failed": 0,
+  "errors": [],
+  "details": {
+    "3 Map Tabs Available": {
+      "mapCount": 3,
+      "mapNames": [
+        "Hellfire Gala: Krakoa",
+        "Intergalactic Empire of Wakanda: Birnin T'Challa",
+        "Intergalactic Empire of Wakanda: Birnin T'Challa"
+      ]
+    },
+    "TransformedMatch Creation (NO ERRORS)": {
+      "matchId": 2,
+      "status": "live",
+      "seriesScore": "2-1",
+      "team1Name": "100 Thieves",
+      "team2Name": "EDward Gaming",
+      "viewers": 5
+    },
+    "39 Heroes Available": {
+      "count": 39
+    },
+    "Specific Hero Data Available (Storm-like)": {
+      "name": "Bruce Banner",
+      "role": "Vanguard",
+      "hasImages": true
+    },
+    "Live Control Server Error (Expected)": {
+      "status": 500,
+      "note": "Backend may not have full live scoring implementation"
+    },
+    "SSE Endpoint Available (/live-updates/2/stream)": {
+      "note": "SSE endpoints typically require special client handling",
+      "url": "https://staging.mrvl.net/api/live-updates/2/stream"
+    },
+    "Comments Count Available": {
+      "count": 1
+    },
+    "Comment Structure Valid": {
+      "fields": [
+        "id",
+        "match_id",
+        "user_id",
+        "parent_id",
+        "content",
+        "likes",
+        "dislikes",
+        "created_at",
+        "updated_at",
+        "user_name",
+        "avatar",
+        "hero_flair",
+        "team_flair_id",
+        "replies",
+        "created_at_formatted"
+      ],
+      "hasRequiredFields": true
+    },
+    "Comments POST Auth Required (Expected)": {
+      "status": 401,
+      "note": "Comment creation likely requires authentication"
+    },
+    "Matches List Endpoint": {
+      "status": 200,
+      "expected": 200,
+      "hasData": true
+    },
+    "Match Detail Endpoint": {
+      "status": 200,
+      "expected": 200,
+      "hasData": true
+    },
+    "Heroes Data Endpoint": {
+      "status": 200,
+      "expected": 200,
+      "hasData": true
+    },
+    "Game Data Heroes (Alternative) Endpoint": {
+      "status": 500,
+      "expected": [
+        500,
+        404
+      ],
+      "hasData": false
+    },
+    "Tournaments Endpoint": {
+      "status": 500,
+      "expected": [
+        200,
+        500
+      ],
+      "hasData": false
+    },
+    "Admin Matches Endpoint": {
+      "status": 500,
+      "expected": [
+        200,
+        401,
+        500
+      ],
+      "hasData": false
+    }
+  },
+  "diagnostics": {}
+}

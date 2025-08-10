@@ -323,7 +323,6 @@ export const PLAYER_STATS = {
 export const MATCH_STATUSES = [
   { value: 'upcoming', label: 'Upcoming', icon: '📅', color: 'blue' },
   { value: 'live', label: 'Live', icon: '🔴', color: 'red' },
-  { value: 'paused', label: 'Paused', icon: '⏸️', color: 'yellow' },
   { value: 'completed', label: 'Completed', icon: '✅', color: 'green' },
   { value: 'cancelled', label: 'Cancelled', icon: '❌', color: 'gray' },
   { value: 'postponed', label: 'Postponed', icon: '⏳', color: 'orange' }

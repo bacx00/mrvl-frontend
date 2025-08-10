@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
-  X, Save, Play, Pause, SkipForward, Trophy, 
+  X, Save, Play, SkipForward, Trophy, 
   Shield, RefreshCw, Activity, Users, Eye,
   AlertCircle, Check, Clock, Zap, Target,
   TrendingUp, Award, BarChart3, Settings,
@@ -38,7 +38,6 @@ const ComprehensiveMatchControl = ({
     team2_score: match?.team2_score || 0,
     current_map: match?.current_map || 1,
     match_timer: '00:00',
-    is_paused: false,
     viewers: match?.viewers || 0,
     stream_url: match?.stream_url || '',
     vod_url: match?.vod_url || ''
@@ -637,33 +636,6 @@ const ComprehensiveMatchControl = ({
             </button>
           )}
           
-          {matchData.status === 'live' && !matchData.is_paused && (
-            <button
-              onClick={() => {
-                setMatchData(prev => ({ ...prev, is_paused: true }));
-                pauseTimer();
-                addMatchEvent('Match paused', 'admin');
-              }}
-              className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg flex items-center"
-            >
-              <Pause className="w-4 h-4 mr-2" />
-              Pause
-            </button>
-          )}
-          
-          {matchData.is_paused && (
-            <button
-              onClick={() => {
-                setMatchData(prev => ({ ...prev, is_paused: false }));
-                startTimer();
-                addMatchEvent('Match resumed', 'admin');
-              }}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center"
-            >
-              <Play className="w-4 h-4 mr-2" />
-              Resume
-            </button>
-          )}
           
           <button
             onClick={saveMatchData}
