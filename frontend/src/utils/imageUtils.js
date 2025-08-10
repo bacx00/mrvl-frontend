@@ -45,7 +45,7 @@ export const getImageUrl = (imagePath, type = 'general') => {
   }
 
   // CORE FIX: Handle backend storage paths properly
-  // Backend returns paths like: "teams/logos/filename.jpg" or "players/avatars/filename.jpg"
+  // Backend returns paths like: "/storage/teams/logos/filename.jpg" or "teams/logos/filename.jpg" or "players/avatars/filename.jpg"
   if (imagePath.includes('/')) {
     // Special handling for public images - they're in public/images/ not storage
     if (imagePath.includes('/heroes/') || imagePath.includes('/heroes-portraits/') || imagePath.includes('/images/')) {
@@ -53,7 +53,12 @@ export const getImageUrl = (imagePath, type = 'general') => {
       return `${API_CONFIG.BASE_URL}${cleanPath}`;
     }
     
-    // Always add /storage/ prefix for backend file paths
+    // Handle full storage paths that already start with /storage/
+    if (imagePath.startsWith('/storage/')) {
+      return `${API_CONFIG.BASE_URL}${imagePath}`;
+    }
+    
+    // Always add /storage/ prefix for backend file paths without it
     const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
     
     // CRITICAL FIX: Handle paths that already include 'storage' vs those that don't
@@ -100,20 +105,62 @@ export const getTeamLogoUrl = (team) => {
       return logoUrl;
     }
     
-    // Clean up the path to prevent double slashes
-    if (logoUrl.startsWith('/storage/')) {
+    // CORRECT FIX: Backend paths that point to /storage/teams/logos/ are correct
+    // Backend returns: "/storage/teams/logos/sentinels-logo.png"
+    // Files are actually stored in: "/var/www/mrvl-backend/storage/app/public/teams/logos/"
+    // Accessible via: "/storage/teams/logos/" (due to storage symlink)
+    if (logoUrl.startsWith('/storage/teams/logos/')) {
       logoUrl = `${API_CONFIG.BASE_URL}${logoUrl}`;
-    } else if (logoUrl.startsWith('teams/logos/')) {
-      // CRITICAL FIX: Backend returns paths like "teams/logos/68939b5ca2053.png"
-      // These need to be prefixed with /storage/ to work correctly
-      logoUrl = `${API_CONFIG.BASE_URL}/storage/${logoUrl}`;
-    } else if (logoUrl.startsWith('/teams/')) {
-      // Fix: team logos are in /storage/teams/logos/ directory
-      logoUrl = `${API_CONFIG.BASE_URL}/storage/teams/logos/${logoUrl.replace('/teams/', '')}`;
+      console.log('🖼️ getTeamLogoUrl - Using correct storage path:', logoUrl);
+      return logoUrl;
+    }
+    
+    // Handle other storage paths
+    if (logoUrl.startsWith('/storage/teams/')) {
+      const filename = logoUrl.replace('/storage/teams/', '');
+      logoUrl = `${API_CONFIG.BASE_URL}/teams/${filename}`;
+      console.log('🖼️ getTeamLogoUrl - Converted storage teams path:', logoUrl);
+      return logoUrl;
+    }
+    
+    // CRITICAL FIX: Team logos are in /public/teams/ directory, not /storage/
+    // Map common team names to actual logo filenames
+    const teamLogoMap = {
+      '100-thieves-logo.png': '100t-logo.png',
+      '100-thieves': '100t-logo.png',
+      '100thieves': '100t-logo.png',
+      'virtuspro-logo.png': 'virtuspro-logo.png',
+      'virtuspro': 'virtuspro-logo.png',
+      'sentinels-logo.png': 'sentinels-logo.png',
+      'sentinels': 'sentinels-logo.png',
+      'cloud9-logo.png': 'cloud9-logo.png',
+      'cloud9': 'cloud9-logo.png',
+      'fnatic-logo.png': 'fnatic-logo.png',
+      'fnatic': 'fnatic-logo.png'
+    };
+    
+    // Check if we need to map the filename
+    const fileName = logoUrl.split('/').pop(); // Get just the filename
+    if (teamLogoMap[fileName]) {
+      logoUrl = teamLogoMap[fileName];
+    } else if (teamLogoMap[logoUrl]) {
+      logoUrl = teamLogoMap[logoUrl];
+    }
+    
+    // Clean up the path to prevent double slashes
+    if (logoUrl.startsWith('/teams/')) {
+      logoUrl = `${API_CONFIG.BASE_URL}${logoUrl}`;
+    } else if (logoUrl.startsWith('teams/')) {
+      logoUrl = `${API_CONFIG.BASE_URL}/${logoUrl}`;
+    } else if (logoUrl.endsWith('-logo.png') || logoUrl.endsWith('-logo.svg')) {
+      // If it's just a filename like "sentinels-logo.png", it goes in /teams/
+      logoUrl = `${API_CONFIG.BASE_URL}/teams/${logoUrl}`;
     } else if (logoUrl.startsWith('/')) {
-      logoUrl = `${API_CONFIG.BASE_URL}/storage${logoUrl}`;
+      // Default to /teams/ for team logos instead of /storage/
+      logoUrl = `${API_CONFIG.BASE_URL}/teams${logoUrl}`;
     } else {
-      logoUrl = `${API_CONFIG.BASE_URL}/storage/${logoUrl}`;
+      // Default to /teams/ for team logos instead of /storage/
+      logoUrl = `${API_CONFIG.BASE_URL}/teams/${logoUrl}`;
     }
     
     console.log('🖼️ getTeamLogoUrl - Final URL:', logoUrl);
@@ -156,15 +203,15 @@ export const getEventLogoUrl = (event) => {
     console.log('🖼️ getEventLogoUrl - Event:', event.name || event.id, 'Logo object:', logoPath);
     let url = logoPath.url;
     
-    // Fix double slash URLs like "//events/mrvl-invitational.jpg"
-    if (url.startsWith('//events/')) {
+    // Fix double slash URLs like "//storage/events/logos/..." or "//events/mrvl-invitational.jpg"
+    if (url.startsWith('//storage/') || url.startsWith('//events/')) {
       url = `${API_CONFIG.BASE_URL}${url.substring(1)}`; // Remove one slash and add domain
       console.log('🖼️ getEventLogoUrl - Fixed double slash URL:', url);
     }
-    // Fix single slash URLs like "/events/mrvl-invitational.jpg"
-    else if (url.startsWith('/events/')) {
+    // Fix single slash URLs like "/events/mrvl-invitational.jpg" or "/storage/..."
+    else if (url.startsWith('/events/') || url.startsWith('/storage/')) {
       url = `${API_CONFIG.BASE_URL}${url}`;
-      console.log('🖼️ getEventLogoUrl - Added domain to events URL:', url);
+      console.log('🖼️ getEventLogoUrl - Added domain to URL:', url);
     }
     
     return url;

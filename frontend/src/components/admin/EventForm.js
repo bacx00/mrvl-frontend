@@ -200,49 +200,59 @@ function EventForm({ eventId, navigateTo }) {
     setSaving(true);
 
     try {
-      const submitData = {
-        name: formData.name.trim(),
-        description: formData.description.trim(),
-        type: formData.type,
-        tier: formData.tier,
-        format: formData.format,
-        region: formData.region,
-        game_mode: formData.game_mode,
-        start_date: formData.start_date,
-        end_date: formData.end_date,
-        registration_start: formData.registration_start || null,
-        registration_end: formData.registration_end || null,
-        max_teams: parseInt(formData.max_teams) || 16,
-        prize_pool: parseFloat(formData.prize_pool) || null,
-        currency: formData.currency,
-        prize_distribution: Object.keys(formData.prize_distribution).length > 0 ? formData.prize_distribution : null,
-        rules: formData.rules || null,
-        registration_requirements: Object.keys(formData.registration_requirements).length > 0 ? formData.registration_requirements : null,
-        streams: Object.keys(formData.streams).length > 0 ? formData.streams : null,
-        social_links: Object.keys(formData.social_links).length > 0 ? formData.social_links : null,
-        timezone: formData.timezone,
-        featured: formData.featured,
-        public: formData.public,
-        status: formData.status
-      };
+      // Create FormData to handle file uploads
+      const formDataToSubmit = new FormData();
+      
+      // Add all text fields
+      formDataToSubmit.append('name', formData.name.trim());
+      formDataToSubmit.append('description', formData.description.trim());
+      formDataToSubmit.append('type', formData.type);
+      formDataToSubmit.append('tier', formData.tier);
+      formDataToSubmit.append('format', formData.format);
+      formDataToSubmit.append('region', formData.region);
+      formDataToSubmit.append('game_mode', formData.game_mode);
+      formDataToSubmit.append('start_date', formData.start_date);
+      formDataToSubmit.append('end_date', formData.end_date);
+      formDataToSubmit.append('max_teams', parseInt(formData.max_teams) || 16);
+      formDataToSubmit.append('currency', formData.currency);
+      formDataToSubmit.append('timezone', formData.timezone);
+      formDataToSubmit.append('featured', formData.featured);
+      formDataToSubmit.append('public', formData.public);
+      formDataToSubmit.append('status', formData.status);
+
+      // Add optional fields
+      if (formData.registration_start) formDataToSubmit.append('registration_start', formData.registration_start);
+      if (formData.registration_end) formDataToSubmit.append('registration_end', formData.registration_end);
+      if (formData.prize_pool) formDataToSubmit.append('prize_pool', parseFloat(formData.prize_pool));
+      if (formData.rules) formDataToSubmit.append('rules', formData.rules);
+
+      // Add JSON fields
+      if (Object.keys(formData.prize_distribution).length > 0) {
+        formDataToSubmit.append('prize_distribution', JSON.stringify(formData.prize_distribution));
+      }
+      if (Object.keys(formData.registration_requirements).length > 0) {
+        formDataToSubmit.append('registration_requirements', JSON.stringify(formData.registration_requirements));
+      }
+      if (Object.keys(formData.streams).length > 0) {
+        formDataToSubmit.append('streams', JSON.stringify(formData.streams));
+      }
+      if (Object.keys(formData.social_links).length > 0) {
+        formDataToSubmit.append('social_links', JSON.stringify(formData.social_links));
+      }
+
+      // Add logo file if selected
+      if (logoFile) {
+        formDataToSubmit.append('logo', logoFile);
+      }
 
       let response;
       if (isEdit) {
-        response = await api.put(`/admin/events/${eventId}`, submitData);
+        response = await api.postFile(`/admin/events/${eventId}`, formDataToSubmit, {
+          method: 'PUT'
+        });
       } else {
-        response = await api.post('/admin/events', submitData);
+        response = await api.postFile('/admin/events', formDataToSubmit);
       }
-
-      const createdEventId = response.data?.data?.id || eventId;
-
-      // Upload images after event creation/update
-      if (logoFile && createdEventId) {
-        const logoUrl = await uploadImage(logoFile, 'logo', createdEventId);
-        if (logoUrl) {
-          console.log('Logo uploaded successfully:', logoUrl);
-        }
-      }
-
 
       alert(`Event ${isEdit ? 'updated' : 'created'} successfully!`);
       

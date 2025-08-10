@@ -155,7 +155,7 @@ function NewsForm({ newsId, navigateTo }) {
     const characters = content.length;
     
     const videos = detectAllVideoUrls(content);
-    const mentionPattern = /@\w+|@team:\w+|@player:\w+/g;
+    const mentionPattern = /\w+|team:\w+|player:\w+/g;
     const mentions = (allText.match(mentionPattern) || []).length;
     
     setContentStats({ words, characters, videos: videos.length, mentions });
@@ -367,7 +367,7 @@ function NewsForm({ newsId, navigateTo }) {
                     }
                   }}
                   className="form-input"
-                  placeholder="Enter article title... (Type @ to mention teams/players)"
+                  placeholder="Enter article title... (Type  to mention teams/players)"
                   required
                 />
                 <MentionDropdown
@@ -405,7 +405,7 @@ function NewsForm({ newsId, navigateTo }) {
                   }}
                   rows={2}
                   className="form-input"
-                  placeholder="Brief summary of the article... (Type @ to mention teams/players)"
+                  placeholder="Brief summary of the article... (Type  to mention teams/players)"
                   required
                 />
                 <MentionDropdown
@@ -421,7 +421,7 @@ function NewsForm({ newsId, navigateTo }) {
                 />
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Short description that appears in article previews. Type @ to mention teams, players, or users!
+                Short description that appears in article previews. Type  to mention teams, players, or users!
               </p>
             </div>
 
@@ -438,12 +438,12 @@ function NewsForm({ newsId, navigateTo }) {
                   <span>{contentStats.words} words</span>
                   {contentStats.videos > 0 && (
                     <span className="text-blue-600 dark:text-blue-400">
-                      📺 {contentStats.videos} video{contentStats.videos !== 1 ? 's' : ''}
+                       {contentStats.videos} video{contentStats.videos !== 1 ? 's' : ''}
                     </span>
                   )}
                   {contentStats.mentions > 0 && (
                     <span className="text-purple-600 dark:text-purple-400">
-                      @ {contentStats.mentions} mention{contentStats.mentions !== 1 ? 's' : ''}
+                       {contentStats.mentions} mention{contentStats.mentions !== 1 ? 's' : ''}
                     </span>
                   )}
                 </div>
@@ -466,14 +466,14 @@ function NewsForm({ newsId, navigateTo }) {
                   className="form-input"
                   placeholder="Write your article content here... 
 
-🎯 Type @ to mention teams, players, or users
-📺 Add video links (YouTube, Twitch, Twitter):
+ Type  to mention teams, players, or users
+ Add video links (YouTube, Twitch, Twitter):
    • YouTube: https://youtube.com/watch?v=VIDEO_ID
    • Twitch Clips: https://clips.twitch.tv/CLIP_ID  
    • Twitch Videos: https://twitch.tv/videos/VIDEO_ID
    • Twitter: https://twitter.com/user/status/TWEET_ID
 
-🏆 Add VLR.gg esports content:
+ Add VLR.gg esports content:
    • Matches: https://vlr.gg/12345/match-name
    • Teams: https://vlr.gg/team/123/team-name
    • Events: https://vlr.gg/event/456/tournament-name
@@ -498,7 +498,7 @@ All content will auto-embed with rich previews and metadata!"
                 <strong>Content Guidelines:</strong>
                 <ul className="list-disc ml-4 mt-1 space-y-1">
                   <li>Minimum 50 characters required for publication</li>
-                  <li>Use <code>@username</code> to mention users, <code>@team:name</code> for teams, <code>@player:name</code> for players</li>
+                  <li>Use <code>username</code> to mention users, <code>team:name</code> for teams, <code>player:name</code> for players</li>
                   <li>Paste video/content URLs directly - they'll auto-embed! (YouTube, Twitch clips/videos, Twitter, VLR.gg matches/teams/events)</li>
                   <li>Write in engaging, professional esports journalism style</li>
                   <li>Include relevant context and background information</li>

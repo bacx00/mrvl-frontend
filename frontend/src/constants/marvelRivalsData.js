@@ -449,6 +449,31 @@ export const getMatchDuration = (format) => {
   return durations[format] || durations.BO3;
 };
 
+// 👥 TEAM ROSTER CONFIGURATION - CRITICAL FIX FOR 6-PLAYER SUPPORT
+export const TEAM_ROSTER_CONFIG = {
+  MAX_PLAYERS: 6, // Marvel Rivals supports 6-player rosters
+  MIN_PLAYERS: 3, // Minimum players needed to form a team
+  STARTING_LINEUP: 6, // All 6 players can play at once
+  REQUIRED_ROLES: {
+    'Duelist': { min: 2, max: 4 }, // At least 2 damage dealers
+    'Vanguard': { min: 1, max: 3 }, // At least 1 tank
+    'Strategist': { min: 1, max: 3 } // At least 1 support
+  },
+  ROLE_DISTRIBUTION: [
+    'Duelist', 'Duelist', 'Vanguard', 'Vanguard', 'Strategist', 'Strategist'
+  ]
+};
+
+// 🎯 MARVEL RIVALS SPECIFIC CONSTANTS
+export const MARVEL_RIVALS_CONFIG = {
+  TEAM_SIZE: 6,
+  MAX_ROSTER_SIZE: 6,
+  COMPETITIVE_TEAM_SIZE: 6,
+  SUPPORTED_ROSTER_SIZES: [6], // Only 6-player teams supported
+  MATCH_TEAM_SIZE: 6,
+  TOURNAMENT_TEAM_SIZE: 6
+};
+
 // 🏆 TOURNAMENT SPECIFICATIONS
 export const TOURNAMENT_FORMATS = {
   competitive: {
@@ -495,6 +520,8 @@ export default {
   TEAM_COMPS,
   TOURNAMENT_FORMATS,
   TOURNAMENT_PRIZE_POOLS,
+  TEAM_ROSTER_CONFIG, // 6-PLAYER ROSTER SUPPORT
+  MARVEL_RIVALS_CONFIG, // MARVEL RIVALS SPECIFIC CONSTANTS
   getMapPool,
   getModeRotation,
   getMatchDuration

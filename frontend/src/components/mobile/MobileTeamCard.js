@@ -3,6 +3,7 @@ import {
   Users, Trophy, TrendingUp, MapPin, Star, 
   ChevronRight, Award, Target, Shield
 } from 'lucide-react';
+import { getImageUrl } from '../../utils/imageUtils';
 
 // VLR.gg-style Mobile Team Card
 export const MobileTeamCard = ({ team, onClick, showRank = false, rank }) => {
@@ -54,6 +55,9 @@ export const MobileTeamCard = ({ team, onClick, showRank = false, rank }) => {
                 src={team.logo} 
                 alt={team.name}
                 className="w-12 h-12 object-contain rounded"
+                onError={(e) => {
+                  e.target.src = getImageUrl(null, 'team-logo');
+                }}
               />
             ) : (
               <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">

@@ -14,8 +14,8 @@ const TabletMatchCard = ({
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [scores, setScores] = useState({
-    team1: match.team1?.score || 0,
-    team2: match.team2?.score || 0
+    team1: match.team1_score || match.team1?.score || 0,
+    team2: match.team2_score || match.team2?.score || 0
   });
 
   const isCompleted = match.status === 'completed';
@@ -56,9 +56,9 @@ const TabletMatchCard = ({
 
   const getTeamWinnerStyle = (teamNumber) => {
     if (!isCompleted) return '';
-    const isWinner = teamNumber === 1 ? 
-      match.team1?.score > match.team2?.score : 
-      match.team2?.score > match.team1?.score;
+    const team1Score = match.team1_score || match.team1?.score || 0;
+    const team2Score = match.team2_score || match.team2?.score || 0;
+    const isWinner = teamNumber === 1 ? team1Score > team2Score : team2Score > team1Score;
     
     return isWinner ? 
       'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700' : 
@@ -76,9 +76,9 @@ const TabletMatchCard = ({
 
   const getScoreStyle = (teamNumber) => {
     if (!isCompleted) return 'text-gray-700 dark:text-gray-300';
-    const isWinner = teamNumber === 1 ? 
-      match.team1?.score > match.team2?.score : 
-      match.team2?.score > match.team1?.score;
+    const team1Score = match.team1_score || match.team1?.score || 0;
+    const team2Score = match.team2_score || match.team2?.score || 0;
+    const isWinner = teamNumber === 1 ? team1Score > team2Score : team2Score > team1Score;
     return isWinner ? 'text-green-600 font-bold' : 'text-gray-500';
   };
 
@@ -193,7 +193,7 @@ const TabletMatchCard = ({
                 />
               ) : (
                 <span className={`text-3xl font-bold ${getScoreStyle(1)}`}>
-                  {match.team1?.score ?? '-'}
+                  {match.team1_score ?? match.team1?.score ?? '-'}
                 </span>
               )}
             </div>
@@ -258,7 +258,7 @@ const TabletMatchCard = ({
                 />
               ) : (
                 <span className={`text-3xl font-bold ${getScoreStyle(2)}`}>
-                  {match.team2?.score ?? '-'}
+                  {match.team2_score ?? match.team2?.score ?? '-'}
                 </span>
               )}
             </div>

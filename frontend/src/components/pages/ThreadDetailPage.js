@@ -165,7 +165,7 @@ function ThreadDetailPage({ params, navigateTo }) {
     return parts.map((part, index) => {
       const mentionData = mentionMap[part];
       
-      if (mentionData) {
+      if (mentionData && mentionData.id) {
         return (
           <MentionLink
             key={index}
@@ -186,10 +186,10 @@ function ThreadDetailPage({ params, navigateTo }) {
         );
       }
       
-      // For unlinked mentions, still style them
+      // For mentions that match pattern but don't have data, still style them as clickable
       if (part.match(mentionPattern)) {
         return (
-          <span key={index} className="text-red-600 dark:text-red-400 font-medium">
+          <span key={index} className="inline-flex items-center font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 cursor-pointer" title="Mention">
             {part}
           </span>
         );
@@ -264,14 +264,18 @@ function ThreadDetailPage({ params, navigateTo }) {
       
       const response = await api.post(`/user/forums/threads/${threadId}/posts`, payload);
       
-      if (response.data?.success) {
+      // Check for success with multiple conditions - API might return 201 without success flag
+      const isSuccess = response.status === 201 || response.data?.success === true || 
+                       (response.data && !response.data.error && response.data.post);
+      
+      if (isSuccess) {
         setReplyContent('');
         setReplyToPost(null);
         
-        // Replace temp post with real post data
-        const realPost = response.data.post || response.data.data;
+        // Replace temp post with real post data - handle different response structures
+        const realPost = response.data.post || response.data.data || response.data;
         // Ensure realPost has valid content property and safe string conversion
-        if (realPost && safeString(realPost.content)) {
+        if (realPost && (safeString(realPost.content) || realPost.id)) {
           // Ensure all properties are safely converted - this prevents [object Object] issues
           const safeRealPost = {
             ...realPost,
@@ -351,9 +355,11 @@ function ThreadDetailPage({ params, navigateTo }) {
         setTimeout(() => document.body.removeChild(successMsg), 3000);
         
       } else {
-        // Remove temp post and show error
+        // Remove temp post and show error - enhanced error detection
         setPosts(originalPosts);
-        alert('Failed to submit reply. Please try again.');
+        console.error('❌ Reply submission failed:', response.data);
+        const errorMsg = response.data?.message || response.data?.error || 'Failed to submit reply. Please try again.';
+        alert(errorMsg);
       }
       
     } catch (error) {
@@ -704,7 +710,21 @@ function ThreadDetailPage({ params, navigateTo }) {
                 </div>
                 <MentionAutocomplete
                   value={replyContent}
-                  onChange={setReplyContent}
+                  onChange={(e) => {
+                    // Enhanced handling for both string values and event objects
+                    let newValue = '';
+                    if (typeof e === 'string') {
+                      newValue = e;
+                    } else if (e && e.target && typeof e.target.value === 'string') {
+                      newValue = e.target.value;
+                    } else if (e && typeof e.value === 'string') {
+                      newValue = e.value;
+                    } else {
+                      console.warn('ThreadDetailPage: Unexpected reply content input:', typeof e, e);
+                      return;
+                    }
+                    setReplyContent(newValue);
+                  }}
                   placeholder="Write your reply..."
                   rows={3}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent"
@@ -747,7 +767,11 @@ function ThreadDetailPage({ params, navigateTo }) {
                 </div>
                 <textarea
                   value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
+                  onChange={(e) => {
+                    // Ensure we always get the string value
+                    const value = typeof e === 'string' ? e : e.target?.value || '';
+                    setEditContent(value);
+                  }}
                   placeholder="Edit your post..."
                   rows={4}
                   className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent"
@@ -973,7 +997,21 @@ function ThreadDetailPage({ params, navigateTo }) {
           <form onSubmit={handleSubmitReply}>
             <MentionAutocomplete
               value={replyContent}
-              onChange={setReplyContent}
+              onChange={(e) => {
+                // Enhanced handling for both string values and event objects
+                let newValue = '';
+                if (typeof e === 'string') {
+                  newValue = e;
+                } else if (e && e.target && typeof e.target.value === 'string') {
+                  newValue = e.target.value;
+                } else if (e && typeof e.value === 'string') {
+                  newValue = e.value;
+                } else {
+                  console.warn('ThreadDetailPage: Unexpected main reply content input:', typeof e, e);
+                  return;
+                }
+                setReplyContent(newValue);
+              }}
               placeholder="Write your reply..."
               rows={4}
               className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent"

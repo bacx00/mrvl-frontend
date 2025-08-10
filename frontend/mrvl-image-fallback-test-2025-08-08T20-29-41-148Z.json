@@ -1,0 +1,3449 @@
+{
+  "timestamp": "2025-08-08T20:29:41.149Z",
+  "summary": {
+    "totalComponentsFound": 210,
+    "totalComponentsTested": 83,
+    "componentsWithFallbacks": 38,
+    "componentsMissingFallbacks": 45,
+    "coverage": "45.8"
+  },
+  "fallbackTypes": {
+    "player-avatar": 13,
+    "team-logo": 18,
+    "event-banner": 6,
+    "news-featured": 2,
+    "general": 0
+  },
+  "recommendations": [
+    "HIGH PRIORITY: Add fallback implementations to 45 components missing image error handling",
+    "MEDIUM PRIORITY: Ensure all image types have appropriate fallback types (player-avatar, team-logo, event-banner, news-featured)",
+    "MOBILE PRIORITY: 10 mobile components lack proper image fallbacks",
+    "ADMIN PRIORITY: 5 admin components lack proper image fallbacks"
+  ],
+  "componentDetails": [
+    {
+      "name": "EventCard.tsx",
+      "path": "/app/components/EventCard.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler",
+        "null-fallback"
+      ],
+      "missingFallbacks": [],
+      "imageTypes": {},
+      "score": 14,
+      "maxScore": 18,
+      "issues": [
+        "Missing fallbacks: 4/9 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 4 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "ForumCategoryCard.tsx",
+      "path": "/app/components/ForumCategoryCard.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "null-fallback"
+      ],
+      "missingFallbacks": [],
+      "imageTypes": {},
+      "score": 9,
+      "maxScore": 12,
+      "issues": [
+        "Missing fallbacks: 3/6 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 3 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "ForumSidebar.tsx",
+      "path": "/app/components/ForumSidebar.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 3,
+      "maxScore": 6,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 3/3 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 3 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "Header.tsx",
+      "path": "/app/components/Header.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "null-fallback"
+      ],
+      "missingFallbacks": [],
+      "imageTypes": {},
+      "score": 6,
+      "maxScore": 8,
+      "issues": [
+        "Missing fallbacks: 2/4 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MatchCard.tsx",
+      "path": "/app/components/MatchCard.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "null-fallback"
+      ],
+      "missingFallbacks": [
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 4,
+      "maxScore": 6,
+      "issues": [
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/3 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MatchClient.tsx",
+      "path": "/app/components/MatchClient.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 3,
+      "maxScore": 6,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing fallbacks: 3/3 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 3 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "NewsCard.tsx",
+      "path": "/app/components/NewsCard.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler",
+        "null-fallback"
+      ],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 7,
+      "maxScore": 10,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 3/5 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 3 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "NotificationBell.tsx",
+      "path": "/app/components/NotificationBell.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "OptimizedImage.tsx",
+      "path": "/app/components/OptimizedImage.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler",
+        "fallback-prop"
+      ],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 3,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation"
+      ],
+      "recommendations": []
+    },
+    {
+      "name": "PostCard.tsx",
+      "path": "/app/components/PostCard.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "null-fallback"
+      ],
+      "missingFallbacks": [],
+      "imageTypes": {},
+      "score": 6,
+      "maxScore": 8,
+      "issues": [
+        "Missing fallbacks: 2/4 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "PostCardSimple.tsx",
+      "path": "/app/components/PostCardSimple.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "null-fallback"
+      ],
+      "missingFallbacks": [],
+      "imageTypes": {},
+      "score": 4,
+      "maxScore": 6,
+      "issues": [
+        "Missing fallbacks: 2/3 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "RichTextEditor.tsx",
+      "path": "/app/components/RichTextEditor.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "Sidebar.tsx",
+      "path": "/app/components/Sidebar.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "ThreadRow.tsx",
+      "path": "/app/components/ThreadRow.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "null-fallback"
+      ],
+      "missingFallbacks": [],
+      "imageTypes": {},
+      "score": 9,
+      "maxScore": 12,
+      "issues": [
+        "Missing fallbacks: 3/6 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 3 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "page.tsx",
+      "path": "/app/events/page.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "string-fallback"
+      ],
+      "missingFallbacks": [
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 2,
+      "issues": [
+        "Missing event-banner fallback implementation"
+      ],
+      "recommendations": []
+    },
+    {
+      "name": "page.tsx",
+      "path": "/app/matches/[id]/page.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "null-fallback"
+      ],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 8,
+      "maxScore": 12,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 4/6 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 4 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "page.tsx",
+      "path": "/app/page.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [],
+      "imageTypes": {},
+      "score": 5,
+      "maxScore": 10,
+      "issues": [
+        "Missing fallbacks: 5/5 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 5 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "RankingsContent.tsx",
+      "path": "/app/rankings/RankingsContent.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "page.tsx",
+      "path": "/app/user/profile/page.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 4,
+      "maxScore": 8,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing fallbacks: 4/4 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 4 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "EventCard.js",
+      "path": "/components/EventCard.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler",
+        "null-fallback"
+      ],
+      "missingFallbacks": [
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 7,
+      "maxScore": 10,
+      "issues": [
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 3/5 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 3 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "HeroAvatarSelector.js",
+      "path": "/components/HeroAvatarSelector.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler",
+        "null-fallback"
+      ],
+      "missingFallbacks": [],
+      "imageTypes": {},
+      "score": 4,
+      "maxScore": 4,
+      "issues": [],
+      "recommendations": []
+    },
+    {
+      "name": "MatchCard.js",
+      "path": "/components/MatchCard.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler",
+        "null-fallback"
+      ],
+      "missingFallbacks": [
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 5,
+      "maxScore": 6,
+      "issues": [
+        "Missing team-logo fallback implementation",
+        "Missing fallbacks: 1/3 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "ComprehensiveLiveScoring.js",
+      "path": "/components/admin/ComprehensiveLiveScoring.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "fallback-prop"
+      ],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 3,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing fallbacks: 1/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "ComprehensiveMatchControl.js",
+      "path": "/components/admin/ComprehensiveMatchControl.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "null-fallback"
+      ],
+      "missingFallbacks": [
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 8,
+      "maxScore": 12,
+      "issues": [
+        "Missing team-logo fallback implementation",
+        "Missing fallbacks: 4/6 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 4 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "EventForm.js",
+      "path": "/components/admin/EventForm.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "null-fallback"
+      ],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 3,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 1/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "ForumModerationPanel.js",
+      "path": "/components/admin/ForumModerationPanel.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "NewsFormSimple.js",
+      "path": "/components/admin/NewsFormSimple.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner",
+        "news-featured"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing news-featured fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "PlayerForm.js",
+      "path": "/components/admin/PlayerForm.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "SimplifiedLiveScoring.js",
+      "path": "/components/admin/SimplifiedLiveScoring.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "TeamForm.js",
+      "path": "/components/admin/TeamForm.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "PlayerEngagementAnalytics.js",
+      "path": "/components/analytics/PlayerEngagementAnalytics.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "TeamPerformanceAnalytics.js",
+      "path": "/components/analytics/TeamPerformanceAnalytics.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "BroadcastOverlay.js",
+      "path": "/components/broadcast/BroadcastOverlay.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 4,
+      "maxScore": 8,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 4/4 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 4 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "BroadcastView.js",
+      "path": "/components/broadcast/BroadcastView.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 4,
+      "maxScore": 8,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 4/4 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 4 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "UserAvatar.js",
+      "path": "/components/common/UserAvatar.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "null-fallback"
+      ],
+      "missingFallbacks": [],
+      "imageTypes": {},
+      "score": 8,
+      "maxScore": 12,
+      "issues": [
+        "Missing fallbacks: 4/6 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 4 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "EngagementImplementationExample.js",
+      "path": "/components/engagement/EngagementImplementationExample.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "EngagementSystemIntegration.js",
+      "path": "/components/engagement/EngagementSystemIntegration.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "GamificationMechanics.js",
+      "path": "/components/engagement/GamificationMechanics.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "SocialEngagementFeatures.js",
+      "path": "/components/engagement/SocialEngagementFeatures.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MobileBracketVisualization.js",
+      "path": "/components/mobile/MobileBracketVisualization.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MobileEnhancements.js",
+      "path": "/components/mobile/MobileEnhancements.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner",
+        "news-featured"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing news-featured fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MobileForumThread.js",
+      "path": "/components/mobile/MobileForumThread.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MobileMatchCard.js",
+      "path": "/components/mobile/MobileMatchCard.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "null-fallback"
+      ],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 6,
+      "maxScore": 8,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/4 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MobileMatchDetail.js",
+      "path": "/components/mobile/MobileMatchDetail.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MobileOnboarding.js",
+      "path": "/components/mobile/MobileOnboarding.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MobileOptimizedImage.js",
+      "path": "/components/mobile/MobileOptimizedImage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler"
+      ],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner",
+        "news-featured"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing news-featured fallback implementation"
+      ],
+      "recommendations": []
+    },
+    {
+      "name": "MobilePerformanceOptimizations.js",
+      "path": "/components/mobile/MobilePerformanceOptimizations.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler"
+      ],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation"
+      ],
+      "recommendations": []
+    },
+    {
+      "name": "MobileTeamCard.js",
+      "path": "/components/mobile/MobileTeamCard.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "null-fallback"
+      ],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 3,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MobileTextEditor.js",
+      "path": "/components/mobile/MobileTextEditor.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MobileUserProfile.js",
+      "path": "/components/mobile/MobileUserProfile.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "PerformanceOptimizations.js",
+      "path": "/components/mobile/PerformanceOptimizations.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "fallback-prop"
+      ],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation"
+      ],
+      "recommendations": []
+    },
+    {
+      "name": "VirtualizedForumList.js",
+      "path": "/components/mobile/VirtualizedForumList.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "ComprehensiveUserProfile.js",
+      "path": "/components/pages/ComprehensiveUserProfile.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "fallback-prop"
+      ],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 8,
+      "maxScore": 6,
+      "issues": [
+        "Missing player-avatar fallback implementation"
+      ],
+      "recommendations": []
+    },
+    {
+      "name": "CreateThreadPage.js",
+      "path": "/components/pages/CreateThreadPage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "EventDetailPage.js",
+      "path": "/components/pages/EventDetailPage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "EventsPage.js",
+      "path": "/components/pages/EventsPage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "HomePage.js",
+      "path": "/components/pages/HomePage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler"
+      ],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner",
+        "news-featured"
+      ],
+      "imageTypes": {},
+      "score": 6,
+      "maxScore": 10,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing news-featured fallback implementation",
+        "Missing fallbacks: 4/5 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 4 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MatchDetailPage.js",
+      "path": "/components/pages/MatchDetailPage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "null-fallback"
+      ],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 8,
+      "maxScore": 12,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 4/6 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 4 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MobileHomePage.js",
+      "path": "/components/pages/MobileHomePage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner",
+        "news-featured"
+      ],
+      "imageTypes": {},
+      "score": 4,
+      "maxScore": 8,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing news-featured fallback implementation",
+        "Missing fallbacks: 4/4 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 4 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "NewsDetailPage.js",
+      "path": "/components/pages/NewsDetailPage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "news-featured"
+      ],
+      "imageTypes": {},
+      "score": 3,
+      "maxScore": 6,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing news-featured fallback implementation",
+        "Missing fallbacks: 3/3 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 3 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "NewsPage.js",
+      "path": "/components/pages/NewsPage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "news-featured"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing news-featured fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "PlayerDetailPage.js",
+      "path": "/components/pages/PlayerDetailPage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler",
+        "null-fallback"
+      ],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 35,
+      "maxScore": 38,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 3/19 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 3 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "PlayerDetailPageNew.js",
+      "path": "/components/pages/PlayerDetailPageNew.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 3,
+      "maxScore": 6,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing fallbacks: 3/3 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 3 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "SimpleUserProfile.js",
+      "path": "/components/pages/SimpleUserProfile.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "fallback-prop"
+      ],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 5,
+      "maxScore": 6,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/3 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "TeamDetailPage.js",
+      "path": "/components/pages/TeamDetailPage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler",
+        "null-fallback"
+      ],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 16,
+      "maxScore": 16,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation"
+      ],
+      "recommendations": []
+    },
+    {
+      "name": "TestPage.js",
+      "path": "/components/pages/TestPage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "UserProfile.js",
+      "path": "/components/pages/UserProfile.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "ForumMentionAutocomplete.js",
+      "path": "/components/shared/ForumMentionAutocomplete.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "HeroImage.js",
+      "path": "/components/shared/HeroImage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler"
+      ],
+      "missingFallbacks": [],
+      "imageTypes": {},
+      "score": 4,
+      "maxScore": 4,
+      "issues": [],
+      "recommendations": []
+    },
+    {
+      "name": "ImageUpload.js",
+      "path": "/components/shared/ImageUpload.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MentionAutocomplete.js",
+      "path": "/components/shared/MentionAutocomplete.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler",
+        "null-fallback"
+      ],
+      "missingFallbacks": [],
+      "imageTypes": {},
+      "score": 4,
+      "maxScore": 4,
+      "issues": [],
+      "recommendations": []
+    },
+    {
+      "name": "MentionDropdown.js",
+      "path": "/components/shared/MentionDropdown.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MentionsSection.js",
+      "path": "/components/shared/MentionsSection.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler",
+        "null-fallback"
+      ],
+      "missingFallbacks": [],
+      "imageTypes": {},
+      "score": 4,
+      "maxScore": 4,
+      "issues": [],
+      "recommendations": []
+    },
+    {
+      "name": "MobileForumWidgets.js",
+      "path": "/components/shared/MobileForumWidgets.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "OptimizedComponent.js",
+      "path": "/components/shared/OptimizedComponent.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler",
+        "fallback-prop"
+      ],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 3,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation"
+      ],
+      "recommendations": []
+    },
+    {
+      "name": "TeamSelector.js",
+      "path": "/components/shared/TeamSelector.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler",
+        "null-fallback",
+        "fallback-prop"
+      ],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 11,
+      "maxScore": 12,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/6 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "UserDisplay.js",
+      "path": "/components/shared/UserDisplay.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler",
+        "null-fallback"
+      ],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 5,
+      "maxScore": 6,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/3 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "VLRGGEmbedCard.js",
+      "path": "/components/shared/VLRGGEmbedCard.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "VideoPreview.js",
+      "path": "/components/shared/VideoPreview.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler"
+      ],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation"
+      ],
+      "recommendations": []
+    },
+    {
+      "name": "TabletAdminControls.tsx",
+      "path": "/components/tablet/TabletAdminControls.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "TabletBracketView.tsx",
+      "path": "/components/tablet/TabletBracketView.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "imageUtils.js",
+      "path": "/utils/imageUtils.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "null-fallback"
+      ],
+      "missingFallbacks": [],
+      "imageTypes": {},
+      "score": 39,
+      "maxScore": 52,
+      "issues": [
+        "Missing fallbacks: 13/26 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 13 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "imageUtils.ts",
+      "path": "/utils/imageUtils.ts",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "null-fallback"
+      ],
+      "missingFallbacks": [],
+      "imageTypes": {},
+      "score": 4,
+      "maxScore": 4,
+      "issues": [],
+      "recommendations": []
+    },
+    {
+      "name": "MobileBracketVisualization.js",
+      "path": "/components/mobile/MobileBracketVisualization.js",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ],
+      "category": "mobile"
+    },
+    {
+      "name": "MobileEnhancements.js",
+      "path": "/components/mobile/MobileEnhancements.js",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner",
+        "news-featured"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing news-featured fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ],
+      "category": "mobile"
+    },
+    {
+      "name": "MobileForumThread.js",
+      "path": "/components/mobile/MobileForumThread.js",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ],
+      "category": "mobile"
+    },
+    {
+      "name": "MobileMatchCard.js",
+      "path": "/components/mobile/MobileMatchCard.js",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "null-fallback"
+      ],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 6,
+      "maxScore": 8,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/4 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ],
+      "category": "mobile"
+    },
+    {
+      "name": "MobileMatchDetail.js",
+      "path": "/components/mobile/MobileMatchDetail.js",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ],
+      "category": "mobile"
+    },
+    {
+      "name": "MobileOnboarding.js",
+      "path": "/components/mobile/MobileOnboarding.js",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ],
+      "category": "mobile"
+    },
+    {
+      "name": "MobileOptimizedImage.js",
+      "path": "/components/mobile/MobileOptimizedImage.js",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler"
+      ],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner",
+        "news-featured"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing news-featured fallback implementation"
+      ],
+      "recommendations": [],
+      "category": "mobile"
+    },
+    {
+      "name": "MobilePerformanceOptimizations.js",
+      "path": "/components/mobile/MobilePerformanceOptimizations.js",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "onError-handler"
+      ],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation"
+      ],
+      "recommendations": [],
+      "category": "mobile"
+    },
+    {
+      "name": "MobileTeamCard.js",
+      "path": "/components/mobile/MobileTeamCard.js",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "null-fallback"
+      ],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 3,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ],
+      "category": "mobile"
+    },
+    {
+      "name": "MobileTextEditor.js",
+      "path": "/components/mobile/MobileTextEditor.js",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ],
+      "category": "mobile"
+    },
+    {
+      "name": "MobileUserProfile.js",
+      "path": "/components/mobile/MobileUserProfile.js",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ],
+      "category": "mobile"
+    },
+    {
+      "name": "PerformanceOptimizations.js",
+      "path": "/components/mobile/PerformanceOptimizations.js",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "fallback-prop"
+      ],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation"
+      ],
+      "recommendations": [],
+      "category": "mobile"
+    },
+    {
+      "name": "VirtualizedForumList.js",
+      "path": "/components/mobile/VirtualizedForumList.js",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ],
+      "category": "mobile"
+    },
+    {
+      "name": "TabletAdminControls.tsx",
+      "path": "/components/tablet/TabletAdminControls.tsx",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ],
+      "category": "mobile"
+    },
+    {
+      "name": "TabletBracketView.tsx",
+      "path": "/components/tablet/TabletBracketView.tsx",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ],
+      "category": "mobile"
+    },
+    {
+      "name": "ComprehensiveLiveScoring.js",
+      "path": "/components/admin/ComprehensiveLiveScoring.js",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "fallback-prop"
+      ],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 3,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing fallbacks: 1/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ],
+      "category": "admin"
+    },
+    {
+      "name": "ComprehensiveMatchControl.js",
+      "path": "/components/admin/ComprehensiveMatchControl.js",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "null-fallback"
+      ],
+      "missingFallbacks": [
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 8,
+      "maxScore": 12,
+      "issues": [
+        "Missing team-logo fallback implementation",
+        "Missing fallbacks: 4/6 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 4 missing image fallback handlers"
+      ],
+      "category": "admin"
+    },
+    {
+      "name": "EventForm.js",
+      "path": "/components/admin/EventForm.js",
+      "hasImages": true,
+      "hasFallbacks": true,
+      "fallbackMethods": [
+        "null-fallback"
+      ],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 3,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 1/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ],
+      "category": "admin"
+    },
+    {
+      "name": "ForumModerationPanel.js",
+      "path": "/components/admin/ForumModerationPanel.js",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ],
+      "category": "admin"
+    },
+    {
+      "name": "NewsFormSimple.js",
+      "path": "/components/admin/NewsFormSimple.js",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner",
+        "news-featured"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing news-featured fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ],
+      "category": "admin"
+    },
+    {
+      "name": "PlayerForm.js",
+      "path": "/components/admin/PlayerForm.js",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ],
+      "category": "admin"
+    },
+    {
+      "name": "SimplifiedLiveScoring.js",
+      "path": "/components/admin/SimplifiedLiveScoring.js",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ],
+      "category": "admin"
+    },
+    {
+      "name": "TeamForm.js",
+      "path": "/components/admin/TeamForm.js",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ],
+      "category": "admin"
+    },
+    {
+      "name": "imageUtils.js",
+      "path": "/utils/imageUtils.js",
+      "type": "utility",
+      "category": "utility",
+      "hasFallbackTypes": {
+        "player-avatar": true,
+        "team-logo": true,
+        "event-banner": true,
+        "news-featured": true,
+        "general": true
+      },
+      "hasQuestionMarkFallbacks": true,
+      "fallbackMethods": [
+        "svg-question-mark",
+        "null-check",
+        "onError-handler"
+      ]
+    },
+    {
+      "name": "imageUtils.ts",
+      "path": "/utils/imageUtils.ts",
+      "type": "utility",
+      "category": "utility",
+      "hasFallbackTypes": {
+        "player-avatar": true,
+        "team-logo": true,
+        "event-banner": true,
+        "news-featured": true,
+        "general": true
+      },
+      "hasQuestionMarkFallbacks": true,
+      "fallbackMethods": [
+        "svg-question-mark",
+        "null-check"
+      ]
+    }
+  ],
+  "missingFallbacks": [
+    {
+      "name": "ForumSidebar.tsx",
+      "path": "/app/components/ForumSidebar.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 3,
+      "maxScore": 6,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 3/3 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 3 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MatchClient.tsx",
+      "path": "/app/components/MatchClient.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 3,
+      "maxScore": 6,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing fallbacks: 3/3 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 3 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "NotificationBell.tsx",
+      "path": "/app/components/NotificationBell.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "RichTextEditor.tsx",
+      "path": "/app/components/RichTextEditor.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "Sidebar.tsx",
+      "path": "/app/components/Sidebar.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "page.tsx",
+      "path": "/app/page.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [],
+      "imageTypes": {},
+      "score": 5,
+      "maxScore": 10,
+      "issues": [
+        "Missing fallbacks: 5/5 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 5 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "RankingsContent.tsx",
+      "path": "/app/rankings/RankingsContent.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "page.tsx",
+      "path": "/app/user/profile/page.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 4,
+      "maxScore": 8,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing fallbacks: 4/4 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 4 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "ForumModerationPanel.js",
+      "path": "/components/admin/ForumModerationPanel.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "NewsFormSimple.js",
+      "path": "/components/admin/NewsFormSimple.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner",
+        "news-featured"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing news-featured fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "PlayerForm.js",
+      "path": "/components/admin/PlayerForm.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "SimplifiedLiveScoring.js",
+      "path": "/components/admin/SimplifiedLiveScoring.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "TeamForm.js",
+      "path": "/components/admin/TeamForm.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "PlayerEngagementAnalytics.js",
+      "path": "/components/analytics/PlayerEngagementAnalytics.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "TeamPerformanceAnalytics.js",
+      "path": "/components/analytics/TeamPerformanceAnalytics.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "BroadcastOverlay.js",
+      "path": "/components/broadcast/BroadcastOverlay.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 4,
+      "maxScore": 8,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 4/4 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 4 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "BroadcastView.js",
+      "path": "/components/broadcast/BroadcastView.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 4,
+      "maxScore": 8,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 4/4 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 4 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "EngagementImplementationExample.js",
+      "path": "/components/engagement/EngagementImplementationExample.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "EngagementSystemIntegration.js",
+      "path": "/components/engagement/EngagementSystemIntegration.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "GamificationMechanics.js",
+      "path": "/components/engagement/GamificationMechanics.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "SocialEngagementFeatures.js",
+      "path": "/components/engagement/SocialEngagementFeatures.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MobileBracketVisualization.js",
+      "path": "/components/mobile/MobileBracketVisualization.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MobileEnhancements.js",
+      "path": "/components/mobile/MobileEnhancements.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner",
+        "news-featured"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing news-featured fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MobileForumThread.js",
+      "path": "/components/mobile/MobileForumThread.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MobileMatchDetail.js",
+      "path": "/components/mobile/MobileMatchDetail.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MobileOnboarding.js",
+      "path": "/components/mobile/MobileOnboarding.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MobileTextEditor.js",
+      "path": "/components/mobile/MobileTextEditor.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MobileUserProfile.js",
+      "path": "/components/mobile/MobileUserProfile.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "VirtualizedForumList.js",
+      "path": "/components/mobile/VirtualizedForumList.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "CreateThreadPage.js",
+      "path": "/components/pages/CreateThreadPage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "EventDetailPage.js",
+      "path": "/components/pages/EventDetailPage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "EventsPage.js",
+      "path": "/components/pages/EventsPage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MobileHomePage.js",
+      "path": "/components/pages/MobileHomePage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "event-banner",
+        "news-featured"
+      ],
+      "imageTypes": {},
+      "score": 4,
+      "maxScore": 8,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing news-featured fallback implementation",
+        "Missing fallbacks: 4/4 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 4 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "NewsDetailPage.js",
+      "path": "/components/pages/NewsDetailPage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "news-featured"
+      ],
+      "imageTypes": {},
+      "score": 3,
+      "maxScore": 6,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing news-featured fallback implementation",
+        "Missing fallbacks: 3/3 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 3 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "NewsPage.js",
+      "path": "/components/pages/NewsPage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "news-featured"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing news-featured fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "PlayerDetailPageNew.js",
+      "path": "/components/pages/PlayerDetailPageNew.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo"
+      ],
+      "imageTypes": {},
+      "score": 3,
+      "maxScore": 6,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing fallbacks: 3/3 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 3 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "TestPage.js",
+      "path": "/components/pages/TestPage.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "UserProfile.js",
+      "path": "/components/pages/UserProfile.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "ForumMentionAutocomplete.js",
+      "path": "/components/shared/ForumMentionAutocomplete.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "ImageUpload.js",
+      "path": "/components/shared/ImageUpload.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MentionDropdown.js",
+      "path": "/components/shared/MentionDropdown.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "MobileForumWidgets.js",
+      "path": "/components/shared/MobileForumWidgets.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "VLRGGEmbedCard.js",
+      "path": "/components/shared/VLRGGEmbedCard.js",
+      "type": "JavaScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar"
+      ],
+      "imageTypes": {},
+      "score": 1,
+      "maxScore": 2,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing fallbacks: 1/1 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 1 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "TabletAdminControls.tsx",
+      "path": "/components/tablet/TabletAdminControls.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    },
+    {
+      "name": "TabletBracketView.tsx",
+      "path": "/components/tablet/TabletBracketView.tsx",
+      "type": "TypeScript",
+      "hasImages": true,
+      "hasFallbacks": false,
+      "fallbackMethods": [],
+      "missingFallbacks": [
+        "player-avatar",
+        "team-logo",
+        "event-banner"
+      ],
+      "imageTypes": {},
+      "score": 2,
+      "maxScore": 4,
+      "issues": [
+        "Missing player-avatar fallback implementation",
+        "Missing team-logo fallback implementation",
+        "Missing event-banner fallback implementation",
+        "Missing fallbacks: 2/2 images lack error handling"
+      ],
+      "recommendations": [
+        "Add 2 missing image fallback handlers"
+      ]
+    }
+  ],
+  "errors": []
+}

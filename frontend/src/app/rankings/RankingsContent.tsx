@@ -19,6 +19,9 @@ interface TeamRanking {
   playerNames?: string[];
   lastMatchDate?: string;
   winRate?: number;
+  earnings?: number;
+  wins?: number;
+  losses?: number;
 }
 
 export default function RankingsContent() {
@@ -27,8 +30,14 @@ export default function RankingsContent() {
   const [teams, setTeams] = useState<TeamRanking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalTeams, setTotalTeams] = useState(0);
   
   const activeRegion = searchParams.get('region') || 'global';
+  const activeSort = searchParams.get('sort') || 'rating';
+  const activePage = parseInt(searchParams.get('page') || '1');
   
   // Regions matching VLR.gg exactly
   const regions = [
@@ -36,6 +45,13 @@ export default function RankingsContent() {
     { id: 'americas', name: 'Americas', flag: '🌎' },
     { id: 'emea', name: 'EMEA', flag: '🌍' },
     { id: 'apac', name: 'Asia-Pacific', flag: '🌏' }
+  ];
+
+  const sortOptions = [
+    { id: 'rating', name: 'Rating' },
+    { id: 'earnings', name: 'Earnings' },
+    { id: 'wins', name: 'Wins' },
+    { id: 'winrate', name: 'Win Rate' }
   ];
 
   // Enhanced mock data
@@ -52,7 +68,10 @@ export default function RankingsContent() {
       change: 2,
       playerNames: ['IronPlayer', 'CapMain', 'SpiderWeb', 'ThorHammer', 'HulkSmash'],
       lastMatchDate: '2 days ago',
-      winRate: 84
+      winRate: 84,
+      earnings: 125000,
+      wins: 42,
+      losses: 8
     },
     {
       id: 2,
@@ -66,7 +85,10 @@ export default function RankingsContent() {
       change: -1,
       playerNames: ['StormBreaker', 'WebSlinger', 'ShieldBearer', 'FrostGiant', 'QuantumHero'],
       lastMatchDate: '1 day ago',
-      winRate: 78
+      winRate: 78,
+      earnings: 98000,
+      wins: 39,
+      losses: 11
     },
     {
       id: 3,
@@ -80,7 +102,10 @@ export default function RankingsContent() {
       change: 1,
       playerNames: ['DragonFist', 'MysticArts', 'TechWizard', 'CosmicPower', 'StarLord'],
       lastMatchDate: '3 days ago',
-      winRate: 72
+      winRate: 72,
+      earnings: 87500,
+      wins: 36,
+      losses: 14
     },
     {
       id: 4,
@@ -94,7 +119,10 @@ export default function RankingsContent() {
       change: 3,
       playerNames: ['TitanSlayer', 'PowerCosmic', 'InfiniteGem', 'TimeStone', 'RealityBender'],
       lastMatchDate: '1 day ago',
-      winRate: 69
+      winRate: 69,
+      earnings: 75000,
+      wins: 34,
+      losses: 15
     },
     {
       id: 5,
@@ -108,7 +136,10 @@ export default function RankingsContent() {
       change: -2,
       playerNames: ['VanguardLeader', 'TacticalMind', 'StrategyKing', 'TeamPlayer', 'SupportGod'],
       lastMatchDate: '4 days ago',
-      winRate: 65
+      winRate: 65,
+      earnings: 62000,
+      wins: 32,
+      losses: 17
     },
     {
       id: 6,
@@ -122,7 +153,10 @@ export default function RankingsContent() {
       change: 0,
       playerNames: ['GalaxyDefender', 'StarProtector', 'SpaceWarrior', 'NebulaStrike', 'RocketFuel'],
       lastMatchDate: '2 days ago',
-      winRate: 63
+      winRate: 63,
+      earnings: 58000,
+      wins: 30,
+      losses: 18
     },
     {
       id: 7,
@@ -136,7 +170,10 @@ export default function RankingsContent() {
       change: 1,
       playerNames: ['StormCaller', 'LightningBolt', 'ThunderStrike', 'WeatherMaster', 'TempestFury'],
       lastMatchDate: '5 days ago',
-      winRate: 58
+      winRate: 58,
+      earnings: 45000,
+      wins: 29,
+      losses: 21
     },
     {
       id: 8,
@@ -150,7 +187,10 @@ export default function RankingsContent() {
       change: -1,
       playerNames: ['ShadowStrike', 'DarkForce', 'NightCrawler', 'StealthMaster', 'InvisibleMan'],
       lastMatchDate: '3 days ago',
-      winRate: 55
+      winRate: 55,
+      earnings: 38000,
+      wins: 27,
+      losses: 22
     },
     {
       id: 9,
@@ -164,7 +204,10 @@ export default function RankingsContent() {
       change: -3,
       playerNames: ['QuantumLeap', 'DimensionWarp', 'PhaseShift', 'TimeBender', 'SpaceRift'],
       lastMatchDate: '6 days ago',
-      winRate: 52
+      winRate: 52,
+      earnings: 32000,
+      wins: 25,
+      losses: 23
     },
     {
       id: 10,
@@ -178,7 +221,10 @@ export default function RankingsContent() {
       change: 2,
       playerNames: ['IronWing', 'SkyHunter', 'FlightPath', 'AerialStrike', 'WindRider'],
       lastMatchDate: '4 days ago',
-      winRate: 48
+      winRate: 48,
+      earnings: 28000,
+      wins: 24,
+      losses: 26
     }
   ], []);
   
@@ -191,7 +237,14 @@ export default function RankingsContent() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000);
         
-        const res = await fetch(`/api/rankings?region=${activeRegion}`, {
+        const params = new URLSearchParams({
+          region: activeRegion,
+          sort: activeSort,
+          search: searchQuery,
+          page: activePage.toString()
+        });
+        
+        const res = await fetch(`/api/team-rankings?${params.toString()}`, {
           signal: controller.signal
         });
         
@@ -199,31 +252,71 @@ export default function RankingsContent() {
         
         if (res.ok) {
           const response = await res.json();
-          const teamsData = response.rankings || response.teamRankings || [];
+          const teamsData = response.data || response.rankings || response.teamRankings || [];
           setTeams(teamsData);
+          
+          // Update pagination info
+          if (response.pagination) {
+            setCurrentPage(response.pagination.current_page);
+            setTotalPages(response.pagination.last_page);
+            setTotalTeams(response.pagination.total);
+          }
         } else {
           throw new Error(`HTTP ${res.status}: Failed to fetch rankings`);
         }
       } catch (err) {
         console.warn('API failed, using mock data:', err);
         
-        // Filter mock data by region
+        // Filter and sort mock data
         let filteredTeams = mockTeams;
+        
+        // Filter by region
         if (activeRegion !== 'global') {
           const regionMap: Record<string, string> = {
             'americas': 'Americas',
             'emea': 'EMEA',
             'apac': 'Asia-Pacific'
           };
-          filteredTeams = mockTeams.filter(team => 
+          filteredTeams = filteredTeams.filter(team => 
             team.region === regionMap[activeRegion]
           );
         }
         
+        // Apply search filter
+        if (searchQuery) {
+          filteredTeams = filteredTeams.filter(team =>
+            team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (team.playerNames && team.playerNames.some(name => 
+              name.toLowerCase().includes(searchQuery.toLowerCase())
+            ))
+          );
+        }
+        
+        // Apply sorting
+        switch (activeSort) {
+          case 'earnings':
+            filteredTeams.sort((a, b) => (b.earnings || 0) - (a.earnings || 0));
+            break;
+          case 'wins':
+            filteredTeams.sort((a, b) => (b.wins || 0) - (a.wins || 0));
+            break;
+          case 'winrate':
+            filteredTeams.sort((a, b) => (b.winRate || 0) - (a.winRate || 0));
+            break;
+          default:
+            filteredTeams.sort((a, b) => b.points - a.points);
+        }
+        
+        // Re-rank based on filtered/sorted results
+        filteredTeams = filteredTeams.map((team, index) => ({
+          ...team,
+          rank: index + 1
+        }));
+        
         setTeams(filteredTeams);
         
         if (filteredTeams.length === 0) {
-          setError('No rankings available for this region');
+          setError('No teams found with current filters');
         }
       } finally {
         setLoading(false);
@@ -231,11 +324,24 @@ export default function RankingsContent() {
     };
     
     fetchRankings();
-  }, [activeRegion, mockTeams]);
+  }, [activeRegion, activeSort, searchQuery, activePage, mockTeams]);
   
   const handleRegionChange = (region: string) => {
     const params = new URLSearchParams(searchParams);
     params.set('region', region);
+    router.push(`/rankings?${params.toString()}`);
+  };
+
+  const handleSortChange = (sort: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('sort', sort);
+    params.set('page', '1'); // Reset to first page when sorting
+    router.push(`/rankings?${params.toString()}`);
+  };
+
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('page', page.toString());
     router.push(`/rankings?${params.toString()}`);
   };
   
@@ -345,6 +451,47 @@ export default function RankingsContent() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Search and Sort Controls */}
+      <div className="mb-6 flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+        {/* Search */}
+        <div className="flex-1">
+          <input
+            type="text"
+            placeholder="Search teams or players..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-2 bg-[#1a242d] border border-[#2b3d4d] rounded text-white placeholder-[#768894] focus:border-[#fa4454] focus:outline-none"
+          />
+        </div>
+        
+        {/* Sort Dropdown */}
+        <select
+          value={activeSort}
+          onChange={(e) => handleSortChange(e.target.value)}
+          className="px-4 py-2 bg-[#1a242d] border border-[#2b3d4d] rounded text-white focus:border-[#fa4454] focus:outline-none"
+        >
+          {sortOptions.map(option => (
+            <option key={option.id} value={option.id}>
+              Sort by {option.name}
+            </option>
+          ))}
+        </select>
+        
+        {/* Clear Filters Button */}
+        {(searchQuery || activeSort !== 'rating' || activeRegion !== 'global') && (
+          <button
+            onClick={() => {
+              setSearchQuery('');
+              handleRegionChange('global');
+              handleSortChange('rating');
+            }}
+            className="px-4 py-2 bg-[#2b3d4d] hover:bg-[#394755] text-white rounded transition-colors"
+          >
+            Clear Filters
+          </button>
+        )}
       </div>
       
       {/* Rankings Table */}
@@ -494,16 +641,80 @@ export default function RankingsContent() {
         
         <div className="text-right">
           <p className="text-[#768894] text-sm">
-            Rankings updated: <span className="text-white font-medium">May 23, 2025</span>
+            Rankings updated: <span className="text-white font-medium">Live</span>
           </p>
           <p className="text-[#768894] text-xs mt-1">
             Points based on tournament performance, match results, and consistency over time.
           </p>
           <p className="text-[#768894] text-xs">
-            Showing {teams.length} teams • Form shows last 5 matches
+            Showing {teams.length} teams{totalTeams > 0 && ` of ${totalTeams} total`} • Form shows last 5 matches
           </p>
         </div>
       </div>
+      
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+              disabled={currentPage <= 1}
+              className={`px-4 py-2 rounded font-medium transition-colors ${
+                currentPage <= 1
+                  ? 'bg-[#2b3d4d] text-[#768894] cursor-not-allowed'
+                  : 'bg-[#1a242d] border border-[#2b3d4d] text-white hover:bg-[#2b3d4d]'
+              }`}
+            >
+              Previous
+            </button>
+            
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    className={`w-10 h-10 rounded font-medium transition-colors ${
+                      currentPage === pageNum
+                        ? 'bg-[#fa4454] text-white'
+                        : 'bg-[#1a242d] border border-[#2b3d4d] text-white hover:bg-[#2b3d4d]'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+            
+            <button
+              onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage >= totalPages}
+              className={`px-4 py-2 rounded font-medium transition-colors ${
+                currentPage >= totalPages
+                  ? 'bg-[#2b3d4d] text-[#768894] cursor-not-allowed'
+                  : 'bg-[#1a242d] border border-[#2b3d4d] text-white hover:bg-[#2b3d4d]'
+              }`}
+            >
+              Next
+            </button>
+          </div>
+          
+          <div className="text-[#768894] text-sm">
+            Page {currentPage} of {totalPages}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

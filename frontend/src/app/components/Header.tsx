@@ -11,6 +11,7 @@ import { useSearch } from '@/context/SearchContext';
 import { useNotifications } from '@/context/NotificationContext';
 import { ROUTES, COLORS } from '@/lib/constants';
 import { debounce } from '@/lib/utils';
+import { getImageUrl } from '@/utils/imageUtils';
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -264,6 +265,9 @@ export default function Header() {
                       width={32}
                       height={32}
                       className="rounded-full"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = getImageUrl(null, 'player-avatar');
+                      }}
                     />
                   ) : (
                     <div className="w-8 h-8 bg-[#2b3d4d] rounded-full flex items-center justify-center">
@@ -475,6 +479,9 @@ export default function Header() {
                         width={32}
                         height={32}
                         className="rounded-full"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = getImageUrl(null, 'player-avatar');
+                        }}
                       />
                     ) : (
                       <div className="w-8 h-8 bg-[#2b3d4d] rounded-full flex items-center justify-center">

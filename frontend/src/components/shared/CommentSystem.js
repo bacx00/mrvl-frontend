@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../hooks';
 import { useMentionAutocomplete } from '../../hooks/useMentionAutocomplete';
 import UserDisplay from './UserDisplay';
@@ -20,7 +20,11 @@ function CommentSystem({
   const [replyText, setReplyText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [sortBy, setSortBy] = useState('newest'); // 'newest', 'oldest', 'best'
+  const [refreshInterval, setRefreshInterval] = useState(null);
+  const [isAutoRefreshing, setIsAutoRefreshing] = useState(false);
   const { api, user } = useAuth();
+  const lastFetchRef = useRef(0);
+  const fetchTimeoutRef = useRef(null);
 
   // Mention autocomplete for main comment
   const {
@@ -69,21 +73,69 @@ function CommentSystem({
 
   useEffect(() => {
     fetchComments();
-  }, [itemType, itemId, sortBy]);
+    
+    // Set up auto-refresh for real-time updates
+    if (user) {
+      setIsAutoRefreshing(true);
+      const interval = setInterval(() => {
+        fetchComments(true); // Silent refresh
+      }, 30000); // Refresh every 30 seconds
+      setRefreshInterval(interval);
+      
+      return () => {
+        clearInterval(interval);
+        setRefreshInterval(null);
+        setIsAutoRefreshing(false);
+      };
+    }
+  }, [itemType, itemId, sortBy, user]);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+    };
+  }, []);
 
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async (silent = false) => {
+    // Prevent rapid consecutive calls
+    const now = Date.now();
+    if (now - lastFetchRef.current < 1000) {
+      return;
+    }
+    lastFetchRef.current = now;
+    
+    // Clear any pending fetch timeout
+    if (fetchTimeoutRef.current) {
+      clearTimeout(fetchTimeoutRef.current);
+    }
+    
     try {
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
       const endpoint = getCommentsEndpoint();
-      const response = await api.get(`${endpoint}?sort=${sortBy}`);
-      setComments(response.data || []);
+      const response = await api.get(`${endpoint}?sort=${sortBy}&t=${now}`);
+      
+      if (response.data) {
+        setComments(response.data);
+      }
     } catch (error) {
       console.error('Error fetching comments:', error);
-      setComments([]);
+      if (!silent) {
+        setComments([]);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
-  };
+  }, [api, sortBy, itemType, itemId]);
 
   const getCommentsEndpoint = () => {
     switch (itemType) {
@@ -136,6 +188,11 @@ function CommentSystem({
             setComments(prevComments => [newCommentData, ...prevComments]);
             setNewComment('');
           }
+          
+          // Trigger immediate refresh to sync any server-side changes
+          fetchTimeoutRef.current = setTimeout(() => {
+            fetchComments(true);
+          }, 2000);
         } else {
           console.error('Invalid comment data received:', newCommentData);
           alert('Failed to post comment. Please try again.');
@@ -172,6 +229,62 @@ function CommentSystem({
 
   const handleVoteChange = (commentId, voteData) => {
     setComments(prevComments => updateCommentVotes(prevComments, commentId, voteData));
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (!user) {
+      alert('Please log in to delete comments');
+      return;
+    }
+
+    if (!window.confirm('Are you sure you want to delete this comment?')) {
+      return;
+    }
+
+    try {
+      const endpoint = itemType === 'news' 
+        ? `/user/news/${itemId}/comments/${commentId}`
+        : itemType === 'match'
+        ? `/matches/${itemId}/comments/${commentId}`
+        : `/user/forum/threads/${itemId}/posts/${commentId}`;
+
+      await api.delete(endpoint);
+      
+      // Remove comment from local state
+      setComments(prevComments => removeCommentFromList(prevComments, commentId));
+      
+      // Trigger refresh to sync with server
+      fetchTimeoutRef.current = setTimeout(() => {
+        fetchComments(true);
+      }, 1000);
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      const errorMessage = safeErrorMessage(error) || 'Failed to delete comment';
+      alert(errorMessage);
+    }
+  };
+
+  const removeCommentFromList = (comments, commentId) => {
+    return comments.filter(comment => {
+      if (comment.id === commentId) {
+        return false; // Remove this comment
+      }
+      if (comment.replies && comment.replies.length > 0) {
+        return {
+          ...comment,
+          replies: removeCommentFromList(comment.replies, commentId)
+        };
+      }
+      return comment;
+    }).map(comment => {
+      if (comment.replies && comment.replies.length > 0) {
+        return {
+          ...comment,
+          replies: removeCommentFromList(comment.replies, commentId)
+        };
+      }
+      return comment;
+    });
   };
 
   const updateCommentVotes = (comments, commentId, voteData) => {
@@ -302,6 +415,7 @@ function CommentSystem({
               setReplyText={setReplyText}
               onSubmitReply={handleSubmitComment}
               onVoteChange={handleVoteChange}
+              onDeleteComment={handleDeleteComment}
               submitting={submitting}
             />
           ))
@@ -323,6 +437,7 @@ function Comment({
   setReplyText, 
   onSubmitReply, 
   onVoteChange,
+  onDeleteComment,
   submitting 
 }) {
   const { user } = useAuth();
@@ -355,6 +470,19 @@ function Comment({
           {comment.is_edited && (
             <span className="text-xs text-gray-400 italic">(edited)</span>
           )}
+          
+          {/* Voting buttons - positioned right after username like forums */}
+          <VotingButtons
+            itemType={itemType === 'forum_thread' ? 'forum_post' : `${itemType}_comment`}
+            itemId={comment.id}
+            parentId={itemId}
+            initialUpvotes={comment.upvotes || 0}
+            initialDownvotes={comment.downvotes || 0}
+            userVote={comment.user_vote}
+            onVoteChange={handleVoteUpdate}
+            size="xs"
+            direction="horizontal"
+          />
         </div>
 
         {/* Comment Content */}
@@ -368,39 +496,34 @@ function Comment({
         </div>
 
         {/* Comment Actions */}
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center space-x-4">
-            {canReply && (
-              <button
-                onClick={() => onReply(comment.id)}
-                className="text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-              >
-                Reply
-              </button>
-            )}
-            
-            {comment.replies_count > 0 && (
-              <button
-                onClick={() => setShowReplies(!showReplies)}
-                className="text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-              >
-                {showReplies ? 'Hide' : 'Show'} {comment.replies_count} {comment.replies_count === 1 ? 'reply' : 'replies'}
-              </button>
-            )}
-          </div>
+        <div className="flex items-center space-x-4 text-sm">
+          {canReply && (
+            <button
+              onClick={() => onReply(comment.id)}
+              className="text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+            >
+              Reply
+            </button>
+          )}
           
-          {/* Voting aligned to the right */}
-          <VotingButtons
-            itemType={itemType === 'forum_thread' ? 'forum_post' : `${itemType}_comment`}
-            itemId={comment.id}
-            parentId={itemId}
-            initialUpvotes={comment.upvotes || 0}
-            initialDownvotes={comment.downvotes || 0}
-            userVote={comment.user_vote}
-            onVoteChange={handleVoteUpdate}
-            size="xs"
-            direction="horizontal"
-          />
+          {/* Delete button - only show for comment author */}
+          {user && (user.id === comment.author?.id || user.id === comment.user?.id) && (
+            <button
+              onClick={() => onDeleteComment(comment.id)}
+              className="text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+            >
+              Delete
+            </button>
+          )}
+          
+          {comment.replies_count > 0 && (
+            <button
+              onClick={() => setShowReplies(!showReplies)}
+              className="text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+            >
+              {showReplies ? 'Hide' : 'Show'} {comment.replies_count} {comment.replies_count === 1 ? 'reply' : 'replies'}
+            </button>
+          )}
         </div>
 
         {/* Reply Form */}
@@ -475,6 +598,7 @@ function Comment({
               setReplyText={setReplyText}
               onSubmitReply={onSubmitReply}
               onVoteChange={onVoteChange}
+              onDeleteComment={onDeleteComment}
               submitting={submitting}
             />
           ))}

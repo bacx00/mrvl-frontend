@@ -1,244 +1,333 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../hooks';
-import { getEventLogoUrl } from '../../utils/imageUtils';
 
-function AdminEvents({ navigateTo }) {
+function AdminEvents() {
+  const { api } = useAuth();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [eventsPerPage] = useState(12);
   const [filters, setFilters] = useState({
+    search: '',
+    status: 'all',
     type: 'all',
-    status: 'all'
+    sortBy: 'date'
   });
-  const { api } = useAuth();
+
+  // Bulk operations
+  const [selectedEvents, setSelectedEvents] = useState(new Set());
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  
+  // Modals
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [eventFormData, setEventFormData] = useState({
+    name: '',
+    description: '',
+    start_date: '',
+    end_date: '',
+    location: '',
+    status: 'upcoming',
+    type: 'tournament'
+  });
 
   useEffect(() => {
     fetchEvents();
-  }, [filters]);
+  }, []);
 
-  const fetchEvents = async () => {
+  const fetchEvents = async (page = 1, limit = 50) => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      if (filters.type !== 'all') params.append('type', filters.type);
-      if (filters.status !== 'all') params.append('status', filters.status);
-      
-      const response = await api.get(`/admin/events${params.toString() ? `?${params.toString()}` : ''}`);
-      setEvents(response.data?.data || response.data || response);
-    } catch (error) {
-      console.error('Error fetching events:', error);
-      // Set fallback data
-      setEvents([
-        {
-          id: 1,
-          name: "Marvel Rivals World Championship 2025",
-          type: "International",
-          status: "upcoming",
-          start_date: "2025-03-15",
-          end_date: "2025-03-22",
-          prize_pool: "$1,000,000",
-          team_count: 32,
-          location: "Los Angeles, CA",
-          organizer: "Marvel Esports",
-          format: "Double Elimination",
-          description: "The ultimate Marvel Rivals championship featuring the world's best teams competing for glory and the largest prize pool in the game's history.",
-          image: "",
-          registration_open: true
-        },
-        {
-          id: 2,
-          name: "NA Regional Championship",
-          type: "Regional",
-          status: "live",
-          start_date: "2025-01-20",
-          end_date: "2025-01-25",
-          prize_pool: "$250,000",
-          team_count: 16,
-          location: "Online",
-          organizer: "Marvel Rivals League",
-          format: "Swiss + Playoffs",
-          description: "North American teams battle for regional supremacy and qualification spots for the World Championship.",
-          image: "🇺🇸",
-          registration_open: false
-        }
-      ]);
+      setError(null);
+      const response = await api.get(`/api/admin/events?page=${page}&limit=${limit}`);
+      const eventsData = response?.data?.data || response?.data || response || [];
+      setEvents(Array.isArray(eventsData) ? eventsData : []);
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to load events';
+      setError(errorMessage);
+      console.error('Error fetching events:', err);
+      setEvents([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (eventId, eventName) => {
-    const confirmMessage = `Are you sure you want to delete "${eventName}"?\n\nThis event has associated matches. Choose your option:`;
-    const forceDelete = window.confirm(`${confirmMessage}\n\nOK = Force Delete (removes matches too)\nCancel = Cancel deletion`);
-    
-    if (forceDelete) {
-      // User chose OK, so force delete
+  const filteredEvents = useMemo(() => {
+    let filtered = [...events];
+
+    if (filters.search.trim()) {
+      const searchTerm = filters.search.toLowerCase().trim();
+      filtered = filtered.filter(event => 
+        event.name?.toLowerCase().includes(searchTerm) ||
+        event.description?.toLowerCase().includes(searchTerm) ||
+        event.location?.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    if (filters.status !== 'all') {
+      filtered = filtered.filter(event => event.status === filters.status);
+    }
+
+    if (filters.type !== 'all') {
+      filtered = filtered.filter(event => event.type === filters.type);
+    }
+
+    if (filters.sortBy === 'date') {
+      filtered.sort((a, b) => new Date(b.start_date || b.created_at) - new Date(a.start_date || a.created_at));
+    } else if (filters.sortBy === 'name') {
+      filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } else if (filters.sortBy === 'status') {
+      filtered.sort((a, b) => (a.status || '').localeCompare(b.status || ''));
+    }
+
+    return filtered;
+  }, [events, filters]);
+
+  const paginatedEvents = useMemo(() => {
+    const startIndex = (currentPage - 1) * eventsPerPage;
+    return filteredEvents.slice(startIndex, startIndex + eventsPerPage);
+  }, [filteredEvents, currentPage, eventsPerPage]);
+
+  const totalPages = Math.ceil(filteredEvents.length / eventsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
+
+  const handleDeleteEvent = async (eventId, eventName) => {
+    if (window.confirm(`Are you sure you want to delete event "${eventName}"? This action cannot be undone.`)) {
       try {
-        // First try force delete
-        await api.delete(`/admin/events/${eventId}?force=true`);
-        await fetchEvents(); // Refresh the list
-        alert('Event and all associated matches deleted successfully!');
-      } catch (error) {
-        console.error('Error force deleting event:', error);
-        
-        if (error.message.includes('422') && error.data?.can_force_delete) {
-          // Backend suggests force delete, try alternative endpoint
-          try {
-            await api.delete(`/admin/events/${eventId}/force`);
-            await fetchEvents(); // Refresh the list
-            alert('Event force deleted successfully!');
-          } catch (forceError) {
-            console.error('Error with force delete endpoint:', forceError);
-            alert(`Error deleting event: ${forceError.message}\n\nPlease try deleting associated matches first.`);
-          }
+        const response = await api.delete(`/api/admin/events/${eventId}`);
+        if (response.data?.success !== false) {
+          await fetchEvents();
+          alert('Event deleted successfully!');
         } else {
-          alert(` Error deleting event: ${error.message}\n\nThe event has ${error.data?.match_count || 'some'} associated matches. Please try deleting them first.`);
+          throw new Error(response.data?.message || 'Delete failed');
         }
+      } catch (error) {
+        console.error('Error deleting event:', error);
+        const errorMessage = error.response?.data?.message || error.message || 'Error deleting event';
+        alert(errorMessage);
       }
     }
-    // If user chose Cancel, do nothing
   };
 
-  const updateEventStatus = async (eventId, newStatus) => {
+  const handleCreateEvent = () => {
+    setEventFormData({
+      name: '',
+      description: '',
+      start_date: '',
+      end_date: '',
+      location: '',
+      status: 'upcoming',
+      type: 'tournament'
+    });
+    setEditingEvent(null);
+    setShowEventModal(true);
+  };
+
+  const handleEditEvent = (event) => {
+    setEditingEvent(event);
+    setEventFormData({
+      name: event.name || '',
+      description: event.description || '',
+      start_date: event.start_date?.slice(0, 10) || '',
+      end_date: event.end_date?.slice(0, 10) || '',
+      location: event.location || '',
+      status: event.status || 'upcoming',
+      type: event.type || 'tournament'
+    });
+    setShowEventModal(true);
+  };
+
+  const handleSubmitEvent = async (e) => {
+    e.preventDefault();
+    
+    if (!eventFormData.name.trim()) {
+      alert('Please enter an event name');
+      return;
+    }
+    
     try {
-      // FIXED: Fetch the full event first, then update only the status
-      console.log(' Fetching full event data before update...');
-      const eventResponse = await api.get(`/admin/events/${eventId}`);
-      const eventData = eventResponse.data || eventResponse;
-      
-      console.log(' Full event data fetched:', eventData);
-      
-      // Update only the status in the complete event object
-      const updateData = {
-        ...eventData,
-        status: newStatus
-      };
-      
-      console.log('📤 Sending complete update data:', updateData);
-      await api.put(`/admin/events/${eventId}`, updateData);
-      await fetchEvents(); // Refresh the list
-      alert(` Event status updated to ${newStatus}!`);
-    } catch (error) {
-      console.error('Error updating event status:', error);
-      
-      if (error.message.includes('422')) {
-        alert(` Validation Error: ${error.message}\n\nMissing required fields. Please edit the event with complete information first.`);
-      } else if (error.message.includes('404')) {
-        alert(' Event not found. It may have been deleted.');
+      if (editingEvent) {
+        const response = await api.put(`/api/admin/events/${editingEvent.id}`, eventFormData);
+        if (response.data?.success !== false) {
+          await fetchEvents();
+          setShowEventModal(false);
+          alert('Event updated successfully!');
+        } else {
+          throw new Error(response.data?.message || 'Event update failed');
+        }
       } else {
-        alert(` Error updating event status: ${error.message}`);
+        const response = await api.post('/api/admin/events', eventFormData);
+        if (response.data?.success !== false) {
+          await fetchEvents();
+          setShowEventModal(false);
+          alert('Event created successfully!');
+        } else {
+          throw new Error(response.data?.message || 'Event creation failed');
+        }
+      }
+    } catch (error) {
+      console.error('Error submitting event:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Error submitting event';
+      alert(errorMessage);
+    }
+  };
+
+  // Bulk operations handlers
+  const handleSelectEvent = (eventId) => {
+    const newSelected = new Set(selectedEvents);
+    if (newSelected.has(eventId)) {
+      newSelected.delete(eventId);
+    } else {
+      newSelected.add(eventId);
+    }
+    setSelectedEvents(newSelected);
+    setShowBulkActions(newSelected.size > 0);
+  };
+
+  const handleSelectAllEvents = () => {
+    if (selectedEvents.size === filteredEvents.length) {
+      setSelectedEvents(new Set());
+      setShowBulkActions(false);
+    } else {
+      setSelectedEvents(new Set(filteredEvents.map(e => e.id)));
+      setShowBulkActions(true);
+    }
+  };
+
+  const handleBulkStatusChange = async (newStatus) => {
+    if (selectedEvents.size === 0) return;
+    
+    const confirmMessage = `Are you sure you want to change status to "${newStatus}" for ${selectedEvents.size} events?`;
+    if (window.confirm(confirmMessage)) {
+      try {
+        const response = await api.post('/api/admin/events/bulk-update', {
+          event_ids: Array.from(selectedEvents),
+          status: newStatus
+        });
+        
+        if (response.data?.success !== false) {
+          await fetchEvents();
+          setSelectedEvents(new Set());
+          setShowBulkActions(false);
+          alert(`${selectedEvents.size} events updated successfully!`);
+        } else {
+          throw new Error(response.data?.message || 'Bulk update failed');
+        }
+      } catch (error) {
+        console.error('Error in bulk status update:', error);
+        const errorMessage = error.response?.data?.message || error.message || 'Bulk update failed';
+        alert(errorMessage);
+      }
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedEvents.size === 0) return;
+    
+    const confirmMessage = `Are you sure you want to delete ${selectedEvents.size} events? This action cannot be undone.`;
+    if (window.confirm(confirmMessage)) {
+      try {
+        const response = await api.post('/api/admin/events/bulk-delete', {
+          event_ids: Array.from(selectedEvents)
+        });
+        
+        if (response.data?.success !== false) {
+          await fetchEvents();
+          setSelectedEvents(new Set());
+          setShowBulkActions(false);
+          alert(`${selectedEvents.size} events deleted successfully!`);
+        } else {
+          throw new Error(response.data?.message || 'Bulk delete failed');
+        }
+      } catch (error) {
+        console.error('Error in bulk delete:', error);
+        const errorMessage = error.response?.data?.message || error.message || 'Bulk delete failed';
+        alert(errorMessage);
       }
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'live': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
-      case 'upcoming': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'completed': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
+      case 'live':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      case 'completed':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 'upcoming':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'cancelled':
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+      default:
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
     }
   };
 
-  const getTypeColor = (type) => {
-    switch (type) {
-      case 'International': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
-      case 'Regional': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
-      case 'Qualifier': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
-      case 'Community': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
-    }
+  const formatDate = (dateString) => {
+    if (!dateString) return 'TBD';
+    return new Date(dateString).toLocaleDateString();
   };
-
-  const types = ['all', 'International', 'Regional', 'Qualifier', 'Community'];
-  const statuses = ['all', 'live', 'upcoming', 'completed'];
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="loading-spinner mx-auto mb-4"></div>
-          <div className="text-gray-600 dark:text-gray-400">Loading events...</div>
+      <div className="p-6">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+          <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-40 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+          <h3 className="text-lg font-semibold text-red-900 dark:text-red-200 mb-2">Error Loading Events</h3>
+          <p className="text-red-700 dark:text-red-300 mb-4">{error}</p>
+          <button onClick={fetchEvents} className="btn btn-outline-primary">
+            Try Again
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Manage Events</h2>
-          <p className="text-gray-600 dark:text-gray-400">Create, edit, and manage all tournaments and events</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Event Management</h1>
+          <p className="text-gray-600 dark:text-gray-400">Manage tournaments and events</p>
         </div>
-        <button 
-          onClick={() => navigateTo('admin-event-create')}
-          className="btn btn-primary"
-        >
-           Create New Event
+        <button onClick={handleCreateEvent} className="btn btn-primary">
+          Create New Event
         </button>
       </div>
 
-      {/* Event Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="card p-6 text-center">
-          <div className="text-3xl mb-2"></div>
-          <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-            {events.filter(e => e.status === 'live').length}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Live Events</div>
-        </div>
-        <div className="card p-6 text-center">
-          <div className="text-3xl mb-2"></div>
-          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-            {events.filter(e => e.status === 'upcoming').length}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Upcoming</div>
-        </div>
-        <div className="card p-6 text-center">
-          <div className="text-3xl mb-2"></div>
-          <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-            ${events.reduce((acc, e) => {
-              // Handle both string and number prize pools, checking both new and old structure
-              let prizeValue = 0;
-              const prizePool = e.details?.prize_pool || e.prize_pool;
-              if (typeof prizePool === 'string') {
-                prizeValue = parseInt(prizePool.replace(/[$,]/g, '') || '0');
-              } else if (typeof prizePool === 'number') {
-                prizeValue = prizePool;
-              }
-              return acc + prizeValue;
-            }, 0).toLocaleString()}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Total Prize Pool</div>
-        </div>
-        <div className="card p-6 text-center">
-          <div className="text-3xl mb-2"></div>
-          <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-            {events.reduce((acc, e) => acc + (e.participation?.current_teams || e.team_count || 0), 0)}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">Total Teams</div>
-        </div>
-      </div>
-
       {/* Filters */}
-      <div className="card p-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-              Event Type
+              Search Events
             </label>
-            <select
-              value={filters.type}
-              onChange={(e) => setFilters({...filters, type: e.target.value})}
-              className="form-input"
-            >
-              {types.map(type => (
-                <option key={type} value={type}>
-                  {type === 'all' ? 'All Types' : type}
-                </option>
-              ))}
-            </select>
+            <input
+              type="text"
+              placeholder="Search by name or location..."
+              value={filters.search}
+              onChange={(e) => setFilters({...filters, search: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+            />
           </div>
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
@@ -247,18 +336,48 @@ function AdminEvents({ navigateTo }) {
             <select
               value={filters.status}
               onChange={(e) => setFilters({...filters, status: e.target.value})}
-              className="form-input"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
             >
-              {statuses.map(status => (
-                <option key={status} value={status}>
-                  {status === 'all' ? 'All Status' : status.charAt(0).toUpperCase() + status.slice(1)}
-                </option>
-              ))}
+              <option value="all">All Status</option>
+              <option value="upcoming">Upcoming</option>
+              <option value="live">Live</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+              Type
+            </label>
+            <select
+              value={filters.type}
+              onChange={(e) => setFilters({...filters, type: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+            >
+              <option value="all">All Types</option>
+              <option value="tournament">Tournament</option>
+              <option value="championship">Championship</option>
+              <option value="qualifier">Qualifier</option>
+              <option value="exhibition">Exhibition</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+              Sort By
+            </label>
+            <select
+              value={filters.sortBy}
+              onChange={(e) => setFilters({...filters, sortBy: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+            >
+              <option value="date">Date</option>
+              <option value="name">Name</option>
+              <option value="status">Status</option>
             </select>
           </div>
           <div className="flex items-end">
             <button
-              onClick={() => setFilters({ type: 'all', status: 'all' })}
+              onClick={() => setFilters({ search: '', status: 'all', type: 'all', sortBy: 'date' })}
               className="btn btn-secondary w-full"
             >
               Clear Filters
@@ -267,113 +386,133 @@ function AdminEvents({ navigateTo }) {
         </div>
       </div>
 
-      {/* Events List */}
-      <div className="space-y-6">
-        {events.map(event => (
-          <div key={event.id} className="card p-6">
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-              {/* Event Info */}
-              <div className="flex-1">
-                <div className="flex items-start gap-4">
-                  {/* Event Logo */}
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0">
-                    <img 
-                      src={getEventLogoUrl(event)} 
-                      alt={`${event.name} logo`}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.parentNode.innerHTML = '<div class="w-full h-full flex items-center justify-center text-lg font-bold text-gray-500 dark:text-gray-400">?</div>';
-                      }}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                        {event.name}
-                      </h3>
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(event.status)}`}>
-                        {event.status.toUpperCase()}
-                      </span>
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getTypeColor(event.type)}`}>
-                        {event.type}
-                      </span>
-                      {event.registration_open && (
-                        <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 text-xs font-medium rounded">
-                          REGISTRATION OPEN
-                        </span>
-                      )}
-                    </div>
-                    
-                    <p className="text-gray-600 dark:text-gray-400 mb-4">{event.description}</p>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-500 dark:text-gray-500">Date:</span>
-                        <div className="font-medium text-gray-900 dark:text-white">
-                          {new Date(event.schedule?.start_date || event.start_date).toLocaleDateString()} - {new Date(event.schedule?.end_date || event.end_date).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-gray-500 dark:text-gray-500">Prize Pool:</span>
-                        <div className="font-medium text-green-600 dark:text-green-400">{event.details?.prize_pool || event.prize_pool}</div>
-                      </div>
-                      <div>
-                        <span className="text-gray-500 dark:text-gray-500">Teams:</span>
-                        <div className="font-medium text-gray-900 dark:text-white">{event.participation?.current_teams || event.team_count || 0}</div>
-                      </div>
-                      <div>
-                        <span className="text-gray-500 dark:text-gray-500">Format:</span>
-                        <div className="font-medium text-gray-900 dark:text-white">{event.details?.format || event.format}</div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 text-sm">
-                      <span className="text-gray-500 dark:text-gray-500">Organizer:</span>
-                      <span className="ml-2 font-medium text-gray-900 dark:text-white">{event.organizer?.name || event.organizer}</span>
-                      <span className="mx-2 text-gray-400">•</span>
-                      <span className="text-gray-500 dark:text-gray-500">Region:</span>
-                      <span className="ml-2 font-medium text-gray-900 dark:text-white">{event.details?.region || event.region}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col gap-3 lg:w-48">
-                {event.status === 'upcoming' && (
-                  <button
-                    onClick={() => updateEventStatus(event.id, 'live')}
-                    className="btn bg-red-600 hover:bg-red-700 text-white"
-                  >
-                     Start Event
-                  </button>
-                )}
-                {event.status === 'live' && (
-                  <button
-                    onClick={() => updateEventStatus(event.id, 'completed')}
-                    className="btn bg-green-600 hover:bg-green-700 text-white"
-                  >
-                     Complete Event
-                  </button>
-                )}
-                <button 
-                  onClick={() => navigateTo('event-detail', { id: event.id })}
-                  className="btn btn-secondary"
+      {/* Bulk Actions Bar */}
+      {showBulkActions && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <span className="text-sm font-medium text-blue-900 dark:text-blue-200">
+                {selectedEvents.size} events selected
+              </span>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => handleBulkStatusChange('upcoming')}
+                  className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
                 >
-                   View Details
-                </button>
-                <button 
-                  onClick={() => navigateTo('admin-event-edit', { id: event.id })}
-                  className="btn btn-secondary"
-                >
-                   Edit Event
+                  Mark as Upcoming
                 </button>
                 <button
-                  onClick={() => handleDelete(event.id, event.name)}
-                  className="btn bg-red-600 hover:bg-red-700 text-white"
+                  onClick={() => handleBulkStatusChange('live')}
+                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
                 >
-                   Delete
+                  Mark as Live
+                </button>
+                <button
+                  onClick={() => handleBulkStatusChange('completed')}
+                  className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-sm"
+                >
+                  Mark as Completed
+                </button>
+                <button
+                  onClick={handleBulkDelete}
+                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setSelectedEvents(new Set());
+                setShowBulkActions(false);
+              }}
+              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
+            >
+              Clear Selection
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Select All */}
+      {filteredEvents.length > 0 && (
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
+          <label className="flex items-center space-x-2 text-sm">
+            <input
+              type="checkbox"
+              checked={selectedEvents.size === filteredEvents.length && filteredEvents.length > 0}
+              onChange={handleSelectAllEvents}
+              className="rounded border-gray-300 dark:border-gray-600"
+            />
+            <span className="text-gray-700 dark:text-gray-300">
+              Select all {filteredEvents.length} events
+            </span>
+          </label>
+        </div>
+      )}
+
+      {/* Events Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {paginatedEvents.map((event) => (
+          <div key={event.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-3">
+                <input
+                  type="checkbox"
+                  checked={selectedEvents.has(event.id)}
+                  onChange={() => handleSelectEvent(event.id)}
+                  className="rounded border-gray-300 dark:border-gray-600"
+                />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate flex-1 mx-3">
+                  {event.name}
+                </h3>
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(event.status)}`}>
+                  {event.status || 'TBD'}
+                </span>
+              </div>
+              
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">
+                {event.description || 'No description available'}
+              </p>
+              
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                  <span className="font-medium mr-2">Start Date:</span>
+                  {formatDate(event.start_date)}
+                </div>
+                {event.end_date && (
+                  <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                    <span className="font-medium mr-2">End Date:</span>
+                    {formatDate(event.end_date)}
+                  </div>
+                )}
+                {event.location && (
+                  <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                    <span className="font-medium mr-2">Location:</span>
+                    {event.location}
+                  </div>
+                )}
+                <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                  <span className="font-medium mr-2">Teams:</span>
+                  {event.team_count || 0} registered
+                </div>
+              </div>
+              
+              <div className="flex space-x-2">
+                <button className="flex-1 btn btn-outline-primary text-sm">
+                  View Details
+                </button>
+                <button 
+                  onClick={() => handleEditEvent(event)}
+                  className="flex-1 btn btn-outline-secondary text-sm"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteEvent(event.id, event.name)}
+                  className="btn btn-outline-danger text-sm"
+                >
+                  Delete
                 </button>
               </div>
             </div>
@@ -381,22 +520,242 @@ function AdminEvents({ navigateTo }) {
         ))}
       </div>
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center">
+          <nav className="flex items-center space-x-2">
+            <button
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="btn btn-secondary"
+            >
+              Previous
+            </button>
+            
+            <div className="flex space-x-1">
+              {[...Array(Math.min(totalPages, 5))].map((_, index) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = index + 1;
+                } else {
+                  if (currentPage <= 3) {
+                    pageNum = index + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + index;
+                  } else {
+                    pageNum = currentPage - 2 + index;
+                  }
+                }
+                
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`px-3 py-2 text-sm font-medium rounded-lg ${
+                      currentPage === pageNum
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+            
+            <button
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="btn btn-secondary"
+            >
+              Next
+            </button>
+          </nav>
+        </div>
+      )}
+
       {/* No Results */}
-      {events.length === 0 && (
-        <div className="card p-12 text-center">
+      {filteredEvents.length === 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
           <div className="text-6xl mb-4"></div>
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Events Found</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            {filters.type !== 'all' || filters.status !== 'all'
+            {filters.search || filters.status !== 'all' || filters.type !== 'all'
               ? 'Try adjusting your filters to find more events.'
               : 'Get started by creating your first event.'}
           </p>
-          <button
-            onClick={() => navigateTo('admin-event-create')}
-            className="btn btn-primary"
-          >
-             Create First Event
+          <button onClick={handleCreateEvent} className="btn btn-primary">
+            Create First Event
           </button>
+        </div>
+      )}
+
+      {/* Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+          <div className="text-3xl mb-2"></div>
+          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            {events.length}
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Total Events</div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+          <div className="text-3xl mb-2">🔴</div>
+          <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+            {events.filter(e => e.status === 'live').length}
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Live Events</div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+          <div className="text-3xl mb-2"></div>
+          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            {events.filter(e => e.status === 'upcoming').length}
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Upcoming</div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+          <div className="text-3xl mb-2">✅</div>
+          <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+            {events.filter(e => e.status === 'completed').length}
+          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Completed</div>
+        </div>
+      </div>
+
+      {/* Event Form Modal */}
+      {showEventModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {editingEvent ? 'Edit Event' : 'Create New Event'}
+              </h3>
+              <button
+                onClick={() => setShowEventModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmitEvent} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Event Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={eventFormData.name}
+                  onChange={(e) => setEventFormData({...eventFormData, name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                  placeholder="Enter event name"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={eventFormData.description}
+                  onChange={(e) => setEventFormData({...eventFormData, description: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                  rows="3"
+                  placeholder="Event description..."
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={eventFormData.start_date}
+                    onChange={(e) => setEventFormData({...eventFormData, start_date: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={eventFormData.end_date}
+                    onChange={(e) => setEventFormData({...eventFormData, end_date: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  value={eventFormData.location}
+                  onChange={(e) => setEventFormData({...eventFormData, location: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                  placeholder="Event location (optional)"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Type
+                  </label>
+                  <select
+                    value={eventFormData.type}
+                    onChange={(e) => setEventFormData({...eventFormData, type: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                  >
+                    <option value="tournament">Tournament</option>
+                    <option value="championship">Championship</option>
+                    <option value="qualifier">Qualifier</option>
+                    <option value="exhibition">Exhibition</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Status
+                  </label>
+                  <select
+                    value={eventFormData.status}
+                    onChange={(e) => setEventFormData({...eventFormData, status: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                  >
+                    <option value="upcoming">Upcoming</option>
+                    <option value="live">Live</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={() => setShowEventModal(false)}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  {editingEvent ? 'Update Event' : 'Create Event'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

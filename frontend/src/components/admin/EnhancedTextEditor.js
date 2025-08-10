@@ -5,7 +5,7 @@ import MentionDropdown from '../shared/MentionDropdown';
 function EnhancedTextEditor({
   value,
   onChange,
-  placeholder = "Type @ to mention users, teams, or players...",
+  placeholder = "Type  to mention users, teams, or players...",
   rows = 15,
   className = ''
 }) {
@@ -111,7 +111,7 @@ function EnhancedTextEditor({
         </div>
         
         <div className="text-xs text-[#768894]">
-          Type @ to mention • Embed format: [platform:id]
+          Type  to mention • Embed format: [platform:id]
         </div>
       </div>
       

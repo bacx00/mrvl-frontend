@@ -6,6 +6,45 @@ import VotingButtons from '../shared/VotingButtons';
 import HeroImage from '../shared/HeroImage';
 import LiveScoringPanel from '../admin/LiveScoringPanel';
 import SimplifiedLiveScoring from '../admin/SimplifiedLiveScoring';
+import CommentSystemSimple from '../shared/CommentSystemSimple';
+import liveScoreManager from '../../utils/LiveScoreManager';
+
+// Error Boundary Component
+class MatchDetailErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('MatchDetail Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+          <div className="bg-gray-800 rounded-lg p-8 max-w-md">
+            <h2 className="text-white text-xl mb-4">Error Loading Match</h2>
+            <p className="text-gray-300 mb-4">Failed to load match details. Please try refreshing the page.</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 function MatchDetailPage({ matchId, navigateTo }) {
   const [match, setMatch] = useState(null);
@@ -20,11 +59,9 @@ function MatchDetailPage({ matchId, navigateTo }) {
       console.log('MatchDetailPage: Current map data:', match.maps[currentMapIndex]);
     }
   }, [currentMapIndex, match?.maps]);
-  const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState('');
-  const [submittingComment, setSubmittingComment] = useState(false);
   const [showLiveScoring, setShowLiveScoring] = useState(false);
   const [liveUpdateConnection, setLiveUpdateConnection] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState(null);
   const eventSourceRef = useRef(null);
   
   const { user, isAuthenticated, api } = useAuth();
@@ -47,51 +84,102 @@ function MatchDetailPage({ matchId, navigateTo }) {
     });
   }, []);
 
-  // SSE Connection for real-time updates
-  const connectToLiveUpdates = useCallback((matchId) => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-    }
+  // ENHANCED: Real-time score update handler with immediate state updates
+  const handleLiveScoreUpdate = useCallback((updateData, source) => {
+    console.log(`🚀 MatchDetailPage received live update from ${source}:`, updateData);
     
-    const eventSource = new EventSource(`${BACKEND_URL}/api/live-updates/${matchId}/stream`);
-    eventSourceRef.current = eventSource;
-    
-    eventSource.onopen = () => {
-      console.log('MatchDetailPage: Connected to live updates');
-      setLiveUpdateConnection('connected');
-    };
-    
-    eventSource.addEventListener('score-update', (event) => {
-      console.log('MatchDetailPage: Received score update:', event.data);
-      const data = JSON.parse(event.data);
-      handleMatchUpdate(data);
-    });
-    
-    eventSource.addEventListener('hero-update', (event) => {
-      console.log('MatchDetailPage: Received hero update:', event.data);
-      const data = JSON.parse(event.data);
-      handleMatchUpdate(data);
-    });
-    
-    eventSource.addEventListener('status-update', (event) => {
-      console.log('MatchDetailPage: Received status update:', event.data);
-      const data = JSON.parse(event.data);
-      handleMatchUpdate(data);
-    });
-    
-    eventSource.onerror = (error) => {
-      console.error('MatchDetailPage: SSE error:', error);
-      setLiveUpdateConnection('error');
-      // Attempt to reconnect after 5 seconds
-      setTimeout(() => {
-        if (match?.status === 'live') {
-          connectToLiveUpdates(matchId);
+    // Handle multiple data formats from different sources
+    const scoreData = updateData.data || updateData;
+    if (!scoreData) return;
+
+    // Use React's flushSync for immediate DOM updates (critical for live scoring)
+    React.flushSync(() => {
+      setMatch(prevMatch => {
+        if (!prevMatch) return prevMatch;
+        
+        // Create deep copy to ensure re-render
+        const updatedMatch = {
+          ...prevMatch,
+          // Update team scores with multiple format support
+          team1_score: scoreData.team1_score !== undefined ? scoreData.team1_score : 
+                       scoreData.team1Score !== undefined ? scoreData.team1Score : 
+                       scoreData.series_score_team1 !== undefined ? scoreData.series_score_team1 : prevMatch.team1_score,
+          team2_score: scoreData.team2_score !== undefined ? scoreData.team2_score :
+                       scoreData.team2Score !== undefined ? scoreData.team2Score :
+                       scoreData.series_score_team2 !== undefined ? scoreData.series_score_team2 : prevMatch.team2_score,
+          
+          // Update maps data with deep merge for immediate player stats updates
+          maps: scoreData.maps ? JSON.parse(JSON.stringify(scoreData.maps)) : prevMatch.maps,
+          
+          // Update match status for immediate UI changes
+          status: scoreData.status || prevMatch.status,
+          
+          // Update current map for immediate map switching
+          current_map: scoreData.current_map || scoreData.currentMap || prevMatch.current_map,
+          
+          // Ensure timestamps update to trigger re-renders
+          updated_at: new Date().toISOString(),
+          live_update_timestamp: Date.now()
+        };
+        
+        // Force re-render of current map data if maps updated
+        if (scoreData.maps && JSON.stringify(scoreData.maps) !== JSON.stringify(prevMatch.maps)) {
+          console.log('🗺️ Maps data updated, forcing current map re-render');
         }
-      }, 5000);
-    };
-  }, [match?.status, handleMatchUpdate]);
-  
-  // Cleanup SSE connection on unmount
+        
+        console.log('⚡ MatchDetailPage updated INSTANTLY with live data:', {
+          team1Score: updatedMatch.team1_score,
+          team2Score: updatedMatch.team2_score,
+          source,
+          eventType: updateData.eventType || updateData.type,
+          timestamp: updatedMatch.live_update_timestamp
+        });
+        
+        return updatedMatch;
+      });
+    });
+
+    // Update current map index if specified in the update
+    if (scoreData.current_map && scoreData.current_map !== currentMapIndex + 1) {
+      console.log(`🗺️ Switching to map ${scoreData.current_map}`);
+      React.flushSync(() => {
+        setCurrentMapIndex(scoreData.current_map - 1);
+      });
+    }
+  }, [currentMapIndex]);
+
+  // Subscribe to live score updates when match loads
+  useEffect(() => {
+    const matchIdValue = getMatchId();
+    
+    if (matchIdValue && match) {
+      console.log(`🔔 MatchDetailPage subscribing to live updates for match ${matchIdValue}`);
+      
+      const subscription = liveScoreManager.subscribe(
+        `match-detail-${matchIdValue}`,
+        handleLiveScoreUpdate,
+        {
+          matchId: parseInt(matchIdValue),
+          updateType: 'all',
+          enableLiveConnection: true // Enable professional WebSocket/SSE connection
+        }
+      );
+
+      // Monitor connection status
+      const statusInterval = setInterval(() => {
+        const status = liveScoreManager.getConnectionStatus(parseInt(matchIdValue));
+        setConnectionStatus(status);
+      }, 2000); // Check every 2 seconds
+      
+      return () => {
+        console.log(`🔕 MatchDetailPage unsubscribing from live updates for match ${matchIdValue}`);
+        liveScoreManager.unsubscribe(`match-detail-${matchIdValue}`);
+        if (statusInterval) clearInterval(statusInterval);
+      };
+    }
+  }, [match?.id, handleLiveScoreUpdate]);
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (eventSourceRef.current) {
@@ -174,11 +262,9 @@ function MatchDetailPage({ matchId, navigateTo }) {
           setMatch(transformedMatch);
         }
         
-        // Initialize SSE connection for live updates
-        if (data.status === 'live' && (data.id || data.match?.id)) {
-          console.log('MatchDetailPage: Connecting to live updates...');
-          connectToLiveUpdates(data.id || data.match.id);
-        }
+        // Real-time updates will be automatically enabled via LiveScoreManager
+        console.log('Match loaded. Live updates enabled via LiveScoreManager for status:', transformedMatch.status);
+        setLiveUpdateConnection(transformedMatch.status === 'live' ? 'live-manager' : 'ready');
       } catch (error) {
         console.error('MatchDetailPage: Error loading match:', error);
       } finally {
@@ -188,50 +274,6 @@ function MatchDetailPage({ matchId, navigateTo }) {
 
     loadMatch();
   }, [matchId, api]);
-
-  // Load comments
-  useEffect(() => {
-    const loadComments = async () => {
-      const id = getMatchId();
-      if (!id) return;
-
-      try {
-        const response = await fetch(`${BACKEND_URL}/api/matches/${id}/comments`);
-        if (!response.ok) {
-          console.log(`Comments endpoint returned ${response.status}`);
-          return;
-        }
-        const data = await response.json();
-        setComments(data.comments || []);
-      } catch (error) {
-        console.error('Error loading comments:', error);
-      }
-    };
-
-    loadComments();
-  }, [matchId]);
-
-  // Submit comment
-  const handleCommentSubmit = async (e) => {
-    e.preventDefault();
-    if (!newComment.trim() || !isAuthenticated) return;
-
-    setSubmittingComment(true);
-    try {
-      const response = await api.post(`/matches/${getMatchId()}/comments`, {
-        content: newComment
-      });
-      
-      if (response.data.comment) {
-        setComments([response.data.comment, ...comments]);
-        setNewComment('');
-      }
-    } catch (error) {
-      console.error('Error submitting comment:', error);
-    } finally {
-      setSubmittingComment(false);
-    }
-  };
 
 
   if (loading) {
@@ -280,7 +322,8 @@ function MatchDetailPage({ matchId, navigateTo }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <MatchDetailErrorBoundary>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* VLR.gg Style Container */}
       <div className="max-w-6xl mx-auto px-4 py-6">
         
@@ -295,19 +338,35 @@ function MatchDetailPage({ matchId, navigateTo }) {
                 ← Back to Matches
               </button>
               <div className="flex items-center space-x-4">
-                {/* Live Update Status */}
+                {/* Enhanced Live Updates Status */}
                 {match?.status === 'live' && (
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      liveUpdateConnection === 'connected' ? 'bg-green-500 animate-pulse' :
-                      liveUpdateConnection === 'error' ? 'bg-red-500' :
-                      'bg-yellow-500'
-                    }`}></div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {liveUpdateConnection === 'connected' ? 'Live Updates Active' :
-                       liveUpdateConnection === 'error' ? 'Connection Error' :
-                       'Connecting...'}
-                    </span>
+                  <div className="flex items-center gap-2">
+                    <div className={`flex items-center gap-2 px-3 py-1 rounded text-sm transition-colors ${
+                      connectionStatus?.hasLocalConnection && connectionStatus?.serviceStatus?.status === 'connected'
+                        ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                        : connectionStatus?.serviceStatus?.status === 'reconnecting'
+                        ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' 
+                        : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                    }`}>
+                      <div className={`w-2 h-2 rounded-full ${
+                        connectionStatus?.hasLocalConnection && connectionStatus?.serviceStatus?.status === 'connected'
+                          ? 'bg-green-500 animate-pulse'
+                          : connectionStatus?.serviceStatus?.status === 'reconnecting'
+                          ? 'bg-yellow-500 animate-spin'
+                          : 'bg-red-500 animate-pulse'
+                      }`}></div>
+                      {connectionStatus?.hasLocalConnection && connectionStatus?.serviceStatus?.status === 'connected' 
+                        ? `Live (${connectionStatus.serviceStatus.transport?.toUpperCase() || 'SSE'})`
+                        : connectionStatus?.serviceStatus?.status === 'reconnecting'
+                        ? 'Reconnecting...'
+                        : 'Live Updates'
+                      }
+                    </div>
+                    {connectionStatus?.serviceStatus?.reconnectAttempts > 0 && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        Attempt {connectionStatus.serviceStatus.reconnectAttempts}
+                      </div>
+                    )}
                   </div>
                 )}
                 {/* Tournament/Event Info */}
@@ -529,11 +588,11 @@ function MatchDetailPage({ matchId, navigateTo }) {
           </div>
         </div>
 
-        {/* URLs Display Above Blue Box - Horizontal Layout */}
+        {/* URLs Display Above Blue Box - Categorized Horizontal Layout */}
         {(match.broadcast?.streams?.length > 0 || match.broadcast?.betting?.length > 0 || match.broadcast?.vods?.length > 0 || match.stream_url || match.vod_url || match.betting_url) && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4 p-4">
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              {/* Extract and display URLs with platform names */}
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {/* Extract and categorize URLs */}
               {(() => {
                 const formatUrlDisplay = (url) => {
                   if (!url) return null;
@@ -545,60 +604,119 @@ function MatchDetailPage({ matchId, navigateTo }) {
                     if (hostname.includes('twitch.tv')) {
                       const pathParts = urlObj.pathname.split('/').filter(p => p);
                       const channel = pathParts[0] || 'Channel';
-                      return { platform: 'Twitch', display: channel.charAt(0).toUpperCase() + channel.slice(1), color: 'purple' };
+                      return { platform: channel, display: channel, color: 'purple', category: 'streaming' };
                     } else if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
-                      return { platform: 'YouTube', display: 'Watch', color: 'red' };
+                      // Try to extract channel name from URL patterns
+                      const pathParts = urlObj.pathname.split('/').filter(p => p);
+                      let channelName = 'YouTube';
+                      if (pathParts.includes('c') && pathParts[pathParts.indexOf('c') + 1]) {
+                        channelName = pathParts[pathParts.indexOf('c') + 1];
+                      } else if (pathParts.includes('channel') && pathParts[pathParts.indexOf('channel') + 1]) {
+                        channelName = pathParts[pathParts.indexOf('channel') + 1];
+                      } else if (pathParts.includes('@') || pathParts[0]?.startsWith('@')) {
+                        channelName = pathParts[0]?.replace('@', '') || 'YouTube';
+                      }
+                      return { platform: channelName, display: channelName, color: 'red', category: 'streaming' };
                     } else if (hostname.includes('kick.com')) {
                       const pathParts = urlObj.pathname.split('/').filter(p => p);
                       const channel = pathParts[0] || 'Channel';
-                      return { platform: 'Kick', display: channel.charAt(0).toUpperCase() + channel.slice(1), color: 'green' };
+                      return { platform: channel, display: channel, color: 'green', category: 'streaming' };
                     } else if (hostname.includes('bet') || hostname.includes('odds') || hostname.includes('stake')) {
-                      return { platform: 'Betting', display: hostname.split('.')[0].charAt(0).toUpperCase() + hostname.split('.')[0].slice(1), color: 'yellow' };
+                      const siteName = hostname.split('.')[0].charAt(0).toUpperCase() + hostname.split('.')[0].slice(1);
+                      return { platform: siteName, display: siteName, color: 'yellow', category: 'betting' };
                     } else {
-                      return { platform: hostname.split('.')[0].charAt(0).toUpperCase() + hostname.split('.')[0].slice(1), display: 'Link', color: 'blue' };
+                      // Extract site name for other URLs
+                      const siteName = hostname.split('.')[0].charAt(0).toUpperCase() + hostname.split('.')[0].slice(1);
+                      return { platform: siteName, display: siteName, color: 'blue', category: 'vod' };
                     }
                   } catch {
-                    return { platform: 'Link', display: 'External', color: 'gray' };
+                    return { platform: 'External Link', display: 'External Link', color: 'gray', category: 'other' };
                   }
                 };
                 
-                const allUrls = [
-                  ...(match.broadcast?.streams || []),
-                  ...(match.broadcast?.betting || []),
-                  ...(match.broadcast?.vods || []),
-                  match.stream_url,
-                  match.betting_url,
-                  match.vod_url
-                ].filter(Boolean);
+                // Categorize URLs
+                const streamUrls = [...(match.broadcast?.streams || []), match.stream_url].filter(Boolean);
+                const bettingUrls = [...(match.broadcast?.betting || []), match.betting_url].filter(Boolean);
+                const vodUrls = [...(match.broadcast?.vods || []), match.vod_url].filter(Boolean);
                 
-                return allUrls.map((url, index) => {
-                  const urlInfo = formatUrlDisplay(url);
-                  if (!urlInfo) return null;
-                  
-                  const colorClasses = {
-                    purple: 'bg-purple-600 hover:bg-purple-700',
-                    red: 'bg-red-600 hover:bg-red-700',
-                    green: 'bg-green-600 hover:bg-green-700',
-                    blue: 'bg-blue-600 hover:bg-blue-700',
-                    yellow: 'bg-yellow-600 hover:bg-yellow-700',
-                    gray: 'bg-gray-600 hover:bg-gray-700'
-                  };
-                  
-                  return (
-                    <a
-                      key={`url-${index}`}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`px-4 py-2 ${colorClasses[urlInfo.color]} text-white rounded-lg transition-colors text-sm font-medium flex items-center hover:shadow-md`}
-                    >
-                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" />
-                      </svg>
-                      {urlInfo.platform}: {urlInfo.display}
-                    </a>
+                const renderUrlButtons = (urls, category) => {
+                  return urls.map((url, index) => {
+                    const urlInfo = formatUrlDisplay(url);
+                    if (!urlInfo) return null;
+                    
+                    const colorClasses = {
+                      purple: 'bg-purple-600 hover:bg-purple-700',
+                      red: 'bg-red-600 hover:bg-red-700',
+                      green: 'bg-green-600 hover:bg-green-700',
+                      blue: 'bg-blue-600 hover:bg-blue-700',
+                      yellow: 'bg-yellow-600 hover:bg-yellow-700',
+                      gray: 'bg-gray-600 hover:bg-gray-700'
+                    };
+                    
+                    return (
+                      <a
+                        key={`${category}-${index}`}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`px-3 py-1 ${colorClasses[urlInfo.color]} text-white rounded transition-colors text-xs font-medium flex items-center hover:shadow-md`}
+                      >
+                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" />
+                        </svg>
+                        {urlInfo.platform}
+                      </a>
+                    );
+                  });
+                };
+                
+                const components = [];
+                
+                // Streaming section
+                if (streamUrls.length > 0) {
+                  components.push(
+                    <div key="streaming" className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Streaming:</span>
+                      {renderUrlButtons(streamUrls, 'streaming')}
+                    </div>
                   );
-                });
+                }
+                
+                // Add separator if needed
+                if (components.length > 0 && (bettingUrls.length > 0 || vodUrls.length > 0)) {
+                  components.push(
+                    <div key="sep1" className="text-gray-300 dark:text-gray-600">|</div>
+                  );
+                }
+                
+                // Betting section
+                if (bettingUrls.length > 0) {
+                  components.push(
+                    <div key="betting" className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Betting:</span>
+                      {renderUrlButtons(bettingUrls, 'betting')}
+                    </div>
+                  );
+                }
+                
+                // Add separator if needed
+                if ((streamUrls.length > 0 || bettingUrls.length > 0) && vodUrls.length > 0) {
+                  components.push(
+                    <div key="sep2" className="text-gray-300 dark:text-gray-600">|</div>
+                  );
+                }
+                
+                // VOD section
+                if (vodUrls.length > 0) {
+                  components.push(
+                    <div key="vod" className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">VOD:</span>
+                      {renderUrlButtons(vodUrls, 'vod')}
+                    </div>
+                  );
+                }
+                
+                return components;
               })()}
             </div>
           </div>
@@ -612,12 +730,14 @@ function MatchDetailPage({ matchId, navigateTo }) {
                 Match Statistics - Map {currentMapIndex + 1}: {currentMapData.mapName}
               </h3>
               {user && (user.role === 'admin' || user.role === 'moderator') && (
-                <button
-                  onClick={() => setShowLiveScoring(!showLiveScoring)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
-                >
-                  Live Scoring
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowLiveScoring(!showLiveScoring)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
+                  >
+                    Live Scoring
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -656,10 +776,19 @@ function MatchDetailPage({ matchId, navigateTo }) {
                       // First priority: dedicated username field
                       if (playerObj.username) return playerObj.username;
                       
-                      // Second priority: extract from quoted text in name
-                      if (playerObj.name && playerObj.name.includes('"')) {
-                        const match = playerObj.name.match(/"([^"]+)"/); // Extract text between quotes
-                        if (match) return match[1];
+                      // Second priority: extract from quoted text in name - handle both single and double quotes
+                      if (playerObj.name) {
+                        // Try double quotes first: Mikkel "Sypeh" Klein -> Sypeh
+                        const doubleQuoteMatch = playerObj.name.match(/"([^"]+)"/); 
+                        if (doubleQuoteMatch) return doubleQuoteMatch[1];
+                        
+                        // Try single quotes: Mikkel 'Sypeh' Klein -> Sypeh
+                        const singleQuoteMatch = playerObj.name.match(/'([^']+)'/); 
+                        if (singleQuoteMatch) return singleQuoteMatch[1];
+                        
+                        // Handle format with quotes at the end: "Sypeh" Klein Mikkel -> Sypeh
+                        const endQuoteMatch = playerObj.name.match(/^"([^"]+)"/); 
+                        if (endQuoteMatch) return endQuoteMatch[1];
                       }
                       
                       // Fallback to player_name or full name
@@ -761,10 +890,19 @@ function MatchDetailPage({ matchId, navigateTo }) {
                       // First priority: dedicated username field
                       if (playerObj.username) return playerObj.username;
                       
-                      // Second priority: extract from quoted text in name
-                      if (playerObj.name && playerObj.name.includes('"')) {
-                        const match = playerObj.name.match(/"([^"]+)"/); // Extract text between quotes
-                        if (match) return match[1];
+                      // Second priority: extract from quoted text in name - handle both single and double quotes
+                      if (playerObj.name) {
+                        // Try double quotes first: Mikkel "Sypeh" Klein -> Sypeh
+                        const doubleQuoteMatch = playerObj.name.match(/"([^"]+)"/); 
+                        if (doubleQuoteMatch) return doubleQuoteMatch[1];
+                        
+                        // Try single quotes: Mikkel 'Sypeh' Klein -> Sypeh
+                        const singleQuoteMatch = playerObj.name.match(/'([^']+)'/); 
+                        if (singleQuoteMatch) return singleQuoteMatch[1];
+                        
+                        // Handle format with quotes at the end: "Sypeh" Klein Mikkel -> Sypeh
+                        const endQuoteMatch = playerObj.name.match(/^"([^"]+)"/); 
+                        if (endQuoteMatch) return endQuoteMatch[1];
                       }
                       
                       // Fallback to player_name or full name
@@ -835,81 +973,21 @@ function MatchDetailPage({ matchId, navigateTo }) {
           </div>
         </div>
 
-        {/* Comments Section - VLR Style */}
+        {/* Comments Section - Forum Style */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Comments</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Match Discussion</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              Share your thoughts, analysis, and reactions to this match
+            </p>
           </div>
           
           <div className="p-6">
-            {/* Comment Form */}
-            {isAuthenticated ? (
-              <form onSubmit={handleCommentSubmit} className="mb-6">
-                <textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Add a comment..."
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  rows="3"
-                />
-                <div className="mt-2 flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={submittingComment || !newComment.trim()}
-                    className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
-                  >
-                    {submittingComment ? 'Posting...' : 'Post Comment'}
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <div className="mb-6 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg text-center">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Join the Discussion</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Sign in to comment on this match and share your thoughts with the community.
-                </p>
-                <button
-                  onClick={() => window.dispatchEvent(new CustomEvent('mrvl-show-auth-modal'))}
-                  className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                >
-                  Sign In to Comment
-                </button>
-              </div>
-            )}
-
-            {/* Comments List */}
-            <div className="space-y-4">
-              {comments.length > 0 ? (
-                comments.map((comment) => (
-                  <div key={comment.id} className="border-b border-gray-200 dark:border-gray-700 pb-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <UserDisplay user={comment.user} />
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {new Date(comment.created_at).toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="text-gray-700 dark:text-gray-300 text-sm">
-                          {parseTextWithMentions(comment.content)}
-                        </div>
-                        <div className="mt-2">
-                          <VotingButtons
-                            type="comment"
-                            id={comment.id}
-                            initialUpvotes={comment.upvotes || 0}
-                            initialDownvotes={comment.downvotes || 0}
-                            userVote={comment.user_vote}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-center text-gray-500 dark:text-gray-400">No comments yet. Be the first to comment!</p>
-              )}
-            </div>
+            <CommentSystemSimple 
+              itemType="match" 
+              itemId={getMatchId()} 
+              className="space-y-4"
+            />
           </div>
         </div>
 
@@ -922,8 +1000,16 @@ function MatchDetailPage({ matchId, navigateTo }) {
           initialMatchData={match} // Pass full match data for seamless integration
         />
       </div>
-    </div>
+      </div>
+    </MatchDetailErrorBoundary>
   );
 }
 
-export default MatchDetailPage;
+// Export wrapped component
+const WrappedMatchDetailPage = (props) => (
+  <MatchDetailErrorBoundary>
+    <MatchDetailPage {...props} />
+  </MatchDetailErrorBoundary>
+);
+
+export default WrappedMatchDetailPage;

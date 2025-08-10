@@ -1,19 +1,26 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../hooks';
 import { getImageUrl } from '../../utils/imageUtils';
+import LazyImage from './LazyImage';
 
-// Debounce utility function
-function debounce(func, wait) {
+// Enhanced debounce utility function with immediate execution option
+function debounce(func, wait, immediate = false) {
   let timeout;
   return function executedFunction(...args) {
     const later = () => {
-      clearTimeout(timeout);
-      func(...args);
+      timeout = null;
+      if (!immediate) func(...args);
     };
+    const callNow = immediate && !timeout;
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
+    if (callNow) func(...args);
   };
 }
+
+// Cache for API responses to prevent duplicate calls
+const mentionCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 const MentionAutocomplete = ({ 
   value, 
@@ -36,9 +43,11 @@ const MentionAutocomplete = ({
   
   const textareaRef = useRef(null);
   const dropdownRef = useRef(null);
+  const lastQueryRef = useRef('');
+  const activeRequestRef = useRef(null);
   const { api } = useAuth();
 
-  // Debounced search function
+  // Enhanced debounced search function with caching and deduplication
   const searchMentions = useCallback(
     debounce(async (query, type = 'all') => {
       if (query.length < 1) {
@@ -47,37 +56,131 @@ const MentionAutocomplete = ({
         return;
       }
 
+      // Prevent duplicate queries
+      if (query === lastQueryRef.current) {
+        return;
+      }
+      lastQueryRef.current = query;
+
+      // Check cache first
+      const cacheKey = `${type}:${query.toLowerCase()}`;
+      const cached = mentionCache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp < CACHE_DURATION)) {
+        setMentionResults(cached.data);
+        setSelectedIndex(0);
+        setShowDropdown(cached.data.length > 0);
+        setLoading(false);
+        return;
+      }
+
+      // Cancel previous request if still pending
+      if (activeRequestRef.current) {
+        activeRequestRef.current.cancel?.();
+      }
+
       try {
         setLoading(true);
-        const response = await api.get(`/public/mentions/search?q=${encodeURIComponent(query)}&type=${type}&limit=10`);
         
-        if (response.data.success) {
-          setMentionResults(response.data.data || []);
+        // Create cancellable request
+        const cancelToken = {
+          cancelled: false,
+          cancel: () => { cancelToken.cancelled = true; }
+        };
+        activeRequestRef.current = cancelToken;
+        
+        // Try the mentions endpoint first, fallback to individual type endpoints
+        let response;
+        try {
+          response = await api.get(`/public/mentions/search?q=${encodeURIComponent(query)}&type=${type}&limit=10`);
+        } catch (mentionError) {
+          // Fallback to individual search endpoints if mentions endpoint fails
+          if (type === 'user' || type === 'all') {
+            response = await api.get(`/public/search/users?q=${encodeURIComponent(query)}&limit=5`);
+          } else if (type === 'team') {
+            response = await api.get(`/public/search/teams?q=${encodeURIComponent(query)}&limit=5`);
+          } else if (type === 'player') {
+            response = await api.get(`/public/search/players?q=${encodeURIComponent(query)}&limit=5`);
+          } else {
+            throw mentionError;
+          }
+        }
+        
+        // Check if request was cancelled
+        if (cancelToken.cancelled) {
+          return;
+        }
+        
+        if (response.data.success || response.data.data) {
+          const results = response.data.data || [];
+          
+          // Cache the results
+          mentionCache.set(cacheKey, {
+            data: results,
+            timestamp: Date.now()
+          });
+          
+          setMentionResults(results);
           setSelectedIndex(0);
+          setShowDropdown(results.length > 0);
+        } else {
+          setMentionResults([]);
+          setShowDropdown(false);
         }
       } catch (error) {
-        console.error('Error searching mentions:', error);
+        if (!error.name || error.name !== 'AbortError') {
+          console.error('Error searching mentions:', error);
+        }
         setMentionResults([]);
+        setShowDropdown(false);
       } finally {
+        activeRequestRef.current = null;
         setLoading(false);
       }
-    }, 300),
+    }, 250), // Reduced debounce time for better responsiveness
     [api]
   );
 
-  // Get popular mentions when dropdown opens without query
+  // Get popular mentions when dropdown opens without query (with caching)
   const getPopularMentions = useCallback(async () => {
+    const cacheKey = 'popular:mentions';
+    const cached = mentionCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp < CACHE_DURATION)) {
+      setMentionResults(cached.data);
+      setSelectedIndex(0);
+      setShowDropdown(cached.data.length > 0);
+      return;
+    }
+
     try {
       setLoading(true);
-      const response = await api.get('/public/mentions/popular?limit=8');
+      let response;
+      try {
+        response = await api.get('/public/mentions/popular?limit=8');
+      } catch (popularError) {
+        // Fallback to getting recent users if popular mentions fails
+        response = await api.get('/public/search/users?limit=8&recent=true');
+      }
       
-      if (response.data.success) {
-        setMentionResults(response.data.data || []);
+      if (response.data.success || response.data.data) {
+        const results = response.data.data || [];
+        
+        // Cache popular mentions for longer duration
+        mentionCache.set(cacheKey, {
+          data: results,
+          timestamp: Date.now()
+        });
+        
+        setMentionResults(results);
         setSelectedIndex(0);
+        setShowDropdown(results.length > 0);
+      } else {
+        setMentionResults([]);
+        setShowDropdown(false);
       }
     } catch (error) {
       console.error('Error fetching popular mentions:', error);
       setMentionResults([]);
+      setShowDropdown(false);
     } finally {
       setLoading(false);
     }
@@ -122,10 +225,32 @@ const MentionAutocomplete = ({
 
   // Handle input changes and detect mentions
   const handleInputChange = (e) => {
-    const newValue = e.target.value;
-    const cursorPosition = e.target.selectionStart;
+    // Extract value safely from event or direct string  
+    let newValue = '';
+    let cursorPosition = 0;
     
-    onChange(e);
+    if (typeof e === 'string') {
+      // Direct string value passed
+      newValue = e;
+      cursorPosition = e.length;
+      // Create synthetic event for onChange callback
+      const syntheticEvent = {
+        target: {
+          value: newValue,
+          selectionStart: cursorPosition,
+          selectionEnd: cursorPosition
+        }
+      };
+      onChange(syntheticEvent);
+    } else if (e && e.target) {
+      // Event object passed
+      newValue = e.target.value;
+      cursorPosition = e.target.selectionStart || newValue.length;
+      onChange(e);
+    } else {
+      console.warn('MentionAutocomplete: Unexpected input type:', typeof e, e);
+      return;
+    }
 
     // Find if cursor is after an @ symbol
     const textBeforeCursor = newValue.substring(0, cursorPosition);
@@ -144,10 +269,12 @@ const MentionAutocomplete = ({
         setDropdownPosition(calculateDropdownPosition());
       }, 0);
       
-      // Always show dropdown immediately when @ is typed
+      // Always show dropdown immediately when @ is typed - improved UX
       if (query.length === 0) {
+        setShowDropdown(true);
         getPopularMentions();
       } else {
+        setShowDropdown(true); // Show dropdown while searching
         searchMentions(query);
       }
     } else {
@@ -166,8 +293,10 @@ const MentionAutocomplete = ({
         }, 0);
         
         if (query.length === 0) {
+          setShowDropdown(true);
           getPopularMentions();
         } else {
+          setShowDropdown(true);
           searchMentions(query, 'team');
         }
       } else {
@@ -186,14 +315,18 @@ const MentionAutocomplete = ({
           }, 0);
           
           if (query.length === 0) {
+            setShowDropdown(true);
             getPopularMentions();
           } else {
+            setShowDropdown(true);
             searchMentions(query, 'player');
           }
         } else {
+          // Only hide dropdown if we're not in a mention context
           setShowDropdown(false);
           setMentionResults([]);
           setMentionStart(-1);
+          setMentionQuery('');
         }
       }
     }
@@ -282,7 +415,7 @@ const MentionAutocomplete = ({
     }
   };
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside and cleanup
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target) &&
@@ -292,7 +425,28 @@ const MentionAutocomplete = ({
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      // Cancel any pending requests on unmount
+      if (activeRequestRef.current) {
+        activeRequestRef.current.cancel?.();
+      }
+    };
+  }, []);
+  
+  // Cleanup cache periodically
+  useEffect(() => {
+    const cleanupCache = () => {
+      const now = Date.now();
+      for (const [key, value] of mentionCache.entries()) {
+        if (now - value.timestamp > CACHE_DURATION) {
+          mentionCache.delete(key);
+        }
+      }
+    };
+    
+    const interval = setInterval(cleanupCache, CACHE_DURATION);
+    return () => clearInterval(interval);
   }, []);
 
   // Get icon for mention type
@@ -325,7 +479,7 @@ const MentionAutocomplete = ({
     <div className="relative">
       <textarea
         ref={textareaRef}
-        value={value}
+        value={value || ''}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
@@ -333,6 +487,9 @@ const MentionAutocomplete = ({
         rows={rows}
         disabled={disabled}
         maxLength={maxLength}
+        style={{ fontSize: '16px' }} // Prevents iOS zoom on focus
+        autoComplete="off"
+        spellCheck="true"
         {...props}
       />
 
@@ -340,7 +497,7 @@ const MentionAutocomplete = ({
       {showDropdown && (
         <div
           ref={dropdownRef}
-          className="fixed z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-64 overflow-y-auto min-w-64"
+          className="fixed z-[9999] bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl max-h-64 overflow-y-auto min-w-64 backdrop-blur-sm"
           style={{
             top: dropdownPosition.top,
             left: dropdownPosition.left
@@ -353,11 +510,9 @@ const MentionAutocomplete = ({
             </div>
           ) : mentionResults.length > 0 ? (
             <>
-              {mentionQuery.length === 0 && (
-                <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-600">
-                  Popular mentions
-                </div>
-              )}
+              <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-600">
+                {mentionQuery.length === 0 ? 'Popular mentions' : `Results for "@${mentionQuery}"`}
+              </div>
               {mentionResults.map((mention, index) => (
                 <div
                   key={`${mention.type}-${mention.id}`}
@@ -367,12 +522,15 @@ const MentionAutocomplete = ({
                   onClick={() => selectMention(mention)}
                 >
                   {mention.avatar ? (
-                    <img 
-                      src={mention.avatar} 
-                      alt={mention.display_name}
-                      className="w-6 h-6 rounded-full object-cover"
-                      onError={(e) => { e.target.src = getImageUrl(null, 'player-avatar'); }}
-                    />
+                    <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700">
+                      <LazyImage 
+                        src={mention.avatar}
+                        alt={mention.display_name}
+                        fallbackType="player-avatar"
+                        className="w-full h-full object-cover"
+                        eager={true}
+                      />
+                    </div>
                   ) : (
                     getMentionIcon(mention.type)
                   )}
@@ -395,9 +553,18 @@ const MentionAutocomplete = ({
             </>
           ) : mentionQuery.length > 0 ? (
             <div className="p-3 text-center text-gray-500 dark:text-gray-400 text-sm">
-              No results found for "{mentionQuery}"
+              No results found for "@{mentionQuery}"
+              <div className="text-xs mt-1 text-gray-400">
+                Try typing @ again or use @team: or @player:
+              </div>
             </div>
-          ) : null}
+          ) : (
+            <div className="p-3 text-center text-gray-500 dark:text-gray-400 text-sm">
+              <div className="text-xs text-gray-400">
+                Type @ to mention users, @team: for teams, @player: for players
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

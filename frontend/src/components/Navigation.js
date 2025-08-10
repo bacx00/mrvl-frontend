@@ -297,14 +297,16 @@ function Navigation({ currentPage, navigateTo, onAuthClick, user: propUser }) {
     { id: 'events', label: 'Events' },
     { id: 'rankings', label: 'Rankings' }
   ];
+  
+  // Add Profile tab at the end for logged-in users
+  if (user) {
+    navigationItems.push({ id: 'profile', label: 'Profile' });
+  }
 
   // Special admin/moderator navigation items - these need to be added separately
   const specialNavItems = [];
   
-  // Add admin dashboard for admin users
-  if (user && hasRole(user, ROLES.ADMIN)) {
-    specialNavItems.push({ id: 'admin-dashboard', label: 'Admin Panel' });
-  }
+  // Admin panel removed from navigation - access through match cards instead
   
   // Add moderator dashboard for moderator users (but not admins, as they have admin panel)
   if (user && hasRole(user, ROLES.MODERATOR) && !hasRole(user, ROLES.ADMIN)) {
@@ -362,12 +364,6 @@ function Navigation({ currentPage, navigateTo, onAuthClick, user: propUser }) {
                       }`}
                     >
                       <span>{item.label}</span>
-                      {(item.id === 'admin-dashboard' && hasRole(user, ROLES.ADMIN)) && (
-                        <span className="text-red-500">🔴</span>
-                      )}
-                      {(item.id === 'moderator-dashboard' && hasRole(user, ROLES.MODERATOR)) && (
-                        <span className="text-yellow-500">🟡</span>
-                      )}
                     </button>
                   ))}
                 </>
@@ -635,12 +631,6 @@ function Navigation({ currentPage, navigateTo, onAuthClick, user: propUser }) {
                       }`}
                     >
                       <span>{item.label}</span>
-                      {(item.id === 'admin-dashboard' && hasRole(user, ROLES.ADMIN)) && (
-                        <span className="text-red-500">🔴</span>
-                      )}
-                      {(item.id === 'moderator-dashboard' && hasRole(user, ROLES.MODERATOR)) && (
-                        <span className="text-yellow-500">🟡</span>
-                      )}
                     </button>
                   ))}
                 </div>

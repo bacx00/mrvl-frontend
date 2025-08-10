@@ -1,0 +1,201 @@
+{
+  "timestamp": "2025-08-08T20:18:30.483Z",
+  "componentTests": [
+    {
+      "component": "src/components/admin/ComprehensiveLiveScoring.js",
+      "status": "FOUND",
+      "analysis": {
+        "linesOfCode": 2336,
+        "hasUseState": true,
+        "hasUseEffect": true,
+        "hasUseCallback": true,
+        "hasAPI": true,
+        "hasErrorHandling": true,
+        "hasConsoleLog": true,
+        "hasAuth": true,
+        "exports": 1,
+        "imports": 4,
+        "keyFeatures": [
+          {
+            "feature": "Live Scoring Component",
+            "hasHeroRoster": false,
+            "hasPlayerStats": true,
+            "hasTeamVictory": true,
+            "hasAutoSave": true,
+            "hasRealTimeSync": true
+          }
+        ]
+      }
+    },
+    {
+      "component": "src/components/pages/MatchDetailPage.js",
+      "status": "FOUND",
+      "analysis": {
+        "linesOfCode": 994,
+        "hasUseState": true,
+        "hasUseEffect": true,
+        "hasUseCallback": true,
+        "hasAPI": true,
+        "hasErrorHandling": true,
+        "hasConsoleLog": true,
+        "hasAuth": true,
+        "exports": 1,
+        "imports": 8,
+        "keyFeatures": [
+          {
+            "feature": "Match Detail Component",
+            "hasMatchDisplay": true,
+            "hasScoreSync": true,
+            "hasLiveScoringIntegration": true,
+            "hasSSE": true,
+            "hasComments": true
+          }
+        ]
+      }
+    },
+    {
+      "component": "src/components/admin/MatchForm.js",
+      "status": "FOUND",
+      "analysis": {
+        "linesOfCode": 1589,
+        "hasUseState": true,
+        "hasUseEffect": true,
+        "hasUseCallback": true,
+        "hasAPI": true,
+        "hasErrorHandling": true,
+        "hasConsoleLog": true,
+        "hasAuth": true,
+        "exports": 1,
+        "imports": 2,
+        "keyFeatures": []
+      }
+    },
+    {
+      "component": "src/components/MatchCard.js",
+      "status": "FOUND",
+      "analysis": {
+        "linesOfCode": 273,
+        "hasUseState": false,
+        "hasUseEffect": false,
+        "hasUseCallback": false,
+        "hasAPI": false,
+        "hasErrorHandling": true,
+        "hasConsoleLog": false,
+        "hasAuth": false,
+        "exports": 1,
+        "imports": 2,
+        "keyFeatures": []
+      }
+    }
+  ],
+  "integrationTests": [
+    {
+      "test": "Live Scoring System Features",
+      "status": "COMPLETED",
+      "details": {
+        "implementedFeatures": 5,
+        "totalFeatures": 7,
+        "featureCompleteness": "71.4%",
+        "features": {
+          "heroRosterDisplay": false,
+          "playerStatsEditing": true,
+          "kdaCalculation": false,
+          "teamVictoryButtons": true,
+          "autoSave": true,
+          "realTimeSync": true,
+          "keyboardShortcuts": true
+        }
+      }
+    },
+    {
+      "test": "Match Detail Page Features",
+      "status": "COMPLETED",
+      "details": {
+        "implementedFeatures": 8,
+        "totalFeatures": 8,
+        "featureCompleteness": "100.0%",
+        "features": {
+          "scoreSynchronization": true,
+          "liveScoringIntegration": true,
+          "realTimeUpdates": true,
+          "urlDisplay": true,
+          "playerNameDisplay": true,
+          "teamLogoDisplay": true,
+          "heroImageDisplay": true,
+          "commentSystem": true
+        }
+      }
+    },
+    {
+      "test": "Data Flow Validation",
+      "status": "COMPLETED",
+      "details": {
+        "componentsChecked": 4,
+        "propsPassing": 4,
+        "stateManagement": 3,
+        "dataFlowIssues": 0
+      }
+    }
+  ],
+  "codeValidationTests": [
+    {
+      "test": "Import/Export Consistency",
+      "status": "COMPLETED",
+      "details": {
+        "componentsChecked": 203,
+        "importIssues": 17,
+        "exportIssues": 3
+      }
+    },
+    {
+      "test": "Props Interface Validation",
+      "status": "COMPLETED",
+      "details": [
+        {
+          "component": "src/components/admin/ComprehensiveLiveScoring.js",
+          "props": [
+            "isOpen",
+            "match",
+            "onClose",
+            "token",
+            "onUpdate"
+          ],
+          "propsCount": 5,
+          "hasPropsValidation": false,
+          "hasDefaultProps": false
+        },
+        {
+          "component": "src/components/pages/MatchDetailPage.js",
+          "props": [
+            "matchId",
+            "navigateTo"
+          ],
+          "propsCount": 2,
+          "hasPropsValidation": false,
+          "hasDefaultProps": false
+        },
+        {
+          "component": "src/components/MatchCard.js",
+          "props": [
+            "match",
+            "navigateTo",
+            "isCompact = false"
+          ],
+          "propsCount": 3,
+          "hasPropsValidation": false,
+          "hasDefaultProps": false
+        }
+      ]
+    }
+  ],
+  "warnings": [],
+  "errors": [],
+  "summary": {
+    "totalTests": 9,
+    "completed": 9,
+    "failed": 0,
+    "warnings": 0,
+    "errors": 0,
+    "completionRate": "100.0"
+  }
+}

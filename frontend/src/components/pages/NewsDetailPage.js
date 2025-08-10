@@ -15,10 +15,22 @@ function NewsDetailPage({ params, navigateTo }) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [commentText, setCommentText] = useState('');
+
+  // Enhanced setCommentText to ensure it's always a string
+  const safeSetCommentText = (value) => {
+    const safeValue = safeString(value);
+    setCommentText(safeValue);
+  };
   const [replyToId, setReplyToId] = useState(null);
   const [submittingComment, setSubmittingComment] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editCommentText, setEditCommentText] = useState('');
+
+  // Enhanced setEditCommentText to ensure it's always a string
+  const safeSetEditCommentText = (value) => {
+    const safeValue = safeString(value);
+    setEditCommentText(safeValue);
+  };
   const { api, user, isAuthenticated } = useAuth();
 
   const articleId = params?.id;
@@ -119,7 +131,7 @@ function NewsDetailPage({ params, navigateTo }) {
       });
 
       if (response.data && response.data.success) {
-        setCommentText('');
+        safeSetCommentText('');
         setReplyToId(null);
         
         // Replace temp comment with real comment data
@@ -213,7 +225,7 @@ function NewsDetailPage({ params, navigateTo }) {
       // Check if this is actually a successful response that was caught as an error
       if (error.response && error.response.data && error.response.data.success) {
         // This is actually a success, handle it properly
-        setCommentText('');
+        safeSetCommentText('');
         setReplyToId(null);
         
         const realComment = error.response.data.comment || error.response.data.data;
@@ -342,7 +354,14 @@ function NewsDetailPage({ params, navigateTo }) {
       setComments(updatedComments);
 
       const response = await api.delete(`/news/comments/${commentId}`);
-      if (response.data.success || response.success) {
+      
+      // Enhanced response validation to handle different response structures
+      const isSuccess = response.status === 200 || 
+                       response.status === 204 || 
+                       (response.data && response.data.success === true) || 
+                       (response.data && response.data.success === 'true');
+      
+      if (isSuccess) {
         // Comment successfully deleted - keep the optimistic update
         console.log('✅ Comment deleted successfully');
         
@@ -388,7 +407,7 @@ function NewsDetailPage({ params, navigateTo }) {
 
   const handleEditComment = (comment) => {
     setEditingCommentId(comment.id);
-    setEditCommentText(comment.content);
+    safeSetEditCommentText(comment.content);
   };
 
   const handleSaveEditComment = async (commentId) => {
@@ -405,7 +424,7 @@ function NewsDetailPage({ params, navigateTo }) {
       
       if (response.data.success) {
         setEditingCommentId(null);
-        setEditCommentText('');
+        safeSetEditCommentText('');
         
         // Immediately fetch fresh data instead of full refresh for better UX
         await fetchArticle();
@@ -434,7 +453,7 @@ function NewsDetailPage({ params, navigateTo }) {
 
   const handleCancelEditComment = () => {
     setEditingCommentId(null);
-    setEditCommentText('');
+    safeSetEditCommentText('');
   };
 
   // Process article content to detect and extract video URLs
@@ -690,28 +709,26 @@ function NewsDetailPage({ params, navigateTo }) {
         style={marginStyle}
       >
         <div className="flex items-start space-x-3">
-          {/* Voting (right side - horizontal layout like forums) */}
+          {/* Comment content */}
           <div className="flex-1">
             {/* Author info */}
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center space-x-2">
-                <UserDisplay
-                  user={comment.author}
-                  showAvatar={true}
-                  showHeroFlair={true}
-                  showTeamFlair={true}
-                  size="sm"
-                  clickable={false}
-                />
-                <span className="text-xs text-gray-500 dark:text-gray-500">
-                  {formatDate(comment.meta?.created_at)}
-                </span>
-                {comment.meta?.edited && (
-                  <span className="text-xs text-gray-400 dark:text-gray-600">(edited)</span>
-                )}
-              </div>
+            <div className="flex items-center space-x-2 mb-2">
+              <UserDisplay
+                user={comment.author}
+                showAvatar={true}
+                showHeroFlair={true}
+                showTeamFlair={true}
+                size="sm"
+                clickable={false}
+              />
+              <span className="text-xs text-gray-500 dark:text-gray-500">
+                {formatDate(comment.meta?.created_at)}
+              </span>
+              {comment.meta?.edited && (
+                <span className="text-xs text-gray-400 dark:text-gray-600">(edited)</span>
+              )}
               
-              {/* Voting buttons - horizontal on right like forums */}
+              {/* Voting buttons - positioned right after username like forums */}
               {!comment.is_temp && (
                 <VotingButtons
                   itemType="news_comment"
@@ -732,7 +749,7 @@ function NewsDetailPage({ params, navigateTo }) {
               <div className="mb-2">
                 <ForumMentionAutocomplete
                   value={editCommentText}
-                  onChange={(e) => setEditCommentText(e?.target?.value || '')}
+                  onChange={safeSetEditCommentText}
                   placeholder="Edit your comment..."
                   rows={3}
                   className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:ring-2 focus:ring-red-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
@@ -828,7 +845,7 @@ function NewsDetailPage({ params, navigateTo }) {
                     <form onSubmit={handleSubmitComment}>
                       <ForumMentionAutocomplete
                         value={commentText}
-                        onChange={(e) => setCommentText(e?.target?.value || '')}
+                        onChange={safeSetCommentText}
                         placeholder={`Reply to ${comment.author?.name}... (Use @ to mention users, @team: for teams, @player: for players)`}
                         rows={3}
                         className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:ring-2 focus:ring-red-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
@@ -839,7 +856,7 @@ function NewsDetailPage({ params, navigateTo }) {
                           type="button"
                           onClick={() => {
                             setReplyToId(null);
-                            setCommentText('');
+                            safeSetCommentText('');
                           }}
                           className="px-3 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors border border-gray-300 dark:border-gray-600 rounded"
                         >
@@ -847,7 +864,7 @@ function NewsDetailPage({ params, navigateTo }) {
                         </button>
                         <button
                           type="submit"
-                          disabled={submittingComment || !commentText.trim()}
+                          disabled={submittingComment || !safeString(commentText).trim()}
                           className="px-3 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                           {submittingComment ? (
@@ -1081,7 +1098,7 @@ function NewsDetailPage({ params, navigateTo }) {
                 <div className="flex-1">
                   <ForumMentionAutocomplete
                     value={commentText}
-                    onChange={(e) => setCommentText(e?.target?.value || '')}
+                    onChange={safeSetCommentText}
                     placeholder="Add a comment... Use @ to mention users, @team: for teams, @player: for players"
                     rows={4}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:ring-2 focus:ring-red-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
@@ -1089,7 +1106,7 @@ function NewsDetailPage({ params, navigateTo }) {
                   <div className="flex justify-end mt-2">
                     <button
                       type="submit"
-                      disabled={submittingComment || !commentText.trim()}
+                      disabled={submittingComment || !safeString(commentText).trim()}
                       className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {submittingComment ? 'Posting...' : 'Post Comment'}

@@ -116,7 +116,7 @@ function NewsFormSimple({ newsId, navigateTo }) {
     const characters = content.length;
     
     const videos = detectAllVideoUrls(content);
-    const mentionPattern = /@\w+|@team:\w+|@player:\w+/g;
+    const mentionPattern = /\w+|team:\w+|player:\w+/g;
     const mentions = (allText.match(mentionPattern) || []).length;
     
     setContentStats({ words, characters, videos: videos.length, mentions });
@@ -295,7 +295,7 @@ function NewsFormSimple({ newsId, navigateTo }) {
                 }
               }}
               className="w-full px-4 py-3 bg-[#0f1419] border border-[#2b3d4d] rounded-lg text-white placeholder-[#768894] focus:border-[#fa4454] focus:outline-none text-xl"
-              placeholder="e.g., Team Liquid signs new roster for VCT 2025 (Use @ to mention)"
+              placeholder="e.g., Team Liquid signs new roster for VCT 2025 (Use  to mention)"
               required
             />
             <MentionDropdown
@@ -319,10 +319,10 @@ function NewsFormSimple({ newsId, navigateTo }) {
             </div>
             <div className="space-x-3">
               {contentStats.videos > 0 && (
-                <span className="text-blue-400">📺 {contentStats.videos}</span>
+                <span className="text-blue-400"> {contentStats.videos}</span>
               )}
               {contentStats.mentions > 0 && (
-                <span className="text-purple-400">@ {contentStats.mentions}</span>
+                <span className="text-purple-400"> {contentStats.mentions}</span>
               )}
             </div>
           </div>
@@ -393,7 +393,7 @@ function NewsFormSimple({ newsId, navigateTo }) {
               }}
               rows={2}
               className="w-full p-3 bg-[#0f1419] border border-[#2b3d4d] rounded-lg text-white placeholder-[#768894] focus:border-[#fa4454] focus:outline-none resize-none"
-              placeholder="e.g., The European powerhouse completes their roster with two new signings ahead of the upcoming season. (Use @ to mention)"
+              placeholder="e.g., The European powerhouse completes their roster with two new signings ahead of the upcoming season. (Use  to mention)"
             />
             <MentionDropdown
               show={showExcerptDropdown}
@@ -421,7 +421,7 @@ function NewsFormSimple({ newsId, navigateTo }) {
               </span>
               <span>{contentStats.words} words</span>
               {contentStats.videos > 0 && (
-                <span className="text-blue-400">📺 {contentStats.videos} video{contentStats.videos !== 1 ? 's' : ''}</span>
+                <span className="text-blue-400"> {contentStats.videos} video{contentStats.videos !== 1 ? 's' : ''}</span>
               )}
             </div>
           </div>
@@ -430,10 +430,10 @@ function NewsFormSimple({ newsId, navigateTo }) {
             onChange={(value) => setFormData(prev => ({ ...prev, content: value }))}
             placeholder="Write your article content here (minimum 50 characters).
 
-📺 Paste video URLs to auto-embed: YouTube, Twitch clips/videos, Twitter
-@ Use @ to mention users, teams (@team:name), or players (@player:name)
-🏆 Include tournament context, team backgrounds, and player performances
-📊 Add statistics and match analysis for comprehensive coverage
+ Paste video URLs to auto-embed: YouTube, Twitch clips/videos, Twitter
+ Use  to mention users, teams (team:name), or players (player:name)
+ Include tournament context, team backgrounds, and player performances
+ Add statistics and match analysis for comprehensive coverage
 
 Write in professional esports journalism style with engaging storytelling."
             rows={15}

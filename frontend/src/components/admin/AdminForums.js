@@ -1,805 +1,466 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
 
-function AdminForums({ navigateTo }) {
+function AdminForums() {
+  const { api } = useAuth();
   const [threads, setThreads] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [reports, setReports] = useState([]);
+  const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('threads');
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(null);
-  const [newCategory, setNewCategory] = useState({ name: '', description: '', slug: '', color: '#3B82F6', icon: '' });
+  const [error, setError] = useState(null);
+  const [currentTab, setCurrentTab] = useState('threads');
   const [filters, setFilters] = useState({
     search: '',
-    category: 'all',
-    status: 'all'
+    status: 'all',
+    sortBy: 'date'
   });
-  const { api, isAdmin, isModerator } = useAuth();
-
-  // Check permissions
-  const canModerateForums = isAdmin() || isModerator();
+  
+  // Bulk operations
+  const [selectedItems, setSelectedItems] = useState(new Set());
+  const [showBulkActions, setShowBulkActions] = useState(false);
 
   useEffect(() => {
-    if (canModerateForums) {
-      fetchForumData();
+    if (currentTab === 'threads') {
+      fetchThreads();
+    } else if (currentTab === 'posts') {
+      fetchPosts();
     }
-  }, [filters, activeTab, canModerateForums]);
+  }, [currentTab]);
 
-  const fetchForumData = async () => {
+  const fetchThreads = async () => {
     try {
       setLoading(true);
-      
-      // CRITICAL FIX: Use REAL backend data only
-      try {
-        console.log('AdminForums: Fetching REAL moderation data...');
-        
-        // Try to fetch real threads for moderation
-        const threadsResponse = await api.get('/admin/forums/threads');
-        const realThreads = threadsResponse?.data?.data || threadsResponse?.data || [];
-        
-        if (Array.isArray(realThreads) && realThreads.length > 0) {
-          const moderationThreads = realThreads.map(thread => ({
-            id: thread.id,
-            title: thread.title,
-            author: { 
-              // FIXED: Use "MRVL User" instead of "Anonymous"
-              name: thread.user_name || thread.author?.name || 'MRVL User',
-              avatar: thread.author?.avatar || ''
-            },
-            category: thread.category || 'general',
-            replies: thread.replies || thread.replies_count || 0,
-            views: thread.views || thread.views_count || 0,
-            created_at: thread.created_at,
-            status: thread.status || 'active',
-            pinned: thread.pinned || false,
-            locked: thread.locked || false,
-            reported: thread.reported || false,
-            reports_count: thread.reports_count || 0
-          }));
-          
-          setThreads(moderationThreads);
-          console.log('AdminForums: Using REAL backend threads:', moderationThreads.length);
-        } else {
-          setThreads([]);
-          console.log('AdminForums: No threads found for moderation');
-        }
-        
-        // Try to fetch real categories
-        try {
-          const categoriesResponse = await api.get('/admin/forums/categories');
-          const realCategories = categoriesResponse?.data?.data || categoriesResponse?.data || [];
-          
-          // Add "All Categories" option for filtering
-          const categoriesWithAll = [
-            { id: 'all', name: 'All Categories', slug: 'all' },
-            ...realCategories
-          ];
-          
-          setCategories(categoriesWithAll);
-          console.log(' AdminForums: Using REAL backend categories:', realCategories.length);
-        } catch (categoriesError) {
-          console.log(' AdminForums: Categories endpoint not available');
-          setCategories([
-            { id: 'all', name: 'All Categories', slug: 'all' },
-            { id: 'general', name: 'General Discussion', slug: 'general' },
-            { id: 'tournaments', name: 'Tournaments', slug: 'tournaments' },
-            { id: 'hero-discussion', name: 'Hero Discussion', slug: 'hero-discussion' },
-            { id: 'strategy', name: 'Strategy & Tactics', slug: 'strategy' },
-            { id: 'esports', name: 'Esports & Competitive', slug: 'esports' }
-          ]);
-        }
-        
-        // Set empty reports for now
-        setReports([]);
-        
-      } catch (error) {
-        console.error(' AdminForums: Failed to fetch moderation data:', error);
-        setThreads([]);
-        setCategories([]);
-        setReports([]);
-      }
-    } catch (error) {
-      console.error(' AdminForums: Error in fetchForumData:', error);
+      const response = await api.get('/api/admin/forums-moderation/threads');
+      const threadsData = response?.data?.data || response?.data || response || [];
+      setThreads(Array.isArray(threadsData) ? threadsData : []);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching threads:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to load threads';
+      setError(errorMessage);
+      setThreads([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCategoryAction = async (categoryId, action, data = {}) => {
+  const fetchPosts = async () => {
     try {
-      let endpoint = '';
-      let method = 'POST';
-      let requestData = {};
-
-      switch (action) {
-        case 'create':
-          endpoint = '/admin/forums/categories';
-          requestData = {
-            name: data.name,
-            description: data.description,
-            slug: data.slug || data.name.toLowerCase().replace(/\s+/g, '-'),
-            color: data.color || '#3B82F6',
-            icon: data.icon || ''
-          };
-          break;
-        case 'edit':
-          endpoint = `/admin/forums/categories/${categoryId}`;
-          method = 'PUT';
-          requestData = {
-            name: data.name,
-            description: data.description,
-            slug: data.slug,
-            color: data.color,
-            icon: data.icon
-          };
-          break;
-        case 'delete':
-          if (!window.confirm('Are you sure you want to delete this category? All threads in this category will be moved to General.')) {
-            return;
-          }
-          endpoint = `/admin/forums/categories/${categoryId}`;
-          method = 'DELETE';
-          break;
-      }
-
-      if (method === 'DELETE') {
-        await api.delete(endpoint);
-      } else if (method === 'PUT') {
-        await api.put(endpoint, requestData);
-      } else {
-        await api.post(endpoint, requestData);
-      }
-
-      await fetchForumData(); // Refresh data
-      setShowCategoryModal(false);
-      setEditingCategory(null);
-      setNewCategory({ name: '', description: '', slug: '' });
-      
-      //  FIXED: Notify ForumsPage about category changes
-      window.dispatchEvent(new CustomEvent('mrvl-category-updated'));
-      
-      alert(` Category ${action}d successfully!`);
-    } catch (error) {
-      console.error(`Error ${action}ing category:`, error);
-      alert(` Category ${action} completed successfully! Functionality working perfectly.`);
+      setLoading(true);
+      const response = await api.get('/api/admin/forums-moderation/posts');
+      const postsData = response?.data?.data || response?.data || response || [];
+      setPosts(Array.isArray(postsData) ? postsData : []);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching posts:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to load posts';
+      setError(errorMessage);
+      setPosts([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const openCategoryModal = (category = null) => {
-    setEditingCategory(category);
-    if (category) {
-      setNewCategory({
-        name: category.name,
-        description: category.description || '',
-        slug: category.slug || category.id,
-        color: category.color || '#3B82F6',
-        icon: category.icon || ''
+  const handleDeleteThread = async (threadId, title) => {
+    if (window.confirm(`Delete thread "${title}"?`)) {
+      try {
+        const response = await api.delete(`/api/admin/forums-moderation/threads/${threadId}`);
+        if (response.data?.success !== false) {
+          await fetchThreads();
+          alert('Thread deleted successfully!');
+        } else {
+          throw new Error(response.data?.message || 'Delete failed');
+        }
+      } catch (error) {
+        console.error('Error deleting thread:', error);
+        const errorMessage = error.response?.data?.message || error.message || 'Error deleting thread';
+        alert(errorMessage);
+      }
+    }
+  };
+
+  const handleDeletePost = async (postId, preview) => {
+    if (window.confirm(`Delete post "${preview}"?`)) {
+      try {
+        const response = await api.delete(`/api/admin/forums-moderation/posts/${postId}`);
+        if (response.data?.success !== false) {
+          await fetchPosts();
+          alert('Post deleted successfully!');
+        } else {
+          throw new Error(response.data?.message || 'Delete failed');
+        }
+      } catch (error) {
+        console.error('Error deleting post:', error);
+        const errorMessage = error.response?.data?.message || error.message || 'Error deleting post';
+        alert(errorMessage);
+      }
+    }
+  };
+
+  const handleToggleThreadStatus = async (threadId, currentStatus) => {
+    const newStatus = currentStatus === 'active' ? 'locked' : 'active';
+    try {
+      const response = await api.put(`/api/admin/forums-moderation/threads/${threadId}`, {
+        status: newStatus
       });
-    } else {
-      setNewCategory({ name: '', description: '', slug: '', color: '#3B82F6', icon: '' });
-    }
-    setShowCategoryModal(true);
-  };
-
-  const handleThreadAction = async (threadId, action) => {
-    try {
-      let endpoint = '';
-      let method = 'POST';
-      let message = '';
-      
-      //  FIXED: Use proper REST API endpoints
-      switch (action) {
-        case 'pin':
-          endpoint = `/admin/forums/threads/${threadId}`;
-          method = 'PUT';
-          message = 'Thread pinned successfully!';
-          break;
-        case 'unpin':
-          endpoint = `/admin/forums/threads/${threadId}`;
-          method = 'PUT';
-          message = 'Thread unpinned successfully!';
-          break;
-        case 'lock':
-          endpoint = `/admin/forums/threads/${threadId}`;
-          method = 'PUT';
-          message = 'Thread locked successfully!';
-          break;
-        case 'unlock':
-          endpoint = `/admin/forums/threads/${threadId}`;
-          method = 'PUT';
-          message = 'Thread unlocked successfully!';
-          break;
-        case 'delete':
-          if (!window.confirm('Are you sure you want to delete this thread? This action cannot be undone.')) {
-            return;
-          }
-          endpoint = `/admin/forums/threads/${threadId}`;
-          method = 'DELETE';
-          message = 'Thread deleted successfully!';
-          break;
-      }
-      
-      //  FIXED: Send proper data with action type
-      const requestData = action === 'delete' ? undefined : { action: action };
-      
-      if (method === 'DELETE') {
-        await api.delete(endpoint);
-      } else if (method === 'PUT') {
-        await api.put(endpoint, requestData);
+      if (response.data?.success !== false) {
+        await fetchThreads();
+        alert(`Thread ${newStatus === 'active' ? 'unlocked' : 'locked'} successfully!`);
       } else {
-        await api.post(endpoint, requestData);
+        throw new Error(response.data?.message || 'Status update failed');
       }
-      
-      await fetchForumData(); // Refresh data
-      alert(message);
     } catch (error) {
-      console.error(`Error performing ${action} on thread:`, error);
-      alert(` Forum action completed! ${action.charAt(0).toUpperCase() + action.slice(1)} functionality working perfectly.`);
+      console.error('Error updating thread status:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Error updating thread status';
+      alert(errorMessage);
     }
   };
 
-  const handleReportAction = async (reportId, action) => {
-    try {
-      await api.post(`/admin/forums/reports/${reportId}/${action}`);
-      await fetchForumData(); // Refresh data
-      alert(`Report ${action} successfully!`);
-    } catch (error) {
-      console.error(`Error ${action} report:`, error);
-      alert(`Error ${action} report. Please try again.`);
+  // Bulk operations
+  const handleSelectItem = (itemId) => {
+    const newSelected = new Set(selectedItems);
+    if (newSelected.has(itemId)) {
+      newSelected.delete(itemId);
+    } else {
+      newSelected.add(itemId);
+    }
+    setSelectedItems(newSelected);
+    setShowBulkActions(newSelected.size > 0);
+  };
+
+  const handleSelectAll = () => {
+    const currentData = currentTab === 'threads' ? threads : posts;
+    if (selectedItems.size === currentData.length) {
+      setSelectedItems(new Set());
+      setShowBulkActions(false);
+    } else {
+      setSelectedItems(new Set(currentData.map(item => item.id)));
+      setShowBulkActions(true);
     }
   };
 
-  const getCategoryColor = (category) => {
-    switch (category) {
-      case 'hero-discussion': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
-      case 'strategy': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'esports': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
-      case 'guides': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      case 'team-recruitment': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
+  const handleBulkDelete = async () => {
+    if (selectedItems.size === 0) return;
+    
+    const itemType = currentTab === 'threads' ? 'threads' : 'posts';
+    const confirmMessage = `Are you sure you want to delete ${selectedItems.size} ${itemType}? This action cannot be undone.`;
+    
+    if (window.confirm(confirmMessage)) {
+      try {
+        const endpoint = currentTab === 'threads' ? 
+          '/api/admin/forums-moderation/threads/bulk-delete' : 
+          '/api/admin/forums-moderation/posts/bulk-delete';
+        
+        const response = await api.post(endpoint, {
+          ids: Array.from(selectedItems)
+        });
+        
+        if (response.data?.success !== false) {
+          if (currentTab === 'threads') {
+            await fetchThreads();
+          } else {
+            await fetchPosts();
+          }
+          setSelectedItems(new Set());
+          setShowBulkActions(false);
+          alert(`${selectedItems.size} ${itemType} deleted successfully!`);
+        } else {
+          throw new Error(response.data?.message || 'Bulk delete failed');
+        }
+      } catch (error) {
+        console.error('Error in bulk delete:', error);
+        const errorMessage = error.response?.data?.message || error.message || 'Bulk delete failed';
+        alert(errorMessage);
+      }
     }
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const filteredData = () => {
+    const data = currentTab === 'threads' ? threads : posts;
+    let filtered = [...data];
 
-  const filteredThreads = threads.filter(thread => {
-    if (filters.search && !thread.title.toLowerCase().includes(filters.search.toLowerCase())) {
-      return false;
+    if (filters.search.trim()) {
+      const searchTerm = filters.search.toLowerCase();
+      filtered = filtered.filter(item => 
+        item.title?.toLowerCase().includes(searchTerm) ||
+        item.content?.toLowerCase().includes(searchTerm) ||
+        item.user?.name?.toLowerCase().includes(searchTerm)
+      );
     }
-    if (filters.category !== 'all' && thread.category !== filters.category) {
-      return false;
-    }
+
     if (filters.status !== 'all') {
-      if (filters.status === 'pinned' && !thread.pinned) return false;
-      if (filters.status === 'locked' && !thread.locked) return false;
-      if (filters.status === 'reported' && !thread.reported) return false;
+      filtered = filtered.filter(item => item.status === filters.status);
     }
-    return true;
-  });
 
-  if (!canModerateForums) {
+    if (filters.sortBy === 'date') {
+      filtered.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    } else if (filters.sortBy === 'replies' && currentTab === 'threads') {
+      filtered.sort((a, b) => (b.posts_count || 0) - (a.posts_count || 0));
+    }
+
+    return filtered;
+  };
+
+  if (loading) {
     return (
-      <div className="card p-12 text-center">
-        <div className="text-6xl mb-4"></div>
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Access Denied</h3>
-        <p className="text-gray-600 dark:text-gray-400">
-          You don't have permission to moderate forums.
-        </p>
+      <div className="p-6">
+        <div className="animate-pulse space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          ))}
+        </div>
       </div>
     );
   }
 
-  if (loading) {
+  if (error) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="loading-spinner mx-auto mb-4"></div>
-          <div className="text-gray-600 dark:text-gray-400">Loading forum data...</div>
+      <div className="p-6">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+          <h3 className="text-lg font-semibold text-red-900 dark:text-red-200 mb-2">Error Loading Data</h3>
+          <p className="text-red-700 dark:text-red-300 mb-4">{error}</p>
+          <button 
+            onClick={() => currentTab === 'threads' ? fetchThreads() : fetchPosts()} 
+            className="btn btn-outline-primary"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Forum Moderation</h2>
-        <p className="text-gray-600 dark:text-gray-400">Manage threads, categories, and reports</p>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Forum Moderation</h1>
+          <p className="text-gray-600 dark:text-gray-400">Moderate forum threads and posts</p>
+        </div>
       </div>
 
       {/* Tabs */}
       <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex space-x-8">
-          {[
-            { id: 'threads', label: 'Threads', count: threads.length },
-            { id: 'categories', label: 'Categories', count: categories.length },
-            { id: 'reports', label: 'Reports', count: reports.length }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === tab.id
-                  ? 'border-red-500 text-red-600 dark:text-red-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
-              }`}
-            >
-              {tab.label} ({tab.count})
-            </button>
-          ))}
+          <button
+            onClick={() => setCurrentTab('threads')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              currentTab === 'threads'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            Threads ({threads.length})
+          </button>
+          <button
+            onClick={() => setCurrentTab('posts')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              currentTab === 'posts'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            Posts ({posts.length})
+          </button>
         </nav>
       </div>
 
-      {/* Forum Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="card p-4 text-center">
-          <div className="text-2xl mb-2"></div>
-          <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
-            {threads.length}
+      {/* Filters */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+              Search {currentTab}
+            </label>
+            <input
+              type="text"
+              placeholder={`Search ${currentTab}...`}
+              value={filters.search}
+              onChange={(e) => setFilters({...filters, search: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+            />
           </div>
-          <div className="text-xs text-gray-600 dark:text-gray-400">Total Threads</div>
-        </div>
-        <div className="card p-4 text-center">
-          <div className="text-2xl mb-2"></div>
-          <div className="text-xl font-bold text-yellow-600 dark:text-yellow-400">
-            {threads.filter(t => t.pinned).length}
+          <div>
+            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+              Status
+            </label>
+            <select
+              value={filters.status}
+              onChange={(e) => setFilters({...filters, status: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="locked">Locked</option>
+              <option value="hidden">Hidden</option>
+            </select>
           </div>
-          <div className="text-xs text-gray-600 dark:text-gray-400">Pinned</div>
-        </div>
-        <div className="card p-4 text-center">
-          <div className="text-2xl mb-2"></div>
-          <div className="text-xl font-bold text-gray-600 dark:text-gray-400">
-            {threads.filter(t => t.locked).length}
+          <div>
+            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+              Sort By
+            </label>
+            <select
+              value={filters.sortBy}
+              onChange={(e) => setFilters({...filters, sortBy: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+            >
+              <option value="date">Date</option>
+              {currentTab === 'threads' && <option value="replies">Replies</option>}
+            </select>
           </div>
-          <div className="text-xs text-gray-600 dark:text-gray-400">Locked</div>
-        </div>
-        <div className="card p-4 text-center">
-          <div className="text-2xl mb-2"></div>
-          <div className="text-xl font-bold text-red-600 dark:text-red-400">
-            {reports.filter(r => r.status === 'pending').length}
+          <div className="flex items-end">
+            <button
+              onClick={() => setFilters({ search: '', status: 'all', sortBy: 'date' })}
+              className="btn btn-secondary w-full"
+            >
+              Clear Filters
+            </button>
           </div>
-          <div className="text-xs text-gray-600 dark:text-gray-400">Pending Reports</div>
         </div>
       </div>
 
-      {/* Threads Tab */}
-      {activeTab === 'threads' && (
-        <>
-          {/* Filters */}
-          <div className="card p-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-                  Search Threads
-                </label>
-                <input
-                  type="text"
-                  placeholder="Search by title..."
-                  value={filters.search}
-                  onChange={(e) => {
-                    // FIXED: Prevent React state batching issues that cause single character input
-                    const newValue = e.target.value;
-                    setFilters(prev => ({...prev, search: newValue}));
-                  }}
-                  className="form-input"
-                  autoComplete="off"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-                  Category
-                </label>
-                <select
-                  value={filters.category}
-                  onChange={(e) => setFilters({...filters, category: e.target.value})}
-                  className="form-input"
-                >
-                  {categories.map(category => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-                  Status
-                </label>
-                <select
-                  value={filters.status}
-                  onChange={(e) => setFilters({...filters, status: e.target.value})}
-                  className="form-input"
-                >
-                  <option value="all">All</option>
-                  <option value="pinned">Pinned</option>
-                  <option value="locked">Locked</option>
-                  <option value="reported">Reported</option>
-                </select>
-              </div>
-              <div className="flex items-end">
+      {/* Bulk Actions Bar */}
+      {showBulkActions && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <span className="text-sm font-medium text-blue-900 dark:text-blue-200">
+                {selectedItems.size} {currentTab} selected
+              </span>
+              <div className="flex space-x-2">
                 <button
-                  onClick={() => setFilters({ search: '', category: 'all', status: 'all' })}
-                  className="btn btn-secondary w-full"
+                  onClick={handleBulkDelete}
+                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
                 >
-                  Clear Filters
+                  Delete Selected
                 </button>
               </div>
             </div>
+            <button
+              onClick={() => {
+                setSelectedItems(new Set());
+                setShowBulkActions(false);
+              }}
+              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
+            >
+              Clear Selection
+            </button>
           </div>
+        </div>
+      )}
 
-          {/* Threads List */}
-          <div className="space-y-4">
-            {filteredThreads.map((thread) => (
-              <div key={thread.id} className="card p-4">
-                <div className="flex items-start justify-between">
+      <div className="space-y-4">
+        {/* Select All */}
+        {filteredData().length > 0 && (
+          <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
+            <label className="flex items-center space-x-2 text-sm">
+              <input
+                type="checkbox"
+                checked={selectedItems.size === filteredData().length && filteredData().length > 0}
+                onChange={handleSelectAll}
+                className="rounded border-gray-300 dark:border-gray-600"
+              />
+              <span className="text-gray-700 dark:text-gray-300">
+                Select all {filteredData().length} {currentTab}
+              </span>
+            </label>
+          </div>
+        )}
+
+        {currentTab === 'threads' ? (
+          filteredData().map((thread) => (
+            <div key={thread.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedItems.has(thread.id)}
+                    onChange={() => handleSelectItem(thread.id)}
+                    className="mt-1 rounded border-gray-300 dark:border-gray-600"
+                  />
                   <div className="flex-1">
-                    {/* Thread badges */}
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span className={`px-2 py-1 text-xs font-bold rounded ${getCategoryColor(thread.category)}`}>
-                        {thread.category.replace('-', ' ').toUpperCase()}
-                      </span>
-                      {thread.pinned && (
-                        <span className="px-2 py-1 text-xs font-bold rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200">
-                           PINNED
-                        </span>
-                      )}
-                      {thread.locked && (
-                        <span className="px-2 py-1 text-xs font-bold rounded bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                           LOCKED
-                        </span>
-                      )}
-                      {thread.reported && (
-                        <span className="px-2 py-1 text-xs font-bold rounded bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200">
-                           REPORTED
-                        </span>
-                      )}
-                    </div>
-
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                       {thread.title}
                     </h3>
-
-                    <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-500 mb-3">
-                      <span>{thread.author.avatar} {thread.author.name}</span>
-                      <span> {thread.replies} replies</span>
-                      <span> {thread.views.toLocaleString()} views</span>
-                      <span>{formatDate(thread.created_at)}</span>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => navigateTo('thread-detail', { id: thread.id })}
-                        className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                      >
-                         View
-                      </button>
-                      
-                      {thread.pinned ? (
-                        <button
-                          onClick={() => handleThreadAction(thread.id, 'unpin')}
-                          className="px-3 py-1 text-xs bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors"
-                        >
-                           Unpin
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleThreadAction(thread.id, 'pin')}
-                          className="px-3 py-1 text-xs bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors"
-                        >
-                           Pin
-                        </button>
-                      )}
-                      
-                      {thread.locked ? (
-                        <button
-                          onClick={() => handleThreadAction(thread.id, 'unlock')}
-                          className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                        >
-                           Unlock
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleThreadAction(thread.id, 'lock')}
-                          className="px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-                        >
-                           Lock
-                        </button>
-                      )}
-                      
-                      <button
-                        onClick={() => handleThreadAction(thread.id, 'delete')}
-                        className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                      >
-                         Delete
-                      </button>
+                    <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                      <span>By {thread.user?.name || thread.author || 'Unknown'}</span>
+                      <span>{thread.posts_count || 0} posts</span>
+                      <span>{thread.created_at ? new Date(thread.created_at).toLocaleDateString() : 'Unknown date'}</span>
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        thread.status === 'active' 
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                          : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                      }`}>
+                        {thread.status || 'active'}
+                      </span>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-            
-            {filteredThreads.length === 0 && (
-              <div className="card p-8 text-center">
-                <div className="text-4xl mb-4"></div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Threads Found</h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {threads.length === 0 
-                    ? 'No threads to moderate yet.' 
-                    : 'No threads match your current filters.'
-                  }
-                </p>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
-      {/* Categories Tab */}
-      {activeTab === 'categories' && (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {categories.filter(cat => cat.id !== 'all').map((category) => (
-              <div key={category.id} className="card p-6 text-center border-l-4" style={{ borderLeftColor: category.color || '#6b7280' }}>
-                <div className="flex items-center justify-center mb-3">
-                  <span className="text-2xl mr-2">{category.icon || ''}</span>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {category.name}
-                  </h3>
-                </div>
-                <p className="text-3xl font-bold mb-2" style={{ color: category.color || '#3B82F6' }}>
-                  {category.threads_count || 0}
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  threads
-                </p>
-                {category.description && (
-                  <p className="text-xs text-gray-500 dark:text-gray-500 mb-4 line-clamp-2">
-                    {category.description}
-                  </p>
-                )}
-                <div className="flex justify-center space-x-2">
+                <div className="flex space-x-2">
+                  <button className="btn btn-outline-primary text-sm">View</button>
                   <button 
-                    onClick={() => openCategoryModal(category)}
-                    className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                    onClick={() => handleToggleThreadStatus(thread.id, thread.status || 'active')}
+                    className="btn btn-outline-secondary text-sm"
                   >
-                     Edit
+                    {thread.status === 'active' ? 'Lock' : 'Unlock'}
                   </button>
                   <button 
-                    onClick={() => handleCategoryAction(category.id, 'delete')}
-                    className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                    onClick={() => handleDeleteThread(thread.id, thread.title)}
+                    className="btn btn-outline-danger text-sm"
                   >
-                     Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-            
-            {/* Add Category Card */}
-            <div className="card p-6 text-center border-2 border-dashed border-gray-300 dark:border-gray-600">
-              <div className="text-4xl mb-4"></div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Add Category
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Create a new forum category
-              </p>
-              <button 
-                onClick={() => openCategoryModal()}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-              >
-                 Add Category
-              </button>
-            </div>
-          </div>
-
-          {/*  Category Modal */}
-          {showCategoryModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <div className="absolute inset-0 bg-black/60" onClick={() => setShowCategoryModal(false)} />
-              <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md">
-                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    {editingCategory ? 'Edit Category' : 'Create New Category'}
-                  </h2>
-                </div>
-                
-                <div className="p-6 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Category Name *
-                    </label>
-                    <input
-                      type="text"
-                      value={newCategory.name}
-                      onChange={(e) => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="e.g., Strategy Discussion"
-                      className="form-input w-full"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      value={newCategory.description}
-                      onChange={(e) => setNewCategory(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Brief description of this category..."
-                      rows="3"
-                      className="form-input w-full resize-none"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      URL Slug
-                    </label>
-                    <input
-                      type="text"
-                      value={newCategory.slug}
-                      onChange={(e) => setNewCategory(prev => ({ ...prev, slug: e.target.value }))}
-                      placeholder="strategy-discussion"
-                      className="form-input w-full"
-                    />
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                      Leave empty to auto-generate from name
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Color
-                      </label>
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="color"
-                          value={newCategory.color}
-                          onChange={(e) => setNewCategory(prev => ({ ...prev, color: e.target.value }))}
-                          className="w-12 h-8 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
-                        />
-                        <input
-                          type="text"
-                          value={newCategory.color}
-                          onChange={(e) => setNewCategory(prev => ({ ...prev, color: e.target.value }))}
-                          placeholder="#3B82F6"
-                          className="form-input flex-1 text-sm"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Icon
-                      </label>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-12 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded flex items-center justify-center text-lg">
-                          {newCategory.icon}
-                        </div>
-                        <select
-                          value={newCategory.icon}
-                          onChange={(e) => setNewCategory(prev => ({ ...prev, icon: e.target.value }))}
-                          className="form-input flex-1"
-                        >
-                          <option value=""> General</option>
-                          <option value=""> Strategy</option>
-                          <option value=""> Team Recruitment</option>
-                          <option value=""> Tournaments</option>
-                          <option value=""> Bug Reports</option>
-                          <option value=""> Discussion</option>
-                          <option value=""> Announcements</option>
-                          <option value=""> Gaming</option>
-                          <option value=""> Meta</option>
-                          <option value=""> Technical</option>
-                          <option value=""> Ideas</option>
-                          <option value=""> Questions</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
-                  <button
-                    onClick={() => setShowCategoryModal(false)}
-                    className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => handleCategoryAction(
-                      editingCategory?.id, 
-                      editingCategory ? 'edit' : 'create', 
-                      newCategory
-                    )}
-                    disabled={!newCategory.name.trim()}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {editingCategory ? 'Update' : 'Create'} Category
+                    Delete
                   </button>
                 </div>
               </div>
             </div>
-          )}
-        </>
-      )}
-
-      {/* Reports Tab */}
-      {activeTab === 'reports' && (
-        <div className="space-y-4">
-          {reports.map((report) => (
-            <div key={report.id} className="card p-4">
+          ))
+        ) : (
+          filteredData().map((post) => (
+            <div key={post.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className="px-2 py-1 text-xs font-bold rounded bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200">
-                       {report.reason.toUpperCase()}
-                    </span>
-                    <span className="px-2 py-1 text-xs font-bold rounded bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                      {report.status.toUpperCase()}
-                    </span>
+                <div className="flex items-start space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedItems.has(post.id)}
+                    onChange={() => handleSelectItem(post.id)}
+                    className="mt-1 rounded border-gray-300 dark:border-gray-600"
+                  />
+                  <div className="flex-1">
+                    <div className="text-gray-600 dark:text-gray-400 mb-2 line-clamp-3">
+                      {post.content?.substring(0, 200) || 'No content'}...
+                    </div>
+                    <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                      <span>By {post.user?.name || post.author || 'Unknown'}</span>
+                      <span>{post.created_at ? new Date(post.created_at).toLocaleDateString() : 'Unknown date'}</span>
+                      <span>Thread: {post.thread?.title || 'Unknown'}</span>
+                    </div>
                   </div>
-
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    Reported Thread: {report.thread_title}
-                  </h3>
-
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    {report.description}
-                  </p>
-
-                  <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-500 mb-3">
-                    <span>Reported by: {report.reporter.avatar} {report.reporter.name}</span>
-                    <span>{formatDate(report.created_at)}</span>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => navigateTo('thread-detail', { id: report.thread_id })}
-                      className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                    >
-                       View Thread
-                    </button>
-                    <button
-                      onClick={() => handleReportAction(report.id, 'approve')}
-                      className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                    >
-                       Approve
-                    </button>
-                    <button
-                      onClick={() => handleReportAction(report.id, 'dismiss')}
-                      className="px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-                    >
-                       Dismiss
-                    </button>
-                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <button className="btn btn-outline-primary text-sm">View</button>
+                  <button 
+                    onClick={() => handleDeletePost(post.id, post.content?.substring(0, 50) || 'Post')}
+                    className="btn btn-outline-danger text-sm"
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             </div>
-          ))}
+          ))
+        )}
+      </div>
 
-          {reports.length === 0 && (
-            <div className="card p-8 text-center">
-              <div className="text-4xl mb-4"></div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Reports</h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                All clear! No pending reports to review.
-              </p>
-            </div>
-          )}
+      {filteredData().length === 0 && (
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">💬</div>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            No {currentTab === 'threads' ? 'Forum Threads' : 'Forum Posts'}
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400">
+            {filters.search || filters.status !== 'all' 
+              ? `No ${currentTab} match your current filters.`
+              : `No ${currentTab} to moderate at this time.`}
+          </p>
         </div>
       )}
     </div>

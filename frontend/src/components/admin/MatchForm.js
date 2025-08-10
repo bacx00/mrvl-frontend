@@ -9,6 +9,7 @@ import {
   getMapPool,
   getModeRotation
 } from '../../constants/marvelRivalsData';
+import liveScoreManager from '../../utils/LiveScoreManager';
 
 // COMPLETE MARVEL RIVALS CONFIGURATION - SYNCHRONIZED WITH CONSTANTS
 const MARVEL_RIVALS_CONFIG = {
@@ -567,7 +568,7 @@ function MatchForm({ matchId, navigateTo }) {
     return null; // Tie or no scores
   }, []);
 
-  // SIMPLE REAL-TIME SCORE UPDATE FUNCTION - MEMOIZED FOR PERFORMANCE
+  // ENHANCED REAL-TIME SCORE UPDATE FUNCTION WITH LIVESCOREMANAGER INTEGRATION
   const sendLiveScoreUpdate = useCallback(async (matchData) => {
     try {
       const updatePayload = {
@@ -588,6 +589,19 @@ function MatchForm({ matchId, navigateTo }) {
       
       if (response?.success || response?.data) {
         console.log('Real-time score update sent successfully with automatic winners');
+        
+        // ENHANCED: Broadcast update through LiveScoreManager for instant UI updates
+        liveScoreManager.broadcastScoreUpdate(matchId, {
+          team1_score: matchData.team1_score,
+          team2_score: matchData.team2_score,
+          maps: matchData.maps,
+          status: matchData.status,
+          current_map: matchData.current_map
+        }, {
+          source: 'MatchForm',
+          type: 'form_score_update',
+          timestamp: Date.now()
+        });
       }
     } catch (error) {
       console.error('Error sending real-time score update:', error);
@@ -709,7 +723,7 @@ function MatchForm({ matchId, navigateTo }) {
           if ((map.team1_score || 0) !== (map.team2_score || 0) && !map.winner_id) {
             map.winner_id = (map.team1_score || 0) > (map.team2_score || 0) ? formData.team1_id : formData.team2_id;
             map.status = 'completed';
-            console.log(`🏆 Auto-calculated map ${map.map_number} winner:`, map.winner_id);
+            console.log(` Auto-calculated map ${map.map_number} winner:`, map.winner_id);
           }
         });
       }
@@ -724,7 +738,7 @@ function MatchForm({ matchId, navigateTo }) {
         }
       });
       
-      console.log(`📊 Calculated series scores: Team1: ${team1SeriesScore}, Team2: ${team2SeriesScore}`);
+      console.log(` Calculated series scores: Team1: ${team1SeriesScore}, Team2: ${team2SeriesScore}`);
       
       // PRODUCTION: Prepare data for EXACT backend structure
       const productionData = {
@@ -1388,14 +1402,14 @@ function MatchForm({ matchId, navigateTo }) {
                         <div className="flex items-center justify-center">
                           <div className="text-center">
                             <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
-                              🏆 {map.winner_id == formData.team1_id ? selectedTeam1?.name : selectedTeam2?.name} Wins!
+                               {map.winner_id == formData.team1_id ? selectedTeam1?.name : selectedTeam2?.name} Wins!
                             </div>
                             <div className="text-sm text-gray-600 dark:text-gray-400">
                               Score: {map.team1_score || 0} - {map.team2_score || 0}
                             </div>
                             {matchId && (
                               <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                ✓ Real-time update sent
+                                 Real-time update sent
                               </div>
                             )}
                           </div>
@@ -1403,9 +1417,9 @@ function MatchForm({ matchId, navigateTo }) {
                       ) : (
                         <div className="text-center text-gray-500 dark:text-gray-400">
                           {(map.team1_score || 0) === (map.team2_score || 0) ? (
-                            (map.team1_score || 0) > 0 ? "🤝 Tie Game" : "⏳ No scores entered yet"
+                            (map.team1_score || 0) > 0 ? " Tie Game" : " No scores entered yet"
                           ) : (
-                            "⏳ Enter scores above to determine winner"
+                            " Enter scores above to determine winner"
                           )}
                         </div>
                       )}
@@ -1421,7 +1435,7 @@ function MatchForm({ matchId, navigateTo }) {
                         }}
                         className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
                       >
-                        🔄 Reset Scores
+                         Reset Scores
                       </button>
                     </div>
                   </div>

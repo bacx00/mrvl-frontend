@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Match } from '@/lib/types';
 import { formatDate, formatMatchTime } from '@/lib/utils';
 import { ROUTES, MATCH_STATUS_COLORS } from '@/lib/constants';
-import { getImageUrl } from '@/utils/imageUtils';
+import { getImageUrl, getTeamLogoUrl } from '../../utils/imageUtils';
 
 interface MatchCardProps {
   match: Match;
@@ -59,12 +59,13 @@ const MatchCard: React.FC<MatchCardProps> = ({
   // Get team logo with fallback
   const getTeamLogo = (team: any) => {
     const logoSize = compact ? 20 : 32;
+    const logoUrl = getTeamLogoUrl(team);
     
-    if (team?.logo) {
+    if (team && logoUrl) {
       return (
         <div className={`${compact ? 'w-5 h-5' : 'w-8 h-8'} rounded-full overflow-hidden bg-[#0f1419] flex-shrink-0`}>
           <Image
-            src={team.logo}
+            src={logoUrl}
             alt={team.name || 'Team'}
             width={logoSize}
             height={logoSize}

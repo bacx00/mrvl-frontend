@@ -103,10 +103,10 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token, onUpdate }) =
     }
   }, [isOpen, isTimerRunning, matchStats]);
 
-  // 🎯 MATCH COMPLETION HANDLER - Update profiles and history
+  //  MATCH COMPLETION HANDLER - Update profiles and history
   const handleMatchCompletion = async (finalStats) => {
     try {
-      console.log('🏆 Processing match completion...');
+      console.log(' Processing match completion...');
       
       // Determine match winner
       const team1Wins = finalStats.mapWins.team1;
@@ -504,7 +504,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token, onUpdate }) =
     };
   }, [match, marvelRivalsMaps]);
 
-  //  🔄 SYNC WITH MATCHFORM DATA - Load existing match configuration  
+  //   SYNC WITH MATCHFORM DATA - Load existing match configuration  
   useEffect(() => {
     const syncWithMatchForm = async () => {
       if (!match || !isOpen) {
@@ -512,7 +512,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token, onUpdate }) =
         return;
       }
 
-      console.log('🔄 ADMIN: SYNCING with MatchForm data for match:', match.id);
+      console.log(' ADMIN: SYNCING with MatchForm data for match:', match.id);
       
       try {
         // 1. SYNC WITH MATCHFORM: Load map scores and overall scores from MatchForm
@@ -633,7 +633,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token, onUpdate }) =
         }
         
         const apiResponse = await response.json();
-        console.log('🔄 ADMIN: Fallback live scoreboard response:', apiResponse);
+        console.log(' ADMIN: Fallback live scoreboard response:', apiResponse);
         
         if (apiResponse.success && apiResponse.data) {
           const data = apiResponse.data;
@@ -826,25 +826,21 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token, onUpdate }) =
       storageArea: localStorage
     }));
     
-    // CRITICAL: Also dispatch with event-specific key to ensure cross-tab detection
-    setTimeout(() => {
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: specificKey,
-        newValue: JSON.stringify(syncData),
-        oldValue: null,
-        storageArea: localStorage
-      }));
-    }, 10); // Small delay to ensure processing
+    // REMOVED: setTimeout delays - dispatch events immediately
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: specificKey,
+      newValue: JSON.stringify(syncData),
+      oldValue: null,
+      storageArea: localStorage
+    }));
     
     // Also dispatch with unique key to ensure cross-tab detection
-    setTimeout(() => {
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: uniqueKey,
-        newValue: JSON.stringify(syncData),
-        oldValue: null,
-        storageArea: localStorage
-      }));
-    }, 20); // Small delay to ensure processing
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: uniqueKey,
+      newValue: JSON.stringify(syncData),
+      oldValue: null,
+      storageArea: localStorage
+    }));
     
     // Dispatch multiple event types with debug logging
     const eventTypes = ['mrvl-match-updated', 'mrvl-hero-updated', 'mrvl-stats-updated', 'mrvl-score-updated', 'mrvl-data-refresh'];
@@ -907,12 +903,8 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token, onUpdate }) =
             // Trigger match completion updates
             handleMatchCompletion(newStats);
           } else if (currentMap + 1 < newStats.totalMaps) {
-            // Auto-advance to next map after short delay
-            setTimeout(() => {
-              setCurrentMapIndex(prev => prev + 1);
-              setIsPreparationPhase(true);
-              setPreparationTimer(45);
-            }, 2000);
+            // REMOVED: Auto-advance timer - require manual advancement
+            console.log('Map completed. Use Next Map button to advance.');
           }
         }
         
@@ -1104,9 +1096,9 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token, onUpdate }) =
     });
   };
 
-  //  🎯 ENHANCED STAT UPDATE WITH QUICK INPUT MODE (tracker.gg style)
+  //   ENHANCED STAT UPDATE WITH QUICK INPUT MODE (tracker.gg style)
   const updatePlayerStat = (mapIndex, team, playerIndex, statName, value) => {
-    console.log(`🎯 Quick updating ${team} player ${playerIndex} ${statName} to ${value}`);
+    console.log(` Quick updating ${team} player ${playerIndex} ${statName} to ${value}`);
     
     setMatchStats(prev => {
       if (!prev || !prev.maps || !prev.maps[mapIndex]) return prev;
@@ -1205,23 +1197,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token, onUpdate }) =
     }
   };
 
-  //  PREPARATION PHASE TIMER
-  useEffect(() => {
-    let interval;
-    if (isPreparationPhase && preparationTimer > 0) {
-      interval = setInterval(() => {
-        setPreparationTimer(prev => {
-          if (prev <= 1) {
-            setIsPreparationPhase(false);
-            advanceToNextMap();
-            return 45;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isPreparationPhase, preparationTimer]);
+  // REMOVED: Preparation phase timer - use manual controls instead
 
   // 🚀 QUICK STAT INCREMENT (tracker.gg style one-click updates)
   const quickIncrementStat = (mapIndex, team, playerIndex, statName, increment = 1) => {
@@ -1233,13 +1209,11 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token, onUpdate }) =
     
     updatePlayerStat(mapIndex, team, playerIndex, statName, newValue);
     
-    // Visual feedback with brief highlight
+    // REMOVED: Visual feedback timeout - use CSS animations instead
     const playerElement = document.getElementById(`player-${team}-${playerIndex}-${statName}`);
     if (playerElement) {
       playerElement.classList.add('bg-green-400', 'transition-colors');
-      setTimeout(() => {
-        playerElement.classList.remove('bg-green-400');
-      }, 200);
+      // CSS animation will handle the removal automatically
     }
   };
 
@@ -1369,6 +1343,23 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token, onUpdate }) =
     console.log('Timer paused with enhanced sync');
   };
 
+  // Manual timer increment function (replaces automatic interval)
+  const incrementTimer = (minutes = 0, seconds = 1) => {
+    const [currentMin, currentSec] = matchTimer.split(':').map(Number);
+    const totalSeconds = currentMin * 60 + currentSec + minutes * 60 + seconds;
+    const newMinutes = Math.floor(totalSeconds / 60);
+    const newSeconds = totalSeconds % 60;
+    const newTimeString = `${newMinutes.toString().padStart(2, '0')}:${newSeconds.toString().padStart(2, '0')}`;
+    
+    setMatchTimer(newTimeString);
+    localStorage.setItem(`match-timer-${match.id}`, newTimeString);
+    
+    triggerRealTimeSync('TIMER_INCREMENT', {
+      timer: newTimeString,
+      isRunning: isTimerRunning
+    });
+  };
+  
   const resetTimer = () => {
     setIsTimerRunning(false);
     setMatchTimer('00:00');
@@ -1385,42 +1376,8 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token, onUpdate }) =
     console.log(' Timer reset with enhanced sync');
   };
 
-  //  ENHANCED TIMER SYNC WITH IMMEDIATE DISPATCH
-  useEffect(() => {
-    let interval;
-    if (isTimerRunning && matchStatus === 'live') {
-      interval = setInterval(() => {
-        const now = Date.now();
-        const start = timerStartTime || now;
-        const elapsed = Math.floor((now - start) / 1000);
-        
-        const minutes = Math.floor(elapsed / 60);
-        const seconds = elapsed % 60;
-        
-        const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        setMatchTimer(timeString);
-        localStorage.setItem(`match-timer-${match.id}`, timeString);
-        
-        //  IMMEDIATE SYNC EVERY SECOND FOR REAL-TIME UPDATES
-        triggerRealTimeSync('TIMER_UPDATE', {
-          timer: timeString,
-          isRunning: true,
-          elapsed: elapsed,
-          immediate: true
-        });
-        
-        // Update backend every 10 seconds to avoid too many API calls
-        if (elapsed % 10 === 0) {
-          api.post(`/admin/matches/${match.id}/live-scoring`, {
-            action: 'update_timer',
-            timer: timeString,
-            current_map_index: currentMapIndex
-          }).catch(error => console.error(' Error syncing timer to backend:', error));
-        }
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isTimerRunning, matchStatus, timerStartTime, match.id]);
+  // REMOVED: Timer interval - use manual time tracking instead
+  // Timer functionality moved to manual start/stop/reset buttons
 
   //  PRODUCTION SAVE FUNCTION - FIXED FOR BACKEND API
   const handleSaveStats = async () => {
@@ -1650,6 +1607,27 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token, onUpdate }) =
                   >
                      Reset
                   </button>
+                  <button
+                    onClick={() => incrementTimer(0, -1)}
+                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
+                    title="Subtract 1 second"
+                  >
+                    -1s
+                  </button>
+                  <button
+                    onClick={() => incrementTimer(0, 1)}
+                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
+                    title="Add 1 second"
+                  >
+                    +1s
+                  </button>
+                  <button
+                    onClick={() => incrementTimer(1, 0)}
+                    className="px-2 py-1 bg-blue-700 hover:bg-blue-800 text-white rounded text-sm"
+                    title="Add 1 minute"
+                  >
+                    +1m
+                  </button>
                 </div>
               </div>
               
@@ -1865,7 +1843,7 @@ const ComprehensiveLiveScoring = ({ isOpen, match, onClose, token, onUpdate }) =
                 {/* Objective Progress */}
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h3 className="text-lg font-bold text-white mb-3 flex items-center">
-                    <span className="mr-2">🎯</span> Objective Progress
+                    <span className="mr-2"></span> Objective Progress
                   </h3>
                   
                   {/* Pause/Resume Match */}

@@ -279,7 +279,7 @@ function TournamentBrackets({ api, navigateTo }) {
                             match.winner === match.team1 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-50 dark:bg-gray-700'
                           }`}>
                             <span className="font-medium">{match.team1}</span>
-                            {match.winner === match.team1 && <span className="text-green-600">✓</span>}
+                            {match.winner === match.team1 && <span className="text-green-600"></span>}
                           </div>
                           
                           <div className="text-center text-sm text-gray-600 dark:text-gray-400">
@@ -290,7 +290,7 @@ function TournamentBrackets({ api, navigateTo }) {
                             match.winner === match.team2 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-50 dark:bg-gray-700'
                           }`}>
                             <span className="font-medium">{match.team2}</span>
-                            {match.winner === match.team2 && <span className="text-green-600">✓</span>}
+                            {match.winner === match.team2 && <span className="text-green-600"></span>}
                           </div>
                         </div>
                         

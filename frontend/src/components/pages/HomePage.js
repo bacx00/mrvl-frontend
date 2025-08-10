@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
 import { TeamLogo, getNewsFeaturedImageUrl, getEventBannerUrl } from '../../utils/imageUtils';
 import { formatTimeAgo, formatDateSafe } from '../../lib/utils.js';
+import liveScoreManager from '../../utils/LiveScoreManager';
 
 function HomePage({ navigateTo }) {
   const { api } = useAuth();
@@ -152,6 +153,66 @@ function HomePage({ navigateTo }) {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // ENHANCED: Real-time score update handler for HomePage match cards
+  const handleLiveScoreUpdate = useCallback((updateData, source) => {
+    console.log(`🏠 HomePage received live update from ${source}:`, updateData);
+    
+    if (!updateData.data || !updateData.matchId) return;
+
+    const { matchId, data: scoreData } = updateData;
+    
+    setMatches(prevMatches => {
+      return prevMatches.map(match => {
+        if (match.id === matchId) {
+          const updatedMatch = {
+            ...match,
+            // Update scores
+            team1_score: scoreData.team1_score !== undefined ? scoreData.team1_score : 
+                         scoreData.team1Score !== undefined ? scoreData.team1Score : match.team1_score,
+            team2_score: scoreData.team2_score !== undefined ? scoreData.team2_score :
+                         scoreData.team2Score !== undefined ? scoreData.team2Score : match.team2_score,
+            // Update status if provided
+            status: scoreData.status || match.status,
+            // Update score display
+            score: (scoreData.team1_score !== undefined || scoreData.team2_score !== undefined) 
+              ? `${scoreData.team1_score || scoreData.team1Score || match.team1_score || 0}-${scoreData.team2_score || scoreData.team2Score || match.team2_score || 0}`
+              : match.score
+          };
+          
+          console.log(`✅ HomePage updated match ${matchId} with live scores:`, {
+            team1: updatedMatch.team1_score,
+            team2: updatedMatch.team2_score,
+            source
+          });
+          
+          return updatedMatch;
+        }
+        return match;
+      });
+    });
+  }, []);
+
+  // Subscribe to live score updates for all matches
+  useEffect(() => {
+    if (matches.length > 0) {
+      console.log(`🔔 HomePage subscribing to live updates for ${matches.length} matches`);
+      
+      // Subscribe to updates for all matches
+      const subscription = liveScoreManager.subscribe(
+        'homepage-matches',
+        handleLiveScoreUpdate,
+        {
+          updateType: 'scores'
+        }
+      );
+      
+      return () => {
+        console.log('🔕 HomePage unsubscribing from live updates');
+        liveScoreManager.unsubscribe('homepage-matches');
+      };
+    }
+  }, [matches.length, handleLiveScoreUpdate]);
 
   // Note: formatTimeAgo is now imported from utils for consistency and safety
 

@@ -35,11 +35,11 @@ function BracketManagement({
   }, [teams, bracketConfig.teams_count, teamSeeds.length]);
 
   const tabs = [
-    { key: 'setup', label: 'Bracket Setup', icon: '⚙️' },
-    { key: 'seeding', label: 'Team Seeding', icon: '🏆' },
-    { key: 'schedule', label: 'Match Scheduling', icon: '📅' },
-    { key: 'live', label: 'Live Control', icon: '🔴' },
-    { key: 'settings', label: 'Settings', icon: '⚡' }
+    { key: 'setup', label: 'Bracket Setup', icon: '' },
+    { key: 'seeding', label: 'Team Seeding', icon: '' },
+    { key: 'schedule', label: 'Match Scheduling', icon: '' },
+    { key: 'live', label: 'Live Control', icon: '' },
+    { key: 'settings', label: 'Settings', icon: '' }
   ];
 
   const handleGenerateBracket = async () => {

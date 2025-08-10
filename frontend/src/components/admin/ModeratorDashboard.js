@@ -49,12 +49,12 @@ function ModeratorDashboardContent({ navigateTo }) {
 
   // Moderator-specific sections - content moderation focused
   const sections = [
-    { id: 'overview', name: 'Overview', icon: '📊', permission: 'moderator_dashboard' },
-    { id: 'reports', name: 'Reports', icon: '🚨', permission: 'content_moderation' },
-    { id: 'users', name: 'User Moderation', icon: '👥', permission: 'user_warnings' },
-    { id: 'content', name: 'Content Moderation', icon: '🔍', permission: 'content_moderation' },
-    { id: 'forums', name: 'Forum Management', icon: '💬', permission: 'forum_management' },
-    { id: 'matches', name: 'Match Verification', icon: '⚔️', permission: 'match_verification' }
+    { id: 'overview', name: 'Overview', icon: '', permission: 'moderator_dashboard' },
+    { id: 'reports', name: 'Reports', icon: '', permission: 'content_moderation' },
+    { id: 'users', name: 'User Moderation', icon: '', permission: 'user_warnings' },
+    { id: 'content', name: 'Content Moderation', icon: '', permission: 'content_moderation' },
+    { id: 'forums', name: 'Forum Management', icon: '', permission: 'forum_management' },
+    { id: 'matches', name: 'Match Verification', icon: '', permission: 'match_verification' }
   ];
 
   // Filter sections based on user permissions
@@ -313,7 +313,7 @@ function ModeratorDashboardContent({ navigateTo }) {
           {activeSection !== 'overview' && activeSection !== 'reports' && (
             <div className="card p-12 text-center">
               <div className="text-6xl mb-4">
-                {sections.find(s => s.id === activeSection)?.icon || '🔧'}
+                {sections.find(s => s.id === activeSection)?.icon || ''}
               </div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 {sections.find(s => s.id === activeSection)?.name} Section

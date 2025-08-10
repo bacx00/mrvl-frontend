@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../hooks';
 import VotingButtons from './VotingButtons';
 import { formatTimeAgo } from '../../lib/utils.js';
@@ -15,7 +15,10 @@ function CommentSystemSimple({
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [refreshInterval, setRefreshInterval] = useState(null);
   const { api, user } = useAuth();
+  const lastFetchRef = useRef(0);
+  const fetchTimeoutRef = useRef(null);
 
   // Safe wrapper function for string operations
   const safeString = (value) => {
@@ -36,21 +39,67 @@ function CommentSystemSimple({
 
   useEffect(() => {
     fetchComments();
-  }, [itemType, itemId]);
+    
+    // Set up auto-refresh for real-time updates
+    if (user) {
+      const interval = setInterval(() => {
+        fetchComments(true); // Silent refresh
+      }, 30000); // Refresh every 30 seconds
+      setRefreshInterval(interval);
+      
+      return () => {
+        clearInterval(interval);
+        setRefreshInterval(null);
+      };
+    }
+  }, [itemType, itemId, user]);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+    };
+  }, []);
 
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async (silent = false) => {
+    // Prevent rapid consecutive calls
+    const now = Date.now();
+    if (now - lastFetchRef.current < 1000) {
+      return;
+    }
+    lastFetchRef.current = now;
+    
+    // Clear any pending fetch timeout
+    if (fetchTimeoutRef.current) {
+      clearTimeout(fetchTimeoutRef.current);
+    }
+    
     try {
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
       const endpoint = getCommentsEndpoint();
-      const response = await api.get(endpoint);
-      setComments(response.data || []);
+      const response = await api.get(`${endpoint}?t=${now}`);
+      
+      if (response.data) {
+        setComments(response.data);
+      }
     } catch (error) {
       console.error('Error fetching comments:', error);
-      setComments([]);
+      if (!silent) {
+        setComments([]);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
-  };
+  }, [api, itemType, itemId]);
 
   const getCommentsEndpoint = () => {
     switch (itemType) {
@@ -112,6 +161,11 @@ function CommentSystemSimple({
           setComments([response.data, ...comments]);
           setNewComment('');
         }
+        
+        // Trigger immediate refresh to sync any server-side changes
+        fetchTimeoutRef.current = setTimeout(() => {
+          fetchComments(true);
+        }, 2000);
       } else {
         console.error('Invalid comment data received:', response.data);
         alert('Failed to post comment. Please try again.');
@@ -236,32 +290,11 @@ function CommentSimple({
             )}
 
             {/* Timestamp */}
-            <time className="text-[#768894] text-sm ml-auto">
+            <time className="text-[#768894] text-sm">
               {formatTimeAgo(new Date(comment.created_at))}
             </time>
-          </div>
 
-          {/* Comment Content */}
-          <div className="text-white mb-3">
-            {safeContent(comment.content)}
-          </div>
-
-          {/* Comment Actions */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              {/* Reply Button */}
-              {user && !isReply && (
-                <button
-                  onClick={onReply}
-                  className="text-[#768894] hover:text-[#fa4454] text-sm transition-colors min-h-[36px] min-w-[60px] px-2 py-1 rounded touch-manipulation active:scale-95"
-                  style={{ WebkitTapHighlightColor: 'rgba(244, 68, 84, 0.1)' }}
-                >
-                  reply
-                </button>
-              )}
-            </div>
-            
-            {/* Voting aligned to the right */}
+            {/* Voting buttons - positioned right after username like forums */}
             <VotingButtons
               itemType={itemType === 'forum_thread' ? 'forum_post' : `${itemType}_comment`}
               itemId={comment.id}
@@ -271,6 +304,25 @@ function CommentSimple({
               size="xs"
               direction="horizontal"
             />
+          </div>
+
+          {/* Comment Content */}
+          <div className="text-white mb-3">
+            {safeContent(comment.content)}
+          </div>
+
+          {/* Comment Actions */}
+          <div className="flex items-center space-x-4">
+            {/* Reply Button */}
+            {user && !isReply && (
+              <button
+                onClick={onReply}
+                className="text-[#768894] hover:text-[#fa4454] text-sm transition-colors min-h-[36px] min-w-[60px] px-2 py-1 rounded touch-manipulation active:scale-95"
+                style={{ WebkitTapHighlightColor: 'rgba(244, 68, 84, 0.1)' }}
+              >
+                reply
+              </button>
+            )}
           </div>
 
           {/* Reply Form */}

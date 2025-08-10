@@ -153,7 +153,7 @@ function EventDetailPage({ params, navigateTo }) {
 
   const handleBracketMatchUpdate = async (matchId, updates) => {
     try {
-      await api.put(`/admin/matches/${matchId}`, updates);
+      await api.put(`/admin/events/${eventId}/matches/${matchId}/score`, updates);
       console.log('✅ Match updated successfully');
       
       // Refresh event data

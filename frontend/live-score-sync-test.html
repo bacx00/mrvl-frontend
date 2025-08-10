@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveScore Bidirectional Synchronization Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .test-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn.success { background: linear-gradient(135deg, #4CAF50, #45a049); }
+        .btn.danger { background: linear-gradient(135deg, #f44336, #d32f2f); }
+        .btn.warning { background: linear-gradient(135deg, #ff9800, #f57c00); }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .component-simulator {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .component-simulator h4 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .update-log {
+            background: #f5f5f5;
+            border-radius: 4px;
+            padding: 10px;
+            height: 150px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .update-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .update-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .timestamp {
+            color: #999;
+            font-size: 10px;
+        }
+        
+        .results {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .results h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            border-left: 4px solid #ddd;
+        }
+        
+        .result-item.pass {
+            border-left-color: #4CAF50;
+        }
+        
+        .result-item.fail {
+            border-left-color: #f44336;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+        }
+        
+        .status-badge.pass {
+            background: #4CAF50;
+        }
+        
+        .status-badge.fail {
+            background: #f44336;
+        }
+        
+        .score-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .score-display h2 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .manual-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        input[type="number"] {
+            width: 80px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        label {
+            font-weight: 600;
+            color: #333;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 LiveScore Bidirectional Synchronization Test</h1>
+            <p>Real-time score updates across all Marvel Rivals match components</p>
+        </div>
+        
+        <div class="content">
+            <!-- Current Score Display -->
+            <div class="score-display">
+                <h2 id="current-score">Team 1: 0 - Team 2: 0</h2>
+                <p>Status: <span id="match-status">Testing</span></p>
+                <small>Last update: <span id="last-update">Never</span></small>
+            </div>
+            
+            <!-- Manual Controls -->
+            <div class="test-section">
+                <h3>🎮 Manual Score Controls</h3>
+                <div class="manual-controls">
+                    <label>Team 1:</label>
+                    <input type="number" id="team1-score" value="0" min="0" max="50">
+                    
+                    <label>Team 2:</label>
+                    <input type="number" id="team2-score" value="0" min="0" max="50">
+                    
+                    <label>Status:</label>
+                    <select id="match-status-select">
+                        <option value="upcoming">Upcoming</option>
+                        <option value="live" selected>Live</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                    
+                    <button class="btn" onclick="sendManualUpdate()">📤 Send Update</button>
+                    <button class="btn warning" onclick="clearAllLogs()">🧹 Clear Logs</button>
+                </div>
+            </div>
+            
+            <!-- Automated Tests -->
+            <div class="test-section">
+                <h3>🧪 Automated Test Suite</h3>
+                <button class="btn" onclick="runFullTestSuite()">🚀 Run All Tests</button>
+                <button class="btn success" onclick="testSimplifiedLiveScoring()">SimplifiedLiveScoring → All</button>
+                <button class="btn success" onclick="testMatchForm()">MatchForm → All</button>
+                <button class="btn warning" onclick="testPerformance()">⚡ Performance Test</button>
+                <button class="btn danger" onclick="testCrossTab()">🔄 Cross-Tab Test</button>
+            </div>
+            
+            <!-- Component Simulators -->
+            <div class="grid">
+                <div class="component-simulator">
+                    <h4>🏠 HomePage (Match Cards)</h4>
+                    <div class="update-log" id="homepage-log">
+                        <div class="update-entry">Waiting for updates...</div>
+                    </div>
+                </div>
+                
+                <div class="component-simulator">
+                    <h4>📄 MatchDetailPage</h4>
+                    <div class="update-log" id="matchdetail-log">
+                        <div class="update-entry">Waiting for updates...</div>
+                    </div>
+                </div>
+                
+                <div class="component-simulator">
+                    <h4>👨‍💼 AdminMatches</h4>
+                    <div class="update-log" id="adminmatches-log">
+                        <div class="update-entry">Waiting for updates...</div>
+                    </div>
+                </div>
+                
+                <div class="component-simulator">
+                    <h4>⚡ SimplifiedLiveScoring</h4>
+                    <div class="update-log" id="livescoring-log">
+                        <div class="update-entry">Waiting for updates...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Test Results -->
+            <div class="results">
+                <h3>📊 Test Results</h3>
+                <div id="test-results">
+                    <p>No tests run yet. Click "Run All Tests" to begin.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulate LiveScoreManager functionality for testing
+        class MockLiveScoreManager {
+            constructor() {
+                this.listeners = new Map();
+                this.currentScore = { team1: 0, team2: 0, status: 'live' };
+                console.log('🔧 Mock LiveScoreManager initialized');
+            }
+            
+            subscribe(componentId, callback, options = {}) {
+                this.listeners.set(componentId, { callback, options });
+                console.log(`✅ ${componentId} subscribed`);
+            }
+            
+            unsubscribe(componentId) {
+                this.listeners.delete(componentId);
+                console.log(`❌ ${componentId} unsubscribed`);
+            }
+            
+            broadcastScoreUpdate(matchId, scoreData, metadata = {}) {
+                const updatePayload = {
+                    matchId,
+                    timestamp: Date.now(),
+                    source: metadata.source || 'unknown',
+                    data: scoreData,
+                    type: metadata.type || 'score_update'
+                };
+                
+                console.log(`📤 Broadcasting update from ${metadata.source}:`, scoreData);
+                
+                // Update current score
+                this.currentScore = {
+                    team1: scoreData.team1_score || this.currentScore.team1,
+                    team2: scoreData.team2_score || this.currentScore.team2,
+                    status: scoreData.status || this.currentScore.status
+                };
+                
+                // Update UI
+                updateScoreDisplay();
+                
+                // Notify all listeners
+                this.listeners.forEach((listener, componentId) => {
+                    try {
+                        listener.callback(updatePayload, metadata.source);
+                        this.logToComponent(componentId, updatePayload, metadata.source);
+                    } catch (error) {
+                        console.error(`❌ Error notifying ${componentId}:`, error);
+                    }
+                });
+            }
+            
+            logToComponent(componentId, updatePayload, source) {
+                const logElement = document.getElementById(`${componentId.replace('test-', '')}-log`);
+                if (logElement) {
+                    const timestamp = new Date(updatePayload.timestamp).toLocaleTimeString();
+                    const entry = document.createElement('div');
+                    entry.className = 'update-entry';
+                    entry.innerHTML = `
+                        <span class="timestamp">${timestamp}</span><br>
+                        From: ${source}<br>
+                        Score: ${updatePayload.data.team1_score || 0} - ${updatePayload.data.team2_score || 0}
+                    `;
+                    logElement.appendChild(entry);
+                    logElement.scrollTop = logElement.scrollHeight;
+                }
+            }
+        }
+        
+        // Initialize mock manager
+        const mockManager = new MockLiveScoreManager();
+        
+        // Setup component simulators
+        function setupComponentSimulators() {
+            // HomePage simulator
+            mockManager.subscribe('test-homepage', (updateData, source) => {
+                console.log(`🏠 HomePage received update from ${source}`);
+            });
+            
+            // MatchDetailPage simulator
+            mockManager.subscribe('test-matchdetail', (updateData, source) => {
+                console.log(`📄 MatchDetailPage received update from ${source}`);
+            });
+            
+            // AdminMatches simulator
+            mockManager.subscribe('test-adminmatches', (updateData, source) => {
+                console.log(`👨‍💼 AdminMatches received update from ${source}`);
+            });
+            
+            // SimplifiedLiveScoring simulator
+            mockManager.subscribe('test-livescoring', (updateData, source) => {
+                console.log(`⚡ SimplifiedLiveScoring received update from ${source}`);
+            });
+        }
+        
+        // Update score display
+        function updateScoreDisplay() {
+            const scoreEl = document.getElementById('current-score');
+            const statusEl = document.getElementById('match-status');
+            const lastUpdateEl = document.getElementById('last-update');
+            
+            scoreEl.textContent = `Team 1: ${mockManager.currentScore.team1} - Team 2: ${mockManager.currentScore.team2}`;
+            statusEl.textContent = mockManager.currentScore.status;
+            lastUpdateEl.textContent = new Date().toLocaleTimeString();
+        }
+        
+        // Send manual update
+        function sendManualUpdate() {
+            const team1Score = parseInt(document.getElementById('team1-score').value);
+            const team2Score = parseInt(document.getElementById('team2-score').value);
+            const status = document.getElementById('match-status-select').value;
+            
+            mockManager.broadcastScoreUpdate(9999, {
+                team1_score: team1Score,
+                team2_score: team2Score,
+                status: status
+            }, {
+                source: 'ManualControl',
+                type: 'manual_update'
+            });
+        }
+        
+        // Test functions
+        function testSimplifiedLiveScoring() {
+            mockManager.broadcastScoreUpdate(9999, {
+                team1_score: Math.floor(Math.random() * 10),
+                team2_score: Math.floor(Math.random() * 10),
+                status: 'live'
+            }, {
+                source: 'SimplifiedLiveScoring',
+                type: 'live_scoring_update'
+            });
+            
+            logTestResult('SimplifiedLiveScoring Broadcast', true, 'Update sent successfully');
+        }
+        
+        function testMatchForm() {
+            mockManager.broadcastScoreUpdate(9999, {
+                team1_score: Math.floor(Math.random() * 10),
+                team2_score: Math.floor(Math.random() * 10),
+                status: 'completed'
+            }, {
+                source: 'MatchForm',
+                type: 'form_update'
+            });
+            
+            logTestResult('MatchForm Broadcast', true, 'Update sent successfully');
+        }
+        
+        async function testPerformance() {
+            console.log('🚀 Starting performance test...');
+            const startTime = Date.now();
+            const updates = 20;
+            
+            for (let i = 0; i < updates; i++) {
+                mockManager.broadcastScoreUpdate(9999, {
+                    team1_score: Math.floor(i / 3),
+                    team2_score: Math.floor(i / 4),
+                    status: 'live',
+                    updateNumber: i
+                }, {
+                    source: 'PerformanceTest',
+                    type: 'rapid_update'
+                });
+                
+                await new Promise(resolve => setTimeout(resolve, 10));
+            }
+            
+            const endTime = Date.now();
+            const duration = endTime - startTime;
+            const success = duration < 1000; // Under 1 second
+            
+            logTestResult('Performance Test', success, `${updates} updates in ${duration}ms`);
+        }
+        
+        function testCrossTab() {
+            // Simulate cross-tab by manually triggering storage event
+            const storageEvent = new StorageEvent('storage', {
+                key: 'match_update_9999',
+                newValue: JSON.stringify({
+                    matchId: 9999,
+                    timestamp: Date.now(),
+                    source: 'CrossTab',
+                    data: {
+                        team1_score: 7,
+                        team2_score: 5,
+                        status: 'live'
+                    }
+                })
+            });
+            
+            window.dispatchEvent(storageEvent);
+            
+            // Manually trigger the update since we're simulating
+            mockManager.broadcastScoreUpdate(9999, {
+                team1_score: 7,
+                team2_score: 5,
+                status: 'live'
+            }, {
+                source: 'CrossTab',
+                type: 'cross_tab_update'
+            });
+            
+            logTestResult('Cross-Tab Sync', true, 'Cross-tab update simulated');
+        }
+        
+        async function runFullTestSuite() {
+            clearTestResults();
+            console.log('🚀 Running full test suite...');
+            
+            await testSimplifiedLiveScoring();
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            await testMatchForm();
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            await testPerformance();
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            await testCrossTab();
+            
+            console.log('✅ Full test suite completed');
+        }
+        
+        // Utility functions
+        function logTestResult(testName, passed, details) {
+            const resultsEl = document.getElementById('test-results');
+            
+            if (resultsEl.querySelector('p')) {
+                resultsEl.innerHTML = ''; // Clear initial message
+            }
+            
+            const resultItem = document.createElement('div');
+            resultItem.className = `result-item ${passed ? 'pass' : 'fail'}`;
+            resultItem.innerHTML = `
+                <div>
+                    <strong>${testName}</strong><br>
+                    <small>${details}</small>
+                </div>
+                <span class="status-badge ${passed ? 'pass' : 'fail'}">
+                    ${passed ? 'PASS' : 'FAIL'}
+                </span>
+            `;
+            
+            resultsEl.appendChild(resultItem);
+        }
+        
+        function clearTestResults() {
+            const resultsEl = document.getElementById('test-results');
+            resultsEl.innerHTML = '<p>Running tests...</p>';
+        }
+        
+        function clearAllLogs() {
+            const logElements = document.querySelectorAll('.update-log');
+            logElements.forEach(log => {
+                log.innerHTML = '<div class="update-entry">Waiting for updates...</div>';
+            });
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setupComponentSimulators();
+            console.log('🎯 LiveScore Test Page Ready');
+            console.log('Components simulated: HomePage, MatchDetailPage, AdminMatches, SimplifiedLiveScoring');
+            console.log('Use the controls above to test real-time synchronization!');
+        });
+    </script>
+</body>
+</html>

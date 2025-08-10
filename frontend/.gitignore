@@ -1,3 +1,4 @@
 frontend/build/
 core.*
 *.log
+node_modules/.cache/

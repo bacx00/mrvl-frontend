@@ -1059,11 +1059,10 @@ function PlayerDetailPage({ params, navigateTo }) {
             )}
           </div>
         </div>
+      </div>
 
-        {/* Content Container */}
-        <div>
-        {/* Team History Section - REMOVED per requirements */}
-        {/* <div className="card p-6 mt-6">
+      {/* Team History Section - COMPLETELY REMOVED */}
+        {/* REMOVED ENTIRE TEAM HISTORY SECTION
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Team History</h3>
           
           {/* Current Team First */}
@@ -1157,9 +1156,10 @@ function PlayerDetailPage({ params, navigateTo }) {
               </div>
             )}
           </div>
-        </div> */}
+        REMOVED ENTIRE TEAM HISTORY SECTION */}
 
-        {/* Player History Section - Displays match history with hero stats */}
+        {/* Player History Section - COMPLETELY REMOVED */}
+        {/* REMOVED ENTIRE PLAYER HISTORY SECTION
         <div className="card p-6 mt-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Player History</h3>
           {matchHistory && matchHistory.length > 0 ? (
@@ -1255,7 +1255,7 @@ function PlayerDetailPage({ params, navigateTo }) {
             </div>
           )}
         </div>
-      </div>
+        {/* REMOVED ENTIRE PLAYER HISTORY SECTION */}
     </div>
     </>
   );

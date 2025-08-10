@@ -50,15 +50,19 @@ function CreateThreadPage({ navigateTo }) {
   };
 
   const handleTitleChange = (value) => {
-    // ForumMentionAutocomplete now always passes strings
+    // Extract string value safely to prevent [object Object] display
     let titleValue = '';
     
     if (typeof value === 'string') {
       titleValue = value;
     } else if (value && typeof value === 'object' && value.target && typeof value.target.value === 'string') {
       titleValue = value.target.value;
+    } else if (value && typeof value === 'object') {
+      // Log unexpected object types for debugging
+      console.warn('CreateThreadPage: Unexpected title value type:', value);
+      titleValue = ''; // Don't serialize objects
     } else {
-      titleValue = String(value || ''); // Fallback to convert anything else to string
+      titleValue = String(value || ''); // Fallback for primitive types
     }
     
     setFormData(prev => ({
@@ -68,15 +72,19 @@ function CreateThreadPage({ navigateTo }) {
   };
 
   const handleContentChange = (value) => {
-    // ForumMentionAutocomplete now always passes strings
+    // Extract string value safely to prevent [object Object] display
     let contentValue = '';
     
     if (typeof value === 'string') {
       contentValue = value;
     } else if (value && typeof value === 'object' && value.target && typeof value.target.value === 'string') {
       contentValue = value.target.value;
+    } else if (value && typeof value === 'object') {
+      // Log unexpected object types for debugging
+      console.warn('CreateThreadPage: Unexpected content value type:', value);
+      contentValue = ''; // Don't serialize objects
     } else {
-      contentValue = String(value || ''); // Fallback to convert anything else to string
+      contentValue = String(value || ''); // Fallback for primitive types
     }
     
     setFormData(prev => ({

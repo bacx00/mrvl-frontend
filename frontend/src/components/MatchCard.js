@@ -239,7 +239,34 @@ function MatchCard({ match, navigateTo, isCompact = false }) {
                   className="text-red-600 dark:text-red-400 hover:underline"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  Watch Stream
+                  {(() => {
+                    try {
+                      const urlObj = new URL(match.stream_url);
+                      const hostname = urlObj.hostname.toLowerCase();
+                      
+                      if (hostname.includes('twitch.tv')) {
+                        const pathParts = urlObj.pathname.split('/').filter(p => p);
+                        return pathParts[0] || 'Twitch';
+                      } else if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
+                        const pathParts = urlObj.pathname.split('/').filter(p => p);
+                        if (pathParts.includes('c') && pathParts[pathParts.indexOf('c') + 1]) {
+                          return pathParts[pathParts.indexOf('c') + 1];
+                        } else if (pathParts.includes('channel') && pathParts[pathParts.indexOf('channel') + 1]) {
+                          return pathParts[pathParts.indexOf('channel') + 1];
+                        } else if (pathParts[0]?.startsWith('@')) {
+                          return pathParts[0].replace('@', '');
+                        }
+                        return 'YouTube';
+                      } else if (hostname.includes('kick.com')) {
+                        const pathParts = urlObj.pathname.split('/').filter(p => p);
+                        return pathParts[0] || 'Kick';
+                      } else {
+                        return hostname.split('.')[0].charAt(0).toUpperCase() + hostname.split('.')[0].slice(1);
+                      }
+                    } catch {
+                      return 'Watch Stream';
+                    }
+                  })()}
                 </a>
               )}
             </div>

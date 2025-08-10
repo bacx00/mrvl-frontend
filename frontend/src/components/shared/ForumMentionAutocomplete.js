@@ -42,7 +42,7 @@ function ForumMentionAutocomplete({
       if (type === 'user') {
         endpoint = `/public/search/users?q=${encodeURIComponent(query)}&limit=10`;
       } else if (type === 'team') {
-        endpoint = `/public/search/teams?q=${encodeURIComponent(query)}&limit=10`;
+        endpoint = `/public/search/teams?q=${encodeURIComponent(query)}&limit=10`;  
       } else if (type === 'player') {
         endpoint = `/public/search/players?q=${encodeURIComponent(query)}&limit=10`;
       }
@@ -63,18 +63,26 @@ function ForumMentionAutocomplete({
   };
 
   const handleTextChange = (e) => {
-    const newValue = e.target.value;
-    const cursorPosition = e.target.selectionStart;
+    // Extract value safely from event or direct string
+    let newValue = '';
+    let cursorPosition = 0;
     
-    // Call onChange with the actual string value to prevent [object Object] issues
+    if (typeof e === 'string') {
+      // Direct string value passed
+      newValue = e;
+      cursorPosition = e.length;
+    } else if (e && e.target) {
+      // Event object passed
+      newValue = e.target.value;
+      cursorPosition = e.target.selectionStart;
+    } else {
+      console.warn('ForumMentionAutocomplete: Unexpected input type:', typeof e);
+      return;
+    }
+    
+    // Always call onChange with the string value to prevent [object Object] issues
     if (typeof onChange === 'function') {
-      // Create a synthetic event that matches the expected format
-      const syntheticEvent = {
-        target: {
-          value: newValue
-        }
-      };
-      onChange(syntheticEvent);
+      onChange(newValue);
     }
     
     // Check for mention triggers
@@ -118,9 +126,10 @@ function ForumMentionAutocomplete({
   const selectMention = (mention) => {
     if (!mention) return;
 
-    const cursorPosition = textareaRef.current.selectionStart;
-    const textBeforeMention = value.substring(0, mentionStart);
-    const textAfterCursor = value.substring(cursorPosition);
+    const currentValue = value || '';
+    const cursorPosition = textareaRef.current ? textareaRef.current.selectionStart : mentionStart + mentionQuery.length + 1;
+    const textBeforeMention = currentValue.substring(0, mentionStart);
+    const textAfterCursor = currentValue.substring(cursorPosition);
     
     // Use mention_text from backend response, or generate fallback
     let mentionText = '';
@@ -142,15 +151,9 @@ function ForumMentionAutocomplete({
     
     const newValue = textBeforeMention + mentionText + ' ' + textAfterCursor;
     
-    // Call onChange with the new string value to prevent [object Object] issues
+    // Always call onChange with just the string value to prevent [object Object] issues
     if (typeof onChange === 'function') {
-      // Create a synthetic event that matches the expected format
-      const syntheticEvent = {
-        target: {
-          value: newValue
-        }
-      };
-      onChange(syntheticEvent);
+      onChange(newValue);
     }
     
     // Set cursor position after the mention
@@ -308,7 +311,7 @@ function ForumMentionAutocomplete({
     <div className="relative">
       <textarea
         ref={textareaRef}
-        value={value}
+        value={value || ''}
         onChange={handleTextChange}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
@@ -318,6 +321,7 @@ function ForumMentionAutocomplete({
         disabled={disabled}
         autoComplete="off"
         spellCheck="false"
+        style={{ fontSize: '16px' }} // Prevents iOS zoom on focus
       />
 
       {/* Mention dropdown */}

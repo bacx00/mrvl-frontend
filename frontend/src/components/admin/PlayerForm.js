@@ -721,7 +721,7 @@ function PlayerForm({ playerId, navigateTo }) {
                 value={formData.socialLinks.tiktok}
                 onChange={handleInputChange}
                 className="form-input"
-                placeholder="https://tiktok.com/@username"
+                placeholder="https://tiktok.com/username"
               />
             </div>
           </div>

@@ -1,0 +1,415 @@
+{
+  "metadata": {
+    "testSuite": "Marvel Rivals Frontend CRUD Test",
+    "timestamp": "2025-08-10T09:26:22.903Z",
+    "duration": "0.04s",
+    "frontendPath": "/var/www/mrvl-frontend/frontend/src"
+  },
+  "summary": {
+    "totalTests": 30,
+    "passed": 28,
+    "failed": 2,
+    "warnings": 0,
+    "criticalIssues": [
+      "Insufficient API endpoint usage - many endpoints not implemented in frontend"
+    ],
+    "successRate": "93.3%",
+    "healthStatus": "STABLE"
+  },
+  "detailedResults": {
+    "teamManagement": {
+      "forms": [
+        {
+          "component": "TeamForm.js",
+          "found": [
+            "useState",
+            "useEffect",
+            "handleSubmit",
+            "name:",
+            "shortName:",
+            "region:",
+            "coach",
+            "logo",
+            "flag",
+            "rating",
+            "earnings",
+            "socialLinks",
+            "ImageUpload",
+            "api.post",
+            "api.put",
+            "social_links"
+          ],
+          "missing": [
+            "team_id"
+          ],
+          "issues": [
+            "Contains debug console.log statements that should be removed in production",
+            "Uses basic alert() - consider using toast notifications for better UX"
+          ]
+        }
+      ],
+      "apiEndpoints": [],
+      "validation": [],
+      "imageUpload": [
+        {
+          "found": [
+            "/upload/team/",
+            "avatar",
+            "logo",
+            "flag"
+          ],
+          "missing": [
+            "/upload/player/"
+          ],
+          "issues": [
+            "Contains debug console.log statements that should be removed in production",
+            "Uses basic alert() - consider using toast notifications for better UX"
+          ]
+        }
+      ]
+    },
+    "playerManagement": {
+      "forms": [
+        {
+          "component": "PlayerForm.js",
+          "found": [
+            "useState",
+            "useEffect",
+            "handleSubmit",
+            "username",
+            "real_name",
+            "team_id",
+            "role",
+            "region",
+            "country",
+            "age",
+            "rating",
+            "earnings",
+            "avatar",
+            "social_media",
+            "ImageUpload",
+            "api.post",
+            "api.put",
+            "Duelist",
+            "Vanguard",
+            "Strategist"
+          ],
+          "missing": [],
+          "issues": [
+            "Contains debug console.log statements that should be removed in production",
+            "Uses basic alert() - consider using toast notifications for better UX"
+          ]
+        }
+      ],
+      "apiEndpoints": [],
+      "validation": [],
+      "imageUpload": [
+        {
+          "found": [
+            "/upload/player/",
+            "avatar"
+          ],
+          "missing": [
+            "/upload/team/",
+            "logo",
+            "flag"
+          ],
+          "issues": [
+            "Contains debug console.log statements that should be removed in production",
+            "Uses basic alert() - consider using toast notifications for better UX"
+          ]
+        }
+      ]
+    },
+    "adminDashboard": {
+      "components": [
+        {
+          "component": "AdminDashboard.js",
+          "hasRoleBasedAccess": true,
+          "found": [
+            "useAuth",
+            "role",
+            "admin",
+            "permission"
+          ],
+          "missing": [],
+          "issues": []
+        },
+        {
+          "component": "AdminTeams.js",
+          "hasRoleBasedAccess": true,
+          "found": [
+            "useAuth",
+            "admin"
+          ],
+          "missing": [
+            "role",
+            "permission"
+          ],
+          "issues": [
+            "Contains debug console.log statements that should be removed in production"
+          ]
+        },
+        {
+          "component": "AdminPlayers.js",
+          "hasRoleBasedAccess": true,
+          "found": [
+            "useAuth",
+            "role",
+            "admin"
+          ],
+          "missing": [
+            "permission"
+          ],
+          "issues": []
+        },
+        {
+          "component": "AdminUsers.js",
+          "hasRoleBasedAccess": true,
+          "found": [
+            "useAuth",
+            "role",
+            "admin",
+            "permission"
+          ],
+          "missing": [],
+          "issues": []
+        },
+        {
+          "component": "AdminStats.js",
+          "hasRoleBasedAccess": true,
+          "found": [
+            "useAuth",
+            "role",
+            "admin",
+            "permission"
+          ],
+          "missing": [],
+          "issues": [
+            "Contains debug console.log statements that should be removed in production"
+          ]
+        },
+        {
+          "component": "AdminEvents.js",
+          "hasRoleBasedAccess": true,
+          "found": [
+            "useAuth",
+            "admin"
+          ],
+          "missing": [
+            "role",
+            "permission"
+          ],
+          "issues": []
+        },
+        {
+          "component": "AdminMatches.js",
+          "hasRoleBasedAccess": true,
+          "found": [
+            "useAuth",
+            "admin"
+          ],
+          "missing": [
+            "role",
+            "permission"
+          ],
+          "issues": [
+            "Contains debug console.log statements that should be removed in production"
+          ]
+        },
+        {
+          "component": "AdminNews.js",
+          "hasRoleBasedAccess": true,
+          "found": [
+            "useAuth",
+            "admin"
+          ],
+          "missing": [
+            "role",
+            "permission"
+          ],
+          "issues": []
+        }
+      ],
+      "accessibility": [
+        {
+          "score": 10,
+          "totalFiles": 5,
+          "average": 2
+        }
+      ],
+      "navigation": []
+    },
+    "profilePages": {
+      "teamProfiles": [
+        {
+          "found": [
+            "team",
+            "players",
+            "coach",
+            "roster",
+            "logo",
+            "achievements",
+            "stats",
+            "social"
+          ],
+          "missing": [],
+          "issues": [
+            "Contains debug console.log statements that should be removed in production"
+          ]
+        }
+      ],
+      "playerProfiles": [
+        {
+          "found": [
+            "player",
+            "team",
+            "role",
+            "stats",
+            "avatar",
+            "social"
+          ],
+          "missing": [
+            "achievements"
+          ],
+          "issues": [
+            "Contains debug console.log statements that should be removed in production"
+          ]
+        }
+      ],
+      "responsiveness": [
+        {
+          "mobileComponents": 3,
+          "totalExpected": 3,
+          "percentage": 100
+        }
+      ]
+    },
+    "coachData": {
+      "integration": [
+        {
+          "file": "TeamForm.js",
+          "found": [
+            "coach"
+          ],
+          "missing": [
+            "coaching_staff",
+            "staff",
+            "head_coach",
+            "assistant"
+          ],
+          "issues": [
+            "Contains debug console.log statements that should be removed in production",
+            "Uses basic alert() - consider using toast notifications for better UX"
+          ]
+        },
+        {
+          "file": "TeamDetailPage.js",
+          "found": [
+            "coach",
+            "coaching_staff",
+            "staff"
+          ],
+          "missing": [
+            "head_coach",
+            "assistant"
+          ],
+          "issues": [
+            "Contains debug console.log statements that should be removed in production"
+          ]
+        },
+        {
+          "file": "TeamsPage.js",
+          "found": [],
+          "missing": [
+            "coach",
+            "coaching_staff",
+            "staff",
+            "head_coach",
+            "assistant"
+          ],
+          "issues": [
+            "Contains debug console.log statements that should be removed in production",
+            "Uses basic alert() - consider using toast notifications for better UX"
+          ]
+        }
+      ],
+      "forms": [],
+      "display": []
+    },
+    "sixPlayerRoster": {
+      "support": [
+        {
+          "file": "TeamForm.js",
+          "found": [],
+          "missing": [
+            "6-player roster constant",
+            "6-player validation",
+            "roster size validation",
+            "MAX_PLAYERS",
+            "ROSTER_SIZE",
+            "players.length"
+          ],
+          "issues": [
+            "Contains debug console.log statements that should be removed in production",
+            "Uses basic alert() - consider using toast notifications for better UX"
+          ]
+        },
+        {
+          "file": "TeamDetailPage.js",
+          "found": [
+            "6-player validation",
+            "players.length"
+          ],
+          "missing": [
+            "6-player roster constant",
+            "roster size validation",
+            "MAX_PLAYERS",
+            "ROSTER_SIZE"
+          ],
+          "issues": [
+            "Contains debug console.log statements that should be removed in production"
+          ]
+        },
+        {
+          "file": "TeamSelector.js",
+          "found": [],
+          "missing": [
+            "6-player roster constant",
+            "6-player validation",
+            "roster size validation",
+            "MAX_PLAYERS",
+            "ROSTER_SIZE",
+            "players.length"
+          ],
+          "issues": []
+        },
+        {
+          "file": "marvelRivalsData.js",
+          "found": [
+            "6-player validation",
+            "MAX_PLAYERS",
+            "ROSTER_SIZE"
+          ],
+          "missing": [
+            "6-player roster constant",
+            "roster size validation",
+            "players.length"
+          ],
+          "issues": []
+        }
+      ],
+      "validation": [],
+      "display": []
+    }
+  },
+  "recommendations": [
+    "Address all critical issues immediately before going to production",
+    "Consider implementing loading states and error boundaries for better user experience",
+    "Add input validation and sanitization for security",
+    "Implement responsive design testing for mobile and tablet devices"
+  ],
+  "criticalIssues": [
+    "Insufficient API endpoint usage - many endpoints not implemented in frontend"
+  ]
+}

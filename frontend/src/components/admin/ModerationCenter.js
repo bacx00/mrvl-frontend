@@ -76,7 +76,7 @@ function ModerationCenter({ api, navigateTo }) {
         {
           id: 501,
           username: 'SuspendedUser1',
-          email: 'user1@example.com',
+          email: 'user1example.com',
           suspensionReason: 'Multiple harassment reports',
           suspendedAt: '2025-01-14T15:00:00Z',
           suspendedUntil: '2025-01-21T15:00:00Z',

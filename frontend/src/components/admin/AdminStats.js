@@ -450,49 +450,49 @@ function AdminStats({ navigateTo }) {
       {/* Key Metrics Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 rounded-2xl p-6 text-center border border-blue-200 dark:border-blue-800">
-          <div className="text-3xl mb-2">🏆</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.totalTeams || 0}</div>
           <div className="text-xs font-medium text-blue-700 dark:text-blue-300">Teams</div>
         </div>
         <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30 rounded-2xl p-6 text-center border border-green-200 dark:border-green-800">
-          <div className="text-3xl mb-2">👥</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.totalPlayers || 0}</div>
           <div className="text-xs font-medium text-green-700 dark:text-green-300">Players</div>
         </div>
         <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 rounded-2xl p-6 text-center border border-purple-200 dark:border-purple-800">
-          <div className="text-3xl mb-2">⚔️</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.totalMatches || 0}</div>
           <div className="text-xs font-medium text-purple-700 dark:text-purple-300">Matches</div>
         </div>
         <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950/30 dark:to-red-900/30 rounded-2xl p-6 text-center border border-red-200 dark:border-red-800">
-          <div className="text-3xl mb-2">🔴</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.liveMatches || 0}</div>
           <div className="text-xs font-medium text-red-700 dark:text-red-300">Live</div>
         </div>
         <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-950/30 dark:to-yellow-900/30 rounded-2xl p-6 text-center border border-yellow-200 dark:border-yellow-800">
-          <div className="text-3xl mb-2">🎮</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.totalEvents || 0}</div>
           <div className="text-xs font-medium text-yellow-700 dark:text-yellow-300">Events</div>
         </div>
         <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/30 dark:to-orange-900/30 rounded-2xl p-6 text-center border border-orange-200 dark:border-orange-800">
-          <div className="text-3xl mb-2">👤</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.totalUsers || 0}</div>
           <div className="text-xs font-medium text-orange-700 dark:text-orange-300">Users</div>
         </div>
         <div className="bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-950/30 dark:to-pink-900/30 rounded-2xl p-6 text-center border border-pink-200 dark:border-pink-800">
-          <div className="text-3xl mb-2">💬</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">{stats.totalThreads || 0}</div>
           <div className="text-xs font-medium text-pink-700 dark:text-pink-300">Threads</div>
         </div>
         {analyticsLevel === 'full' ? (
           <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-950/30 dark:to-indigo-900/30 rounded-2xl p-6 text-center border border-indigo-200 dark:border-indigo-800">
-            <div className="text-3xl mb-2">⭐</div>
+            <div className="text-3xl mb-2"></div>
             <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{analyticsData.performance?.avgTeamRating || 1500}</div>
             <div className="text-xs font-medium text-indigo-700 dark:text-indigo-300">Avg Rating</div>
           </div>
         ) : (
           <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-950/30 dark:to-yellow-900/30 rounded-2xl p-6 text-center border border-yellow-200 dark:border-yellow-800">
-            <div className="text-3xl mb-2">⚠️</div>
+            <div className="text-3xl mb-2"></div>
             <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.suspendedUsers || 0}</div>
             <div className="text-xs font-medium text-yellow-700 dark:text-yellow-300">Suspended</div>
           </div>
@@ -504,7 +504,7 @@ function AdminStats({ navigateTo }) {
         {/* Engagement Metrics */}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-            <span className="mr-2">👥</span>
+            <span className="mr-2"></span>
             User Engagement
           </h3>
           <div className="space-y-4">
@@ -539,7 +539,7 @@ function AdminStats({ navigateTo }) {
         {analyticsLevel === 'full' && analyticsData.revenue && (
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <span className="mr-2">💰</span>
+              <span className="mr-2"></span>
               Revenue Insights
             </h3>
             <div className="space-y-4">
@@ -575,7 +575,7 @@ function AdminStats({ navigateTo }) {
         {analyticsLevel === 'moderation' && analyticsData.moderation && (
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <span className="mr-2">🛡️</span>
+              <span className="mr-2"></span>
               Moderation Metrics
             </h3>
             <div className="space-y-4">
@@ -612,7 +612,7 @@ function AdminStats({ navigateTo }) {
       {analyticsLevel === 'full' && analyticsData.regions && (
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-            <span className="mr-2">🌎</span>
+            <span className="mr-2"></span>
             Regional Distribution
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -637,7 +637,7 @@ function AdminStats({ navigateTo }) {
           {/* Popular Maps */}
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <span className="mr-2">🗺️</span>
+              <span className="mr-2"></span>
               Popular Maps
             </h3>
             <div className="space-y-3">
@@ -656,7 +656,7 @@ function AdminStats({ navigateTo }) {
           {/* Popular Heroes */}
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <span className="mr-2">🧿</span>
+              <span className="mr-2"></span>
               Popular Heroes
             </h3>
             <div className="space-y-3">

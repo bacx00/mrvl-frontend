@@ -4,7 +4,7 @@ import {
   Shield, Zap, Heart, Play, Users, Trophy, Star
 } from 'lucide-react';
 import { SwipeableItem, TouchFeedback, useLongPress, hapticFeedback } from './MobileGestures';
-import { TeamLogo, getCountryFlag } from '../../utils/imageUtils';
+import { TeamLogo, getCountryFlag, getImageUrl } from '../../utils/imageUtils';
 
 // VLR.gg-style Mobile Match Card with Information Density
 export const MobileMatchCard = ({ 
@@ -134,6 +134,9 @@ export const MobileMatchCard = ({
                   src={match.team1.logo} 
                   alt={match.team1.name}
                   className="w-8 h-8 object-contain"
+                  onError={(e) => {
+                    e.target.src = getImageUrl(null, 'team-logo');
+                  }}
                 />
               ) : (
                 <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
@@ -182,6 +185,9 @@ export const MobileMatchCard = ({
                   src={match.team2.logo} 
                   alt={match.team2.name}
                   className="w-8 h-8 object-contain"
+                  onError={(e) => {
+                    e.target.src = getImageUrl(null, 'team-logo');
+                  }}
                 />
               ) : (
                 <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">

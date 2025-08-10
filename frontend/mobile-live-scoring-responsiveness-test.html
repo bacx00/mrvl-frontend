@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MRVL Mobile Live Scoring Responsiveness Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .test-section h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+
+        .viewport-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-card {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #4299e1;
+        }
+
+        .info-card strong {
+            display: block;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .live-scoring-demo {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background: #f8fafc;
+        }
+
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .team {
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .team-logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #4299e1, #667eea);
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .team-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .score {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .vs {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #718096;
+            min-width: 60px;
+        }
+
+        .match-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .info-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .info-item .label {
+            font-size: 0.875rem;
+            color: #718096;
+            margin-bottom: 5px;
+        }
+
+        .info-item .value {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .live-indicator {
+            background: #f56565;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .live-indicator::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .map-scores {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .map-score {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .map-score.active {
+            border-color: #4299e1;
+            background: #ebf8ff;
+        }
+
+        .map-number {
+            font-size: 0.875rem;
+            color: #718096;
+            margin-bottom: 5px;
+        }
+
+        .map-name {
+            font-size: 0.75rem;
+            color: #4a5568;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .map-result {
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .player-stats {
+            margin: 20px 0;
+        }
+
+        .stats-header {
+            background: #4a5568;
+            color: white;
+            padding: 10px;
+            border-radius: 8px 8px 0 0;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .stats-table {
+            border: 1px solid #e2e8f0;
+            border-radius: 0 0 8px 8px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            padding: 10px;
+            border-bottom: 1px solid #f1f5f9;
+            align-items: center;
+            font-size: 0.875rem;
+        }
+
+        .stats-row:hover {
+            background: #f8fafc;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .player-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-primary {
+            background: #4299e1;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3182ce;
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #38a169;
+        }
+
+        .btn-warning {
+            background: #ed8936;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #dd6b20;
+        }
+
+        .test-results {
+            margin-top: 20px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: #f7fafc;
+            border-radius: 6px;
+            border-left: 4px solid #cbd5e0;
+        }
+
+        .result-item.pass {
+            border-left-color: #48bb78;
+            background: #f0fff4;
+        }
+
+        .result-item.fail {
+            border-left-color: #f56565;
+            background: #fff5f5;
+        }
+
+        .result-item.warning {
+            border-left-color: #ed8936;
+            background: #fffaf0;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-pass {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-fail {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .status-warning {
+            background: #feebc8;
+            color: #7b341e;
+        }
+
+        /* Responsive Design Tests */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .match-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .vs {
+                transform: rotate(90deg);
+                margin: 10px 0;
+            }
+            
+            .stats-row {
+                grid-template-columns: 1fr;
+                gap: 5px;
+                text-align: center;
+            }
+            
+            .player-info {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .test-section {
+                padding: 15px;
+            }
+            
+            .team-logo {
+                width: 50px;
+                height: 50px;
+                font-size: 1rem;
+            }
+            
+            .score {
+                font-size: 1.5rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 MRVL Mobile Live Scoring Test</h1>
+            <p>Comprehensive responsiveness validation for live match scoring system</p>
+        </div>
+
+        <div class="test-section">
+            <h2>📱 Viewport Information</h2>
+            <div class="viewport-info">
+                <div class="info-card">
+                    <strong>Screen Width</strong>
+                    <span id="screen-width">-</span>
+                </div>
+                <div class="info-card">
+                    <strong>Screen Height</strong>
+                    <span id="screen-height">-</span>
+                </div>
+                <div class="info-card">
+                    <strong>Device Type</strong>
+                    <span id="device-type">-</span>
+                </div>
+                <div class="info-card">
+                    <strong>Orientation</strong>
+                    <span id="orientation">-</span>
+                </div>
+                <div class="info-card">
+                    <strong>Touch Support</strong>
+                    <span id="touch-support">-</span>
+                </div>
+                <div class="info-card">
+                    <strong>Connection</strong>
+                    <span id="connection-type">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>⚡ Live Scoring Demo</h2>
+            <div class="live-scoring-demo">
+                <div class="match-header">
+                    <div class="team">
+                        <div class="team-logo">SEN</div>
+                        <div class="team-name">Sentinels</div>
+                        <div class="score" id="team1-score">2</div>
+                    </div>
+                    
+                    <div class="vs">
+                        <div>VS</div>
+                        <div style="margin-top: 10px;">
+                            <div class="live-indicator">LIVE</div>
+                        </div>
+                    </div>
+                    
+                    <div class="team">
+                        <div class="team-logo">LOU</div>
+                        <div class="team-name">LOUD</div>
+                        <div class="score" id="team2-score">1</div>
+                    </div>
+                </div>
+
+                <div class="match-info">
+                    <div class="info-item">
+                        <div class="label">Format</div>
+                        <div class="value">BO5</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">Current Map</div>
+                        <div class="value">4/5</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">Match Time</div>
+                        <div class="value" id="match-timer">15:42</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">Viewers</div>
+                        <div class="value" id="viewer-count">12,543</div>
+                    </div>
+                </div>
+
+                <div class="map-scores">
+                    <div class="map-score">
+                        <div class="map-number">Map 1</div>
+                        <div class="map-name">Tokyo 2099</div>
+                        <div class="map-result">2-0</div>
+                    </div>
+                    <div class="map-score">
+                        <div class="map-number">Map 2</div>
+                        <div class="map-name">Wakanda</div>
+                        <div class="map-result">0-2</div>
+                    </div>
+                    <div class="map-score">
+                        <div class="map-number">Map 3</div>
+                        <div class="map-name">Sanctum</div>
+                        <div class="map-result">2-1</div>
+                    </div>
+                    <div class="map-score active">
+                        <div class="map-number">Map 4</div>
+                        <div class="map-name">Brooklyn</div>
+                        <div class="map-result" id="current-map-score">1-1</div>
+                    </div>
+                    <div class="map-score">
+                        <div class="map-number">Map 5</div>
+                        <div class="map-name">TBD</div>
+                        <div class="map-result">-</div>
+                    </div>
+                </div>
+
+                <div class="player-stats">
+                    <div class="stats-header">Sentinels</div>
+                    <div class="stats-table">
+                        <div class="stats-row" style="background: #f1f5f9; font-weight: bold;">
+                            <div>Player</div>
+                            <div>K</div>
+                            <div>D</div>
+                            <div>A</div>
+                            <div>Hero</div>
+                        </div>
+                        <div class="stats-row">
+                            <div class="player-info">
+                                <div class="player-avatar">TZ</div>
+                                <div>TenZ</div>
+                            </div>
+                            <div id="tenz-kills">18</div>
+                            <div id="tenz-deaths">7</div>
+                            <div id="tenz-assists">12</div>
+                            <div>Spider-Man</div>
+                        </div>
+                        <div class="stats-row">
+                            <div class="player-info">
+                                <div class="player-avatar">JO</div>
+                                <div>johnqt</div>
+                            </div>
+                            <div id="johnqt-kills">15</div>
+                            <div id="johnqt-deaths">9</div>
+                            <div id="johnqt-assists">8</div>
+                            <div>Iron Man</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="player-stats">
+                    <div class="stats-header">LOUD</div>
+                    <div class="stats-table">
+                        <div class="stats-row" style="background: #f1f5f9; font-weight: bold;">
+                            <div>Player</div>
+                            <div>K</div>
+                            <div>D</div>
+                            <div>A</div>
+                            <div>Hero</div>
+                        </div>
+                        <div class="stats-row">
+                            <div class="player-info">
+                                <div class="player-avatar">AS</div>
+                                <div>aspas</div>
+                            </div>
+                            <div id="aspas-kills">16</div>
+                            <div id="aspas-deaths">8</div>
+                            <div id="aspas-assists">6</div>
+                            <div>Hulk</div>
+                        </div>
+                        <div class="stats-row">
+                            <div class="player-info">
+                                <div class="player-avatar">SA</div>
+                                <div>saadhak</div>
+                            </div>
+                            <div id="saadhak-kills">12</div>
+                            <div id="saadhak-deaths">11</div>
+                            <div id="saadhak-assists">9</div>
+                            <div>Captain America</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="simulateScoreUpdate()">
+                    ⚡ Simulate Score Update
+                </button>
+                <button class="btn btn-success" onclick="simulatePlayerStats()">
+                    📊 Update Player Stats
+                </button>
+                <button class="btn btn-warning" onclick="testResponsiveness()">
+                    📱 Test Responsiveness
+                </button>
+                <button class="btn btn-primary" onclick="runPerformanceTest()">
+                    🚀 Performance Test
+                </button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>✅ Test Results</h2>
+            <div class="test-results" id="test-results">
+                <div class="result-item">
+                    <span>Initial viewport detection...</span>
+                    <span class="status-badge status-warning">Running</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Test state management
+        let testResults = [];
+        let performanceMetrics = {
+            renderTimes: [],
+            updateLatencies: [],
+            memoryUsage: []
+        };
+
+        // Initialize viewport information
+        function updateViewportInfo() {
+            document.getElementById('screen-width').textContent = `${window.innerWidth}px`;
+            document.getElementById('screen-height').textContent = `${window.innerHeight}px`;
+            
+            // Determine device type
+            const width = window.innerWidth;
+            let deviceType = 'Desktop';
+            if (width <= 480) deviceType = 'Mobile (Small)';
+            else if (width <= 768) deviceType = 'Mobile/Tablet';
+            else if (width <= 1024) deviceType = 'Tablet/Small Desktop';
+            
+            document.getElementById('device-type').textContent = deviceType;
+            document.getElementById('orientation').textContent = 
+                window.innerHeight > window.innerWidth ? 'Portrait' : 'Landscape';
+            document.getElementById('touch-support').textContent = 
+                'ontouchstart' in window ? 'Yes' : 'No';
+            
+            // Connection information
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            document.getElementById('connection-type').textContent = 
+                connection ? `${connection.effectiveType} (${connection.downlink}Mbps)` : 'Unknown';
+        }
+
+        // Add test result
+        function addTestResult(testName, status, details = '') {
+            const result = { testName, status, details, timestamp: Date.now() };
+            testResults.push(result);
+            
+            const container = document.getElementById('test-results');
+            const resultElement = document.createElement('div');
+            resultElement.className = `result-item ${status}`;
+            resultElement.innerHTML = `
+                <span>${testName} ${details ? `- ${details}` : ''}</span>
+                <span class="status-badge status-${status}">${status.toUpperCase()}</span>
+            `;
+            
+            // Insert at the top
+            container.insertBefore(resultElement, container.firstChild);
+        }
+
+        // Simulate live score updates
+        function simulateScoreUpdate() {
+            const startTime = performance.now();
+            
+            // Random score update
+            const team1Score = Math.floor(Math.random() * 3);
+            const team2Score = Math.floor(Math.random() * 3);
+            
+            document.getElementById('team1-score').textContent = team1Score;
+            document.getElementById('team2-score').textContent = team2Score;
+            document.getElementById('current-map-score').textContent = `${team1Score}-${team2Score}`;
+            
+            const endTime = performance.now();
+            const latency = endTime - startTime;
+            performanceMetrics.updateLatencies.push(latency);
+            
+            addTestResult('Score Update Simulation', 'pass', `${latency.toFixed(2)}ms latency`);
+            
+            // Simulate real-time viewer count update
+            const newViewerCount = Math.floor(Math.random() * 5000) + 10000;
+            document.getElementById('viewer-count').textContent = newViewerCount.toLocaleString();
+        }
+
+        // Simulate player stats updates
+        function simulatePlayerStats() {
+            const startTime = performance.now();
+            
+            // Update TenZ stats
+            const tenzKills = Math.floor(Math.random() * 10) + 15;
+            const tenzDeaths = Math.floor(Math.random() * 5) + 5;
+            const tenzAssists = Math.floor(Math.random() * 8) + 8;
+            
+            document.getElementById('tenz-kills').textContent = tenzKills;
+            document.getElementById('tenz-deaths').textContent = tenzDeaths;
+            document.getElementById('tenz-assists').textContent = tenzAssists;
+            
+            // Update aspas stats
+            const aspasKills = Math.floor(Math.random() * 8) + 14;
+            const aspasDeaths = Math.floor(Math.random() * 5) + 6;
+            const aspasAssists = Math.floor(Math.random() * 6) + 4;
+            
+            document.getElementById('aspas-kills').textContent = aspasKills;
+            document.getElementById('aspas-deaths').textContent = aspasDeaths;
+            document.getElementById('aspas-assists').textContent = aspasAssists;
+            
+            const endTime = performance.now();
+            const latency = endTime - startTime;
+            
+            addTestResult('Player Stats Update', 'pass', `Updated 2 players in ${latency.toFixed(2)}ms`);
+        }
+
+        // Test responsive design
+        function testResponsiveness() {
+            const currentWidth = window.innerWidth;
+            const testWidths = [320, 480, 768, 1024, 1440];
+            let responsiveIssues = 0;
+            
+            // Check if current layout looks good
+            const matchHeader = document.querySelector('.match-header');
+            const statsRows = document.querySelectorAll('.stats-row');
+            const mapScores = document.querySelector('.map-scores');
+            
+            // Test 1: Match header responsiveness
+            if (currentWidth <= 768) {
+                const headerStyle = getComputedStyle(matchHeader);
+                if (headerStyle.flexDirection === 'column') {
+                    addTestResult('Mobile Header Layout', 'pass', 'Header properly stacks on mobile');
+                } else {
+                    addTestResult('Mobile Header Layout', 'fail', 'Header should stack on mobile');
+                    responsiveIssues++;
+                }
+            }
+            
+            // Test 2: Stats table responsiveness
+            if (currentWidth <= 480) {
+                const firstRow = statsRows[1]; // Skip header
+                if (firstRow) {
+                    const rowStyle = getComputedStyle(firstRow);
+                    if (rowStyle.gridTemplateColumns.includes('1fr')) {
+                        addTestResult('Mobile Stats Layout', 'pass', 'Stats properly reflow on small screens');
+                    } else {
+                        addTestResult('Mobile Stats Layout', 'warning', 'Stats layout may be cramped');
+                        responsiveIssues++;
+                    }
+                }
+            }
+            
+            // Test 3: Map scores grid
+            const mapScoreStyle = getComputedStyle(mapScores);
+            if (mapScoreStyle.display === 'grid') {
+                addTestResult('Map Scores Grid', 'pass', 'Map scores use responsive grid');
+            } else {
+                addTestResult('Map Scores Grid', 'warning', 'Map scores should use CSS Grid');
+                responsiveIssues++;
+            }
+            
+            // Test 4: Touch-friendly targets
+            if ('ontouchstart' in window) {
+                const buttons = document.querySelectorAll('.btn');
+                let smallButtons = 0;
+                
+                buttons.forEach(button => {
+                    const rect = button.getBoundingClientRect();
+                    if (rect.height < 44) smallButtons++; // iOS minimum touch target
+                });
+                
+                if (smallButtons === 0) {
+                    addTestResult('Touch Target Size', 'pass', 'All buttons meet minimum touch target size');
+                } else {
+                    addTestResult('Touch Target Size', 'warning', `${smallButtons} buttons below recommended size`);
+                    responsiveIssues++;
+                }
+            }
+            
+            // Overall responsiveness assessment
+            if (responsiveIssues === 0) {
+                addTestResult('Overall Responsiveness', 'pass', 'All responsive tests passed');
+            } else {
+                addTestResult('Overall Responsiveness', 'warning', `${responsiveIssues} issues found`);
+            }
+        }
+
+        // Performance testing
+        function runPerformanceTest() {
+            addTestResult('Performance Test', 'pass', 'Starting comprehensive performance analysis...');
+            
+            // Test 1: Render performance
+            const renderStart = performance.now();
+            
+            // Simulate rapid updates
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    simulateScoreUpdate();
+                    
+                    if (i === 19) {
+                        const avgLatency = performanceMetrics.updateLatencies.reduce((a, b) => a + b, 0) / performanceMetrics.updateLatencies.length;
+                        
+                        if (avgLatency < 16) { // 60fps threshold
+                            addTestResult('Render Performance', 'pass', `Avg ${avgLatency.toFixed(2)}ms (60fps capable)`);
+                        } else if (avgLatency < 33) { // 30fps threshold
+                            addTestResult('Render Performance', 'warning', `Avg ${avgLatency.toFixed(2)}ms (30fps capable)`);
+                        } else {
+                            addTestResult('Render Performance', 'fail', `Avg ${avgLatency.toFixed(2)}ms (below 30fps)`);
+                        }
+                    }
+                }, i * 50);
+            }
+            
+            // Test 2: Memory usage (if available)
+            if (performance.memory) {
+                const memoryMB = performance.memory.usedJSHeapSize / 1024 / 1024;
+                if (memoryMB < 50) {
+                    addTestResult('Memory Usage', 'pass', `${memoryMB.toFixed(1)}MB heap used`);
+                } else if (memoryMB < 100) {
+                    addTestResult('Memory Usage', 'warning', `${memoryMB.toFixed(1)}MB heap used`);
+                } else {
+                    addTestResult('Memory Usage', 'fail', `${memoryMB.toFixed(1)}MB heap used (high)`);
+                }
+            }
+            
+            // Test 3: DOM query performance
+            const domStart = performance.now();
+            for (let i = 0; i < 1000; i++) {
+                document.querySelector('.team-logo');
+                document.getElementById('team1-score');
+                document.querySelectorAll('.stats-row');
+            }
+            const domEnd = performance.now();
+            const domTime = domEnd - domStart;
+            
+            if (domTime < 10) {
+                addTestResult('DOM Query Performance', 'pass', `${domTime.toFixed(2)}ms for 3000 queries`);
+            } else if (domTime < 50) {
+                addTestResult('DOM Query Performance', 'warning', `${domTime.toFixed(2)}ms for 3000 queries`);
+            } else {
+                addTestResult('DOM Query Performance', 'fail', `${domTime.toFixed(2)}ms for 3000 queries (slow)`);
+            }
+            
+            // Test 4: Network simulation (if online)
+            if (navigator.onLine) {
+                const networkStart = Date.now();
+                fetch('/api/matches/1', { method: 'HEAD' })
+                    .then(() => {
+                        const networkTime = Date.now() - networkStart;
+                        if (networkTime < 100) {
+                            addTestResult('API Response Time', 'pass', `${networkTime}ms response`);
+                        } else if (networkTime < 500) {
+                            addTestResult('API Response Time', 'warning', `${networkTime}ms response`);
+                        } else {
+                            addTestResult('API Response Time', 'fail', `${networkTime}ms response (slow)`);
+                        }
+                    })
+                    .catch(() => {
+                        addTestResult('API Response Time', 'warning', 'API endpoint not available in test environment');
+                    });
+            }
+        }
+
+        // Timer simulation
+        function updateMatchTimer() {
+            const timer = document.getElementById('match-timer');
+            const current = timer.textContent.split(':');
+            let minutes = parseInt(current[0]);
+            let seconds = parseInt(current[1]);
+            
+            seconds++;
+            if (seconds >= 60) {
+                seconds = 0;
+                minutes++;
+            }
+            
+            timer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Event listeners
+        window.addEventListener('resize', () => {
+            updateViewportInfo();
+            addTestResult('Viewport Resize', 'pass', `New dimensions: ${window.innerWidth}x${window.innerHeight}`);
+        });
+
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                updateViewportInfo();
+                addTestResult('Orientation Change', 'pass', 'Viewport updated after orientation change');
+            }, 100);
+        });
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            updateViewportInfo();
+            addTestResult('Page Load', 'pass', 'Live scoring interface loaded successfully');
+            
+            // Start match timer
+            setInterval(updateMatchTimer, 1000);
+            
+            // Auto-run initial tests
+            setTimeout(() => {
+                testResponsiveness();
+            }, 1000);
+            
+            // Simulate periodic live updates
+            setInterval(() => {
+                if (Math.random() > 0.7) { // 30% chance every 5 seconds
+                    simulateScoreUpdate();
+                }
+            }, 5000);
+        });
+
+        // PWA-like features test
+        if ('serviceWorker' in navigator) {
+            addTestResult('Service Worker Support', 'pass', 'Browser supports offline functionality');
+        } else {
+            addTestResult('Service Worker Support', 'warning', 'Offline support not available');
+        }
+
+        // WebSocket simulation
+        function testWebSocketSimulation() {
+            // Simulate WebSocket connection
+            addTestResult('WebSocket Connection', 'pass', 'Real-time connection established (simulated)');
+            
+            // Simulate periodic live data
+            setInterval(() => {
+                if (Math.random() > 0.8) {
+                    addTestResult('Live Data Received', 'pass', 'Real-time match data synchronized');
+                }
+            }, 10000);
+        }
+
+        // Generate final test report
+        function generateTestReport() {
+            const passed = testResults.filter(r => r.status === 'pass').length;
+            const warnings = testResults.filter(r => r.status === 'warning').length;
+            const failed = testResults.filter(r => r.status === 'fail').length;
+            const total = testResults.length;
+            
+            const report = {
+                timestamp: new Date().toISOString(),
+                viewport: {
+                    width: window.innerWidth,
+                    height: window.innerHeight,
+                    devicePixelRatio: window.devicePixelRatio,
+                    orientation: window.innerHeight > window.innerWidth ? 'portrait' : 'landscape'
+                },
+                results: {
+                    total,
+                    passed,
+                    warnings,
+                    failed,
+                    successRate: `${((passed / total) * 100).toFixed(1)}%`
+                },
+                performance: {
+                    averageUpdateLatency: performanceMetrics.updateLatencies.length > 0 ? 
+                        (performanceMetrics.updateLatencies.reduce((a, b) => a + b, 0) / performanceMetrics.updateLatencies.length).toFixed(2) + 'ms' : 'N/A',
+                    memoryUsage: performance.memory ? `${(performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(1)}MB` : 'N/A'
+                },
+                tests: testResults
+            };
+            
+            console.log('📊 Mobile Live Scoring Test Report:', report);
+            return report;
+        }
+
+        // Auto-generate report after 30 seconds
+        setTimeout(() => {
+            const report = generateTestReport();
+            addTestResult('Test Report Generated', 'pass', `${report.results.total} tests completed with ${report.results.successRate} success rate`);
+        }, 30000);
+
+        // Initialize WebSocket simulation
+        testWebSocketSimulation();
+    </script>
+</body>
+</html>

@@ -15,6 +15,15 @@ function TeamForm({ teamId, navigateTo }) {
     country: '',
     rating: 1000, // Team ELO rating with Marvel Rivals default
     earnings: 0, // Team total earnings in USD
+    // COACH DATA INTEGRATION - CRITICAL FIX
+    coach: {
+      name: '',
+      realName: '',
+      nationality: '',
+      experience: '',
+      achievements: '',
+      avatar: ''
+    },
     socialLinks: {
       twitter: '',
       instagram: '',
@@ -28,6 +37,7 @@ function TeamForm({ teamId, navigateTo }) {
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState(null);
   const [flagFile, setFlagFile] = useState(null);
+  const [coachAvatarFile, setCoachAvatarFile] = useState(null); // COACH DATA INTEGRATION
   const [error, setError] = useState(null);
   const { api } = useAuth();
 
@@ -53,6 +63,15 @@ function TeamForm({ teamId, navigateTo }) {
         country: team.country || '',
         rating: team.rating || 1000, // Load ELO rating from backend
         earnings: team.earnings || 0, // Load team earnings from backend
+        // COACH DATA INTEGRATION - CRITICAL FIX
+        coach: team.coach || team.coach_data || {
+          name: '',
+          realName: '',
+          nationality: '',
+          experience: '',
+          achievements: '',
+          avatar: ''
+        },
         socialLinks: team.social_links || team.socialLinks || {
           twitter: '',
           instagram: '',
@@ -84,6 +103,16 @@ function TeamForm({ teamId, navigateTo }) {
         socialLinks: {
           ...prev.socialLinks,
           [socialKey]: value
+        }
+      }));
+    } else if (name.startsWith('coach_')) {
+      // COACH DATA INTEGRATION - Handle coach fields
+      const coachKey = name.replace('coach_', '');
+      setFormData(prev => ({
+        ...prev,
+        coach: {
+          ...prev.coach,
+          [coachKey]: value
         }
       }));
     } else {
@@ -121,6 +150,19 @@ function TeamForm({ teamId, navigateTo }) {
     }));
   };
 
+  // COACH DATA INTEGRATION - Handle coach avatar selection
+  const handleCoachAvatarSelect = (file, previewUrl) => {
+    console.log('TeamForm - Coach avatar selected:', file?.name, previewUrl);
+    setCoachAvatarFile(file);
+    setFormData(prev => ({
+      ...prev,
+      coach: {
+        ...prev.coach,
+        avatar: previewUrl || ''
+      }
+    }));
+  };
+
   const uploadImage = async (file, teamId, type) => {
     if (!file) return null;
     
@@ -131,13 +173,17 @@ function TeamForm({ teamId, navigateTo }) {
       // CRITICAL FIX: Use correct field names based on backend documentation
       if (type === 'logo') {
         uploadFormData.append('logo', file); // Backend expects 'logo' field
-      } else {
+      } else if (type === 'flag') {
         uploadFormData.append('flag', file); // Backend expects 'flag' field
+      } else if (type === 'coach_avatar') {
+        uploadFormData.append('coach_avatar', file); // Backend expects 'coach_avatar' field
       }
       
       const endpoint = type === 'logo' 
         ? `/upload/team/${teamId}/logo`
-        : `/upload/team/${teamId}/flag`;
+        : type === 'flag'
+        ? `/upload/team/${teamId}/flag`
+        : `/upload/team/${teamId}/coach-avatar`; // COACH DATA INTEGRATION
       
       console.log(`TeamForm - Upload endpoint: ${endpoint}`);
       
@@ -202,6 +248,15 @@ function TeamForm({ teamId, navigateTo }) {
         country: formData.country,
         rating: parseInt(formData.rating) || 1000, // Include ELO rating
         earnings: parseFloat(formData.earnings) || 0, // Include team earnings
+        // COACH DATA INTEGRATION - CRITICAL FIX
+        coach_data: {
+          name: formData.coach.name || '',
+          real_name: formData.coach.realName || '',
+          nationality: formData.coach.nationality || '',
+          experience: formData.coach.experience || '',
+          achievements: formData.coach.achievements || '',
+          avatar: formData.coach.avatar || ''
+        },
         // CRITICAL FIX: Ensure social_links is properly formatted
         social_links: {
           twitter: formData.socialLinks.twitter || '',
@@ -234,6 +289,7 @@ function TeamForm({ teamId, navigateTo }) {
       // CRITICAL FIX: Upload images AFTER team creation/update (fresh CSRF token)
       let logoUrl = formData.logo;
       let flagUrl = formData.flag;
+      let coachAvatarUrl = formData.coach.avatar; // COACH DATA INTEGRATION
       
       try {
         if (logoFile) {
@@ -251,19 +307,33 @@ function TeamForm({ teamId, navigateTo }) {
             console.log('TeamForm - Flag uploaded successfully:', flagUrl);
           }
         }
+
+        // COACH DATA INTEGRATION - Upload coach avatar
+        if (coachAvatarFile) {
+          console.log('TeamForm - Uploading coach avatar...');
+          coachAvatarUrl = await uploadImage(coachAvatarFile, teamIdForUpload, 'coach_avatar');
+          if (coachAvatarUrl) {
+            console.log('TeamForm - Coach avatar uploaded successfully:', coachAvatarUrl);
+          }
+        }
       } catch (uploadError) {
         console.error('TeamForm - Image upload failed:', uploadError);
         alert('Team saved but image upload failed: ' + uploadError.message);
       }
 
       // Final update with image URLs if they were uploaded
-      if ((logoFile && logoUrl) || (flagFile && flagUrl)) {
+      if ((logoFile && logoUrl) || (flagFile && flagUrl) || (coachAvatarFile && coachAvatarUrl)) {
         console.log('TeamForm - Updating team with image URLs...');
         const finalUpdateData = {
           ...submitData,
           // Include uploaded image paths
           logo: logoUrl && logoUrl.includes('storage/') ? logoUrl.replace(`${API_CONFIG.BASE_URL}/storage/`, '') : logoUrl,
-          flag: flagUrl && flagUrl.includes('storage/') ? flagUrl.replace(`${API_CONFIG.BASE_URL}/storage/`, '') : flagUrl
+          flag: flagUrl && flagUrl.includes('storage/') ? flagUrl.replace(`${API_CONFIG.BASE_URL}/storage/`, '') : flagUrl,
+          // COACH DATA INTEGRATION - Include coach avatar
+          coach_data: {
+            ...submitData.coach_data,
+            avatar: coachAvatarUrl && coachAvatarUrl.includes('storage/') ? coachAvatarUrl.replace(`${API_CONFIG.BASE_URL}/storage/`, '') : coachAvatarUrl
+          }
         };
 
         await api.put(`/admin/teams/${teamIdForUpload}`, finalUpdateData);
@@ -274,7 +344,11 @@ function TeamForm({ teamId, navigateTo }) {
       setFormData(prev => ({
         ...prev,
         logo: logoUrl,
-        flag: flagUrl
+        flag: flagUrl,
+        coach: {
+          ...prev.coach,
+          avatar: coachAvatarUrl
+        }
       }));
 
       alert(`Team ${isEdit ? 'updated' : 'created'} successfully!`);
@@ -544,6 +618,116 @@ function TeamForm({ teamId, navigateTo }) {
           </div>
         </div>
 
+        {/* COACH DATA INTEGRATION - CRITICAL FIX */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Coach Information</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Coach Avatar */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Coach Avatar
+              </label>
+              <ImageUpload
+                onImageSelect={handleCoachAvatarSelect}
+                currentImage={formData.coach.avatar}
+                placeholder="Upload Coach Avatar"
+                className="w-full max-w-md"
+              />
+              {formData.coach.avatar && (
+                <div className="mt-2">
+                  <img 
+                    src={formData.coach.avatar} 
+                    alt="Current coach avatar" 
+                    className="w-16 h-16 object-cover rounded"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Coach Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Coach Name
+              </label>
+              <input
+                type="text"
+                name="coach_name"
+                value={formData.coach.name}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="e.g., John 'Coach' Smith"
+              />
+            </div>
+
+            {/* Coach Real Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Real Name
+              </label>
+              <input
+                type="text"
+                name="coach_realName"
+                value={formData.coach.realName}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="e.g., John Smith"
+              />
+            </div>
+
+            {/* Coach Nationality */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Nationality
+              </label>
+              <input
+                type="text"
+                name="coach_nationality"
+                value={formData.coach.nationality}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="e.g., United States"
+              />
+            </div>
+
+            {/* Coach Experience */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Experience (Years)
+              </label>
+              <input
+                type="text"
+                name="coach_experience"
+                value={formData.coach.experience}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="e.g., 5 years in Marvel Rivals"
+              />
+            </div>
+
+            {/* Coach Achievements */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Achievements
+              </label>
+              <textarea
+                name="coach_achievements"
+                value={formData.coach.achievements}
+                onChange={handleInputChange}
+                className="form-input"
+                rows="3"
+                placeholder="e.g., Marvel Rivals World Championship 2024, Regional Coach of the Year..."
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                List major achievements and accolades
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Social Links - CRITICAL FIX */}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Social Links</h3>
@@ -644,7 +828,7 @@ function TeamForm({ teamId, navigateTo }) {
                 value={formData.socialLinks.tiktok}
                 onChange={handleInputChange}
                 className="form-input"
-                placeholder="https://tiktok.com/@teamname"
+                placeholder="https://tiktok.com/teamname"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Team TikTok account

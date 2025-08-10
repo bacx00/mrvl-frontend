@@ -1,0 +1,511 @@
+{
+  "metadata": {
+    "extraction_date": "2025-08-10",
+    "source_note": "Data compiled from multiple esports sources due to Liquipedia rate limiting",
+    "total_teams_found": 35,
+    "regions": ["North America", "EMEA", "Asia-Pacific", "Oceania"],
+    "note": "The claim of 57 teams on Liquipedia could not be fully verified due to access restrictions"
+  },
+  "teams": {
+    "north_america": [
+      {
+        "team_name": "100 Thieves",
+        "region": "North America",
+        "country": "United States",
+        "status": "Active",
+        "founded_date": "March 2025 (Marvel Rivals division)",
+        "organization_info": {
+          "parent_org": "100 Thieves",
+          "headquarters": "Los Angeles, USA",
+          "ceo": "Matthew 'Nadeshot' Haag"
+        },
+        "roster": {
+          "players": [
+            {"name": "Delenaa", "role": "DPS/Duelist"},
+            {"name": "Terra", "role": "DPS/Duelist", "former_name": "Afersie"},
+            {"name": "Vinnie", "role": "Tank/Vanguard"},
+            {"name": "TopTierKid", "role": "Tank/Vanguard", "alias": "TTK"},
+            {"name": "Harvey", "role": "Support/Strategist"},
+            {"name": "SJP", "role": "Support/Strategist"},
+            {"name": "Billion", "role": "Flex", "former_name": "Amano"}
+          ],
+          "staff": [
+            {"name": "BlueJae", "role": "Manager"}
+          ]
+        },
+        "achievements": [
+          {"tournament": "MRC SO: NA PC", "placement": "1st"},
+          {"tournament": "Dawn of Legends", "placement": "1st"},
+          {"tournament": "1k Infinity War Tourney", "placement": "2nd"},
+          {"tournament": "War of Realms NA PC", "placement": "3rd"},
+          {"tournament": "Rivals Fight Night 2", "achievement": "Beat FlyQuest 3-1 and Sentinels 3-0"}
+        ],
+        "sponsors": ["Lexus"],
+        "social_media": {
+          "website": "https://100thieves.com",
+          "twitter": "@100thieves"
+        },
+        "total_earnings": "Not specified",
+        "background": "Formerly Team Mutants, picked up by 100 Thieves in March 2025"
+      },
+      {
+        "team_name": "Sentinels",
+        "region": "North America",
+        "country": "United States",
+        "status": "Active",
+        "founded_date": "March 2025 (Marvel Rivals roster announcement)",
+        "roster": {
+          "players": [
+            {"name": "Coluge", "role": "Not specified"},
+            {"name": "Hogz", "role": "Not specified"},
+            {"name": "Rymazing", "role": "Not specified"},
+            {"name": "SuperGomez", "role": "Not specified"},
+            {"name": "aramori", "role": "Not specified"},
+            {"name": "Karova", "role": "Not specified"},
+            {"name": "Teki", "role": "Vanguard", "note": "New addition March 2025"}
+          ],
+          "staff": [
+            {"name": "William 'Crimzo' Hernandez", "role": "Coach/Fill Vanguard"}
+          ]
+        },
+        "achievements": [
+          {"tournament": "Marvel Rivals Fight Night #8", "placement": "1st", "note": "First trophy after Teki recruitment"}
+        ],
+        "background": "One of the most successful rosters from early Marvel Rivals competitive scene",
+        "social_media": {
+          "website": "https://sentinels.gg"
+        }
+      },
+      {
+        "team_name": "Team Envy",
+        "region": "North America", 
+        "country": "United States",
+        "status": "Active",
+        "organization_info": {
+          "headquarters": "Dallas, Texas"
+        },
+        "roster": {
+          "players": [
+            {"name": "cal", "role": "Not specified"},
+            {"name": "iRemiix", "role": "Not specified"},
+            {"name": "nkae", "role": "Not specified"},
+            {"name": "Paintbrush", "role": "Not specified"},
+            {"name": "SPACE", "role": "Not specified"},
+            {"name": "Sleepy", "role": "Not specified"}
+          ]
+        },
+        "background": "Features various former Overwatch players with years of pro scene experience"
+      },
+      {
+        "team_name": "FlyQuest",
+        "region": "North America",
+        "country": "United States", 
+        "status": "Active",
+        "roster": {
+          "players": [
+            {"name": "Ghasklin", "role": "Not specified"},
+            {"name": "SparkChief", "role": "Not specified"},
+            {"name": "adios", "role": "Not specified"},
+            {"name": "energy", "role": "Not specified"},
+            {"name": "lyte", "role": "Not specified"},
+            {"name": "cooper", "role": "Not specified"},
+            {"name": "Zelos", "role": "Not specified"}
+          ]
+        },
+        "background": "Acquired players from Shikigami's former roster"
+      },
+      {
+        "team_name": "SHROUD-X",
+        "region": "North America",
+        "country": "United States",
+        "status": "Active",
+        "roster": {
+          "players": [
+            {"name": "dongmin", "role": "Not specified"},
+            {"name": "Window", "role": "Not specified"},
+            {"name": "Impuniti", "role": "Not specified"},
+            {"name": "Vision", "role": "Not specified"},
+            {"name": "Doomed", "role": "Not specified"},
+            {"name": "Fidel", "role": "Not specified"},
+            {"name": "Nuk", "role": "Not specified"}
+          ]
+        },
+        "background": "The former Intergalactic team now playing under shroud's banner"
+      },
+      {
+        "team_name": "Luminosity Gaming",
+        "region": "North America",
+        "country": "United States",
+        "status": "Active",
+        "roster": {
+          "players": [
+            {"name": "Alphy", "role": "Not specified"},
+            {"name": "ProGamer360", "role": "Not specified"},
+            {"name": "Orbit", "role": "Not specified"},
+            {"name": "Bready", "role": "Not specified"},
+            {"name": "Paradoxed", "role": "Not specified"},
+            {"name": "Merge", "role": "Not specified"}
+          ]
+        },
+        "organization_info": {
+          "note": "Signed two teams (EMEA and NA)"
+        }
+      },
+      {
+        "team_name": "Rad Esports",
+        "region": "North America",
+        "country": "United States",
+        "status": "Active",
+        "background": "Has been around for a while in Rivals esports with a slightly altered lineup"
+      },
+      {
+        "team_name": "Shikigami", 
+        "region": "North America",
+        "country": "United States",
+        "status": "Roster changes ongoing",
+        "note": "Players moved to FlyQuest"
+      },
+      {
+        "team_name": "NTM",
+        "region": "North America",
+        "country": "United States",
+        "status": "Active",
+        "organization_info": {
+          "headquarters": "Miami, Florida"
+        }
+      },
+      {
+        "team_name": "NRG",
+        "region": "North America",
+        "country": "United States",
+        "status": "Participated in original Marvel Rivals Invitational",
+        "note": "Participation was for one-time tournament without maintaining roster"
+      }
+    ],
+    "emea": [
+      {
+        "team_name": "Virtus.pro",
+        "region": "EMEA",
+        "country": "Russia",
+        "status": "Active",
+        "founded_date": "2003 (organization), February 2025 (Marvel Rivals)",
+        "roster": {
+          "players": [
+            {"name": "phi", "role": "Not specified"},
+            {"name": "SparkR", "role": "Not specified"},
+            {"name": "Nevix", "role": "Not specified"},
+            {"name": "dridro", "role": "Not specified"},
+            {"name": "Sypeh", "role": "Not specified"},
+            {"name": "Finnsi", "role": "Not specified"}
+          ]
+        },
+        "achievements": [
+          {"tournament": "Marvel Rivals Invitational EMEA", "placement": "1st", "note": "Beat OG 4-2 in grand finals"},
+          {"tournament": "Marvel Rivals Fight Night EU", "placements": "Won brackets #1, #3, #4, #5, #6, #7, #8"}
+        ],
+        "background": "Formerly TeamCats, most players are ex-Overwatch pros",
+        "social_media": {
+          "website": "https://virtus.pro"
+        }
+      },
+      {
+        "team_name": "Fnatic",
+        "region": "EMEA",
+        "country": "United Kingdom",
+        "status": "Active",
+        "roster": {
+          "players": [
+            {"name": "Melio", "role": "Not specified"},
+            {"name": "Munkmutta", "role": "Not specified"},
+            {"name": "Blax", "role": "Not specified"},
+            {"name": "Networkz", "role": "Not specified"},
+            {"name": "Linepro", "role": "Not specified"},
+            {"name": "Syylvii", "role": "Not specified"}
+          ]
+        },
+        "background": "Known for dominating Overwatch, now testing waters in Marvel Rivals",
+        "social_media": {
+          "website": "https://fnatic.com"
+        }
+      },
+      {
+        "team_name": "OG Esports",
+        "region": "EMEA",
+        "country": "Multiple",
+        "status": "Active",
+        "roster": {
+          "players": [
+            {"name": "Tanukii", "role": "Not specified"},
+            {"name": "Ken", "role": "Not specified"},
+            {"name": "Etsu", "role": "Not specified"},
+            {"name": "Snayz", "role": "Not specified"},
+            {"name": "Alx", "role": "Not specified"},
+            {"name": "frzo", "role": "Not specified"}
+          ]
+        },
+        "achievements": [
+          {"tournament": "Marvel Rivals Invitational EMEA", "placement": "2nd", "note": "Lost to Virtus.pro 4-2 in finals"}
+        ],
+        "background": "Usually found in CS2 and Dota 2, said entry into Marvel Rivals was 'inevitable'"
+      },
+      {
+        "team_name": "Luminosity Gaming EMEA",
+        "region": "EMEA",
+        "country": "Multiple",
+        "status": "Active",
+        "roster": {
+          "players": [
+            {"name": "TrqstO", "role": "Not specified"},
+            {"name": "Raajaro", "role": "Not specified"},
+            {"name": "Sestroyed", "role": "Not specified"},
+            {"name": "Lv1Crook", "role": "Not specified"},
+            {"name": "fate", "role": "Not specified"},
+            {"name": "Naga", "role": "Not specified"}
+          ]
+        }
+      },
+      {
+        "team_name": "Twisted Minds",
+        "region": "EMEA",
+        "country": "Multiple",
+        "status": "Active",
+        "roster": {
+          "players": [
+            {"name": "Deppie", "role": "Not specified"},
+            {"name": "EgZo", "role": "Not specified"},
+            {"name": "Isack", "role": "Not specified"},
+            {"name": "KayZzer", "role": "Not specified"},
+            {"name": "Ia Kaya", "role": "Not specified"},
+            {"name": "PoxX", "role": "Not specified"},
+            {"name": "TeamCaptain", "role": "Not specified"},
+            {"name": "Vale", "role": "Not specified"}
+          ]
+        }
+      },
+      {
+        "team_name": "DUSTY",
+        "region": "EMEA",
+        "country": "Iceland",
+        "status": "Active",
+        "roster": {
+          "players": [
+            {"name": "424", "role": "Not specified"},
+            {"name": "cmd", "role": "Not specified"},
+            {"name": "FrankyBoxing", "role": "Not specified"},
+            {"name": "ILO", "role": "Not specified"},
+            {"name": "Krizzi", "role": "Not specified"},
+            {"name": "Milkboy", "role": "Not specified"},
+            {"name": "Oriion", "role": "Not specified"},
+            {"name": "sasa", "role": "Not specified"}
+          ]
+        }
+      },
+      {
+        "team_name": "Team Peps",
+        "region": "EMEA",
+        "country": "Multiple",
+        "status": "Active",
+        "roster": {
+          "players": [
+            {"name": "Hqrdest", "role": "Not specified"},
+            {"name": "Leaf", "role": "Not specified"},
+            {"name": "Natlocks", "role": "Not specified"},
+            {"name": "Shuh", "role": "Not specified"},
+            {"name": "Switch", "role": "Not specified"},
+            {"name": "Teemo", "role": "Not specified"},
+            {"name": "Tsuyo", "role": "Not specified"}
+          ]
+        }
+      },
+      {
+        "team_name": "Arrival Seven",
+        "region": "EMEA",
+        "country": "Multiple",
+        "status": "Active"
+      },
+      {
+        "team_name": "Steam Engines",
+        "region": "EMEA", 
+        "country": "Multiple",
+        "status": "Active"
+      },
+      {
+        "team_name": "Brr Brr Patapim",
+        "region": "EMEA",
+        "country": "Multiple", 
+        "status": "Active"
+      },
+      {
+        "team_name": "TEAM1",
+        "region": "EMEA",
+        "country": "Multiple",
+        "status": "Active"
+      }
+    ],
+    "asia_pacific": [
+      {
+        "team_name": "U4RIA NLE",
+        "region": "Asia-Pacific",
+        "country": "Not specified",
+        "status": "Active",
+        "achievements": [
+          {"tournament": "Marvel Rivals Invitational Asia", "placement": "1st", "note": "Beat REJECT"}
+        ]
+      },
+      {
+        "team_name": "REJECT",
+        "region": "Asia-Pacific",
+        "country": "Japan",
+        "status": "Active",
+        "roster": {
+          "players": [
+            {"name": "finale", "role": "Not specified"},
+            {"name": "GARGOYLE", "role": "Not specified"},
+            {"name": "piggy", "role": "Not specified"},
+            {"name": "Gnome", "role": "Not specified"},
+            {"name": "DDobi", "role": "Not specified"},
+            {"name": "MOKA", "role": "Not specified"}
+          ],
+          "staff": [
+            {"name": "tobi", "role": "Coach"}
+          ]
+        },
+        "achievements": [
+          {"tournament": "Marvel Rivals Invitational Asia", "placement": "2nd", "note": "Lost to U4RIA NLE 3-4"},
+          {"tournament": "Marvel Rivals Ignite Stage 1", "record": "5-0 win-loss ratio"}
+        ],
+        "social_media": {
+          "twitter": "@RC_REJECT"
+        }
+      },
+      {
+        "team_name": "Nova Esports",
+        "region": "Asia-Pacific",
+        "country": "Hong Kong",
+        "status": "Active",
+        "roster": {
+          "players": [
+            {"name": "UWU3", "role": "Not specified"},
+            {"name": "夜信A", "role": "Not specified", "english_name": "Yexin A"},
+            {"name": "Wenxuyan", "role": "Not specified"},
+            {"name": "Clembb", "role": "Not specified"},
+            {"name": "Vonxl", "role": "Not specified"}
+          ]
+        },
+        "total_earnings": "$45,806",
+        "achievements": [
+          {"tournament": "Marvel Rivals Ignite Mid-Season Finals Play-In Stage", "note": "Fell to ENVY and Rad EU"}
+        ]
+      },
+      {
+        "team_name": "LGD Gaming",
+        "region": "Asia-Pacific",
+        "country": "China",
+        "status": "Active"
+      },
+      {
+        "team_name": "FURY",
+        "region": "Asia-Pacific",
+        "country": "Not specified",
+        "status": "Active"
+      },
+      {
+        "team_name": "Gen.G",
+        "region": "Asia-Pacific",
+        "country": "South Korea",
+        "status": "Active",
+        "note": "Expanded Marvel Rivals esports roster in May 2025"
+      }
+    ],
+    "oceania": [
+      {
+        "team_name": "Kanga Esports",
+        "region": "Oceania",
+        "country": "Australia", 
+        "status": "Active",
+        "roster": {
+          "players": [
+            {"name": "Tyraxe", "role": "Not specified"},
+            {"name": "Kronicx", "role": "Not specified"},
+            {"name": "Don", "role": "Not specified"},
+            {"name": "Tekzy", "role": "Not specified"},
+            {"name": "Inspo", "role": "Not specified"},
+            {"name": "Crimsyn", "role": "Not specified"},
+            {"name": "Haydz", "role": "Not specified"}
+          ]
+        },
+        "achievements": [
+          {"tournament": "Marvel Rivals Invitational Oceania", "placement": "1st", "note": "Came back from lower bracket to beat Platinum Star"},
+          {"tournament": "MRI OCEANIA 2025", "placement": "1st", "prize_pool": "$100,000"}
+        ],
+        "social_media": {
+          "website": "https://www.kangaesports.com/marvel-rivals"
+        }
+      },
+      {
+        "team_name": "FURY Esports",
+        "region": "Oceania",
+        "country": "Australia",
+        "status": "Active",
+        "roster": {
+          "players": [
+            {"name": "Schreudz", "role": "Not specified"},
+            {"name": "ecartxo", "role": "Not specified"},
+            {"name": "Isaac", "role": "Not specified"},
+            {"name": "Ashen", "role": "Not specified"},
+            {"name": "asher", "role": "Not specified"},
+            {"name": "atlas", "role": "Not specified"},
+            {"name": "Netra", "role": "Not specified"}
+          ]
+        },
+        "achievements": [
+          {"tournament": "Oceania Invitational", "placement": "3rd"}
+        ]
+      },
+      {
+        "team_name": "Platinum Star",
+        "region": "Oceania",
+        "country": "Australia",
+        "status": "Active",
+        "achievements": [
+          {"tournament": "Marvel Rivals Invitational Oceania", "placement": "2nd", "note": "Lost to Kanga Esports in finals"}
+        ]
+      }
+    ]
+  },
+  "tournaments": {
+    "major_tournaments": [
+      {
+        "name": "Marvel Rivals Invitational 2025",
+        "regions": ["North America", "EMEA", "Asia", "Oceania"],
+        "prize_pool": "$100,000 per region",
+        "status": "First official tournament",
+        "winners": {
+          "north_america": "Not specified in sources",
+          "emea": "Virtus.pro",
+          "asia": "U4RIA NLE", 
+          "oceania": "Kanga Esports"
+        }
+      },
+      {
+        "name": "Marvel Rivals Ignite 2025 Stage 1",
+        "type": "Regional tournament",
+        "prize_pool": "$250,000",
+        "participants": "52 established esports organizations",
+        "organizer": "NetEase Games"
+      },
+      {
+        "name": "Marvel Rivals Fight Night",
+        "type": "Recurring tournament series",
+        "regions": ["NA", "EU"]
+      }
+    ]
+  },
+  "industry_info": {
+    "game_launch": "Late 2024",
+    "player_count": "Over 40 million players (as of sources dated)",
+    "esports_model": "No franchising plans - learning from Overwatch League",
+    "developer": "NetEase Games",
+    "competitive_focus": "2025 marked as year for esports ecosystem development"
+  }
+}

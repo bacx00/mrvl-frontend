@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MRVL Live Scoring System - Test Runner</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .test-controls {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .button:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+        }
+        
+        .button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .button.danger {
+            background: #ef4444;
+        }
+        
+        .button.danger:hover {
+            background: #dc2626;
+        }
+        
+        .button.success {
+            background: #10b981;
+        }
+        
+        .button.success:hover {
+            background: #059669;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-left: 12px;
+        }
+        
+        .status.running {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .console {
+            background: #1f2937;
+            color: #f3f4f6;
+            font-family: 'Monaco', 'Consolas', monospace;
+            padding: 20px;
+            border-radius: 12px;
+            height: 500px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .console .log-entry {
+            margin: 4px 0;
+            word-wrap: break-word;
+        }
+        
+        .console .log-error {
+            color: #fca5a5;
+        }
+        
+        .console .log-success {
+            color: #86efac;
+        }
+        
+        .console .log-warning {
+            color: #fcd34d;
+        }
+        
+        .console .log-info {
+            color: #93c5fd;
+        }
+        
+        .test-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .result-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .result-card h3 {
+            margin: 0 0 15px 0;
+            font-size: 1.3em;
+            color: #374151;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .metric:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            font-weight: 500;
+            color: #6b7280;
+        }
+        
+        .metric-value {
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #f3f4f6;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 MRVL Live Scoring System</h1>
+        <p>Professional Real-Time Test Suite</p>
+    </div>
+    
+    <div class="test-controls">
+        <h2>Test Controls</h2>
+        <button id="runAllTests" class="button">Run All Tests</button>
+        <button id="runConnectionTest" class="button">Test Connections</button>
+        <button id="runUpdateTest" class="button">Test Updates</button>
+        <button id="runReconnectTest" class="button">Test Reconnection</button>
+        <button id="runPerformanceTest" class="button">Performance Test</button>
+        <button id="clearConsole" class="button danger">Clear Console</button>
+        <button id="exportResults" class="button success" disabled>Export Results</button>
+        <span id="testStatus" class="status" style="display: none;"></span>
+        
+        <div class="progress-bar">
+            <div id="progressFill" class="progress-fill"></div>
+        </div>
+    </div>
+    
+    <div id="testResults" class="test-results" style="display: none;">
+        <!-- Results will be populated here -->
+    </div>
+    
+    <div class="console" id="console">
+        <div class="log-entry">🔍 MRVL Live Scoring System Test Suite Ready</div>
+        <div class="log-entry">📋 Click "Run All Tests" to begin comprehensive testing</div>
+    </div>
+
+    <script src="live-scoring-system-test.js"></script>
+    <script>
+        let currentTest = null;
+        let testResults = null;
+        
+        // Console logging override
+        const originalLog = console.log;
+        const originalError = console.error;
+        const consoleElement = document.getElementById('console');
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            appendToConsole(args.join(' '), 'info');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            appendToConsole(args.join(' '), 'error');
+        };
+        
+        function appendToConsole(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+            consoleElement.appendChild(entry);
+            consoleElement.scrollTop = consoleElement.scrollHeight;
+        }
+        
+        function setStatus(status, message) {
+            const statusElement = document.getElementById('testStatus');
+            statusElement.className = `status ${status}`;
+            statusElement.textContent = message;
+            statusElement.style.display = 'inline-block';
+        }
+        
+        function setProgress(percent) {
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = percent + '%';
+        }
+        
+        function disableButtons() {
+            document.querySelectorAll('.button').forEach(btn => {
+                if (btn.id !== 'clearConsole') {
+                    btn.disabled = true;
+                }
+            });
+        }
+        
+        function enableButtons() {
+            document.querySelectorAll('.button').forEach(btn => {
+                btn.disabled = false;
+            });
+            document.getElementById('exportResults').disabled = testResults === null;
+        }
+        
+        function displayResults(results) {
+            const resultsContainer = document.getElementById('testResults');
+            resultsContainer.innerHTML = '';
+            
+            // Connection Tests
+            if (results.connectionTests.length > 0) {
+                const card = createResultCard('🔌 Connection Tests', results.connectionTests);
+                resultsContainer.appendChild(card);
+            }
+            
+            // Update Tests
+            if (results.updateTests.length > 0) {
+                const updateData = results.updateTests[0];
+                const metrics = [
+                    { label: 'Success Rate', value: updateData.successRate?.toFixed(1) + '%' || 'N/A' },
+                    { label: 'Avg Latency', value: updateData.averageLatency?.toFixed(2) + 'ms' || 'N/A' },
+                    { label: 'Updates Received', value: updateData.receivedUpdates || 0 },
+                    { label: 'Total Updates', value: updateData.totalUpdates || 0 }
+                ];
+                const card = createResultCard('⚡ Update Performance', metrics);
+                resultsContainer.appendChild(card);
+            }
+            
+            // Performance Tests
+            if (results.performanceMetrics.length > 0) {
+                const perfData = results.performanceMetrics[0];
+                const metrics = [
+                    { label: 'Messages/Second', value: perfData.messagesPerSecond?.toFixed(2) || 'N/A' },
+                    { label: 'Concurrent Connections', value: perfData.concurrentConnections || 0 },
+                    { label: 'Total Messages', value: perfData.totalMessages || 0 },
+                    { label: 'Test Duration', value: (perfData.testDuration / 1000).toFixed(1) + 's' || 'N/A' }
+                ];
+                const card = createResultCard('🚀 Performance Metrics', metrics);
+                resultsContainer.appendChild(card);
+            }
+            
+            // Error Recovery Tests
+            if (results.errorRecoveryTests.length > 0) {
+                const successCount = results.errorRecoveryTests.filter(t => t.success).length;
+                const totalCount = results.errorRecoveryTests.length;
+                const metrics = [
+                    { label: 'Tests Passed', value: `${successCount}/${totalCount}` },
+                    { label: 'Success Rate', value: ((successCount/totalCount) * 100).toFixed(1) + '%' }
+                ];
+                const card = createResultCard('🛡️ Error Recovery', metrics);
+                resultsContainer.appendChild(card);
+            }
+            
+            resultsContainer.style.display = 'grid';
+        }
+        
+        function createResultCard(title, data) {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            
+            const titleElement = document.createElement('h3');
+            titleElement.textContent = title;
+            card.appendChild(titleElement);
+            
+            if (Array.isArray(data)) {
+                data.forEach(item => {
+                    const metric = document.createElement('div');
+                    metric.className = 'metric';
+                    
+                    const label = document.createElement('span');
+                    label.className = 'metric-label';
+                    label.textContent = item.type || item.testName || item.label || 'Test';
+                    
+                    const value = document.createElement('span');
+                    value.className = 'metric-value';
+                    value.textContent = item.success ? '✅ Passed' : '❌ Failed';
+                    if (item.latency) {
+                        value.textContent += ` (${item.latency}ms)`;
+                    }
+                    
+                    metric.appendChild(label);
+                    metric.appendChild(value);
+                    card.appendChild(metric);
+                });
+            } else {
+                data.forEach(item => {
+                    const metric = document.createElement('div');
+                    metric.className = 'metric';
+                    
+                    const label = document.createElement('span');
+                    label.className = 'metric-label';
+                    label.textContent = item.label;
+                    
+                    const value = document.createElement('span');
+                    value.className = 'metric-value';
+                    value.textContent = item.value;
+                    
+                    metric.appendChild(label);
+                    metric.appendChild(value);
+                    card.appendChild(metric);
+                });
+            }
+            
+            return card;
+        }
+        
+        // Event Listeners
+        document.getElementById('runAllTests').addEventListener('click', async () => {
+            disableButtons();
+            setStatus('running', 'Running all tests...');
+            setProgress(0);
+            
+            try {
+                currentTest = new LiveScoringSystemTest();
+                
+                // Run tests with progress updates
+                const progressSteps = [
+                    { method: 'testConnectionEstablishment', progress: 20 },
+                    { method: 'testImmediateUpdates', progress: 40 },
+                    { method: 'testReconnectionLogic', progress: 60 },
+                    { method: 'testErrorRecovery', progress: 80 },
+                    { method: 'testPerformanceUnderLoad', progress: 95 }
+                ];
+                
+                for (const step of progressSteps) {
+                    await currentTest[step.method]();
+                    setProgress(step.progress);
+                }
+                
+                await currentTest.testCrossTabSync();
+                setProgress(100);
+                
+                currentTest.generateTestReport();
+                testResults = currentTest.testResults;
+                
+                setStatus('success', 'All tests completed');
+                displayResults(testResults);
+                
+            } catch (error) {
+                setStatus('error', 'Tests failed: ' + error.message);
+                console.error('Test suite error:', error);
+            }
+            
+            enableButtons();
+        });
+        
+        document.getElementById('clearConsole').addEventListener('click', () => {
+            consoleElement.innerHTML = '<div class="log-entry">🧹 Console cleared</div>';
+        });
+        
+        document.getElementById('exportResults').addEventListener('click', () => {
+            if (!testResults) return;
+            
+            const data = {
+                timestamp: new Date().toISOString(),
+                testResults: testResults,
+                environment: {
+                    userAgent: navigator.userAgent,
+                    url: window.location.href,
+                    timestamp: new Date().toISOString()
+                }
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], {
+                type: 'application/json'
+            });
+            
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mrvl-live-scoring-test-results-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            console.log('✅ Test results exported');
+        });
+        
+        // Individual test buttons
+        document.getElementById('runConnectionTest').addEventListener('click', async () => {
+            disableButtons();
+            setStatus('running', 'Testing connections...');
+            
+            try {
+                const test = new LiveScoringSystemTest();
+                await test.testConnectionEstablishment();
+                setStatus('success', 'Connection tests completed');
+            } catch (error) {
+                setStatus('error', 'Connection tests failed');
+            }
+            
+            enableButtons();
+        });
+        
+        document.getElementById('runUpdateTest').addEventListener('click', async () => {
+            disableButtons();
+            setStatus('running', 'Testing updates...');
+            
+            try {
+                const test = new LiveScoringSystemTest();
+                await test.testImmediateUpdates();
+                setStatus('success', 'Update tests completed');
+            } catch (error) {
+                setStatus('error', 'Update tests failed');
+            }
+            
+            enableButtons();
+        });
+        
+        document.getElementById('runReconnectTest').addEventListener('click', async () => {
+            disableButtons();
+            setStatus('running', 'Testing reconnection...');
+            
+            try {
+                const test = new LiveScoringSystemTest();
+                await test.testReconnectionLogic();
+                setStatus('success', 'Reconnection tests completed');
+            } catch (error) {
+                setStatus('error', 'Reconnection tests failed');
+            }
+            
+            enableButtons();
+        });
+        
+        document.getElementById('runPerformanceTest').addEventListener('click', async () => {
+            disableButtons();
+            setStatus('running', 'Running performance tests...');
+            
+            try {
+                const test = new LiveScoringSystemTest();
+                await test.testPerformanceUnderLoad();
+                setStatus('success', 'Performance tests completed');
+            } catch (error) {
+                setStatus('error', 'Performance tests failed');
+            }
+            
+            enableButtons();
+        });
+    </script>
+</body>
+</html>

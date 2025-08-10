@@ -14,6 +14,24 @@ function AdminTeams({ navigateTo }) {
     sortBy: 'rating'
   });
   const { api } = useAuth();
+  
+  // Modal states for create/edit
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingTeam, setEditingTeam] = useState(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    short_name: '',
+    region: 'NA',
+    country: '',
+    rating: 1500,
+    description: '',
+    website: '',
+    social_media: {
+      twitter: '',
+      discord: ''
+    }
+  });
 
   const fetchTeams = useCallback(async () => {
     try {
@@ -97,6 +115,93 @@ function AdminTeams({ navigateTo }) {
     setCurrentPage(1);
   };
 
+  // CRUD Operations
+  const handleCreateTeam = () => {
+    setFormData({
+      name: '',
+      short_name: '',
+      region: 'NA',
+      country: '',
+      rating: 1500,
+      description: '',
+      website: '',
+      social_media: {
+        twitter: '',
+        discord: ''
+      }
+    });
+    setShowCreateModal(true);
+  };
+
+  const handleEditTeam = (team) => {
+    setEditingTeam(team);
+    setFormData({
+      name: team.name || '',
+      short_name: team.short_name || '',
+      region: team.region || 'NA',
+      country: team.country || '',
+      rating: team.rating || 1500,
+      description: team.description || '',
+      website: team.website || '',
+      social_media: {
+        twitter: team.social_media?.twitter || '',
+        discord: team.social_media?.discord || ''
+      }
+    });
+    setShowEditModal(true);
+  };
+
+  const handleCloseModals = () => {
+    setShowCreateModal(false);
+    setShowEditModal(false);
+    setEditingTeam(null);
+    setFormData({
+      name: '',
+      short_name: '',
+      region: 'NA',
+      country: '',
+      rating: 1500,
+      description: '',
+      website: '',
+      social_media: {
+        twitter: '',
+        discord: ''
+      }
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.name.trim() || !formData.short_name.trim()) {
+      alert('Please fill in required fields (Name and Short Name)');
+      return;
+    }
+
+    try {
+      const submitData = {
+        ...formData,
+        social_media: JSON.stringify(formData.social_media)
+      };
+
+      if (editingTeam) {
+        // Update existing team
+        await api.put(`/admin/teams/${editingTeam.id}`, submitData);
+        alert('Team updated successfully!');
+      } else {
+        // Create new team
+        await api.post('/admin/teams', submitData);
+        alert('Team created successfully!');
+      }
+      
+      await fetchTeams();
+      handleCloseModals();
+    } catch (error) {
+      console.error('Error submitting team:', error);
+      alert(`Error ${editingTeam ? 'updating' : 'creating'} team. Please try again.`);
+    }
+  };
+
   const handleDelete = async (teamId, teamName) => {
     if (window.confirm(`Are you sure you want to delete "${teamName}"? This action cannot be undone.`)) {
       try {
@@ -109,8 +214,7 @@ function AdminTeams({ navigateTo }) {
         }
 
         console.log(' AdminTeams: Deleting team with ID:', teamId);
-        // FIXED: Use POST with method spoofing for Laravel backend deletes
-        await api.post(`/admin/teams/${teamId}`, { _method: 'DELETE' });
+        await api.delete(`/admin/teams/${teamId}`);
         await fetchTeams(); // Refresh the list
         alert('Team deleted successfully!');
       } catch (error) {
@@ -147,7 +251,7 @@ function AdminTeams({ navigateTo }) {
           <p className="text-gray-600 dark:text-gray-400">Create, edit, and manage all teams</p>
         </div>
         <button 
-          onClick={() => navigateTo('admin-team-create')}
+          onClick={handleCreateTeam}
           className="btn btn-primary"
         >
           Create New Team
@@ -285,10 +389,7 @@ function AdminTeams({ navigateTo }) {
                         View
                       </button>
                       <button
-                        onClick={() => {
-                          console.log(' AdminTeams: Navigating to admin-team-edit with ID:', team.id);
-                          navigateTo('admin-team-edit', { id: team.id });
-                        }}
+                        onClick={() => handleEditTeam(team)}
                         className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
                       >
                         Edit
@@ -331,7 +432,7 @@ function AdminTeams({ navigateTo }) {
               : 'Get started by creating your first team.'}
           </p>
           <button
-            onClick={() => navigateTo('admin-team-create')}
+            onClick={handleCreateTeam}
             className="btn btn-primary"
           >
             Create First Team
@@ -342,7 +443,7 @@ function AdminTeams({ navigateTo }) {
       {/* Team Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="card p-6 text-center">
-          <div className="text-3xl mb-2">🏆</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
             {allTeams.length}
           </div>
@@ -368,13 +469,183 @@ function AdminTeams({ navigateTo }) {
           <div className="text-sm text-gray-600 dark:text-gray-400">EU Teams</div>
         </div>
         <div className="card p-6 text-center">
-          <div className="text-3xl mb-2">⭐</div>
+          <div className="text-3xl mb-2"></div>
           <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
             {allTeams.filter(t => (t.rating || 0) > 2000).length}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">High Rated</div>
         </div>
       </div>
+
+      {/* Create/Edit Team Modal */}
+      {(showCreateModal || showEditModal) && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {editingTeam ? 'Edit Team' : 'Create New Team'}
+              </h3>
+              <button
+                onClick={handleCloseModals}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Team Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="form-input"
+                    placeholder="Enter team name"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Short Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.short_name}
+                    onChange={(e) => setFormData({...formData, short_name: e.target.value})}
+                    className="form-input"
+                    placeholder="e.g., SEN, FNC"
+                    maxLength="10"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Region
+                  </label>
+                  <select
+                    value={formData.region}
+                    onChange={(e) => setFormData({...formData, region: e.target.value})}
+                    className="form-input"
+                  >
+                    <option value="NA">North America</option>
+                    <option value="EU">Europe</option>
+                    <option value="APAC">Asia-Pacific</option>
+                    <option value="LATAM">Latin America</option>
+                    <option value="BR">Brazil</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Country
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.country}
+                    onChange={(e) => setFormData({...formData, country: e.target.value})}
+                    className="form-input"
+                    placeholder="e.g., United States, France"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Rating
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.rating}
+                    onChange={(e) => setFormData({...formData, rating: parseInt(e.target.value) || 0})}
+                    className="form-input"
+                    min="0"
+                    max="5000"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Website
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.website}
+                    onChange={(e) => setFormData({...formData, website: e.target.value})}
+                    className="form-input"
+                    placeholder="https://team-website.com"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Twitter
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.social_media.twitter}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      social_media: {...formData.social_media, twitter: e.target.value}
+                    })}
+                    className="form-input"
+                    placeholder="@teamhandle"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Discord
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.social_media.discord}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      social_media: {...formData.social_media, discord: e.target.value}
+                    })}
+                    className="form-input"
+                    placeholder="Discord server invite"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  className="form-input"
+                  rows="4"
+                  placeholder="Team description..."
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={handleCloseModals}
+                  className="btn btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                >
+                  {editingTeam ? 'Update Team' : 'Create Team'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

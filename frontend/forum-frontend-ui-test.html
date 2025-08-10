@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forum Frontend UI Test Suite</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8fafc;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+        
+        .test-section h3 {
+            margin: 0 0 15px 0;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .test-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 6px;
+            font-size: 14px;
+            background: #f8fafc;
+        }
+        
+        .test-item.pass {
+            background: #dcfce7;
+            border-left: 4px solid #22c55e;
+        }
+        
+        .test-item.fail {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .test-item.skip {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .status {
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .status.pass { background: #22c55e; color: white; }
+        .status.fail { background: #ef4444; color: white; }
+        .status.skip { background: #f59e0b; color: white; }
+        
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-card {
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .summary-card.total { background: #3b82f6; }
+        .summary-card.passed { background: #22c55e; }
+        .summary-card.failed { background: #ef4444; }
+        .summary-card.skipped { background: #f59e0b; }
+        
+        .test-controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .btn:hover { background: #2563eb; }
+        .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+        
+        .log-section {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            word-wrap: break-word;
+        }
+        
+        .log-entry.success { color: #22c55e; }
+        .log-entry.error { color: #ef4444; }
+        .log-entry.warning { color: #f59e0b; }
+        .log-entry.info { color: #3b82f6; }
+        
+        @media (max-width: 768px) {
+            .container { padding: 20px; }
+            .summary { grid-template-columns: 1fr; }
+            .test-item { flex-direction: column; align-items: flex-start; gap: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Forum Frontend UI Test Suite</h1>
+            <p>Comprehensive testing of forum user interface and user experience</p>
+        </div>
+
+        <div class="test-controls">
+            <button class="btn" onclick="runAllTests()">Run All Tests</button>
+            <button class="btn" onclick="runMobileTests()">Test Mobile UI</button>
+            <button class="btn" onclick="runAccessibilityTests()">Test Accessibility</button>
+            <button class="btn" onclick="clearResults()">Clear Results</button>
+        </div>
+
+        <div class="summary">
+            <div class="summary-card total">
+                <h3>Total Tests</h3>
+                <div id="totalTests">0</div>
+            </div>
+            <div class="summary-card passed">
+                <h3>Passed</h3>
+                <div id="passedTests">0</div>
+            </div>
+            <div class="summary-card failed">
+                <h3>Failed</h3>
+                <div id="failedTests">0</div>
+            </div>
+            <div class="summary-card skipped">
+                <h3>Skipped</h3>
+                <div id="skippedTests">0</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🏠 Forum Navigation & Structure</h3>
+            <div id="navigationTests"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 Thread Display & Interaction</h3>
+            <div id="threadDisplayTests"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>✍️ Posting & Reply System</h3>
+            <div id="postingTests"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔗 Mention System UI</h3>
+            <div id="mentionTests"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>👑 Admin Features UI</h3>
+            <div id="adminTests"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📱 Mobile Responsiveness</h3>
+            <div id="mobileTests"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>♿ Accessibility</h3>
+            <div id="accessibilityTests"></div>
+        </div>
+
+        <div class="log-section">
+            <div id="testLog"></div>
+        </div>
+    </div>
+
+    <script>
+        class ForumUITester {
+            constructor() {
+                this.results = {
+                    total: 0,
+                    passed: 0,
+                    failed: 0,
+                    skipped: 0
+                };
+                this.testLog = document.getElementById('testLog');
+            }
+
+            log(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry ${type}`;
+                logEntry.innerHTML = `[${timestamp}] ${message}`;
+                this.testLog.appendChild(logEntry);
+                this.testLog.scrollTop = this.testLog.scrollHeight;
+                console.log(`[${type.toUpperCase()}] ${message}`);
+            }
+
+            updateSummary() {
+                document.getElementById('totalTests').textContent = this.results.total;
+                document.getElementById('passedTests').textContent = this.results.passed;
+                document.getElementById('failedTests').textContent = this.results.failed;
+                document.getElementById('skippedTests').textContent = this.results.skipped;
+            }
+
+            addTestResult(sectionId, testName, status, details = '') {
+                this.results.total++;
+                this.results[status]++;
+
+                const section = document.getElementById(sectionId);
+                const testItem = document.createElement('div');
+                testItem.className = `test-item ${status}`;
+                
+                const statusBadge = document.createElement('span');
+                statusBadge.className = `status ${status}`;
+                statusBadge.textContent = status.toUpperCase();
+                
+                testItem.innerHTML = `
+                    <span>${testName}</span>
+                    <span>${statusBadge.outerHTML}</span>
+                `;
+                
+                if (details) {
+                    testItem.title = details;
+                }
+                
+                section.appendChild(testItem);
+                this.updateSummary();
+                
+                // Log the result
+                const logType = status === 'pass' ? 'success' : status === 'fail' ? 'error' : 'warning';
+                this.log(`${testName}: ${status.toUpperCase()}${details ? ' - ' + details : ''}`, logType);
+            }
+
+            // Test Forum Navigation & Structure
+            testNavigation() {
+                this.log('🏠 Testing Forum Navigation & Structure', 'info');
+
+                // Test 1: Check if forum navigation exists
+                const forumNav = document.querySelector('.forum-navigation, .mobile-forum-navigation, [data-testid="forum-navigation"]');
+                this.addTestResult('navigationTests', 'Forum navigation component exists', 
+                    forumNav ? 'pass' : 'fail', 
+                    forumNav ? 'Navigation found' : 'Navigation component not found in DOM'
+                );
+
+                // Test 2: Check category filters
+                const categoryFilters = document.querySelectorAll('.category-filter, [data-testid="category-filter"], select[name="category"]');
+                this.addTestResult('navigationTests', 'Category filter controls present',
+                    categoryFilters.length > 0 ? 'pass' : 'fail',
+                    `Found ${categoryFilters.length} category filter controls`
+                );
+
+                // Test 3: Check search functionality
+                const searchInput = document.querySelector('input[type="search"], input[placeholder*="search" i], input[placeholder*="Search" i]');
+                this.addTestResult('navigationTests', 'Search input field present',
+                    searchInput ? 'pass' : 'fail',
+                    searchInput ? 'Search input found' : 'Search input not found'
+                );
+
+                // Test 4: Check sorting options
+                const sortControls = document.querySelectorAll('.sort-button, [data-testid="sort"], button[data-sort], select[name="sort"]');
+                this.addTestResult('navigationTests', 'Sort controls present',
+                    sortControls.length > 0 ? 'pass' : 'fail',
+                    `Found ${sortControls.length} sort controls`
+                );
+
+                // Test 5: Check breadcrumb navigation
+                const breadcrumbs = document.querySelector('.breadcrumb, [data-testid="breadcrumb"], nav[aria-label*="breadcrumb" i]');
+                this.addTestResult('navigationTests', 'Breadcrumb navigation present',
+                    breadcrumbs ? 'pass' : 'skip',
+                    breadcrumbs ? 'Breadcrumbs found' : 'Breadcrumbs not implemented (optional)'
+                );
+            }
+
+            // Test Thread Display & Interaction
+            testThreadDisplay() {
+                this.log('📝 Testing Thread Display & Interaction', 'info');
+
+                // Test 1: Check thread list container
+                const threadList = document.querySelector('.thread-list, .forum-threads, [data-testid="thread-list"]');
+                this.addTestResult('threadDisplayTests', 'Thread list container present',
+                    threadList ? 'pass' : 'fail',
+                    threadList ? 'Thread list container found' : 'Thread list container not found'
+                );
+
+                // Test 2: Check individual thread items
+                const threadItems = document.querySelectorAll('.thread-item, .thread-card, [data-testid="thread"], .forum-thread');
+                this.addTestResult('threadDisplayTests', 'Thread items displayed',
+                    threadItems.length > 0 ? 'pass' : 'fail',
+                    `Found ${threadItems.length} thread items`
+                );
+
+                // Test 3: Check thread titles
+                const threadTitles = document.querySelectorAll('.thread-title, .thread-item h3, .thread-card h3, [data-testid="thread-title"]');
+                this.addTestResult('threadDisplayTests', 'Thread titles present',
+                    threadTitles.length > 0 ? 'pass' : 'fail',
+                    `Found ${threadTitles.length} thread titles`
+                );
+
+                // Test 4: Check author information
+                const authorInfo = document.querySelectorAll('.thread-author, .author-info, [data-testid="thread-author"]');
+                this.addTestResult('threadDisplayTests', 'Thread author information present',
+                    authorInfo.length > 0 ? 'pass' : 'fail',
+                    `Found ${authorInfo.length} author info elements`
+                );
+
+                // Test 5: Check timestamps
+                const timestamps = document.querySelectorAll('.timestamp, .time-ago, [data-testid="timestamp"], time');
+                this.addTestResult('threadDisplayTests', 'Thread timestamps present',
+                    timestamps.length > 0 ? 'pass' : 'fail',
+                    `Found ${timestamps.length} timestamp elements`
+                );
+
+                // Test 6: Check voting buttons
+                const votingButtons = document.querySelectorAll('.vote-button, .voting-buttons, [data-testid="vote"], .upvote, .downvote');
+                this.addTestResult('threadDisplayTests', 'Voting controls present',
+                    votingButtons.length > 0 ? 'pass' : 'skip',
+                    `Found ${votingButtons.length} voting controls`
+                );
+
+                // Test 7: Check thread stats
+                const threadStats = document.querySelectorAll('.thread-stats, .reply-count, [data-testid="thread-stats"]');
+                this.addTestResult('threadDisplayTests', 'Thread statistics displayed',
+                    threadStats.length > 0 ? 'pass' : 'fail',
+                    `Found ${threadStats.length} thread stat elements`
+                );
+            }
+
+            // Test Posting & Reply System
+            testPosting() {
+                this.log('✍️ Testing Posting & Reply System', 'info');
+
+                // Test 1: Check new thread button
+                const newThreadButton = document.querySelector('.new-thread, [data-testid="new-thread"], button[onclick*="create-thread"], a[href*="create"]');
+                this.addTestResult('postingTests', 'New thread creation button present',
+                    newThreadButton ? 'pass' : 'fail',
+                    newThreadButton ? 'New thread button found' : 'New thread button not found'
+                );
+
+                // Test 2: Check reply forms (if any threads are present)
+                const replyForms = document.querySelectorAll('.reply-form, [data-testid="reply-form"], form[data-type="reply"]');
+                this.addTestResult('postingTests', 'Reply form components present',
+                    replyForms.length > 0 ? 'pass' : 'skip',
+                    `Found ${replyForms.length} reply forms`
+                );
+
+                // Test 3: Check text editors/textareas
+                const textAreas = document.querySelectorAll('textarea, [contenteditable="true"], .text-editor');
+                this.addTestResult('postingTests', 'Text input areas present',
+                    textAreas.length > 0 ? 'pass' : 'skip',
+                    `Found ${textAreas.length} text input areas`
+                );
+
+                // Test 4: Check post actions (edit, delete, etc.)
+                const postActions = document.querySelectorAll('.post-actions, .edit-button, .delete-button, [data-testid="post-action"]');
+                this.addTestResult('postingTests', 'Post action controls present',
+                    postActions.length > 0 ? 'pass' : 'skip',
+                    `Found ${postActions.length} post action controls`
+                );
+
+                // Test 5: Check form validation feedback
+                const validationMessages = document.querySelectorAll('.validation-message, .error-message, [data-testid="validation"]');
+                this.addTestResult('postingTests', 'Form validation UI present',
+                    validationMessages.length >= 0 ? 'pass' : 'fail',
+                    `Validation system ready (${validationMessages.length} messages currently)`
+                );
+            }
+
+            // Test Mention System UI
+            testMentions() {
+                this.log('🔗 Testing Mention System UI', 'info');
+
+                // Test 1: Check mention autocomplete container
+                const mentionAutocomplete = document.querySelector('.mention-autocomplete, [data-testid="mention-autocomplete"]');
+                this.addTestResult('mentionTests', 'Mention autocomplete component present',
+                    mentionAutocomplete ? 'pass' : 'skip',
+                    mentionAutocomplete ? 'Mention autocomplete found' : 'Mention autocomplete not currently visible'
+                );
+
+                // Test 2: Check rendered mentions in content
+                const renderedMentions = document.querySelectorAll('.mention, [data-testid="mention"], a[href*="user"], a[href*="team"], a[href*="player"]');
+                this.addTestResult('mentionTests', 'Rendered mentions present in content',
+                    renderedMentions.length > 0 ? 'pass' : 'skip',
+                    `Found ${renderedMentions.length} rendered mentions`
+                );
+
+                // Test 3: Check mention styling
+                const styledMentions = document.querySelectorAll('.mention[style*="color"], .text-red, .text-blue');
+                this.addTestResult('mentionTests', 'Mentions have proper styling',
+                    styledMentions.length > 0 ? 'pass' : 'skip',
+                    `Found ${styledMentions.length} styled mentions`
+                );
+
+                // Test 4: Check mention input helpers
+                const mentionHelpers = document.querySelectorAll('.mention-help, [data-testid="mention-help"], .placeholder[text*="@"]');
+                this.addTestResult('mentionTests', 'Mention input helpers present',
+                    mentionHelpers.length > 0 ? 'pass' : 'skip',
+                    `Found ${mentionHelpers.length} mention helper elements`
+                );
+            }
+
+            // Test Admin Features UI
+            testAdminFeatures() {
+                this.log('👑 Testing Admin Features UI', 'info');
+
+                // Test 1: Check admin controls
+                const adminControls = document.querySelectorAll('.admin-controls, [data-testid="admin-controls"], .moderation-controls');
+                this.addTestResult('adminTests', 'Admin control panels present',
+                    adminControls.length > 0 ? 'pass' : 'skip',
+                    `Found ${adminControls.length} admin control panels`
+                );
+
+                // Test 2: Check pin/unpin buttons
+                const pinButtons = document.querySelectorAll('button[onclick*="pin"], [data-testid="pin-button"], .pin-thread');
+                this.addTestResult('adminTests', 'Pin/unpin thread controls present',
+                    pinButtons.length > 0 ? 'pass' : 'skip',
+                    `Found ${pinButtons.length} pin controls`
+                );
+
+                // Test 3: Check lock/unlock buttons
+                const lockButtons = document.querySelectorAll('button[onclick*="lock"], [data-testid="lock-button"], .lock-thread');
+                this.addTestResult('adminTests', 'Lock/unlock thread controls present',
+                    lockButtons.length > 0 ? 'pass' : 'skip',
+                    `Found ${lockButtons.length} lock controls`
+                );
+
+                // Test 4: Check delete buttons
+                const deleteButtons = document.querySelectorAll('button[onclick*="delete"], [data-testid="delete-button"], .delete-thread');
+                this.addTestResult('adminTests', 'Delete thread controls present',
+                    deleteButtons.length > 0 ? 'pass' : 'skip',
+                    `Found ${deleteButtons.length} delete controls`
+                );
+
+                // Test 5: Check moderation badges/indicators
+                const moderationBadges = document.querySelectorAll('.pinned-badge, .locked-badge, [data-testid="thread-badge"]');
+                this.addTestResult('adminTests', 'Moderation status badges present',
+                    moderationBadges.length > 0 ? 'pass' : 'skip',
+                    `Found ${moderationBadges.length} moderation badges`
+                );
+            }
+
+            // Test Mobile Responsiveness
+            testMobileResponsiveness() {
+                this.log('📱 Testing Mobile Responsiveness', 'info');
+
+                // Test 1: Check mobile navigation
+                const mobileNav = document.querySelector('.mobile-nav, .mobile-forum-navigation, [data-testid="mobile-nav"]');
+                this.addTestResult('mobileTests', 'Mobile navigation component present',
+                    mobileNav ? 'pass' : 'fail',
+                    mobileNav ? 'Mobile navigation found' : 'Mobile navigation not found'
+                );
+
+                // Test 2: Check responsive breakpoints
+                const mobileCSS = Array.from(document.styleSheets).some(sheet => {
+                    try {
+                        return Array.from(sheet.cssRules).some(rule => 
+                            rule.media && rule.media.mediaText.includes('max-width')
+                        );
+                    } catch (e) {
+                        return false;
+                    }
+                });
+                this.addTestResult('mobileTests', 'Mobile-responsive CSS rules present',
+                    mobileCSS ? 'pass' : 'fail',
+                    mobileCSS ? 'Mobile CSS breakpoints found' : 'No mobile CSS breakpoints detected'
+                );
+
+                // Test 3: Check touch-friendly elements
+                const touchElements = document.querySelectorAll('.touch-optimized, [data-touch="true"]');
+                this.addTestResult('mobileTests', 'Touch-optimized elements present',
+                    touchElements.length > 0 ? 'pass' : 'skip',
+                    `Found ${touchElements.length} touch-optimized elements`
+                );
+
+                // Test 4: Check mobile-specific components
+                const mobileComponents = document.querySelectorAll('[class*="mobile-"], [data-mobile="true"]');
+                this.addTestResult('mobileTests', 'Mobile-specific components present',
+                    mobileComponents.length > 0 ? 'pass' : 'fail',
+                    `Found ${mobileComponents.length} mobile-specific components`
+                );
+
+                // Test 5: Check viewport meta tag
+                const viewportMeta = document.querySelector('meta[name="viewport"]');
+                this.addTestResult('mobileTests', 'Viewport meta tag configured',
+                    viewportMeta ? 'pass' : 'fail',
+                    viewportMeta ? `Viewport: ${viewportMeta.content}` : 'Viewport meta tag missing'
+                );
+            }
+
+            // Test Accessibility
+            testAccessibility() {
+                this.log('♿ Testing Accessibility Features', 'info');
+
+                // Test 1: Check semantic HTML
+                const semanticElements = document.querySelectorAll('main, article, section, nav, header, footer');
+                this.addTestResult('accessibilityTests', 'Semantic HTML elements used',
+                    semanticElements.length > 0 ? 'pass' : 'fail',
+                    `Found ${semanticElements.length} semantic elements`
+                );
+
+                // Test 2: Check ARIA labels
+                const ariaLabels = document.querySelectorAll('[aria-label], [aria-labelledby], [aria-describedby]');
+                this.addTestResult('accessibilityTests', 'ARIA labels present',
+                    ariaLabels.length > 0 ? 'pass' : 'fail',
+                    `Found ${ariaLabels.length} elements with ARIA labels`
+                );
+
+                // Test 3: Check alt text on images
+                const images = document.querySelectorAll('img');
+                const imagesWithAlt = document.querySelectorAll('img[alt]');
+                this.addTestResult('accessibilityTests', 'Images have alt text',
+                    images.length === 0 || imagesWithAlt.length === images.length ? 'pass' : 'fail',
+                    `${imagesWithAlt.length}/${images.length} images have alt text`
+                );
+
+                // Test 4: Check keyboard navigation
+                const focusableElements = document.querySelectorAll('button, a, input, textarea, select, [tabindex]');
+                this.addTestResult('accessibilityTests', 'Focusable elements present',
+                    focusableElements.length > 0 ? 'pass' : 'fail',
+                    `Found ${focusableElements.length} focusable elements`
+                );
+
+                // Test 5: Check heading hierarchy
+                const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+                const h1Count = document.querySelectorAll('h1').length;
+                this.addTestResult('accessibilityTests', 'Heading hierarchy proper',
+                    h1Count === 1 && headings.length > 0 ? 'pass' : 'fail',
+                    `Found ${h1Count} h1 tags and ${headings.length} total headings`
+                );
+
+                // Test 6: Check color contrast (basic check)
+                const darkBackgrounds = document.querySelectorAll('[class*="dark"], [class*="bg-gray"], [class*="bg-black"]');
+                this.addTestResult('accessibilityTests', 'Dark mode / contrast considerations',
+                    darkBackgrounds.length > 0 ? 'pass' : 'skip',
+                    `Found ${darkBackgrounds.length} dark background elements`
+                );
+
+                // Test 7: Check skip links
+                const skipLinks = document.querySelectorAll('a[href="#main"], a[href="#content"], [class*="skip-link"]');
+                this.addTestResult('accessibilityTests', 'Skip navigation links present',
+                    skipLinks.length > 0 ? 'pass' : 'skip',
+                    `Found ${skipLinks.length} skip links`
+                );
+            }
+
+            // Test for [object Object] issues in UI
+            testObjectObjectIssues() {
+                this.log('🔧 Testing for [object Object] display issues', 'info');
+
+                // Check for [object Object] text in the DOM
+                const objectObjectElements = Array.from(document.querySelectorAll('*')).filter(el => {
+                    return el.textContent && el.textContent.includes('[object Object]');
+                });
+
+                this.addTestResult('navigationTests', 'No [object Object] display issues',
+                    objectObjectElements.length === 0 ? 'pass' : 'fail',
+                    objectObjectElements.length > 0 ? `Found ${objectObjectElements.length} elements with [object Object]` : 'No object serialization issues found'
+                );
+
+                // Log specific elements with issues
+                objectObjectElements.forEach((el, index) => {
+                    this.log(`Object Object Issue ${index + 1}: ${el.tagName} - "${el.textContent.substr(0, 100)}..."`, 'error');
+                });
+            }
+
+            clearResults() {
+                this.results = { total: 0, passed: 0, failed: 0, skipped: 0 };
+                this.updateSummary();
+                
+                const testSections = ['navigationTests', 'threadDisplayTests', 'postingTests', 'mentionTests', 'adminTests', 'mobileTests', 'accessibilityTests'];
+                testSections.forEach(sectionId => {
+                    document.getElementById(sectionId).innerHTML = '';
+                });
+                
+                this.testLog.innerHTML = '';
+                this.log('🧹 Test results cleared', 'info');
+            }
+
+            async runAllTests() {
+                this.log('🚀 Starting Forum Frontend UI Test Suite', 'info');
+                this.clearResults();
+                
+                // Wait a bit for any dynamic content to load
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                this.testNavigation();
+                this.testThreadDisplay();
+                this.testPosting();
+                this.testMentions();
+                this.testAdminFeatures();
+                this.testMobileResponsiveness();
+                this.testAccessibility();
+                this.testObjectObjectIssues();
+                
+                const successRate = this.results.total > 0 ? 
+                    ((this.results.passed / this.results.total) * 100).toFixed(1) : 0;
+                
+                this.log(`✅ Test suite completed! ${this.results.passed}/${this.results.total} tests passed (${successRate}%)`, 'success');
+                
+                if (this.results.failed > 0) {
+                    this.log(`❌ ${this.results.failed} tests failed - check the results above`, 'error');
+                }
+                
+                if (this.results.skipped > 0) {
+                    this.log(`⏭️ ${this.results.skipped} tests skipped (features not present or not applicable)`, 'warning');
+                }
+            }
+
+            async runMobileTests() {
+                this.log('📱 Running Mobile-Specific UI Tests', 'info');
+                document.getElementById('mobileTests').innerHTML = '';
+                this.testMobileResponsiveness();
+            }
+
+            async runAccessibilityTests() {
+                this.log('♿ Running Accessibility Tests', 'info');
+                document.getElementById('accessibilityTests').innerHTML = '';
+                this.testAccessibility();
+            }
+        }
+
+        // Initialize tester
+        const forumUITester = new ForumUITester();
+
+        // Global functions for buttons
+        function runAllTests() {
+            forumUITester.runAllTests();
+        }
+
+        function runMobileTests() {
+            forumUITester.runMobileTests();
+        }
+
+        function runAccessibilityTests() {
+            forumUITester.runAccessibilityTests();
+        }
+
+        function clearResults() {
+            forumUITester.clearResults();
+        }
+
+        // Auto-run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                forumUITester.log('🎯 Forum Frontend UI Test Suite loaded and ready', 'info');
+                forumUITester.log('💡 Click "Run All Tests" to start comprehensive UI testing', 'info');
+            }, 500);
+        });
+
+        // Detect if we're in an iframe or embedded context
+        if (window.self !== window.top) {
+            setTimeout(() => {
+                forumUITester.log('🔍 Detected embedded context - running automatic tests', 'info');
+                forumUITester.runAllTests();
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

@@ -55,6 +55,7 @@ function TeamDetailPage({ params, navigateTo }) {
         founded: teamData.founded,
         captain: teamData.captain,
         coach: teamData.coach,
+        coach_data: teamData.coach_data || teamData.coaching_staff || {}, // COACH DATA INTEGRATION
         website: teamData.website,
         earnings: teamData.earnings || teamData.total_earnings || 0,
         social_media: teamData.social_media || teamData.social_links || {},
@@ -400,11 +401,57 @@ function TeamDetailPage({ params, navigateTo }) {
                 </div>
               ))}
             </div>
-            {team.coach && (
+            {/* COACH DATA INTEGRATION - Enhanced coach display */}
+            {(team.coach || team.coach_data) && (
               <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex items-center space-x-2">
-                  <span className="text-gray-600 dark:text-gray-400">Coach:</span>
-                  <span className="font-semibold text-gray-900 dark:text-white">{team.coach}</span>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                  <span className="text-lg mr-2">🧑‍🏫</span>
+                  Coaching Staff
+                </h4>
+                
+                <div className="flex items-center space-x-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  {/* Coach Avatar */}
+                  {team.coach_data?.avatar && (
+                    <img 
+                      src={team.coach_data.avatar} 
+                      alt="Coach avatar" 
+                      className="w-12 h-12 rounded-full object-cover border-2 border-gray-300 dark:border-gray-600"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  )}
+                  
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        {team.coach_data?.name || team.coach}
+                      </span>
+                      {team.coach_data?.nationality && (
+                        <span className="text-sm">
+                          {getCountryFlag(team.coach_data.nationality)} {team.coach_data.nationality}
+                        </span>
+                      )}
+                    </div>
+                    
+                    {team.coach_data?.real_name && (
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Real Name: {team.coach_data.real_name}
+                      </div>
+                    )}
+                    
+                    {team.coach_data?.experience && (
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Experience: {team.coach_data.experience}
+                      </div>
+                    )}
+                    
+                    {team.coach_data?.achievements && (
+                      <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        <span className="font-medium">Achievements:</span> {team.coach_data.achievements}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

@@ -1,0 +1,368 @@
+{
+  "timestamp": "2025-08-08T20:28:18.331Z",
+  "summary": {
+    "componentsAnalyzed": 86,
+    "fallbacksNeeded": 26,
+    "fallbacksImplemented": 22,
+    "criticalIssues": [
+      {
+        "type": "mobile",
+        "component": "MobileBracketVisualization.js",
+        "issues": 2
+      },
+      {
+        "type": "mobile",
+        "component": "MobileEnhancements.js",
+        "issues": 1
+      },
+      {
+        "type": "mobile",
+        "component": "MobileForumThread.js",
+        "issues": 1
+      },
+      {
+        "type": "mobile",
+        "component": "MobileMatchCard.js",
+        "issues": 2
+      },
+      {
+        "type": "mobile",
+        "component": "MobileMatchDetail.js",
+        "issues": 2
+      },
+      {
+        "type": "mobile",
+        "component": "MobileOnboarding.js",
+        "issues": 1
+      },
+      {
+        "type": "mobile",
+        "component": "MobileTeamCard.js",
+        "issues": 1
+      },
+      {
+        "type": "mobile",
+        "component": "MobileTextEditor.js",
+        "issues": 2
+      },
+      {
+        "type": "mobile",
+        "component": "MobileUserProfile.js",
+        "issues": 1
+      },
+      {
+        "type": "mobile",
+        "component": "PerformanceOptimizations.js",
+        "issues": 1
+      },
+      {
+        "type": "mobile",
+        "component": "VirtualizedForumList.js",
+        "issues": 1
+      },
+      {
+        "type": "admin",
+        "component": "ComprehensiveMatchControl.js",
+        "issues": 4
+      },
+      {
+        "type": "admin",
+        "component": "ForumModerationPanel.js",
+        "issues": 1
+      },
+      {
+        "type": "admin",
+        "component": "NewsFormSimple.js",
+        "issues": 1
+      }
+    ]
+  },
+  "totalFixesNeeded": 26,
+  "fixesByType": {
+    "general": 26
+  },
+  "fixesByComponent": {
+    "Header.tsx": 2,
+    "MobileMatchCard.js": 4,
+    "MobileTeamCard.js": 2,
+    "MobileBracketVisualization.js": 2,
+    "MobileEnhancements.js": 1,
+    "MobileForumThread.js": 1,
+    "MobileMatchDetail.js": 2,
+    "MobileOnboarding.js": 1,
+    "MobileTextEditor.js": 2,
+    "MobileUserProfile.js": 1,
+    "PerformanceOptimizations.js": 1,
+    "VirtualizedForumList.js": 1,
+    "ComprehensiveMatchControl.js": 4,
+    "ForumModerationPanel.js": 1,
+    "NewsFormSimple.js": 1
+  },
+  "implementationPlan": [
+    {
+      "component": "MobileBracketVisualization.js",
+      "path": "/var/www/mrvl-frontend/frontend/src/components/mobile/MobileBracketVisualization.js",
+      "priority": "MOBILE",
+      "fixesCount": 2,
+      "needsImport": true,
+      "fixes": [
+        {
+          "line": 692,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        },
+        {
+          "line": 733,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        }
+      ]
+    },
+    {
+      "component": "MobileEnhancements.js",
+      "path": "/var/www/mrvl-frontend/frontend/src/components/mobile/MobileEnhancements.js",
+      "priority": "MOBILE",
+      "fixesCount": 1,
+      "needsImport": true,
+      "fixes": [
+        {
+          "line": 304,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        }
+      ]
+    },
+    {
+      "component": "MobileForumThread.js",
+      "path": "/var/www/mrvl-frontend/frontend/src/components/mobile/MobileForumThread.js",
+      "priority": "MOBILE",
+      "fixesCount": 1,
+      "needsImport": true,
+      "fixes": [
+        {
+          "line": 291,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        }
+      ]
+    },
+    {
+      "component": "MobileMatchDetail.js",
+      "path": "/var/www/mrvl-frontend/frontend/src/components/mobile/MobileMatchDetail.js",
+      "priority": "MOBILE",
+      "fixesCount": 2,
+      "needsImport": true,
+      "fixes": [
+        {
+          "line": 390,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        },
+        {
+          "line": 540,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        }
+      ]
+    },
+    {
+      "component": "MobileOnboarding.js",
+      "path": "/var/www/mrvl-frontend/frontend/src/components/mobile/MobileOnboarding.js",
+      "priority": "MOBILE",
+      "fixesCount": 1,
+      "needsImport": true,
+      "fixes": [
+        {
+          "line": 443,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        }
+      ]
+    },
+    {
+      "component": "MobileTextEditor.js",
+      "path": "/var/www/mrvl-frontend/frontend/src/components/mobile/MobileTextEditor.js",
+      "priority": "MOBILE",
+      "fixesCount": 2,
+      "needsImport": true,
+      "fixes": [
+        {
+          "line": 378,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        },
+        {
+          "line": 518,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        }
+      ]
+    },
+    {
+      "component": "MobileUserProfile.js",
+      "path": "/var/www/mrvl-frontend/frontend/src/components/mobile/MobileUserProfile.js",
+      "priority": "MOBILE",
+      "fixesCount": 1,
+      "needsImport": true,
+      "fixes": [
+        {
+          "line": 298,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        }
+      ]
+    },
+    {
+      "component": "PerformanceOptimizations.js",
+      "path": "/var/www/mrvl-frontend/frontend/src/components/mobile/PerformanceOptimizations.js",
+      "priority": "MOBILE",
+      "fixesCount": 1,
+      "needsImport": true,
+      "fixes": [
+        {
+          "line": 54,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        }
+      ]
+    },
+    {
+      "component": "VirtualizedForumList.js",
+      "path": "/var/www/mrvl-frontend/frontend/src/components/mobile/VirtualizedForumList.js",
+      "priority": "MOBILE",
+      "fixesCount": 1,
+      "needsImport": true,
+      "fixes": [
+        {
+          "line": 109,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        }
+      ]
+    },
+    {
+      "component": "ComprehensiveMatchControl.js",
+      "path": "/var/www/mrvl-frontend/frontend/src/components/admin/ComprehensiveMatchControl.js",
+      "priority": "ADMIN",
+      "fixesCount": 4,
+      "needsImport": true,
+      "fixes": [
+        {
+          "line": 720,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        },
+        {
+          "line": 754,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        },
+        {
+          "line": 1039,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        },
+        {
+          "line": 1118,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        }
+      ]
+    },
+    {
+      "component": "ForumModerationPanel.js",
+      "path": "/var/www/mrvl-frontend/frontend/src/components/admin/ForumModerationPanel.js",
+      "priority": "ADMIN",
+      "fixesCount": 1,
+      "needsImport": true,
+      "fixes": [
+        {
+          "line": 135,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        }
+      ]
+    },
+    {
+      "component": "NewsFormSimple.js",
+      "path": "/var/www/mrvl-frontend/frontend/src/components/admin/NewsFormSimple.js",
+      "priority": "ADMIN",
+      "fixesCount": 1,
+      "needsImport": false,
+      "fixes": [
+        {
+          "line": 339,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        }
+      ]
+    },
+    {
+      "component": "Header.tsx",
+      "path": "/var/www/mrvl-frontend/frontend/src/app/components/Header.tsx",
+      "priority": "STANDARD",
+      "fixesCount": 2,
+      "needsImport": true,
+      "fixes": [
+        {
+          "line": 261,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  (e.target as HTMLImageElement).src = getImageUrl(null, 'general');\n                }}"
+        },
+        {
+          "line": 472,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  (e.target as HTMLImageElement).src = getImageUrl(null, 'general');\n                }}"
+        }
+      ]
+    },
+    {
+      "component": "MobileMatchCard.js",
+      "path": "/var/www/mrvl-frontend/frontend/src/components/mobile/MobileMatchCard.js",
+      "priority": "STANDARD",
+      "fixesCount": 4,
+      "needsImport": true,
+      "fixes": [
+        {
+          "line": 133,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        },
+        {
+          "line": 181,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        },
+        {
+          "line": 133,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        },
+        {
+          "line": 181,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        }
+      ]
+    },
+    {
+      "component": "MobileTeamCard.js",
+      "path": "/var/www/mrvl-frontend/frontend/src/components/mobile/MobileTeamCard.js",
+      "priority": "STANDARD",
+      "fixesCount": 2,
+      "needsImport": true,
+      "fixes": [
+        {
+          "line": 53,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        },
+        {
+          "line": 53,
+          "type": "general",
+          "handler": "onError={(e) => {\n                  e.target.src = getImageUrl(null, 'general');\n                }}"
+        }
+      ]
+    }
+  ]
+}

@@ -8,7 +8,7 @@ import {
   ChevronLeft, RotateCcw, Camera, Mic, MicOff
 } from 'lucide-react';
 import { useAuth } from '../../hooks';
-import { getHeroImageSync, getHeroRole, getCountryFlag, TeamLogo, PlayerAvatar } from '../../utils/imageUtils';
+import { getHeroImageSync, getHeroRole, getCountryFlag, TeamLogo, PlayerAvatar, getImageUrl } from '../../utils/imageUtils';
 import { MARVEL_RIVALS_MAPS, MARVEL_RIVALS_HEROES } from '../../data/marvelRivalsComplete';
 
 /**
@@ -722,6 +722,9 @@ const ComprehensiveMatchControl = ({
                       alt={player.hero}
                       className="w-10 h-10 rounded-full"
                       title={`${player.player_name} - ${player.hero}`}
+                      onError={(e) => {
+                        e.target.src = getImageUrl(null, 'player-avatar');
+                      }}
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-xs">
@@ -756,6 +759,9 @@ const ComprehensiveMatchControl = ({
                       alt={player.hero}
                       className="w-10 h-10 rounded-full"
                       title={`${player.player_name} - ${player.hero}`}
+                      onError={(e) => {
+                        e.target.src = getImageUrl(null, 'player-avatar');
+                      }}
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-xs">

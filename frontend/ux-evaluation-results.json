@@ -1,0 +1,35 @@
+{
+  "liveScoring": {
+    "broadcastInterface": true,
+    "heroRosterDisplay": true,
+    "autoSaveSystem": true,
+    "realTimeUpdates": true,
+    "visualFeedback": true,
+    "score": 100
+  },
+  "matchDetail": {
+    "urlCategorization": true,
+    "playerDisplays": true,
+    "mapNavigation": true,
+    "scoreReadability": true,
+    "enhancedLayout": true,
+    "score": 100
+  },
+  "mobile": {
+    "touchOptimization": true,
+    "swipeGestures": true,
+    "hapticFeedback": true,
+    "responsiveLayout": true,
+    "accessibleDesign": true,
+    "score": 100
+  },
+  "engagement": {
+    "realTimeUpdates": 1,
+    "loadingStates": 1,
+    "errorHandling": 1,
+    "userFeedback": 1,
+    "score": 100
+  },
+  "accessibility": {},
+  "performance": {}
+}
