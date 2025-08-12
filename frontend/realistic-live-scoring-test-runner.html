@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realistic Live Scoring System Test Runner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 2px solid #333;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            color: #ff4444;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #ccc;
+            font-size: 1.1em;
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #ff4444, #ff6666);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 68, 68, 0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(45deg, #444, #666);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(100, 100, 100, 0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .test-status {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            display: none;
+        }
+        
+        .test-status.running {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid #ffc107;
+            color: #ffc107;
+            display: block;
+        }
+        
+        .test-status.success {
+            background: rgba(40, 167, 69, 0.2);
+            border: 1px solid #28a745;
+            color: #28a745;
+            display: block;
+        }
+        
+        .test-status.error {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid #dc3545;
+            color: #dc3545;
+            display: block;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .test-results {
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .test-results h3 {
+            color: #ff4444;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 1px solid #444;
+            padding-bottom: 8px;
+        }
+        
+        .test-log {
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 6px;
+            border-left: 4px solid;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+        
+        .test-log .timestamp {
+            color: #888;
+            font-weight: bold;
+        }
+        
+        .test-log .type {
+            font-weight: bold;
+            margin: 0 8px;
+        }
+        
+        .test-log .message {
+            color: #fff;
+        }
+        
+        .test-log .data {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 8px;
+            font-size: 0.8em;
+            color: #ccc;
+            overflow-x: auto;
+        }
+        
+        .test-info {
+            border-left-color: #17a2b8;
+            background: rgba(23, 162, 184, 0.1);
+        }
+        
+        .test-test {
+            border-left-color: #6f42c1;
+            background: rgba(111, 66, 193, 0.1);
+        }
+        
+        .test-hero {
+            border-left-color: #fd7e14;
+            background: rgba(253, 126, 20, 0.1);
+        }
+        
+        .test-stats {
+            border-left-color: #20c997;
+            background: rgba(32, 201, 151, 0.1);
+        }
+        
+        .test-match {
+            border-left-color: #e83e8c;
+            background: rgba(232, 62, 140, 0.1);
+        }
+        
+        .test-ui {
+            border-left-color: #6610f2;
+            background: rgba(102, 16, 242, 0.1);
+        }
+        
+        .test-success {
+            border-left-color: #28a745;
+            background: rgba(40, 167, 69, 0.1);
+        }
+        
+        .test-error {
+            border-left-color: #dc3545;
+            background: rgba(220, 53, 69, 0.1);
+        }
+        
+        .results-container {
+            max-height: 600px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #666 #222;
+        }
+        
+        .results-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .results-container::-webkit-scrollbar-track {
+            background: #222;
+        }
+        
+        .results-container::-webkit-scrollbar-thumb {
+            background: #666;
+            border-radius: 4px;
+        }
+        
+        .match-simulation {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .teams {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+        }
+        
+        .team {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .team-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #ff4444;
+            margin-bottom: 10px;
+        }
+        
+        .team-score {
+            font-size: 3em;
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        .vs {
+            font-size: 1.2em;
+            color: #888;
+            margin: 0 20px;
+        }
+        
+        .map-info {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: #333;
+            border-radius: 8px;
+        }
+        
+        .map-name {
+            font-size: 1.3em;
+            color: #ffc107;
+            margin-bottom: 5px;
+        }
+        
+        .map-mode {
+            color: #ccc;
+        }
+        
+        .progress-bar {
+            background: #333;
+            border-radius: 10px;
+            height: 20px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #ff4444, #ff6666);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .scenario-list {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .scenario-list h4 {
+            color: #ffc107;
+            margin-bottom: 10px;
+        }
+        
+        .scenario-list ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .scenario-list li {
+            padding: 5px 0;
+            color: #ccc;
+            border-bottom: 1px solid #444;
+        }
+        
+        .scenario-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .scenario-list li::before {
+            content: "⚡";
+            color: #ff4444;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Realistic Live Scoring Test Runner</h1>
+            <p>Marvel Rivals Tournament Simulation: Rare Atom vs Soniqs</p>
+        </div>
+        
+        <div class="test-controls">
+            <button id="runTests" class="btn btn-primary">🚀 Run Full Test Suite</button>
+            <button id="runHeroTests" class="btn btn-secondary">👥 Test Hero Selection</button>
+            <button id="runStatsTests" class="btn btn-secondary">📊 Test Player Stats</button>
+            <button id="clearResults" class="btn btn-secondary">🗑️ Clear Results</button>
+        </div>
+        
+        <div id="testStatus" class="test-status">
+            Test Status
+        </div>
+        
+        <div class="test-grid">
+            <div class="test-results">
+                <h3>📝 Test Results</h3>
+                <div id="test-results" class="results-container">
+                    <div class="test-log test-info">
+                        <span class="timestamp">[Ready]</span>
+                        <span class="type">INFO:</span>
+                        <span class="message">Click "Run Full Test Suite" to begin testing</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="match-simulation">
+                <h3>🏆 Match Simulation</h3>
+                
+                <div class="teams">
+                    <div class="team">
+                        <div class="team-name">Rare Atom</div>
+                        <div class="team-score" id="team1-score">0</div>
+                    </div>
+                    <div class="vs">VS</div>
+                    <div class="team">
+                        <div class="team-name">Soniqs</div>
+                        <div class="team-score" id="team2-score">0</div>
+                    </div>
+                </div>
+                
+                <div class="map-info">
+                    <div class="map-name" id="current-map">Map 1: Tokyo 2099</div>
+                    <div class="map-mode" id="current-mode">Domination</div>
+                </div>
+                
+                <div class="progress-bar">
+                    <div class="progress-fill" id="test-progress" style="width: 0%">0%</div>
+                </div>
+                
+                <div class="scenario-list">
+                    <h4>🎯 Test Scenarios</h4>
+                    <ul>
+                        <li>Map 1: Tokyo 2099 Domination - Initial hero picks and stats</li>
+                        <li>Map 2: Midtown Manhattan Convoy - Hero swaps and adaptations</li>
+                        <li>Map 3: Yggsgard Convergence - Counter-picks and stat accumulation</li>
+                        <li>Backend persistence validation</li>
+                        <li>UI/UX feature testing</li>
+                        <li>Real-time stat calculations</li>
+                    </ul>
+                </div>
+                
+                <div id="match-summary" style="display: none;" class="scenario-list">
+                    <h4>📈 Match Summary</h4>
+                    <div id="summary-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="realistic-live-scoring-test.js"></script>
+    <script>
+        class TestRunner {
+            constructor() {
+                this.testInstance = null;
+                this.isRunning = false;
+                this.currentProgress = 0;
+                this.totalSteps = 6;
+                
+                this.initializeEventListeners();
+            }
+            
+            initializeEventListeners() {
+                document.getElementById('runTests').addEventListener('click', () => this.runFullTest());
+                document.getElementById('runHeroTests').addEventListener('click', () => this.runHeroTest());
+                document.getElementById('runStatsTests').addEventListener('click', () => this.runStatsTest());
+                document.getElementById('clearResults').addEventListener('click', () => this.clearResults());
+            }
+            
+            updateProgress(step, message = '') {
+                this.currentProgress = (step / this.totalSteps) * 100;
+                const progressBar = document.getElementById('test-progress');
+                progressBar.style.width = `${this.currentProgress}%`;
+                progressBar.textContent = `${Math.round(this.currentProgress)}%`;
+                
+                if (message) {
+                    this.updateStatus(message, 'running');
+                }
+            }
+            
+            updateStatus(message, type = 'info') {
+                const statusEl = document.getElementById('testStatus');
+                statusEl.textContent = message;
+                statusEl.className = `test-status ${type}`;
+            }
+            
+            updateMatchDisplay(matchData) {
+                if (!matchData) return;
+                
+                document.getElementById('team1-score').textContent = matchData.team1SeriesScore || 0;
+                document.getElementById('team2-score').textContent = matchData.team2SeriesScore || 0;
+                
+                const currentMapData = matchData.maps[matchData.currentMap];
+                if (currentMapData) {
+                    document.getElementById('current-map').textContent = `Map ${matchData.currentMap}: ${currentMapData.name || 'Unknown'}`;
+                    document.getElementById('current-mode').textContent = currentMapData.mode || 'Unknown Mode';
+                }
+            }
+            
+            async runFullTest() {
+                if (this.isRunning) return;
+                
+                this.isRunning = true;
+                this.setButtonsDisabled(true);
+                this.clearResults();
+                
+                try {
+                    this.updateStatus('Initializing test suite...', 'running');
+                    this.updateProgress(0, 'Starting comprehensive live scoring test...');
+                    
+                    this.testInstance = new RealisticLiveScoringTest();
+                    
+                    // Override the log method to update our UI
+                    const originalLog = this.testInstance.log;
+                    this.testInstance.log = async (message, type = 'info', data = null) => {
+                        await originalLog.call(this.testInstance, message, type, data);
+                        this.updateMatchDisplay(this.testInstance.matchData);
+                    };
+                    
+                    this.updateProgress(1, 'Testing hero selection...');
+                    await this.testInstance.testHeroSelection();
+                    
+                    this.updateProgress(2, 'Testing player statistics...');
+                    await this.testInstance.testPlayerStats();
+                    
+                    this.updateProgress(3, 'Testing hero swaps...');
+                    await this.testInstance.testHeroSwaps();
+                    
+                    this.updateProgress(4, 'Testing stat accumulation...');
+                    await this.testInstance.testStatAccumulation();
+                    
+                    this.updateProgress(5, 'Testing backend persistence...');
+                    await this.testInstance.testBackendPersistence();
+                    
+                    this.updateProgress(6, 'Testing UI/UX features...');
+                    await this.testInstance.testUIUXFeatures();
+                    
+                    // Generate summary
+                    const summary = await this.testInstance.generateSummaryReport();
+                    this.displaySummary(summary);
+                    
+                    this.updateStatus('All tests completed successfully! 🎉', 'success');
+                    this.updateProgress(6, 'Test suite completed successfully');
+                    
+                } catch (error) {
+                    this.updateStatus(`Test failed: ${error.message}`, 'error');
+                    console.error('Test execution failed:', error);
+                } finally {
+                    this.isRunning = false;
+                    this.setButtonsDisabled(false);
+                }
+            }
+            
+            async runHeroTest() {
+                if (this.isRunning) return;
+                
+                this.isRunning = true;
+                this.setButtonsDisabled(true);
+                
+                try {
+                    this.updateStatus('Testing hero selection...', 'running');
+                    this.testInstance = new RealisticLiveScoringTest();
+                    
+                    const originalLog = this.testInstance.log;
+                    this.testInstance.log = async (message, type = 'info', data = null) => {
+                        await originalLog.call(this.testInstance, message, type, data);
+                        this.updateMatchDisplay(this.testInstance.matchData);
+                    };
+                    
+                    await this.testInstance.testHeroSelection();
+                    this.updateStatus('Hero selection test completed!', 'success');
+                } catch (error) {
+                    this.updateStatus(`Hero test failed: ${error.message}`, 'error');
+                } finally {
+                    this.isRunning = false;
+                    this.setButtonsDisabled(false);
+                }
+            }
+            
+            async runStatsTest() {
+                if (this.isRunning) return;
+                
+                this.isRunning = true;
+                this.setButtonsDisabled(true);
+                
+                try {
+                    this.updateStatus('Testing player statistics...', 'running');
+                    this.testInstance = new RealisticLiveScoringTest();
+                    
+                    const originalLog = this.testInstance.log;
+                    this.testInstance.log = async (message, type = 'info', data = null) => {
+                        await originalLog.call(this.testInstance, message, type, data);
+                        this.updateMatchDisplay(this.testInstance.matchData);
+                    };
+                    
+                    await this.testInstance.testHeroSelection(); // Need heroes first
+                    await this.testInstance.testPlayerStats();
+                    this.updateStatus('Player stats test completed!', 'success');
+                } catch (error) {
+                    this.updateStatus(`Stats test failed: ${error.message}`, 'error');
+                } finally {
+                    this.isRunning = false;
+                    this.setButtonsDisabled(false);
+                }
+            }
+            
+            setButtonsDisabled(disabled) {
+                const buttons = document.querySelectorAll('.btn');
+                buttons.forEach(btn => {
+                    btn.disabled = disabled;
+                });
+            }
+            
+            clearResults() {
+                const resultsEl = document.getElementById('test-results');
+                resultsEl.innerHTML = `
+                    <div class="test-log test-info">
+                        <span class="timestamp">[Ready]</span>
+                        <span class="type">INFO:</span>
+                        <span class="message">Results cleared. Ready for new test.</span>
+                    </div>
+                `;
+                
+                // Reset progress
+                this.updateProgress(0);
+                
+                // Reset match display
+                document.getElementById('team1-score').textContent = '0';
+                document.getElementById('team2-score').textContent = '0';
+                document.getElementById('current-map').textContent = 'Map 1: Tokyo 2099';
+                document.getElementById('current-mode').textContent = 'Domination';
+                
+                // Hide summary
+                document.getElementById('match-summary').style.display = 'none';
+                
+                // Clear status
+                document.getElementById('testStatus').className = 'test-status';
+            }
+            
+            displaySummary(summary) {
+                const summaryEl = document.getElementById('match-summary');
+                const contentEl = document.getElementById('summary-content');
+                
+                contentEl.innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+                        <div>
+                            <strong>Match Result:</strong> ${summary.finalMatchState.winner} wins ${summary.finalMatchState.seriesScore}<br>
+                            <strong>Total Maps:</strong> ${summary.finalMatchState.totalMapsPlayed}<br>
+                            <strong>Status:</strong> ${summary.finalMatchState.status}<br>
+                            <strong>Test Duration:</strong> ${(summary.testDuration / 1000).toFixed(1)}s
+                        </div>
+                        <div>
+                            <strong>Tests Run:</strong> ${summary.totalTests}<br>
+                            <strong>Successes:</strong> ${summary.successCount}<br>
+                            <strong>Errors:</strong> ${summary.errorCount}<br>
+                            <strong>Hero Updates:</strong> ${summary.heroUpdates}
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <strong>Player Stats Validation:</strong><br>
+                        • Players with stats: ${summary.playerStatsValidation.totalPlayersWithStats}/12<br>
+                        • Heroes selected: ${summary.playerStatsValidation.heroesSelected}/12<br>
+                        • Total damage: ${summary.playerStatsValidation.totalDamage.toLocaleString()}<br>
+                        • Total healing: ${summary.playerStatsValidation.totalHealing.toLocaleString()}<br>
+                        • Total damage blocked: ${summary.playerStatsValidation.totalBlocked.toLocaleString()}
+                    </div>
+                `;
+                
+                summaryEl.style.display = 'block';
+            }
+        }
+        
+        // Initialize test runner when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new TestRunner();
+        });
+    </script>
+</body>
+</html>

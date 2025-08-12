@@ -179,34 +179,8 @@ function MatchDetailPage({ matchId, navigateTo }) {
     }
   }, [currentMapIndex]);
 
-  // FIXED: Recalculate overall score only when maps data changes AND no explicit live scores exist
-  useEffect(() => {
-    if (match?.maps && match?.status !== 'live') {
-      const overallScore = calculateOverallScore(match.maps);
-      
-      // Only auto-calculate from maps if this is NOT a live match and we don't have explicit scores
-      const hasExplicitLiveScores = (match.series_score_team1 !== undefined || match.series_score_team2 !== undefined) ||
-                                    (match.team1_score > 0 || match.team2_score > 0);
-      
-      if (!hasExplicitLiveScores && (overallScore.team1Score !== match.team1_score || overallScore.team2Score !== match.team2_score)) {
-        console.log('🏆 Auto-calculating score from completed maps (non-live match):', overallScore);
-        setMatch(prevMatch => ({
-          ...prevMatch,
-          team1_score: overallScore.team1Score,
-          team2_score: overallScore.team2Score,
-          score_calculated_from_maps: true,
-          score_calculation_timestamp: Date.now()
-        }));
-      } else if (hasExplicitLiveScores) {
-        console.log('🏆 Live match with explicit scores, preserving live scores:', {
-          team1: match.team1_score,
-          team2: match.team2_score,
-          series_team1: match.series_score_team1,
-          series_team2: match.series_score_team2
-        });
-      }
-    }
-  }, [match?.maps, match?.status]);
+  // REMOVED: Auto-calculation logic that was overriding live scores
+  // The match scores should ONLY come from the API or live updates, never calculated
 
   // Subscribe to live score updates when match loads
   useEffect(() => {

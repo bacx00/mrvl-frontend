@@ -67,18 +67,28 @@ const SimplifiedLiveScoring = ({
   const debounceTimerRef = useRef(null);
   const isUnmountedRef = useRef(false);
 
-  // Comprehensive state for match data
+  // Comprehensive state for match data with per-map scoring
   const [matchData, setMatchData] = useState({
+    // Current map scores (round-based scoring)
     team1Score: 0,
     team2Score: 0,
-    team1MapScore: 0,
-    team2MapScore: 0,
+    // Series scores (map wins)
+    team1SeriesScore: 0,
+    team2SeriesScore: 0,
     status: 'live',
     currentMap: 1,
     totalMaps: 5,
     matchTimer: '00:00',
     team1Players: [],
-    team2Players: []
+    team2Players: [],
+    // Per-map data structure
+    maps: {
+      1: { team1Score: 0, team2Score: 0, status: 'active', winner: null },
+      2: { team1Score: 0, team2Score: 0, status: 'pending', winner: null },
+      3: { team1Score: 0, team2Score: 0, status: 'pending', winner: null },
+      4: { team1Score: 0, team2Score: 0, status: 'pending', winner: null },
+      5: { team1Score: 0, team2Score: 0, status: 'pending', winner: null }
+    }
   });
 
   const [expandedStats, setExpandedStats] = useState(true);
@@ -202,23 +212,38 @@ const SimplifiedLiveScoring = ({
         });
       }
 
-      // FIXED: Preserve existing scores if they're higher than server data (prevents reset during live scoring)
-      const newTeam1MapScore = validateAndSanitizeInput(data.series_score_team1 || data.team1_series_score || data.team1_score || 0);
-      const newTeam2MapScore = validateAndSanitizeInput(data.series_score_team2 || data.team2_series_score || data.team2_score || 0);
+      // Load per-map data and series scores
+      const newTeam1SeriesScore = validateAndSanitizeInput(data.series_score_team1 || data.team1_series_score || 0);
+      const newTeam2SeriesScore = validateAndSanitizeInput(data.series_score_team2 || data.team2_series_score || 0);
+      const currentMapNumber = validateAndSanitizeInput(data.current_map || 1);
+      
+      // Initialize or update maps data from backend
+      const mapsData = data.maps || {};
+      const initializedMaps = {};
+      
+      for (let i = 1; i <= (data.total_maps || 5); i++) {
+        initializedMaps[i] = {
+          team1Score: validateAndSanitizeInput(mapsData[i]?.team1Score || 0),
+          team2Score: validateAndSanitizeInput(mapsData[i]?.team2Score || 0),
+          status: mapsData[i]?.status || (i === currentMapNumber ? 'active' : i < currentMapNumber ? 'completed' : 'pending'),
+          winner: mapsData[i]?.winner || null
+        };
+      }
       
       setMatchData(prev => ({
-        team1Score: validateAndSanitizeInput(data.team1_score || 0),
-        team2Score: validateAndSanitizeInput(data.team2_score || 0),
-        // Preserve higher scores during live updates to prevent resets
-        team1MapScore: Math.max(prev.team1MapScore, newTeam1MapScore),
-        team2MapScore: Math.max(prev.team2MapScore, newTeam2MapScore),
+        // Current map scores (for active map)
+        team1Score: validateAndSanitizeInput(initializedMaps[currentMapNumber]?.team1Score || 0),
+        team2Score: validateAndSanitizeInput(initializedMaps[currentMapNumber]?.team2Score || 0),
+        // Series scores (map wins)
+        team1SeriesScore: Math.max(prev.team1SeriesScore, newTeam1SeriesScore),
+        team2SeriesScore: Math.max(prev.team2SeriesScore, newTeam2SeriesScore),
         status: validateAndSanitizeInput(data.status || 'live', 'string'),
         team1Players,
         team2Players,
-        // Preserve other existing state
-        currentMap: prev.currentMap,
-        totalMaps: prev.totalMaps,
-        matchTimer: prev.matchTimer
+        currentMap: currentMapNumber,
+        totalMaps: validateAndSanitizeInput(data.total_maps || 5),
+        matchTimer: prev.matchTimer,
+        maps: initializedMaps
       }));
       
     } catch (error) {
@@ -280,8 +305,11 @@ const SimplifiedLiveScoring = ({
             blocked: validateAndSanitizeInput(player.blocked),
             hero: validateAndSanitizeInput(player.hero || '', 'string')
           })),
-          series_score_team1: validateAndSanitizeInput(dataToSave.team1MapScore),
-          series_score_team2: validateAndSanitizeInput(dataToSave.team2MapScore),
+          series_score_team1: validateAndSanitizeInput(dataToSave.team1SeriesScore),
+          series_score_team2: validateAndSanitizeInput(dataToSave.team2SeriesScore),
+          current_map: validateAndSanitizeInput(dataToSave.currentMap),
+          total_maps: validateAndSanitizeInput(dataToSave.totalMaps),
+          maps: dataToSave.maps || {},
           team1_score: validateAndSanitizeInput(dataToSave.team1Score),
           team2_score: validateAndSanitizeInput(dataToSave.team2Score),
           status: validateAndSanitizeInput(dataToSave.status || 'live', 'string'),
@@ -334,8 +362,15 @@ const SimplifiedLiveScoring = ({
           timestamp: now
         });
         
-        // Legacy localStorage support for backward compatibility
+        // CRITICAL: Broadcast via localStorage for cross-tab and fallback sync
         if (window.localStorage) {
+          const broadcastData = {
+            ...validatedData,
+            matchId: match.id,
+            timestamp: now,
+            source: 'SimplifiedLiveScoring'
+          };
+          localStorage.setItem(`live_match_${match.id}`, JSON.stringify(broadcastData));
           localStorage.setItem(`match_${match.id}_updated`, now.toString());
         }
         
@@ -431,14 +466,54 @@ const SimplifiedLiveScoring = ({
     }
   }, [debouncedApiSave, addError]);
 
-  // Update map scores with validation and debounced save
-  const updateMapScore = useCallback(async (team, increment) => {
+  // Update current map scores with validation and debounced save
+  const updateCurrentMapScore = useCallback(async (team, increment) => {
     if (isUnmountedRef.current) return;
     
     try {
       // Update UI immediately
       setMatchData(prev => {
-        const scoreKey = team === 1 ? 'team1MapScore' : 'team2MapScore';
+        const currentMap = prev.currentMap;
+        const scoreKey = team === 1 ? 'team1Score' : 'team2Score';
+        const mapScoreKey = team === 1 ? 'team1Score' : 'team2Score';
+        
+        const newScore = Math.max(0, prev[scoreKey] + (increment ? 1 : -1));
+        const validatedScore = validateAndSanitizeInput(newScore);
+        
+        // Update both current scores and map-specific scores
+        const updatedMaps = {
+          ...prev.maps,
+          [currentMap]: {
+            ...prev.maps[currentMap],
+            [mapScoreKey]: validatedScore
+          }
+        };
+        
+        const newState = {
+          ...prev,
+          [scoreKey]: validatedScore,
+          maps: updatedMaps
+        };
+
+        // DEBOUNCED API CALL: Save current map score changes
+        debouncedApiSave(newState);
+
+        return newState;
+      });
+    } catch (error) {
+      console.error('Error updating current map score:', error);
+      addError(error);
+    }
+  }, [debouncedApiSave, addError]);
+
+  // Update series scores (map wins) with validation and debounced save
+  const updateSeriesScore = useCallback(async (team, increment) => {
+    if (isUnmountedRef.current) return;
+    
+    try {
+      // Update UI immediately
+      setMatchData(prev => {
+        const scoreKey = team === 1 ? 'team1SeriesScore' : 'team2SeriesScore';
         const newScore = Math.max(0, prev[scoreKey] + (increment ? 1 : -1));
         
         // Validate score
@@ -449,13 +524,101 @@ const SimplifiedLiveScoring = ({
           [scoreKey]: validatedScore
         };
 
-        // DEBOUNCED API CALL: Save map score changes
+        // DEBOUNCED API CALL: Save series score changes
         debouncedApiSave(newState);
 
         return newState;
       });
     } catch (error) {
-      console.error('Error updating map score:', error);
+      console.error('Error updating series score:', error);
+      addError(error);
+    }
+  }, [debouncedApiSave, addError]);
+
+  // Change current map
+  const changeCurrentMap = useCallback(async (mapNumber) => {
+    if (isUnmountedRef.current) return;
+    
+    try {
+      const validatedMapNumber = validateAndSanitizeInput(mapNumber);
+      
+      setMatchData(prev => {
+        // Load scores for the selected map
+        const selectedMapData = prev.maps[validatedMapNumber] || { team1Score: 0, team2Score: 0, status: 'active', winner: null };
+        
+        const newState = {
+          ...prev,
+          currentMap: validatedMapNumber,
+          team1Score: selectedMapData.team1Score,
+          team2Score: selectedMapData.team2Score
+        };
+
+        // DEBOUNCED API CALL: Save current map change
+        debouncedApiSave(newState);
+
+        return newState;
+      });
+    } catch (error) {
+      console.error('Error changing current map:', error);
+      addError(error);
+    }
+  }, [debouncedApiSave, addError]);
+
+  // Complete current map and calculate series winner
+  const completeCurrentMap = useCallback(async (winningTeam) => {
+    if (isUnmountedRef.current) return;
+    
+    try {
+      setMatchData(prev => {
+        const currentMap = prev.currentMap;
+        const updatedMaps = {
+          ...prev.maps,
+          [currentMap]: {
+            ...prev.maps[currentMap],
+            status: 'completed',
+            winner: winningTeam
+          }
+        };
+        
+        // Update series score
+        let newTeam1SeriesScore = prev.team1SeriesScore;
+        let newTeam2SeriesScore = prev.team2SeriesScore;
+        
+        if (winningTeam === 1) {
+          newTeam1SeriesScore += 1;
+        } else if (winningTeam === 2) {
+          newTeam2SeriesScore += 1;
+        }
+        
+        // Auto-advance to next map if available
+        let nextMap = currentMap;
+        if (currentMap < prev.totalMaps) {
+          nextMap = currentMap + 1;
+          // Set next map as active
+          updatedMaps[nextMap] = {
+            ...updatedMaps[nextMap],
+            status: 'active'
+          };
+        }
+        
+        const newState = {
+          ...prev,
+          maps: updatedMaps,
+          team1SeriesScore: newTeam1SeriesScore,
+          team2SeriesScore: newTeam2SeriesScore,
+          currentMap: nextMap,
+          // Load next map scores
+          team1Score: updatedMaps[nextMap]?.team1Score || 0,
+          team2Score: updatedMaps[nextMap]?.team2Score || 0
+        };
+
+        // DEBOUNCED API CALL: Save map completion
+        debouncedApiSave(newState);
+
+        return newState;
+      });
+    } catch (error) {
+      console.error('Error completing current map:', error);
       addError(error);
     }
   }, [debouncedApiSave, addError]);
@@ -533,19 +696,12 @@ const SimplifiedLiveScoring = ({
     }
     
     try {
-      const response = await api.post(`/admin/matches/${match.id}/team-wins-map`, {
-        winning_team: teamNumber
-      });
-
-      // Update map series score (this is the correct field for map wins)
-      if (teamNumber === 1) {
-        setMatchData(prev => ({ ...prev, team1MapScore: prev.team1MapScore + 1 }));
-      } else {
-        setMatchData(prev => ({ ...prev, team2MapScore: prev.team2MapScore + 1 }));
-      }
+      // Use the new map completion function
+      await completeCurrentMap(teamNumber);
       if (onUpdate) onUpdate();
     } catch (error) {
       console.error('Error updating map win:', error);
+      addError(error);
     }
   };
 
@@ -571,7 +727,7 @@ const SimplifiedLiveScoring = ({
 
   // Reset all stats
   const resetStats = async () => {
-    if (!confirm('Reset all player stats to zero?')) return;
+    if (!confirm('Reset all player stats and map scores to zero?')) return;
 
     const resetPlayers = (players) => players.map(player => ({
       ...player,
@@ -586,12 +742,26 @@ const SimplifiedLiveScoring = ({
       isAlive: true
     }));
 
+    // Reset maps data
+    const resetMaps = {};
+    for (let i = 1; i <= prev.totalMaps; i++) {
+      resetMaps[i] = {
+        team1Score: 0,
+        team2Score: 0,
+        status: i === 1 ? 'active' : 'pending',
+        winner: null
+      };
+    }
+
     setMatchData(prev => ({
       ...prev,
-      team1MapScore: 0,
-      team2MapScore: 0,
+      team1Score: 0,
+      team2Score: 0,
+      team1SeriesScore: 0,
+      team2SeriesScore: 0,
       currentMap: 1,
       matchTimer: '00:00',
+      maps: resetMaps,
       team1Players: resetPlayers(prev.team1Players),
       team2Players: resetPlayers(prev.team2Players)
     }));
@@ -895,14 +1065,15 @@ const SimplifiedLiveScoring = ({
         </div>
 
         <div className="p-3 bg-gray-900">
-          {/* Match Status Bar */}
+          {/* Match Status & Series Score Bar */}
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 mb-3">
-            <div className="grid grid-cols-3 gap-3 items-center text-center">
-              {/* Team 1 */}
+            <div className="grid grid-cols-3 gap-3 items-center text-center mb-3">
+              {/* Team 1 Series */}
               <div>
-                <div className="text-xs text-gray-400 mb-1">TEAM 1</div>
+                <div className="text-xs text-gray-400 mb-1">SERIES SCORE</div>
                 <div className="font-bold text-sm text-white truncate">{match.team1?.name || 'Team 1'}</div>
-                <div className="text-2xl font-bold text-red-400 mt-1">{matchData.team1MapScore}</div>
+                <div className="text-3xl font-bold text-yellow-400 mt-1">{matchData.team1SeriesScore}</div>
+                <div className="text-xs text-gray-500">Maps Won</div>
               </div>
 
               {/* VS & Status */}
@@ -914,86 +1085,96 @@ const SimplifiedLiveScoring = ({
                   {matchData.status === 'live' && <div className="w-1 h-1 bg-red-400 rounded-full animate-pulse" />}
                   {matchData.status.toUpperCase()}
                 </div>
-                <div className="text-xs text-gray-500 mt-1">Map {matchData.currentMap}/{matchData.totalMaps}</div>
+                <div className="text-xs text-gray-500 mt-1">BO{matchData.totalMaps}</div>
               </div>
 
-              {/* Team 2 */}
+              {/* Team 2 Series */}
               <div>
-                <div className="text-xs text-gray-400 mb-1">TEAM 2</div>
+                <div className="text-xs text-gray-400 mb-1">SERIES SCORE</div>
                 <div className="font-bold text-sm text-white truncate">{match.team2?.name || 'Team 2'}</div>
-                <div className="text-2xl font-bold text-red-400 mt-1">{matchData.team2MapScore}</div>
+                <div className="text-3xl font-bold text-yellow-400 mt-1">{matchData.team2SeriesScore}</div>
+                <div className="text-xs text-gray-500">Maps Won</div>
+              </div>
+            </div>
+            
+            {/* Current Map Score Display */}
+            <div className="border-t border-gray-700 pt-3">
+              <div className="text-center mb-2">
+                <div className="text-sm font-bold text-white mb-1">CURRENT MAP SCORE</div>
+                <div className="text-xs text-gray-400 mb-2">Map {matchData.currentMap} - {matchData.maps[matchData.currentMap]?.status || 'Active'}</div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-3 items-center text-center">
+                <div>
+                  <div className="text-lg font-bold text-red-400">{matchData.team1Score}</div>
+                  <div className="text-xs text-gray-400">{match.team1?.name || 'Team 1'}</div>
+                </div>
+                <div className="text-gray-400 text-sm font-bold">-</div>
+                <div>
+                  <div className="text-lg font-bold text-red-400">{matchData.team2Score}</div>
+                  <div className="text-xs text-gray-400">{match.team2?.name || 'Team 2'}</div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Map Control Panel */}
+          {/* Per-Map Control Panel */}
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 mb-3">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-white flex items-center gap-1">
                 <Award className="w-4 h-4 text-yellow-400" />
-                Map Control
+                Map Controls
               </h3>
-              <div className="text-xs text-gray-400">
-                BO{matchData.totalMaps}
+              
+              {/* Map Selector */}
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-gray-400">Select Map:</label>
+                <select
+                  value={matchData.currentMap}
+                  onChange={(e) => {
+                    if (!hasAdminAccess) return;
+                    changeCurrentMap(parseInt(e.target.value));
+                  }}
+                  disabled={!hasAdminAccess}
+                  className={`rounded px-2 py-1 text-xs text-white focus:ring-1 focus:ring-red-500 focus:border-red-500 ${
+                    hasAdminAccess 
+                      ? 'bg-gray-700 border border-gray-600' 
+                      : 'bg-gray-800 border border-gray-700 cursor-not-allowed opacity-75'
+                  }`}
+                >
+                  {Array.from({ length: matchData.totalMaps }, (_, i) => i + 1).map(mapNum => {
+                    const mapData = matchData.maps[mapNum];
+                    const statusIndicator = mapData?.status === 'completed' ? '✓' : mapData?.status === 'active' ? '●' : '';
+                    return (
+                      <option key={mapNum} value={mapNum}>
+                        Map {mapNum} {statusIndicator}
+                      </option>
+                    );
+                  })}
+                </select>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              {/* Team 1 Map Control */}
-              <div className="bg-gray-700 border border-red-600 rounded-lg p-2">
-                <div className="text-center mb-2">
-                  <h4 className="font-bold text-white text-sm mb-1">{match.team1?.name || 'Team 1'}</h4>
-                  <div className="text-2xl font-bold text-red-400 mb-2">{matchData.team1MapScore}</div>
-                  
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <button
-                      onClick={() => hasAdminAccess && updateMapScore(1, false)}
-                      disabled={!hasAdminAccess}
-                      className={`px-2 py-1 text-white rounded text-xs font-bold transition-colors ${
-                        hasAdminAccess 
-                          ? 'bg-red-600 hover:bg-red-700' 
-                          : 'bg-gray-600 cursor-not-allowed opacity-50'
-                      }`}
-                    >
-                      -1
-                    </button>
-                    <button
-                      onClick={() => hasAdminAccess && updateMapScore(1, true)}
-                      disabled={!hasAdminAccess}
-                      className={`px-2 py-1 text-white rounded text-xs font-bold transition-colors ${
-                        hasAdminAccess 
-                          ? 'bg-green-600 hover:bg-green-700' 
-                          : 'bg-gray-600 cursor-not-allowed opacity-50'
-                      }`}
-                    >
-                      +1
-                    </button>
-                  </div>
-                  
-                  <button
-                    onClick={() => hasAdminAccess && teamWinsMap(1)}
-                    disabled={!hasAdminAccess}
-                    className={`w-full px-2 py-1 text-white rounded text-xs font-bold transition-colors flex items-center justify-center gap-1 ${
-                      hasAdminAccess 
-                        ? 'bg-red-600 hover:bg-red-700' 
-                        : 'bg-gray-600 cursor-not-allowed opacity-50'
-                    }`}
-                  >
-                    <Trophy className="w-3 h-3" />
-                    Win Map
-                  </button>
+            {/* Current Map Score Controls */}
+            <div className="bg-gray-700 border border-gray-600 rounded-lg p-3 mb-3">
+              <div className="text-center mb-2">
+                <h4 className="text-sm font-bold text-white mb-1">
+                  Map {matchData.currentMap} Score Control
+                </h4>
+                <div className="text-xs text-gray-400 capitalize">
+                  Status: {matchData.maps[matchData.currentMap]?.status || 'active'}
                 </div>
               </div>
-
-              {/* Team 2 Map Control */}
-              <div className="bg-gray-700 border border-red-600 rounded-lg p-2">
-                <div className="text-center mb-2">
-                  <h4 className="font-bold text-white text-sm mb-1">{match.team2?.name || 'Team 2'}</h4>
-                  <div className="text-2xl font-bold text-red-400 mb-2">{matchData.team2MapScore}</div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                {/* Team 1 Current Map Score */}
+                <div className="bg-gray-800 rounded-lg p-2 text-center">
+                  <h5 className="font-bold text-white text-sm mb-1">{match.team1?.name || 'Team 1'}</h5>
+                  <div className="text-xl font-bold text-red-400 mb-2">{matchData.team1Score}</div>
                   
-                  <div className="flex items-center justify-center gap-2 mb-2">
+                  <div className="flex items-center justify-center gap-1 mb-2">
                     <button
-                      onClick={() => hasAdminAccess && updateMapScore(2, false)}
+                      onClick={() => hasAdminAccess && updateCurrentMapScore(1, false)}
                       disabled={!hasAdminAccess}
                       className={`px-2 py-1 text-white rounded text-xs font-bold transition-colors ${
                         hasAdminAccess 
@@ -1004,7 +1185,7 @@ const SimplifiedLiveScoring = ({
                       -1
                     </button>
                     <button
-                      onClick={() => hasAdminAccess && updateMapScore(2, true)}
+                      onClick={() => hasAdminAccess && updateCurrentMapScore(1, true)}
                       disabled={!hasAdminAccess}
                       className={`px-2 py-1 text-white rounded text-xs font-bold transition-colors ${
                         hasAdminAccess 
@@ -1015,20 +1196,97 @@ const SimplifiedLiveScoring = ({
                       +1
                     </button>
                   </div>
-                  
-                  <button
-                    onClick={() => hasAdminAccess && teamWinsMap(2)}
-                    disabled={!hasAdminAccess}
-                    className={`w-full px-2 py-1 text-white rounded text-xs font-bold transition-colors flex items-center justify-center gap-1 ${
-                      hasAdminAccess 
-                        ? 'bg-red-600 hover:bg-red-700' 
-                        : 'bg-gray-600 cursor-not-allowed opacity-50'
-                    }`}
-                  >
-                    <Trophy className="w-3 h-3" />
-                    Win Map
-                  </button>
                 </div>
+
+                {/* Team 2 Current Map Score */}
+                <div className="bg-gray-800 rounded-lg p-2 text-center">
+                  <h5 className="font-bold text-white text-sm mb-1">{match.team2?.name || 'Team 2'}</h5>
+                  <div className="text-xl font-bold text-red-400 mb-2">{matchData.team2Score}</div>
+                  
+                  <div className="flex items-center justify-center gap-1 mb-2">
+                    <button
+                      onClick={() => hasAdminAccess && updateCurrentMapScore(2, false)}
+                      disabled={!hasAdminAccess}
+                      className={`px-2 py-1 text-white rounded text-xs font-bold transition-colors ${
+                        hasAdminAccess 
+                          ? 'bg-red-600 hover:bg-red-700' 
+                          : 'bg-gray-600 cursor-not-allowed opacity-50'
+                      }`}
+                    >
+                      -1
+                    </button>
+                    <button
+                      onClick={() => hasAdminAccess && updateCurrentMapScore(2, true)}
+                      disabled={!hasAdminAccess}
+                      className={`px-2 py-1 text-white rounded text-xs font-bold transition-colors ${
+                        hasAdminAccess 
+                          ? 'bg-green-600 hover:bg-green-700' 
+                          : 'bg-gray-600 cursor-not-allowed opacity-50'
+                      }`}
+                    >
+                      +1
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Map Completion Controls */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => hasAdminAccess && teamWinsMap(1)}
+                disabled={!hasAdminAccess || matchData.maps[matchData.currentMap]?.status === 'completed'}
+                className={`px-3 py-2 text-white rounded text-sm font-bold transition-colors flex items-center justify-center gap-1 ${
+                  hasAdminAccess && matchData.maps[matchData.currentMap]?.status !== 'completed'
+                    ? 'bg-red-600 hover:bg-red-700' 
+                    : 'bg-gray-600 cursor-not-allowed opacity-50'
+                }`}
+              >
+                <Trophy className="w-3 h-3" />
+                {match.team1?.name || 'Team 1'} Wins Map
+              </button>
+              
+              <button
+                onClick={() => hasAdminAccess && teamWinsMap(2)}
+                disabled={!hasAdminAccess || matchData.maps[matchData.currentMap]?.status === 'completed'}
+                className={`px-3 py-2 text-white rounded text-sm font-bold transition-colors flex items-center justify-center gap-1 ${
+                  hasAdminAccess && matchData.maps[matchData.currentMap]?.status !== 'completed'
+                    ? 'bg-red-600 hover:bg-red-700' 
+                    : 'bg-gray-600 cursor-not-allowed opacity-50'
+                }`}
+              >
+                <Trophy className="w-3 h-3" />
+                {match.team2?.name || 'Team 2'} Wins Map
+              </button>
+            </div>
+            
+            {/* Maps Overview */}
+            <div className="mt-3 p-2 bg-gray-700 rounded">
+              <div className="text-xs font-bold text-gray-300 mb-2">Maps Overview:</div>
+              <div className="grid grid-cols-5 gap-1 text-center">
+                {Array.from({ length: matchData.totalMaps }, (_, i) => i + 1).map(mapNum => {
+                  const mapData = matchData.maps[mapNum];
+                  const isActive = mapNum === matchData.currentMap;
+                  const isCompleted = mapData?.status === 'completed';
+                  const winner = mapData?.winner;
+                  
+                  return (
+                    <div key={mapNum} className={`p-1 rounded text-xs ${
+                      isActive ? 'bg-red-600 text-white' : 
+                      isCompleted ? 'bg-green-600 text-white' : 
+                      'bg-gray-600 text-gray-300'
+                    }`}>
+                      <div className="font-bold">M{mapNum}</div>
+                      <div className="text-xs">
+                        {isCompleted && winner ? `W:T${winner}` : 
+                         isActive ? 'LIVE' : 'WAIT'}
+                      </div>
+                      <div className="text-xs">
+                        {mapData?.team1Score || 0}-{mapData?.team2Score || 0}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

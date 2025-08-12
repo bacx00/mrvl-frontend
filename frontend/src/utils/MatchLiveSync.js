@@ -67,10 +67,27 @@ class MatchLiveSync {
       const connection = this.activeConnections.get(matchId);
       connection.subscribers += 1;
       connection.lastActivity = Date.now();
-      console.log(`⚡ Reusing existing SSE connection for match ${matchId}`);
+      console.log(`⚡ Reusing existing connection for match ${matchId}`);
       return;
     }
 
+    // DISABLED: SSE connections - using localStorage synchronization instead
+    console.log(`📡 Match ${matchId} using localStorage synchronization (SSE disabled)`);
+    
+    // Store a mock connection to track active subscriptions
+    this.activeConnections.set(matchId, {
+      matchId,
+      subscribers: 1,
+      lastActivity: Date.now(),
+      type: 'localStorage',
+      active: true
+    });
+    
+    // Listen for localStorage updates for this match
+    this.startLocalStorageSync(matchId);
+    return;
+    
+    /* DISABLED SSE CODE
     try {
       console.log(`🔌 Creating SSE connection for match ${matchId}`);
       
@@ -104,6 +121,7 @@ class MatchLiveSync {
     } catch (error) {
       console.error(`Failed to create SSE connection for match ${matchId}:`, error);
     }
+    */
   }
 
   /**
@@ -147,6 +165,32 @@ class MatchLiveSync {
   }
 
   /**
+   * Start localStorage synchronization for a match
+   */
+  startLocalStorageSync(matchId) {
+    // Listen for localStorage changes
+    const storageHandler = (e) => {
+      if (e.key === `live_match_${matchId}` && e.newValue) {
+        try {
+          const data = JSON.parse(e.newValue);
+          this.distributeUpdate(matchId, data);
+        } catch (error) {
+          console.error('Error parsing localStorage update:', error);
+        }
+      }
+    };
+    
+    // Store handler for later cleanup
+    if (!this.storageHandlers) {
+      this.storageHandlers = new Map();
+    }
+    this.storageHandlers.set(matchId, storageHandler);
+    
+    window.addEventListener('storage', storageHandler);
+    console.log(`📦 LocalStorage sync enabled for match ${matchId}`);
+  }
+
+  /**
    * Schedule connection cleanup after inactivity
    */
   scheduleConnectionCleanup(matchId) {
@@ -162,14 +206,25 @@ class MatchLiveSync {
   }
 
   /**
-   * Close SSE connection for a match
+   * Close connection for a match
    */
   closeConnection(matchId) {
     const connection = this.activeConnections.get(matchId);
     if (connection) {
-      connection.eventSource.close();
+      // Clean up localStorage handler if exists
+      if (this.storageHandlers?.has(matchId)) {
+        const handler = this.storageHandlers.get(matchId);
+        window.removeEventListener('storage', handler);
+        this.storageHandlers.delete(matchId);
+      }
+      
+      // Clean up SSE if it exists
+      if (connection.eventSource) {
+        connection.eventSource.close();
+      }
+      
       this.activeConnections.delete(matchId);
-      console.log(`🔌 SSE connection closed for match ${matchId}`);
+      console.log(`🔌 Connection closed for match ${matchId}`);
     }
   }
 
