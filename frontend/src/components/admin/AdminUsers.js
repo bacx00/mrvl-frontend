@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../hooks';
+import { getUserAvatarUrl, getHeroImageSync } from '../../utils/imageUtils';
 
 function AdminUsers() {
   const { api } = useAuth();
@@ -44,7 +45,7 @@ function AdminUsers() {
     try {
       setLoading(true);
       setError(null);
-      const response = await api.get(`/api/admin/users?page=${page}&limit=${limit}`);
+      const response = await api.get(`/admin/users?page=${page}&limit=${limit}`);
       const usersData = response?.data?.data || response?.data || response || [];
       setUsers(Array.isArray(usersData) ? usersData : []);
     } catch (err) {
@@ -100,7 +101,7 @@ function AdminUsers() {
 
   const handleRoleChange = async (userId, newRole) => {
     try {
-      const response = await api.put(`/api/admin/users/${userId}`, { role: newRole });
+      const response = await api.put(`/admin/users/${userId}`, { role: newRole });
       if (response.data?.success !== false) {
         await fetchUsers();
         alert(`User role updated to ${newRole}!`);
@@ -118,7 +119,7 @@ function AdminUsers() {
     if (window.confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
       try {
         setLoading(true);
-        const response = await api.delete(`/api/admin/users/${userId}`);
+        const response = await api.delete(`/admin/users/${userId}`);
         if (response.data?.success !== false) {
           await fetchUsers();
           alert('User deleted successfully!');
@@ -138,7 +139,7 @@ function AdminUsers() {
   const handleStatusChange = async (userId, newStatus) => {
     try {
       setLoading(true);
-      const response = await api.put(`/api/admin/users/${userId}`, { status: newStatus });
+      const response = await api.put(`/admin/users/${userId}`, { status: newStatus });
       if (response.data?.success !== false) {
         await fetchUsers();
         alert(`User status updated to ${newStatus}!`);
@@ -224,7 +225,7 @@ function AdminUsers() {
       errors.role = 'Invalid role selected';
     }
     
-    if (!['active', 'inactive', 'banned'].includes(data.status)) {
+    if (!['active', 'inactive', 'banned', 'suspended'].includes(data.status)) {
       errors.status = 'Invalid status selected';
     }
     
@@ -245,7 +246,7 @@ function AdminUsers() {
     setFormErrors({});
     
     try {
-      const response = await api.post('/api/admin/users', formData);
+      const response = await api.post('/admin/users', formData);
       if (response.data?.success !== false) {
         await fetchUsers();
         closeAllModals();
@@ -286,7 +287,7 @@ function AdminUsers() {
         delete updateData.password;
       }
       
-      const response = await api.put(`/api/admin/users/${selectedUser.id}`, updateData);
+      const response = await api.put(`/admin/users/${selectedUser.id}`, updateData);
       if (response.data?.success !== false) {
         await fetchUsers();
         closeAllModals();
@@ -327,7 +328,9 @@ function AdminUsers() {
       case 'banned':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
       case 'suspended':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
+      case 'inactive':
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
@@ -415,7 +418,7 @@ function AdminUsers() {
     const confirmMessage = `Are you sure you want to delete ${selectedUsers.size} users? This action cannot be undone.`;
     if (window.confirm(confirmMessage)) {
       try {
-        const response = await api.post('/api/admin/users/bulk-delete', {
+        const response = await api.post('/admin/users/bulk-delete', {
           user_ids: Array.from(selectedUsers)
         });
         
@@ -523,6 +526,7 @@ function AdminUsers() {
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
               <option value="suspended">Suspended</option>
               <option value="banned">Banned</option>
             </select>
@@ -578,6 +582,12 @@ function AdminUsers() {
                   className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
                 >
                   Ban
+                </button>
+                <button
+                  onClick={() => handleBulkStatusChange('suspended')}
+                  className="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded text-sm"
+                >
+                  Suspend
                 </button>
                 <button
                   onClick={() => handleBulkRoleChange('moderator')}
@@ -651,9 +661,14 @@ function AdminUsers() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold">
-                          {(user.name || user.email || '?')[0].toUpperCase()}
-                        </div>
+                        <UserAvatar user={user} navigateToProfile={() => {
+                          console.log('🔍 AdminUsers: Navigating to user profile:', user.id);
+                          // Admin functionality - navigate to user profile
+                          if (window.confirm(`Navigate to user profile for ${user.name}?`)) {
+                            // This would navigate to user profile page - implement as needed
+                            window.open(`/profile/${user.id}`, '_blank');
+                          }
+                        }} />
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -685,6 +700,7 @@ function AdminUsers() {
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
                       <option value="banned">Banned</option>
+                      <option value="suspended">Suspended</option>
                     </select>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -866,6 +882,7 @@ function AdminUsers() {
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                   <option value="banned">Banned</option>
+                  <option value="suspended">Suspended</option>
                 </select>
                 {formErrors.status && <p className="text-red-500 text-xs mt-1">{formErrors.status}</p>}
               </div>
@@ -969,6 +986,7 @@ function AdminUsers() {
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                   <option value="banned">Banned</option>
+                  <option value="suspended">Suspended</option>
                 </select>
                 {formErrors.status && <p className="text-red-500 text-xs mt-1">{formErrors.status}</p>}
               </div>
@@ -1062,6 +1080,100 @@ function AdminUsers() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// UserAvatar component that shows hero avatar or fallback
+function UserAvatar({ user, navigateToProfile }) {
+  const [imageError, setImageError] = React.useState(false);
+  
+  if (!user) {
+    return (
+      <div className="h-10 w-10 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center text-gray-600 font-bold text-lg">
+        ?
+      </div>
+    );
+  }
+
+  // Get initials from name or email
+  const getInitials = () => {
+    const nameToUse = user.name || user.email || '?';
+    const parts = nameToUse.split(' ');
+    if (parts.length > 1) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    // For email, use first two characters
+    if (nameToUse.includes('@')) {
+      return nameToUse.substring(0, 2).toUpperCase();
+    }
+    return nameToUse.substring(0, 1).toUpperCase();
+  };
+  const fallbackInitials = getInitials();
+
+  // Check if user has a hero avatar selected
+  let avatarUrl = null;
+  
+  // First check if user has selected a hero
+  if (user.selected_hero || user.hero_name) {
+    const heroName = user.selected_hero || user.hero_name;
+    const heroImage = getHeroImageSync(heroName);
+    if (heroImage) {
+      avatarUrl = heroImage;
+      console.log('👤 Using hero avatar for user:', user.name, 'Hero:', heroName);
+    }
+  }
+  
+  // If no hero image, check for regular avatar
+  if (!avatarUrl && user.avatar) {
+    // If it's a hero path, get the hero image
+    if (user.avatar.includes('/heroes/')) {
+      // Extract hero name from path
+      const heroMatch = user.avatar.match(/heroes\/([^/]+)/);
+      if (heroMatch) {
+        const heroName = heroMatch[1].replace(/-headbig\.webp$/, '').replace(/-/g, ' ');
+        const heroImage = getHeroImageSync(heroName);
+        if (heroImage) {
+          avatarUrl = heroImage;
+        }
+      }
+    } else {
+      // Regular avatar
+      avatarUrl = getUserAvatarUrl(user);
+    }
+  }
+  
+  // If still no avatar or there was an error, show question mark
+  if (imageError || !avatarUrl || avatarUrl.includes('placeholder') || avatarUrl.includes('data:image')) {
+    return (
+      <div 
+        className="h-10 w-10 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center text-gray-600 font-bold text-lg cursor-pointer hover:border-blue-500 transition-colors"
+        onClick={navigateToProfile}
+        title={`Click to view ${user.name}'s profile (Admin functionality)`}
+      >
+        ?
+      </div>
+    );
+  }
+  
+  return (
+    <div 
+      className="h-10 w-10 rounded-full overflow-hidden cursor-pointer border-2 border-transparent hover:border-blue-500 transition-colors"
+      onClick={navigateToProfile}
+      title={`Click to view ${user.name}'s profile (Admin functionality)`}
+    >
+      <img
+        src={avatarUrl}
+        alt={user.name}
+        className="w-full h-full object-cover"
+        onError={(e) => {
+          console.log('👤 UserAvatar image failed to load for:', user.name);
+          setImageError(true);
+        }}
+        onLoad={() => {
+          console.log('👤 UserAvatar loaded successfully for:', user.name);
+        }}
+      />
     </div>
   );
 }

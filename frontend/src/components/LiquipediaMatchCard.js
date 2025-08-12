@@ -1,5 +1,6 @@
 import React from 'react';
 import { TeamLogo } from '../utils/imageUtils';
+import '../styles/liquipedia-tournament.css';
 
 /**
  * Liquipedia-style Match Card Component

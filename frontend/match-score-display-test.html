@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match Score Display Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-case { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .score { font-size: 24px; font-weight: bold; color: #333; }
+        .map-score { font-size: 16px; color: #666; margin: 5px 0; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>🏆 Match Score Display Fix Verification</h1>
+    <p>This test verifies that the overall match score is correctly calculated and displayed from individual map scores.</p>
+    
+    <div id="test-results"></div>
+    
+    <script>
+        // Simulate the calculateOverallScore function from MatchDetailPage.js
+        function calculateOverallScore(mapsData) {
+            if (!mapsData || mapsData.length === 0) {
+                return { team1Score: 0, team2Score: 0 };
+            }
+            
+            let team1Wins = 0;
+            let team2Wins = 0;
+            
+            mapsData.forEach(map => {
+                // Only count completed maps with definitive scores
+                if (map && (map.status === 'completed' || (map.team1_score > 0 || map.team2_score > 0))) {
+                    if (map.team1_score > map.team2_score) {
+                        team1Wins++;
+                    } else if (map.team2_score > map.team1_score) {
+                        team2Wins++;
+                    }
+                }
+            });
+            
+            return { team1Score: team1Wins, team2Score: team2Wins };
+        }
+        
+        // Test cases based on real Marvel Rivals tournament scenarios
+        const testCases = [
+            {
+                name: "BO3 Match - Team 1 Wins 2-1",
+                match: {
+                    team1: { name: "Rare Atom", short_name: "RA" },
+                    team2: { name: "Soniqs", short_name: "SQ" },
+                    format: "BO3",
+                    maps: [
+                        { map_name: "Tokyo", team1_score: 3, team2_score: 1, status: "completed" },
+                        { map_name: "New York", team1_score: 1, team2_score: 3, status: "completed" },
+                        { map_name: "Klyntar", team1_score: 3, team2_score: 2, status: "completed" }
+                    ]
+                },
+                expected: { team1Score: 2, team2Score: 1 }
+            },
+            {
+                name: "BO3 Match - Team 2 Wins 2-0",
+                match: {
+                    team1: { name: "Team Alpha", short_name: "TA" },
+                    team2: { name: "Team Beta", short_name: "TB" },
+                    format: "BO3", 
+                    maps: [
+                        { map_name: "Shanghai", team1_score: 1, team2_score: 3, status: "completed" },
+                        { map_name: "Sanctum", team1_score: 2, team2_score: 3, status: "completed" }
+                    ]
+                },
+                expected: { team1Score: 0, team2Score: 2 }
+            },
+            {
+                name: "Live Match - 1-1 with third map in progress",
+                match: {
+                    team1: { name: "Cloud9", short_name: "C9" },
+                    team2: { name: "G2 Esports", short_name: "G2" },
+                    format: "BO3",
+                    maps: [
+                        { map_name: "Tokyo", team1_score: 3, team2_score: 1, status: "completed" },
+                        { map_name: "New York", team1_score: 1, team2_score: 3, status: "completed" },
+                        { map_name: "Klyntar", team1_score: 1, team2_score: 2, status: "live" }
+                    ]
+                },
+                expected: { team1Score: 1, team2Score: 1 }
+            },
+            {
+                name: "Edge Case - No maps completed",
+                match: {
+                    team1: { name: "Team X", short_name: "TX" },
+                    team2: { name: "Team Y", short_name: "TY" },
+                    format: "BO3",
+                    maps: []
+                },
+                expected: { team1Score: 0, team2Score: 0 }
+            }
+        ];
+        
+        // Run tests and display results
+        function runTests() {
+            const resultsContainer = document.getElementById('test-results');
+            let allPassed = true;
+            
+            testCases.forEach((testCase, index) => {
+                const calculated = calculateOverallScore(testCase.match.maps);
+                const passed = calculated.team1Score === testCase.expected.team1Score && 
+                              calculated.team2Score === testCase.expected.team2Score;
+                
+                if (!passed) allPassed = false;
+                
+                const testDiv = document.createElement('div');
+                testDiv.className = `test-case ${passed ? 'success' : 'error'}`;
+                
+                let mapDetails = '';
+                if (testCase.match.maps && testCase.match.maps.length > 0) {
+                    mapDetails = testCase.match.maps.map((map, i) => 
+                        `<div class="map-score">Map ${i+1} (${map.map_name}): ${testCase.match.team1.short_name} ${map.team1_score}-${map.team2_score} ${testCase.match.team2.short_name} ${map.status ? `(${map.status})` : ''}</div>`
+                    ).join('');
+                }
+                
+                testDiv.innerHTML = `
+                    <h3>${passed ? '✅' : '❌'} Test ${index + 1}: ${testCase.name}</h3>
+                    <p><strong>Teams:</strong> ${testCase.match.team1.name} vs ${testCase.match.team2.name}</p>
+                    <p><strong>Format:</strong> ${testCase.match.format}</p>
+                    ${mapDetails}
+                    <div class="score">
+                        <strong>Expected:</strong> ${testCase.match.team1.short_name} ${testCase.expected.team1Score}-${testCase.expected.team2Score} ${testCase.match.team2.short_name}
+                    </div>
+                    <div class="score">
+                        <strong>Calculated:</strong> ${testCase.match.team1.short_name} ${calculated.team1Score}-${calculated.team2Score} ${testCase.match.team2.short_name}
+                    </div>
+                    <p><strong>Status:</strong> ${passed ? 'PASSED' : 'FAILED'}</p>
+                `;
+                
+                resultsContainer.appendChild(testDiv);
+            });
+            
+            // Summary
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = `test-case ${allPassed ? 'success' : 'warning'}`;
+            summaryDiv.innerHTML = `
+                <h2>🎯 Test Summary</h2>
+                <p><strong>Tests Run:</strong> ${testCases.length}</p>
+                <p><strong>Tests Passed:</strong> ${testCases.filter((_, i) => {
+                    const calculated = calculateOverallScore(testCases[i].match.maps);
+                    return calculated.team1Score === testCases[i].expected.team1Score && 
+                           calculated.team2Score === testCases[i].expected.team2Score;
+                }).length}</p>
+                <p><strong>Overall Status:</strong> ${allPassed ? '✅ ALL TESTS PASSED' : '⚠️ SOME TESTS FAILED'}</p>
+                <p><strong>Fix Status:</strong> ${allPassed ? '🎉 Score calculation fix is working correctly!' : '❌ Fix needs more work'}</p>
+            `;
+            resultsContainer.appendChild(summaryDiv);
+        }
+        
+        // Run tests when page loads
+        document.addEventListener('DOMContentLoaded', runTests);
+    </script>
+</body>
+</html>

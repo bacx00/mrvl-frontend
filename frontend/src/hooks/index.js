@@ -64,6 +64,15 @@ const api = {
       if (!response.ok) {
         console.error(`❌ HTTP Error ${response.status}:`, data);
         
+        // Handle 401 errors specifically to clear auth state
+        if (response.status === 401) {
+          console.warn('401 Unauthorized - clearing authentication data');
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userData');
+          // Dispatch a custom event to notify the auth context
+          window.dispatchEvent(new CustomEvent('auth-expired'));
+        }
+        
         // Create detailed error message
         let errorMessage = `HTTP ${response.status}`;
         if (data.message) {
@@ -279,7 +288,19 @@ export const AuthProvider = ({ children }) => {
       console.log('User data fetched successfully:', user);
     } catch (error) {
       console.error('Failed to fetch user:', error);
-      logout();
+      
+      // Handle specific 401 errors to prevent infinite loops
+      if (error.status === 401 || error.message.includes('HTTP 401')) {
+        console.log('Token expired or invalid, logging out...');
+        // Silent logout to avoid additional API calls
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userData');
+        setUser(null);
+        setIsAuthenticated(false);
+      } else {
+        // For other errors, still attempt logout
+        logout();
+      }
     } finally {
       setLoading(false);
     }
@@ -322,11 +343,33 @@ export const AuthProvider = ({ children }) => {
       return userData;
     } catch (error) {
       console.error('❌ Failed to update user:', error);
+      
+      // Handle 401 errors gracefully
+      if (error.status === 401 || error.message.includes('HTTP 401')) {
+        console.log('Token expired during user update, logging out...');
+        // Silent logout to avoid additional API calls
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userData');
+        setUser(null);
+        setIsAuthenticated(false);
+        throw new Error('Session expired. Please log in again.');
+      }
+      
       throw error;
     }
   }, []);
 
   useEffect(() => {
+    // Listen for auth-expired events from API client
+    const handleAuthExpired = () => {
+      console.log('Auth expired event received, updating state...');
+      setUser(null);
+      setIsAuthenticated(false);
+      setLoading(false);
+    };
+    
+    window.addEventListener('auth-expired', handleAuthExpired);
+    
     const token = localStorage.getItem('authToken');
     if (token) {
       // Fetch user data if token exists - WITH TIMEOUT for frontend-only mode
@@ -354,25 +397,34 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
           console.error('Failed to fetch user from API:', error);
           
-          // Try to recover user data from localStorage
-          const cachedUserData = localStorage.getItem('userData');
-          if (cachedUserData) {
-            try {
-              const user = JSON.parse(cachedUserData);
-              console.log('Recovered user data from cache:', user);
-              setUser(user);
-              setIsAuthenticated(true);
-            } catch (parseError) {
-              console.error('Failed to parse cached user data:', parseError);
+          // Handle 401 errors specifically to avoid retry loops
+          if (error.status === 401 || error.message.includes('HTTP 401')) {
+            console.log('Initial auth check failed with 401, clearing auth data...');
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userData');
+            setUser(null);
+            setIsAuthenticated(false);
+          } else {
+            // Try to recover user data from localStorage for other errors
+            const cachedUserData = localStorage.getItem('userData');
+            if (cachedUserData) {
+              try {
+                const user = JSON.parse(cachedUserData);
+                console.log('Recovered user data from cache:', user);
+                setUser(user);
+                setIsAuthenticated(true);
+              } catch (parseError) {
+                console.error('Failed to parse cached user data:', parseError);
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('userData');
+                setUser(null);
+                setIsAuthenticated(false);
+              }
+            } else {
               localStorage.removeItem('authToken');
-              localStorage.removeItem('userData');
               setUser(null);
               setIsAuthenticated(false);
             }
-          } else {
-            localStorage.removeItem('authToken');
-            setUser(null);
-            setIsAuthenticated(false);
           }
         } finally {
           setLoading(false);
@@ -383,6 +435,11 @@ export const AuthProvider = ({ children }) => {
       // No token - set loading to false immediately
       setLoading(false);
     }
+    
+    // Cleanup event listener
+    return () => {
+      window.removeEventListener('auth-expired', handleAuthExpired);
+    };
   }, []); // No dependencies - only run once on mount
 
   const login = async (email, password) => {

@@ -253,3 +253,9 @@ Stack trace:
 Stack trace:
 #0 {main}
   thrown in /var/www/mrvl-frontend/artisan on line 10
+[10-Aug-2025 23:08:24 UTC] PHP Warning:  PHP Startup: Unable to load dynamic library 'sodium' (tried: /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium: cannot open shared object file: No such file or directory), /opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so (/opt/cpanel/ea-php82/root/usr/lib64/php/modules/sodium.so: cannot open shared object file: No such file or directory)) in Unknown on line 0
+[10-Aug-2025 23:08:25 UTC] PHP Warning:  require(/var/www/mrvl-frontend/vendor/autoload.php): Failed to open stream: No such file or directory in /var/www/mrvl-frontend/artisan on line 10
+[10-Aug-2025 23:08:25 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/mrvl-frontend/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /var/www/mrvl-frontend/artisan:10
+Stack trace:
+#0 {main}
+  thrown in /var/www/mrvl-frontend/artisan on line 10

@@ -104,7 +104,7 @@ class LiveScoringValidationSuite {
     const endpoints = [
       '/api/admin/matches/{id}/set-live',
       '/api/admin/matches/{id}/live-update',
-      '/api/live-updates/stream/{id}',
+      '/api/live-updates/{id}/stream',
       '/api/live-updates/status/{id}'
     ];
     
@@ -197,7 +197,7 @@ class LiveScoringValidationSuite {
     
     return new Promise((resolve) => {
       const testMatchId = 1; // Use dummy ID for connection test
-      const url = `${BACKEND_URL}/api/live-updates/stream/${testMatchId}`;
+      const url = `${BACKEND_URL}/api/live-updates/${testMatchId}/stream`;
       
       console.log(`  🔌 Connecting to: ${url}`);
       

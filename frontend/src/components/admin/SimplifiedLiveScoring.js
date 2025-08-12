@@ -4,6 +4,7 @@ import { X, Trophy, Play, Pause, RotateCcw, ChevronDown, Users, Award } from 'lu
 import { useAuth } from '../../hooks';
 import { HEROES } from '../../constants/marvelRivalsData';
 import { getHeroImageSync, getHeroRole, getTeamLogoUrl } from '../../utils/imageUtils';
+import matchLiveSync from '../../utils/MatchLiveSync';
 import liveScoreManager from '../../utils/LiveScoreManager';
 
 // Error Boundary Component
@@ -49,8 +50,16 @@ const SimplifiedLiveScoring = ({
   match,
   onUpdate 
 }) => {
-  const { token } = useAuth();
+  const { isAuthenticated, api, user, isAdmin } = useAuth();
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
+  
+  // Get token from localStorage directly since useAuth doesn't expose it
+  const token = localStorage.getItem('authToken');
+  
+  // FIXED: Check authentication, token AND admin role
+  const hasAdminAccess = isAuthenticated && token && user && isAdmin();
+  
+  // REMOVED: Excessive console logging for cleaner output
   
   // Version tracking for optimistic locking
   const matchVersionRef = useRef(0);
@@ -96,12 +105,15 @@ const SimplifiedLiveScoring = ({
     };
   }, [match?.id]);
 
-  // Load match data on open
+  // FIXED: Load match data ONLY ONCE when component opens - NO REFRESH LOOPS
   useEffect(() => {
     if (match && isOpen && !isUnmountedRef.current) {
-      loadMatchData();
+      // Load data ONLY if we don't have any current data - prevents refresh loops
+      if (!matchData.team1Players.length || !matchData.team2Players.length) {
+        loadMatchData();
+      }
     }
-  }, [match, isOpen]);
+  }, [match?.id, isOpen]); // Only run when match ID or isOpen changes
 
   // Security: Input validation and sanitization
   const validateAndSanitizeInput = (value, type = 'number') => {
@@ -145,17 +157,9 @@ const SimplifiedLiveScoring = ({
     try {
       if (!silent) setIsLoading(true);
       
-      const response = await fetch(`${BACKEND_URL}/api/matches/${match.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await api.get(`/matches/${match.id}`);
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      const data = response;
       
       if (isUnmountedRef.current) return;
       
@@ -198,15 +202,24 @@ const SimplifiedLiveScoring = ({
         });
       }
 
-      setMatchData({
+      // FIXED: Preserve existing scores if they're higher than server data (prevents reset during live scoring)
+      const newTeam1MapScore = validateAndSanitizeInput(data.series_score_team1 || data.team1_series_score || data.team1_score || 0);
+      const newTeam2MapScore = validateAndSanitizeInput(data.series_score_team2 || data.team2_series_score || data.team2_score || 0);
+      
+      setMatchData(prev => ({
         team1Score: validateAndSanitizeInput(data.team1_score || 0),
         team2Score: validateAndSanitizeInput(data.team2_score || 0),
-        team1MapScore: validateAndSanitizeInput(data.series_score_team1 || data.team1_series_score || 0),
-        team2MapScore: validateAndSanitizeInput(data.series_score_team2 || data.team2_series_score || 0),
+        // Preserve higher scores during live updates to prevent resets
+        team1MapScore: Math.max(prev.team1MapScore, newTeam1MapScore),
+        team2MapScore: Math.max(prev.team2MapScore, newTeam2MapScore),
         status: validateAndSanitizeInput(data.status || 'live', 'string'),
         team1Players,
-        team2Players
-      });
+        team2Players,
+        // Preserve other existing state
+        currentMap: prev.currentMap,
+        totalMaps: prev.totalMaps,
+        matchTimer: prev.matchTimer
+      }));
       
     } catch (error) {
       console.error('Error loading match data:', error);
@@ -276,31 +289,19 @@ const SimplifiedLiveScoring = ({
           timestamp: now
         };
         
-        const response = await fetch(`${BACKEND_URL}/api/admin/matches/${match.id}/update-live-stats`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-          },
-          body: JSON.stringify(validatedData)
-        });
+        const response = await api.post(`/admin/matches/${match.id}/update-live-stats`, validatedData);
 
-        if (!response.ok) {
-          if (response.status === 409) {
-            // Handle conflict - another user updated the match
-            const conflict = await response.json();
-            setConflictResolution({
-              serverData: conflict.current_data,
-              localData: dataToSave,
-              timestamp: now
-            });
-            throw new Error('Conflict detected: Match was updated by another user');
-          }
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+        const result = response;
         
-        const result = await response.json();
+        // Handle conflict detection from API response
+        if (result.status === 'conflict') {
+          setConflictResolution({
+            serverData: result.current_data,
+            localData: dataToSave,
+            timestamp: now
+          });
+          throw new Error('Conflict detected: Match was updated by another user');
+        }
         
         if (isUnmountedRef.current) return;
         
@@ -317,11 +318,19 @@ const SimplifiedLiveScoring = ({
         
         setLastUpdate(new Date().toLocaleTimeString());
         
-        // ENHANCED: Broadcast real-time update through LiveScoreManager
+        // FIXED: Broadcast real-time update through LiveScoreManager to immediately update MatchDetailPage
         liveScoreManager.broadcastScoreUpdate(match.id, result.data || dataToSave, {
           source: 'SimplifiedLiveScoring',
           version: matchVersionRef.current,
           type: 'live_score_update',
+          timestamp: now
+        });
+        
+        // ADDED: Also broadcast via matchLiveSync for immediate component communication
+        matchLiveSync.broadcastUpdate(match.id, {
+          type: 'score_update',
+          data: result.data || dataToSave,
+          source: 'SimplifiedLiveScoring',
           timestamp: now
         });
         
@@ -518,27 +527,23 @@ const SimplifiedLiveScoring = ({
 
   // 3. QUICK ACTIONS
   const teamWinsMap = async (teamNumber) => {
+    if (!hasAdminAccess) {
+      addError(new Error('Admin access required for updating scores'));
+      return;
+    }
+    
     try {
-      const response = await fetch(`${BACKEND_URL}/api/admin/matches/${match.id}/team-wins-map`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          winning_team: teamNumber
-        })
+      const response = await api.post(`/admin/matches/${match.id}/team-wins-map`, {
+        winning_team: teamNumber
       });
 
-      if (response.ok) {
-        // Update series score
-        if (teamNumber === 1) {
-          setMatchData(prev => ({ ...prev, team1Score: prev.team1Score + 1 }));
-        } else {
-          setMatchData(prev => ({ ...prev, team2Score: prev.team2Score + 1 }));
-        }
-        if (onUpdate) onUpdate();
+      // Update map series score (this is the correct field for map wins)
+      if (teamNumber === 1) {
+        setMatchData(prev => ({ ...prev, team1MapScore: prev.team1MapScore + 1 }));
+      } else {
+        setMatchData(prev => ({ ...prev, team2MapScore: prev.team2MapScore + 1 }));
       }
+      if (onUpdate) onUpdate();
     } catch (error) {
       console.error('Error updating map win:', error);
     }
@@ -546,23 +551,19 @@ const SimplifiedLiveScoring = ({
 
   // Complete match
   const completeMatch = async () => {
+    if (!hasAdminAccess) {
+      addError(new Error('Admin access required for completing matches'));
+      return;
+    }
+    
     try {
-      const response = await fetch(`${BACKEND_URL}/api/admin/matches/${match.id}/complete`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          status: 'completed'
-        })
+      const response = await api.post(`/admin/matches/${match.id}/complete`, {
+        status: 'completed'
       });
 
-      if (response.ok) {
-        setMatchData(prev => ({ ...prev, status: 'completed' }));
-        if (onUpdate) onUpdate();
-        alert('Match completed!');
-      }
+      setMatchData(prev => ({ ...prev, status: 'completed' }));
+      if (onUpdate) onUpdate();
+      alert('Match completed!');
     } catch (error) {
       console.error('Error completing match:', error);
     }
@@ -653,8 +654,16 @@ const SimplifiedLiveScoring = ({
         <div className="mb-2">
           <select
             value={player.hero}
-            onChange={(e) => updatePlayerHero(team, playerIndex, e.target.value)}
-            className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white focus:ring-1 focus:ring-red-500 focus:border-red-500"
+            onChange={(e) => {
+              if (!hasAdminAccess) return;
+              updatePlayerHero(team, playerIndex, e.target.value);
+            }}
+            disabled={!hasAdminAccess}
+            className={`w-full rounded px-2 py-1 text-xs text-white focus:ring-1 focus:ring-red-500 focus:border-red-500 ${
+              hasAdminAccess 
+                ? 'bg-gray-700 border border-gray-600' 
+                : 'bg-gray-800 border border-gray-700 cursor-not-allowed opacity-75'
+            }`}
           >
             <option value="">Select Hero...</option>
             {Object.entries(HEROES).map(([role, heroes]) => (
@@ -678,13 +687,19 @@ const SimplifiedLiveScoring = ({
               max="999"
               value={player.kills}
               onChange={(e) => {
+                if (!hasAdminAccess) return;
                 try {
                   updatePlayerStat(team, playerIndex, 'kills', e.target.value);
                 } catch (err) {
                   console.error('Invalid kills value:', err);
                 }
               }}
-              className="w-full bg-gray-700 border border-gray-600 rounded px-1 py-1 text-xs text-center font-mono text-white focus:ring-1 focus:ring-red-500"
+              disabled={!hasAdminAccess}
+              className={`w-full rounded px-1 py-1 text-xs text-center font-mono text-white focus:ring-1 focus:ring-red-500 ${
+                hasAdminAccess 
+                  ? 'bg-gray-700 border border-gray-600' 
+                  : 'bg-gray-800 border border-gray-700 cursor-not-allowed opacity-75'
+              }`}
             />
           </div>
 
@@ -697,13 +712,19 @@ const SimplifiedLiveScoring = ({
               max="999"
               value={player.deaths}
               onChange={(e) => {
+                if (!hasAdminAccess) return;
                 try {
                   updatePlayerStat(team, playerIndex, 'deaths', e.target.value);
                 } catch (err) {
                   console.error('Invalid deaths value:', err);
                 }
               }}
-              className="w-full bg-gray-700 border border-gray-600 rounded px-1 py-1 text-xs text-center font-mono text-white focus:ring-1 focus:ring-red-500"
+              disabled={!hasAdminAccess}
+              className={`w-full rounded px-1 py-1 text-xs text-center font-mono text-white focus:ring-1 focus:ring-red-500 ${
+                hasAdminAccess 
+                  ? 'bg-gray-700 border border-gray-600' 
+                  : 'bg-gray-800 border border-gray-700 cursor-not-allowed opacity-75'
+              }`}
             />
           </div>
 
@@ -716,13 +737,19 @@ const SimplifiedLiveScoring = ({
               max="999"
               value={player.assists}
               onChange={(e) => {
+                if (!hasAdminAccess) return;
                 try {
                   updatePlayerStat(team, playerIndex, 'assists', e.target.value);
                 } catch (err) {
                   console.error('Invalid assists value:', err);
                 }
               }}
-              className="w-full bg-gray-700 border border-gray-600 rounded px-1 py-1 text-xs text-center font-mono text-white focus:ring-1 focus:ring-red-500"
+              disabled={!hasAdminAccess}
+              className={`w-full rounded px-1 py-1 text-xs text-center font-mono text-white focus:ring-1 focus:ring-red-500 ${
+                hasAdminAccess 
+                  ? 'bg-gray-700 border border-gray-600' 
+                  : 'bg-gray-800 border border-gray-700 cursor-not-allowed opacity-75'
+              }`}
             />
           </div>
 
@@ -743,13 +770,19 @@ const SimplifiedLiveScoring = ({
               max="999999"
               value={player.damage}
               onChange={(e) => {
+                if (!hasAdminAccess) return;
                 try {
                   updatePlayerStat(team, playerIndex, 'damage', e.target.value);
                 } catch (err) {
                   console.error('Invalid damage value:', err);
                 }
               }}
-              className="w-full bg-gray-700 border border-gray-600 rounded px-1 py-1 text-xs text-center font-mono text-white focus:ring-1 focus:ring-red-500"
+              disabled={!hasAdminAccess}
+              className={`w-full rounded px-1 py-1 text-xs text-center font-mono text-white focus:ring-1 focus:ring-red-500 ${
+                hasAdminAccess 
+                  ? 'bg-gray-700 border border-gray-600' 
+                  : 'bg-gray-800 border border-gray-700 cursor-not-allowed opacity-75'
+              }`}
             />
           </div>
 
@@ -762,13 +795,19 @@ const SimplifiedLiveScoring = ({
               max="999999"
               value={player.healing}
               onChange={(e) => {
+                if (!hasAdminAccess) return;
                 try {
                   updatePlayerStat(team, playerIndex, 'healing', e.target.value);
                 } catch (err) {
                   console.error('Invalid healing value:', err);
                 }
               }}
-              className="w-full bg-gray-700 border border-gray-600 rounded px-1 py-1 text-xs text-center font-mono text-white focus:ring-1 focus:ring-red-500"
+              disabled={!hasAdminAccess}
+              className={`w-full rounded px-1 py-1 text-xs text-center font-mono text-white focus:ring-1 focus:ring-red-500 ${
+                hasAdminAccess 
+                  ? 'bg-gray-700 border border-gray-600' 
+                  : 'bg-gray-800 border border-gray-700 cursor-not-allowed opacity-75'
+              }`}
             />
           </div>
 
@@ -781,13 +820,19 @@ const SimplifiedLiveScoring = ({
               max="999999"
               value={player.blocked}
               onChange={(e) => {
+                if (!hasAdminAccess) return;
                 try {
                   updatePlayerStat(team, playerIndex, 'blocked', e.target.value);
                 } catch (err) {
                   console.error('Invalid blocked value:', err);
                 }
               }}
-              className="w-full bg-gray-700 border border-gray-600 rounded px-1 py-1 text-xs text-center font-mono text-white focus:ring-1 focus:ring-red-500"
+              disabled={!hasAdminAccess}
+              className={`w-full rounded px-1 py-1 text-xs text-center font-mono text-white focus:ring-1 focus:ring-red-500 ${
+                hasAdminAccess 
+                  ? 'bg-gray-700 border border-gray-600' 
+                  : 'bg-gray-800 border border-gray-700 cursor-not-allowed opacity-75'
+              }`}
             />
           </div>
         </div>
@@ -822,10 +867,13 @@ const SimplifiedLiveScoring = ({
               </div>
               <div>
                 <h2 className="text-lg font-bold">
-                  Live Control
+                  {hasAdminAccess ? 'Live Control' : 'Live View'}
                 </h2>
                 <div className="text-xs opacity-90">
                   {match.team1?.name || 'Team 1'} vs {match.team2?.name || 'Team 2'}
+                  {!hasAdminAccess && (
+                    <span className="ml-2 text-yellow-300">• View Only Mode</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -854,7 +902,7 @@ const SimplifiedLiveScoring = ({
               <div>
                 <div className="text-xs text-gray-400 mb-1">TEAM 1</div>
                 <div className="font-bold text-sm text-white truncate">{match.team1?.name || 'Team 1'}</div>
-                <div className="text-2xl font-bold text-red-400 mt-1">{matchData.team1Score}</div>
+                <div className="text-2xl font-bold text-red-400 mt-1">{matchData.team1MapScore}</div>
               </div>
 
               {/* VS & Status */}
@@ -873,7 +921,7 @@ const SimplifiedLiveScoring = ({
               <div>
                 <div className="text-xs text-gray-400 mb-1">TEAM 2</div>
                 <div className="font-bold text-sm text-white truncate">{match.team2?.name || 'Team 2'}</div>
-                <div className="text-2xl font-bold text-red-400 mt-1">{matchData.team2Score}</div>
+                <div className="text-2xl font-bold text-red-400 mt-1">{matchData.team2MapScore}</div>
               </div>
             </div>
           </div>
@@ -899,22 +947,37 @@ const SimplifiedLiveScoring = ({
                   
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <button
-                      onClick={() => updateMapScore(1, false)}
-                      className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold transition-colors"
+                      onClick={() => hasAdminAccess && updateMapScore(1, false)}
+                      disabled={!hasAdminAccess}
+                      className={`px-2 py-1 text-white rounded text-xs font-bold transition-colors ${
+                        hasAdminAccess 
+                          ? 'bg-red-600 hover:bg-red-700' 
+                          : 'bg-gray-600 cursor-not-allowed opacity-50'
+                      }`}
                     >
                       -1
                     </button>
                     <button
-                      onClick={() => updateMapScore(1, true)}
-                      className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-bold transition-colors"
+                      onClick={() => hasAdminAccess && updateMapScore(1, true)}
+                      disabled={!hasAdminAccess}
+                      className={`px-2 py-1 text-white rounded text-xs font-bold transition-colors ${
+                        hasAdminAccess 
+                          ? 'bg-green-600 hover:bg-green-700' 
+                          : 'bg-gray-600 cursor-not-allowed opacity-50'
+                      }`}
                     >
                       +1
                     </button>
                   </div>
                   
                   <button
-                    onClick={() => teamWinsMap(1)}
-                    className="w-full px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold transition-colors flex items-center justify-center gap-1"
+                    onClick={() => hasAdminAccess && teamWinsMap(1)}
+                    disabled={!hasAdminAccess}
+                    className={`w-full px-2 py-1 text-white rounded text-xs font-bold transition-colors flex items-center justify-center gap-1 ${
+                      hasAdminAccess 
+                        ? 'bg-red-600 hover:bg-red-700' 
+                        : 'bg-gray-600 cursor-not-allowed opacity-50'
+                    }`}
                   >
                     <Trophy className="w-3 h-3" />
                     Win Map
@@ -930,22 +993,37 @@ const SimplifiedLiveScoring = ({
                   
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <button
-                      onClick={() => updateMapScore(2, false)}
-                      className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold transition-colors"
+                      onClick={() => hasAdminAccess && updateMapScore(2, false)}
+                      disabled={!hasAdminAccess}
+                      className={`px-2 py-1 text-white rounded text-xs font-bold transition-colors ${
+                        hasAdminAccess 
+                          ? 'bg-red-600 hover:bg-red-700' 
+                          : 'bg-gray-600 cursor-not-allowed opacity-50'
+                      }`}
                     >
                       -1
                     </button>
                     <button
-                      onClick={() => updateMapScore(2, true)}
-                      className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-bold transition-colors"
+                      onClick={() => hasAdminAccess && updateMapScore(2, true)}
+                      disabled={!hasAdminAccess}
+                      className={`px-2 py-1 text-white rounded text-xs font-bold transition-colors ${
+                        hasAdminAccess 
+                          ? 'bg-green-600 hover:bg-green-700' 
+                          : 'bg-gray-600 cursor-not-allowed opacity-50'
+                      }`}
                     >
                       +1
                     </button>
                   </div>
                   
                   <button
-                    onClick={() => teamWinsMap(2)}
-                    className="w-full px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold transition-colors flex items-center justify-center gap-1"
+                    onClick={() => hasAdminAccess && teamWinsMap(2)}
+                    disabled={!hasAdminAccess}
+                    className={`w-full px-2 py-1 text-white rounded text-xs font-bold transition-colors flex items-center justify-center gap-1 ${
+                      hasAdminAccess 
+                        ? 'bg-red-600 hover:bg-red-700' 
+                        : 'bg-gray-600 cursor-not-allowed opacity-50'
+                    }`}
                   >
                     <Trophy className="w-3 h-3" />
                     Win Map
@@ -1009,8 +1087,13 @@ const SimplifiedLiveScoring = ({
             <div className="grid grid-cols-2 gap-2">
               {/* Complete Match */}
               <button
-                onClick={completeMatch}
-                className="px-2 py-1 bg-green-700 hover:bg-green-800 text-white rounded text-xs font-medium flex items-center justify-center gap-1 transition-colors"
+                onClick={() => hasAdminAccess && completeMatch()}
+                disabled={!hasAdminAccess}
+                className={`px-2 py-1 text-white rounded text-xs font-medium flex items-center justify-center gap-1 transition-colors ${
+                  hasAdminAccess 
+                    ? 'bg-green-700 hover:bg-green-800' 
+                    : 'bg-gray-600 cursor-not-allowed opacity-50'
+                }`}
               >
                 <Trophy className="w-3 h-3" />
                 Complete
@@ -1018,8 +1101,13 @@ const SimplifiedLiveScoring = ({
 
               {/* Reset Stats */}
               <button
-                onClick={resetStats}
-                className="px-2 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded text-xs font-medium flex items-center justify-center gap-1 transition-colors"
+                onClick={() => hasAdminAccess && resetStats()}
+                disabled={!hasAdminAccess}
+                className={`px-2 py-1 text-white rounded text-xs font-medium flex items-center justify-center gap-1 transition-colors ${
+                  hasAdminAccess 
+                    ? 'bg-yellow-700 hover:bg-yellow-800' 
+                    : 'bg-gray-600 cursor-not-allowed opacity-50'
+                }`}
               >
                 <RotateCcw className="w-3 h-3" />
                 Reset

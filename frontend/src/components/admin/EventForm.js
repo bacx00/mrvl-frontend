@@ -174,6 +174,67 @@ function EventForm({ eventId, navigateTo }) {
     }
   };
 
+  // Helper functions for default registration dates
+  const getDefaultRegistrationStart = (startDate) => {
+    if (!startDate) return '';
+    const start = new Date(startDate);
+    // Default: registration starts 7 days before event
+    start.setDate(start.getDate() - 7);
+    return start.toISOString().split('T')[0];
+  };
+
+  const getDefaultRegistrationEnd = (startDate) => {
+    if (!startDate) return '';
+    const start = new Date(startDate);
+    // Default: registration ends 1 day before event
+    start.setDate(start.getDate() - 1);
+    return start.toISOString().split('T')[0];
+  };
+
+  const validateDates = () => {
+    const errors = [];
+    
+    if (!formData.start_date) {
+      errors.push('Start date is required');
+      return errors;
+    }
+    
+    if (!formData.end_date) {
+      errors.push('End date is required');
+      return errors;
+    }
+    
+    const startDate = new Date(formData.start_date);
+    const endDate = new Date(formData.end_date);
+    
+    if (endDate <= startDate) {
+      errors.push('End date must be after start date');
+    }
+    
+    if (formData.registration_start) {
+      const regStart = new Date(formData.registration_start);
+      if (regStart >= startDate) {
+        errors.push('Registration start must be before event start date');
+      }
+    }
+    
+    if (formData.registration_end) {
+      const regEnd = new Date(formData.registration_end);
+      if (regEnd > startDate) {
+        errors.push('Registration end must be before or equal to event start date');
+      }
+      
+      if (formData.registration_start) {
+        const regStart = new Date(formData.registration_start);
+        if (regEnd <= regStart) {
+          errors.push('Registration end must be after registration start');
+        }
+      }
+    }
+    
+    return errors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -187,13 +248,10 @@ function EventForm({ eventId, navigateTo }) {
       return;
     }
     
-    if (!formData.start_date) {
-      alert('Start date is required');
-      return;
-    }
-    
-    if (!formData.end_date) {
-      alert('End date is required');
+    // Validate dates
+    const dateErrors = validateDates();
+    if (dateErrors.length > 0) {
+      alert('Date validation errors:\n' + dateErrors.join('\n'));
       return;
     }
 
@@ -216,13 +274,20 @@ function EventForm({ eventId, navigateTo }) {
       formDataToSubmit.append('max_teams', parseInt(formData.max_teams) || 16);
       formDataToSubmit.append('currency', formData.currency);
       formDataToSubmit.append('timezone', formData.timezone);
-      formDataToSubmit.append('featured', formData.featured);
-      formDataToSubmit.append('public', formData.public);
+      formDataToSubmit.append('featured', formData.featured ? '1' : '0');
+      formDataToSubmit.append('public', formData.public ? '1' : '0');
       formDataToSubmit.append('status', formData.status);
 
-      // Add optional fields
-      if (formData.registration_start) formDataToSubmit.append('registration_start', formData.registration_start);
-      if (formData.registration_end) formDataToSubmit.append('registration_end', formData.registration_end);
+      // Add registration dates with proper validation
+      const registrationStart = formData.registration_start || getDefaultRegistrationStart(formData.start_date);
+      const registrationEnd = formData.registration_end || getDefaultRegistrationEnd(formData.start_date);
+      
+      if (registrationStart) {
+        formDataToSubmit.append('registration_start', registrationStart);
+      }
+      if (registrationEnd) {
+        formDataToSubmit.append('registration_end', registrationEnd);
+      }
       if (formData.prize_pool) formDataToSubmit.append('prize_pool', parseFloat(formData.prize_pool));
       if (formData.rules) formDataToSubmit.append('rules', formData.rules);
 
@@ -630,6 +695,9 @@ function EventForm({ eventId, navigateTo }) {
                 onChange={handleInputChange}
                 className="form-input"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Optional. Must be before event start date. Defaults to 7 days before event.
+              </p>
             </div>
 
             <div>
@@ -643,6 +711,9 @@ function EventForm({ eventId, navigateTo }) {
                 onChange={handleInputChange}
                 className="form-input"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Optional. Must be before or equal to event start date. Defaults to 1 day before event.
+              </p>
             </div>
           </div>
         </div>

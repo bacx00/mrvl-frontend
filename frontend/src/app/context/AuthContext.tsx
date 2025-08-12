@@ -60,9 +60,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storedToken = storage.get<string>(STORAGE_KEYS.AUTH_TOKEN);
 
       if (storedUser && storedToken) {
+        // Validate token format (basic JWT structure check)
+        const tokenParts = storedToken.split('.');
+        if (tokenParts.length !== 3) {
+          console.warn('Invalid token format, clearing stored auth');
+          clearStoredAuth();
+          return;
+        }
+
+        // Check if token is expired (basic check without verification)
+        try {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          if (payload.exp && payload.exp * 1000 < Date.now()) {
+            console.warn('Token expired, attempting refresh');
+            try {
+              await refreshToken();
+              return; // Let the refresh token flow handle user update
+            } catch (refreshError) {
+              console.warn('Token refresh failed, clearing stored auth');
+              clearStoredAuth();
+              return;
+            }
+          }
+        } catch (tokenParseError) {
+          console.warn('Token parsing failed, treating as invalid');
+        }
+
         // Verify token is still valid by fetching current user
         try {
           const currentUser = await authAPI.me();
+          
+          // Validate user object structure
+          if (!currentUser.id || !currentUser.email) {
+            console.error('Invalid user object received from API');
+            clearStoredAuth();
+            return;
+          }
           
           // Ensure role is properly set - fallback to stored user role if API doesn't return it
           if (!currentUser.role && storedUser.role) {
@@ -74,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           storage.set(STORAGE_KEYS.USER, currentUser);
           setUser(currentUser);
         } catch (error) {
-          console.warn('Token validation failed, clearing stored auth');
+          console.warn('Token validation failed, clearing stored auth', error);
           clearStoredAuth();
         }
       }

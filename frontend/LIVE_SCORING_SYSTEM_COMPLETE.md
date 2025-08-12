@@ -145,7 +145,7 @@ const statusInterval = setInterval(() => {
 The system integrates with existing backend endpoints:
 
 ### Live Update Endpoints
-- `GET /api/live-updates/stream/{matchId}` - SSE stream
+- `GET /api/live-updates/{matchId}/stream` - SSE stream
 - `POST /api/live-updates/update/{matchId}` - Send updates
 - `GET /api/live-updates/status/{matchId}` - Polling fallback
 

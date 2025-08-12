@@ -26,41 +26,61 @@ export const safeParseDate = (date, fallback = 'Unknown') => {
  * Format time ago with proper validation (VLR.gg style)
  */
 export const formatTimeAgo = (dateString) => {
-  if (!dateString || !isValidDate(dateString)) {
-    return 'Unknown';
+  // Handle various edge cases and invalid data
+  if (!dateString || 
+      dateString === 'unknown' || 
+      dateString === 'null' || 
+      dateString === null || 
+      dateString === undefined) {
+    return 'Recently';
   }
   
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  // Handle future dates
-  if (diffMs < 0) {
-    const futureMins = Math.abs(diffMins);
-    const futureHours = Math.abs(diffHours);
-    const futureDays = Math.abs(diffDays);
-    
-    if (futureMins < 60) return `in ${futureMins}m`;
-    if (futureHours < 24) return `in ${futureHours}h`;
-    if (futureDays < 7) return `in ${futureDays}d`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  // Additional validation for common API response formats
+  if (typeof dateString === 'string' && dateString.trim() === '') {
+    return 'Recently';
   }
+  
+  if (!isValidDate(dateString)) {
+    console.warn('formatTimeAgo: Invalid date format:', dateString);
+    return 'Recently';
+  }
+  
+  try {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  // VLR.gg style relative time for past dates
-  if (diffMins < 1) return 'now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
+    // Handle future dates
+    if (diffMs < 0) {
+      const futureMins = Math.abs(diffMins);
+      const futureHours = Math.abs(diffHours);
+      const futureDays = Math.abs(diffDays);
+      
+      if (futureMins < 60) return `in ${futureMins}m`;
+      if (futureHours < 24) return `in ${futureHours}h`;
+      if (futureDays < 7) return `in ${futureDays}d`;
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
 
-  // Format for older dates
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
-  });
+    // VLR.gg style relative time for past dates
+    if (diffMins < 1) return 'now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+
+    // Format for older dates
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+    });
+  } catch (error) {
+    console.warn('formatTimeAgo: Date parsing error:', error, 'for date:', dateString);
+    return 'Recently';
+  }
 };
 
 /**

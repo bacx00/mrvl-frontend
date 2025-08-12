@@ -5,10 +5,21 @@ import VotingButtons from '../shared/VotingButtons';
 import ForumMentionAutocomplete from '../shared/ForumMentionAutocomplete';
 import MentionLink from '../shared/MentionLink';
 import VideoEmbed from '../shared/VideoEmbed';
+// import SocialShareButtons from '../shared/SocialShareButtons'; // Removed per request
+import LazyImageOptimized from '../shared/LazyImageOptimized';
 import { processContentWithMentions } from '../../utils/mentionUtils';
 import { detectAllVideoUrls } from '../../utils/videoUtils';
 import { safeString, safeErrorMessage, safeContent } from '../../utils/safeStringUtils';
 import { getNewsFeaturedImageUrl } from '../../utils/imageUtils';
+import { 
+  generateNewsMetaTags, 
+  generateNewsStructuredData, 
+  updateMetaTags, 
+  addStructuredData,
+  calculateReadingTime 
+} from '../../utils/seoUtils';
+import { trackNewsView, trackNewsEngagement, initializeNewsAnalytics } from '../../utils/analyticsUtils';
+import { showToast, showSuccessToast, showErrorToast } from '../../utils/toastUtils';
 
 function NewsDetailPage({ params, navigateTo }) {
   const [article, setArticle] = useState(null);
@@ -40,6 +51,30 @@ function NewsDetailPage({ params, navigateTo }) {
       fetchArticle();
     }
   }, [articleId]);
+
+  // Initialize analytics and SEO when article loads
+  useEffect(() => {
+    if (article) {
+      // Set up SEO meta tags
+      const metaTags = generateNewsMetaTags(article);
+      updateMetaTags(metaTags);
+      
+      // Add structured data
+      const structuredData = generateNewsStructuredData(article);
+      addStructuredData(structuredData);
+      
+      // Track article view
+      trackNewsView(article, 'direct');
+      
+      // Set global article for analytics
+      window.__CURRENT_ARTICLE__ = article;
+      
+      // Initialize analytics tracking
+      const cleanup = initializeNewsAnalytics();
+      
+      return cleanup;
+    }
+  }, [article]);
 
   const fetchArticle = async () => {
     try {
@@ -130,9 +165,26 @@ function NewsDetailPage({ params, navigateTo }) {
         parent_id: replyToId
       });
 
-      if (response.data && response.data.success) {
+      // CRITICAL FIX: Better response validation for successful comment posting
+      const isSuccess = response?.status === 200 || response?.status === 201 || 
+                        response?.data?.success === true || response?.data?.success === 'true';
+      
+      console.log('Comment submission response:', {
+        status: response?.status,
+        success: response?.data?.success,
+        hasData: !!response?.data,
+        isSuccess
+      });
+
+      if (isSuccess) {
         safeSetCommentText('');
         setReplyToId(null);
+        
+        // Track comment engagement
+        trackNewsEngagement(article, 'comment', {
+          comment_type: replyToId ? 'reply' : 'top_level',
+          parent_comment_id: replyToId
+        });
         
         // Replace temp comment with real comment data
         const realComment = response.data.comment || response.data.data;
@@ -204,12 +256,8 @@ function NewsDetailPage({ params, navigateTo }) {
           await fetchArticle();
         }
         
-        // Show success message
-        const successMsg = document.createElement('div');
-        successMsg.textContent = '✅ Comment posted successfully';
-        successMsg.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
-        document.body.appendChild(successMsg);
-        setTimeout(() => document.body.removeChild(successMsg), 3000);
+        // Show success message using our toast utility
+        showSuccessToast('Comment posted successfully!');
         
       } else {
         // Remove temp comment and show error
@@ -217,13 +265,16 @@ function NewsDetailPage({ params, navigateTo }) {
         
         // Try to get error message from response
         const errorMsg = response.data?.message || 'Failed to post comment. Please try again.';
-        alert(errorMsg);
+        showErrorToast(errorMsg);
       }
     } catch (error) {
       console.error('Error posting comment:', error);
       
-      // Check if this is actually a successful response that was caught as an error
-      if (error.response && error.response.data && error.response.data.success) {
+      // CRITICAL FIX: Check if this is actually a successful response that was caught as an error
+      const isActuallySuccess = (error.response?.status === 200 || error.response?.status === 201) && 
+                                (error.response?.data?.success === true || error.response?.data?.success === 'true');
+      
+      if (isActuallySuccess) {
         // This is actually a success, handle it properly
         safeSetCommentText('');
         setReplyToId(null);
@@ -292,12 +343,8 @@ function NewsDetailPage({ params, navigateTo }) {
           await fetchArticle();
         }
         
-        // Show success message
-        const successMsg = document.createElement('div');
-        successMsg.textContent = '✅ Comment posted successfully';
-        successMsg.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
-        document.body.appendChild(successMsg);
-        setTimeout(() => document.body.removeChild(successMsg), 3000);
+        // Show success message using our toast utility
+        showSuccessToast('Comment posted successfully!');
         
         return; // Exit early since this was actually successful
       }
@@ -320,7 +367,7 @@ function NewsDetailPage({ params, navigateTo }) {
         errorMessage = safeErrorMsg;
       }
       
-      alert(errorMessage);
+      showErrorToast(errorMessage);
     } finally {
       setSubmittingComment(false);
     }
@@ -358,19 +405,16 @@ function NewsDetailPage({ params, navigateTo }) {
       // Enhanced response validation to handle different response structures
       const isSuccess = response.status === 200 || 
                        response.status === 204 || 
-                       (response.data && response.data.success === true) || 
-                       (response.data && response.data.success === 'true');
+                       response?.success === true ||
+                       response?.data?.success === true || 
+                       (response?.message && response.message.toLowerCase().includes('success'));
       
       if (isSuccess) {
         // Comment successfully deleted - keep the optimistic update
         console.log('✅ Comment deleted successfully');
         
-        // Show success feedback
-        const successMessage = document.createElement('div');
-        successMessage.textContent = '✅ Comment deleted successfully';
-        successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
-        document.body.appendChild(successMessage);
-        setTimeout(() => document.body.removeChild(successMessage), 3000);
+        // Show success toast notification
+        showSuccessToast('Comment deleted successfully!');
         
       } else {
         // Rollback on API failure
@@ -401,7 +445,7 @@ function NewsDetailPage({ params, navigateTo }) {
         errorMessage = safeErrorMsg;
       }
       
-      alert(errorMessage);
+      showErrorToast(errorMessage);
     }
   };
 
@@ -429,7 +473,7 @@ function NewsDetailPage({ params, navigateTo }) {
         // Immediately fetch fresh data instead of full refresh for better UX
         await fetchArticle();
       } else {
-        alert('Failed to update comment. Please try again.');
+        showErrorToast('Failed to update comment. Please try again.');
       }
     } catch (error) {
       console.error('Error updating comment:', error);
@@ -447,7 +491,7 @@ function NewsDetailPage({ params, navigateTo }) {
         errorMessage = safeErrorMsg;
       }
       
-      alert(errorMessage);
+      showErrorToast(errorMessage);
     }
   };
 
@@ -456,12 +500,15 @@ function NewsDetailPage({ params, navigateTo }) {
     safeSetEditCommentText('');
   };
 
-  // Process article content to detect and extract video URLs
+  // ENHANCED: Process article content to detect and extract video URLs
   const processArticleContent = (content, existingVideos = []) => {
     if (!content) return { processedContent: content, detectedVideos: [] };
     
+    console.log('🎥 Processing article content for videos...', { contentLength: content.length, existingVideos: existingVideos.length });
+    
     // Detect videos in the content
     const detectedVideos = detectAllVideoUrls(content);
+    console.log('🎥 Detected videos:', detectedVideos);
     
     // Combine existing videos with detected ones (avoid duplicates)
     const allVideos = [...existingVideos];
@@ -474,22 +521,37 @@ function NewsDetailPage({ params, navigateTo }) {
       );
       
       if (!isDuplicate) {
-        allVideos.push({
+        const videoData = {
           ...detectedVideo,
           url: detectedVideo.originalUrl,
           video_id: detectedVideo.id,
           platform: detectedVideo.platform,
-          type: detectedVideo.type
-        });
+          type: detectedVideo.type,
+          // Enhanced metadata for better video handling
+          platformName: detectedVideo.platformName,
+          thumbnail: detectedVideo.thumbnail,
+          embedUrl: detectedVideo.embedUrl,
+          isValid: detectedVideo.isValid !== false
+        };
+        allVideos.push(videoData);
+        console.log('🎥 Added video to embed list:', videoData);
+      } else {
+        console.log('🎥 Skipping duplicate video:', detectedVideo.originalUrl);
       }
     });
     
     // Clean content by removing standalone video URLs but keeping them in context
     let processedContent = content;
     detectedVideos.forEach(video => {
-      // Only remove URLs that are on their own line
+      // Only remove URLs that are on their own line to avoid breaking inline links
       const standalonePattern = new RegExp(`^\\s*${video.originalUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'gm');
-      processedContent = processedContent.replace(standalonePattern, '');
+      processedContent = processedContent.replace(standalonePattern, '<!-- VIDEO_EMBEDDED -->');
+    });
+    
+    console.log('🎥 Final processed content:', { 
+      originalLength: content.length, 
+      processedLength: processedContent.length, 
+      totalVideos: allVideos.length 
     });
     
     return { processedContent, detectedVideos: allVideos };
@@ -577,12 +639,18 @@ function NewsDetailPage({ params, navigateTo }) {
     });
   };
 
+  // ENHANCED: Render content with video embeds and improved layout
   const renderContentWithEmbeds = (content, videos = []) => {
     if (!content) return null;
     
     // Process content to detect additional videos and clean it up
     const { processedContent, detectedVideos } = processArticleContent(content, videos);
-    const allVideos = detectedVideos;
+    const allVideos = detectedVideos.filter(video => video.isValid !== false);
+    
+    console.log('🎥 Rendering content with embeds:', { 
+      totalVideos: allVideos.length, 
+      contentHasVideos: allVideos.length > 0 
+    });
     
     // If no videos, just return content with mentions
     if (!allVideos || allVideos.length === 0) {
@@ -617,13 +685,19 @@ function NewsDetailPage({ params, navigateTo }) {
       }
     }
     
+    console.log('🎥 Video placement strategy:', { 
+      totalParagraphs, 
+      videoPlacementPoints, 
+      videosToPlace: allVideos.length 
+    });
+    
     return (
       <div className="prose prose-lg dark:prose-invert max-w-none">
         {paragraphs.map((paragraph, index) => {
           const elements = [];
           
-          // Add paragraph content with improved styling
-          if (paragraph.trim()) {
+          // Add paragraph content with improved styling (skip empty paragraphs)
+          if (paragraph.trim() && !paragraph.includes('<!-- VIDEO_EMBEDDED -->')) {
             elements.push(
               <div key={`p-${index}`} className="whitespace-pre-wrap leading-relaxed mb-6 text-gray-900 dark:text-gray-100">
                 {renderContentWithMentions(safeString(paragraph), article?.mentions)}
@@ -634,17 +708,19 @@ function NewsDetailPage({ params, navigateTo }) {
           // Check if we should place a video after this paragraph
           if (videoIndex < allVideos.length && videoPlacementPoints.includes(index)) {
             const video = allVideos[videoIndex];
+            console.log('🎥 Placing video at position', index, ':', video);
+            
             elements.push(
               <div key={`video-${videoIndex}`} className="not-prose my-8">
                 <VideoEmbed
                   type={video.platform || video.type}
                   id={video.video_id || video.id}
-                  url={video.embed_url || video.original_url || video.url || video.originalUrl}
+                  url={video.embedUrl || video.embed_url || video.original_url || video.url || video.originalUrl}
                   mobileOptimized={true}
                   lazyLoad={true}
                   inline={true}
                   showTitle={false}
-                  className="rounded-lg overflow-hidden shadow-lg"
+                  className="rounded-lg overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700"
                 />
               </div>
             );
@@ -658,21 +734,51 @@ function NewsDetailPage({ params, navigateTo }) {
         {videoIndex < allVideos.length && (
           <div className="not-prose mt-8 space-y-6">
             <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-4 border-t border-gray-200 dark:border-gray-700 pt-6">
-              Related Videos
+              📺 Related Videos ({allVideos.length - videoIndex} more)
             </div>
-            {allVideos.slice(videoIndex).map((video, index) => (
-              <VideoEmbed
-                key={`video-remaining-${index}`}
-                type={video.platform || video.type}
-                id={video.video_id || video.id}
-                url={video.embed_url || video.original_url || video.url || video.originalUrl}
-                mobileOptimized={true}
-                lazyLoad={true}
-                inline={true}
-                showTitle={true}
-                className="rounded-lg overflow-hidden shadow-lg"
-              />
-            ))}
+            {allVideos.slice(videoIndex).map((video, index) => {
+              console.log('🎥 Placing remaining video:', video);
+              return (
+                <VideoEmbed
+                  key={`video-remaining-${index}`}
+                  type={video.platform || video.type}
+                  id={video.video_id || video.id}
+                  url={video.embedUrl || video.embed_url || video.original_url || video.url || video.originalUrl}
+                  mobileOptimized={true}
+                  lazyLoad={true}
+                  inline={true}
+                  showTitle={true}
+                  className="rounded-lg overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700"
+                />
+              );
+            })}
+          </div>
+        )}
+        
+        {/* Video summary for accessibility and SEO */}
+        {allVideos.length > 0 && (
+          <div className="mt-8 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              📺 Video Content Summary
+            </h3>
+            <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+              {allVideos.map((video, index) => (
+                <li key={index} className="flex items-center space-x-2">
+                  <span>•</span>
+                  <span>{video.platformName || video.platform || video.type}</span>
+                  {video.originalUrl && (
+                    <a 
+                      href={video.originalUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:text-blue-600 text-xs"
+                    >
+                      (Open in new tab)
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </div>
@@ -986,10 +1092,13 @@ function NewsDetailPage({ params, navigateTo }) {
             
             <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-500">
               <span>{formatDate(article.meta?.published_at || article.meta?.created_at)}</span>
-              {/* View count hidden per user request */}
-              {article.meta?.read_time && (
-                <span>📖 {article.meta.read_time} min read</span>
-              )}
+              {/* Reading time estimate */}
+              {(() => {
+                const readingTime = calculateReadingTime(article.content) || article.meta?.read_time;
+                return readingTime ? (
+                  <span>📖 {readingTime} min read</span>
+                ) : null;
+              })()}
               {(() => {
                 const { detectedVideos } = processArticleContent(article.content, article.videos || []);
                 const totalVideos = detectedVideos.length;
@@ -1003,20 +1112,18 @@ function NewsDetailPage({ params, navigateTo }) {
           </div>
         </div>
 
-        {/* Featured image */}
-        {article.featured_image && (
-          <div className="aspect-video overflow-hidden bg-gray-100 dark:bg-gray-800">
-            <img 
-              src={getNewsFeaturedImageUrl(article)}
-              alt={article.title}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = getNewsFeaturedImageUrl(null); // Use our fallback logic
-              }}
-            />
-          </div>
-        )}
+        {/* Featured image - always show */}
+        <div className="aspect-video overflow-hidden bg-gray-100 dark:bg-gray-800">
+          <img
+            src={getNewsFeaturedImageUrl(article)}
+            alt={article.title}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = 'https://staging.mrvl.net/images/news-placeholder.svg';
+            }}
+          />
+        </div>
 
         {/* Article content */}
         <div className="p-6">
@@ -1062,7 +1169,7 @@ function NewsDetailPage({ params, navigateTo }) {
 
         {/* Article voting and sharing */}
         <div className="p-6 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <VotingButtons
               itemType="news"
               itemId={article.id}
@@ -1070,8 +1177,10 @@ function NewsDetailPage({ params, navigateTo }) {
               initialDownvotes={article.stats?.downvotes || 0}
               userVote={article.user_vote}
               direction="horizontal"
+              onVote={(voteType) => {
+                trackNewsEngagement(article, voteType === 'up' ? 'upvote' : 'downvote');
+              }}
             />
-            
           </div>
         </div>
       </article>

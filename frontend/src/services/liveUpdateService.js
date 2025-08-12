@@ -176,10 +176,16 @@ class LiveUpdateService {
   async connectSSE(connection) {
     return new Promise((resolve, reject) => {
       const { matchId, options } = connection;
-      const url = `${BACKEND_URL}/api/live-updates/stream/${matchId}`;
+      
+      // SSE connections are now public for viewing live updates - no authentication required
+      // Only admin updates require authentication, but viewing is open to all users
+      console.log(`🌐 Creating public SSE connection for match ${matchId} (no auth required for viewing)`);
+      
+      // Build URL without token - SSE endpoint is public for live viewing
+      const url = `${BACKEND_URL}/api/live-updates/${matchId}/stream`;
       
       const eventSource = new EventSource(url, {
-        withCredentials: true
+        withCredentials: false // Changed to false since no authentication needed
       });
 
       let connectionTimeout = setTimeout(() => {
@@ -221,7 +227,11 @@ class LiveUpdateService {
     return new Promise((resolve, reject) => {
       const { matchId } = connection;
       
-      // WebSocket URL would need to be implemented on backend
+      // WebSocket connections are now public for viewing live updates - no authentication required
+      // Only admin updates require authentication, but viewing is open to all users
+      console.log(`🌐 Creating public WebSocket connection for match ${matchId} (no auth required for viewing)`);
+      
+      // WebSocket URL would need to be implemented on backend - removed token requirement
       const wsUrl = `${BACKEND_URL.replace('http', 'ws')}/ws/match/${matchId}`;
       
       const ws = new WebSocket(wsUrl);
@@ -280,18 +290,26 @@ class LiveUpdateService {
       }
 
       try {
+        const headers = {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        };
+        
+        // Polling is now public for viewing live updates - no authentication required
+        // Only admin updates require authentication, but viewing is open to all users
+        
         const response = await fetch(`${BACKEND_URL}/api/live-updates/status/${matchId}`, {
           method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
+          headers,
           signal: AbortSignal.timeout(5000)
         });
 
         if (response.ok) {
           const data = await response.json();
           this.handleMessage(connection, JSON.stringify(data));
+        } else {
+          console.error(`❌ Polling failed for match ${matchId}:`, response.status, response.statusText);
+          // Don't treat non-200 responses as authentication errors for public viewing
         }
       } catch (error) {
         console.error(`❌ Polling error for match ${matchId}:`, error);

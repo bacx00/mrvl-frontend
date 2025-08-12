@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import LiquipediaMatchCard from './LiquipediaMatchCard';
+import '../styles/liquipedia-tournament.css';
 
 /**
  * Liquipedia-style Double Elimination Bracket
@@ -7,6 +8,11 @@ import LiquipediaMatchCard from './LiquipediaMatchCard';
  */
 function LiquipediaDoubleEliminationBracket({
   bracket,
+  tournament,
+  tournamentId,
+  navigateTo,
+  isAdmin = false,
+  onMatchUpdate,
   onMatchClick,
   onTeamClick,
   hoveredMatch,

@@ -105,7 +105,7 @@ function CommentSystemSimple({
     switch (itemType) {
       case 'news': return `/news/${itemId}/comments`;
       case 'match': return `/matches/${itemId}/comments`;
-      case 'forum_thread': return `/forum/threads/${itemId}/posts`;
+      case 'forum_thread': return `/forums/threads/${itemId}/posts`;
       default: return `/comments/${itemType}/${itemId}`;
     }
   };
@@ -132,42 +132,63 @@ function CommentSystemSimple({
         parent_id: parentId
       });
 
-      if (response.data && response.data.content && typeof response.data.content === 'string') {
-        // Add new comment to list - validate data structure
-        if (parentId) {
-          // Find parent and add reply
-          const updateReplies = (comments) => {
-            return comments.map(comment => {
-              if (comment.id === parentId) {
-                return {
-                  ...comment,
-                  replies: [...(comment.replies || []), response.data],
-                  replies_count: (comment.replies_count || 0) + 1
-                };
-              }
-              if (comment.replies) {
-                return {
-                  ...comment,
-                  replies: updateReplies(comment.replies)
-                };
-              }
-              return comment;
-            });
-          };
-          setComments(updateReplies(comments));
-          setReplyText('');
-          setReplyingTo(null);
-        } else {
-          setComments([response.data, ...comments]);
-          setNewComment('');
+      // Handle different response structures for different item types
+      let commentData = response.data;
+      
+      // Forum posts return data nested under 'post' key
+      if (itemType === 'forum_thread' && response.data?.post) {
+        commentData = response.data.post;
+      }
+      
+      if (commentData && (commentData.content || commentData.id)) {
+        // Validate that we have either a complete comment or just an ID
+        const isCompleteComment = commentData.content && typeof commentData.content === 'string';
+        
+        if (isCompleteComment) {
+          // Add new comment to list with complete data
+          if (parentId) {
+            // Find parent and add reply
+            const updateReplies = (comments) => {
+              return comments.map(comment => {
+                if (comment.id === parentId) {
+                  return {
+                    ...comment,
+                    replies: [...(comment.replies || []), commentData],
+                    replies_count: (comment.replies_count || 0) + 1
+                  };
+                }
+                if (comment.replies) {
+                  return {
+                    ...comment,
+                    replies: updateReplies(comment.replies)
+                  };
+                }
+                return comment;
+              });
+            };
+            setComments(updateReplies(comments));
+            setReplyText('');
+            setReplyingTo(null);
+          } else {
+            setComments([commentData, ...comments]);
+            setNewComment('');
+          }
+        } else if (commentData.id) {
+          // If we only got an ID, clear the form and refresh to get the complete comment
+          if (parentId) {
+            setReplyText('');
+            setReplyingTo(null);
+          } else {
+            setNewComment('');
+          }
         }
         
         // Trigger immediate refresh to sync any server-side changes
         fetchTimeoutRef.current = setTimeout(() => {
           fetchComments(true);
-        }, 2000);
+        }, isCompleteComment ? 2000 : 500);
       } else {
-        console.error('Invalid comment data received:', response.data);
+        console.error('Invalid comment data received:', commentData);
         alert('Failed to post comment. Please try again.');
       }
     } catch (error) {

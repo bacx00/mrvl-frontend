@@ -275,7 +275,7 @@ class MasterLiveScoringValidator {
       // Test 2: SSE Connection Speed
       const sseStartTime = Date.now();
       const sseConnectionTest = await new Promise((resolve) => {
-        const eventSource = new EventSource(`${BACKEND_URL}/api/live-updates/stream/1`);
+        const eventSource = new EventSource(`${BACKEND_URL}/api/live-updates/1/stream`);
         
         const timeout = setTimeout(() => {
           eventSource.close();

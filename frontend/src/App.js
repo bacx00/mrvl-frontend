@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AuthProvider, ThemeProvider, useAuth, useTheme } from './hooks';
 import Navigation from './components/Navigation';
 import AuthModal from './components/AuthModal';
+import ErrorBoundary from './components/shared/ErrorBoundary';
 
 // Import all page components
 import HomePage from './components/pages/HomePage';
@@ -16,6 +17,8 @@ import PlayerDetailPage from './components/pages/PlayerDetailPage';
 import RankingsPage from './components/pages/RankingsPage';
 import EventsPage from './components/pages/EventsPage';
 import EventDetailPage from './components/pages/EventDetailPage';
+import TournamentsPage from './components/pages/TournamentsPage';
+import TournamentDetailPage from './components/pages/TournamentDetailPage';
 import ForumsPage from './components/pages/ForumsPage';
 import ThreadDetailPage from './components/pages/ThreadDetailPage';
 import CreateThreadPage from './components/pages/CreateThreadPage';
@@ -63,6 +66,8 @@ const ROUTES = {
   'rankings': RankingsPage,
   'events': EventsPage,
   'event-detail': EventDetailPage,
+  'tournaments': TournamentsPage,
+  'tournament-detail': TournamentDetailPage,
   'forums': ForumsPage,
   'thread-detail': ThreadDetailPage,
   'create-thread': CreateThreadPage,
@@ -284,11 +289,15 @@ function AppContent() {
 
 function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </ThemeProvider>
+    <ErrorBoundary component="App">
+      <ThemeProvider>
+        <AuthProvider>
+          <ErrorBoundary component="AppContent">
+            <AppContent />
+          </ErrorBoundary>
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

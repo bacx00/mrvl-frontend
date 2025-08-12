@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
-import { TeamLogo, getNewsFeaturedImageUrl, getEventBannerUrl } from '../../utils/imageUtils';
+import { TeamLogo, getNewsFeaturedImageUrl, getEventBannerUrl, getImageUrl } from '../../utils/imageUtils';
 import { formatTimeAgo, formatDateSafe } from '../../lib/utils.js';
 import liveScoreManager from '../../utils/LiveScoreManager';
 
@@ -95,19 +95,41 @@ function HomePage({ navigateTo }) {
         const rawDiscussions = forumsResponse?.data?.data || forumsResponse?.data || [];
         
         if (Array.isArray(rawDiscussions) && rawDiscussions.length > 0) {
-          // ✅ SIMPLIFIED FIX: Only include threads with valid IDs and basic validation
+          // ✅ ENHANCED FIX: Better date validation and debugging
           discussionsData = rawDiscussions
             .filter(thread => thread.id && thread.title && thread.id > 0) // Only valid threads
             .slice(0, 8)
-            .map(thread => ({
-              id: thread.id,
-              title: thread.title,
-              // ✅ FIXED: Use "MRVL User" instead of "Anonymous"
-              author: thread.user_name || thread.author?.name || 'MRVL User',
-              replies: thread.replies || thread.replies_count || 0,
-              lastActivity: formatTimeAgo(thread.updated_at || thread.created_at),
-              category: formatCategory(thread.category)
-            }));
+            .map(thread => {
+              // Improved date handling with multiple fallbacks - check meta object
+              const dateToFormat = thread.updated_at || 
+                                  thread.meta?.last_reply_at ||
+                                  thread.meta?.created_at ||
+                                  thread.last_post_at || 
+                                  thread.last_reply_at || 
+                                  thread.created_at;
+              
+              // Debug logging for date issues
+              if (!dateToFormat || dateToFormat === 'unknown') {
+                console.warn('HomePage: Thread with bad date:', {
+                  id: thread.id,
+                  title: thread.title,
+                  updated_at: thread.updated_at,
+                  created_at: thread.created_at,
+                  last_post_at: thread.last_post_at,
+                  last_reply_at: thread.last_reply_at
+                });
+              }
+              
+              return {
+                id: thread.id,
+                title: thread.title,
+                // ✅ FIXED: Use "MRVL User" instead of "Anonymous"
+                author: thread.user_name || thread.author?.name || thread.user?.username || 'MRVL User',
+                replies: thread.replies || thread.replies_count || thread.posts_count || 0,
+                lastActivity: dateToFormat ? formatTimeAgo(dateToFormat) : 'Recently',
+                category: formatCategory(thread.category || thread.category_slug)
+              };
+            });
           console.log('HomePage: Using REAL valid discussions:', discussionsData.length);
         }
       } catch (error) {
@@ -193,26 +215,9 @@ function HomePage({ navigateTo }) {
     });
   }, []);
 
-  // Subscribe to live score updates for all matches
-  useEffect(() => {
-    if (matches.length > 0) {
-      console.log(`🔔 HomePage subscribing to live updates for ${matches.length} matches`);
-      
-      // Subscribe to updates for all matches
-      const subscription = liveScoreManager.subscribe(
-        'homepage-matches',
-        handleLiveScoreUpdate,
-        {
-          updateType: 'scores'
-        }
-      );
-      
-      return () => {
-        console.log('🔕 HomePage unsubscribing from live updates');
-        liveScoreManager.unsubscribe('homepage-matches');
-      };
-    }
-  }, [matches.length, handleLiveScoreUpdate]);
+  // REMOVED: HomePage no longer subscribes to live updates to reduce overhead
+  // Live updates should only be between MatchDetailPage ↔ LiveScoring panel
+  // HomePage will refresh match data on focus/navigation instead
 
   // Note: formatTimeAgo is now imported from utils for consistency and safety
 
@@ -512,17 +517,16 @@ function HomePage({ navigateTo }) {
                     className="flex space-x-3 cursor-pointer group"
                     onClick={() => handleNewsClick(article)}
                   >
-                    {article.featured_image && (
-                      <img 
-                        src={getNewsFeaturedImageUrl(article)} 
-                        alt={article.title}
-                        className="w-20 h-16 object-cover rounded group-hover:opacity-80 transition-opacity"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = getNewsFeaturedImageUrl(null); // Use our fallback logic
-                        }}
-                      />
-                    )}
+                    <img 
+                      src={getNewsFeaturedImageUrl(article)} 
+                      alt={article.title}
+                      className="w-20 h-16 object-cover rounded group-hover:opacity-80 transition-opacity"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        // Use a proper placeholder URL instead of question mark
+                        e.target.src = 'https://staging.mrvl.net/images/news-placeholder.svg';
+                      }}
+                    />
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors line-clamp-2">
                         {article.title}
@@ -570,8 +574,18 @@ function HomePage({ navigateTo }) {
                       className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
                       onClick={() => handleMatchClick(match)}
                     >
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center space-x-1">
+                      {/* Event Logo and Info Header */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          {/* Event Logo */}
+                          {match.event?.logo && (
+                            <img 
+                              src={getImageUrl(match.event.logo)}
+                              alt={match.event.name}
+                              className="w-5 h-5 rounded object-cover"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          )}
                           <span className="text-xs font-medium text-red-600 dark:text-red-400">LIVE</span>
                           {/* ✅ FIXED: Show real viewers or nothing if 0 */}
                           {match.viewers > 0 && (
@@ -586,16 +600,16 @@ function HomePage({ navigateTo }) {
                         <div className="flex items-center justify-between text-sm font-medium text-gray-900 dark:text-white mb-1">
                           <div className={`flex items-center space-x-2 ${match.status === 'completed' && match.team1_score <= match.team2_score ? 'opacity-50' : ''}`}>
                             <TeamLogo team={match.team1} size="w-6 h-6" />
-                            <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team1.short_name}</span>
+                            <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team1.short_name || match.team1.name}</span>
                           </div>
                           <div className="text-center px-2">
                             <div className="text-red-600 dark:text-red-400 font-bold text-lg">
                               <span className={match.status === 'completed' && match.team1_score > match.team2_score ? 'text-green-600 dark:text-green-400' : ''}>
-                                {match.team1_score}
+                                {match.team1_score || 0}
                               </span>
                               -
                               <span className={match.status === 'completed' && match.team2_score > match.team1_score ? 'text-green-600 dark:text-green-400' : ''}>
-                                {match.team2_score}
+                                {match.team2_score || 0}
                               </span>
                             </div>
                             <div className="text-xs text-gray-500 dark:text-gray-500">
@@ -603,7 +617,7 @@ function HomePage({ navigateTo }) {
                             </div>
                           </div>
                           <div className={`flex items-center space-x-2 ${match.status === 'completed' && match.team2_score <= match.team1_score ? 'opacity-50' : ''}`}>
-                            <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team2.short_name}</span>
+                            <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team2.short_name || match.team2.name}</span>
                             <TeamLogo team={match.team2} size="w-6 h-6" />
                           </div>
                         </div>
@@ -636,15 +650,29 @@ function HomePage({ navigateTo }) {
                       className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
                       onClick={() => handleMatchClick(match)}
                     >
-                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-1 font-medium">
-                        {match.time}
+                      {/* Event Logo and Time Header */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          {/* Event Logo */}
+                          {match.event?.logo && (
+                            <img 
+                              src={getImageUrl(match.event.logo)}
+                              alt={match.event.name}
+                              className="w-5 h-5 rounded object-cover"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          )}
+                          <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                            {match.time}
+                          </span>
+                        </div>
                       </div>
                       <div className="text-center">
                         {/* BIGGER TEAM DISPLAYS */}
                         <div className="flex items-center justify-between text-sm font-medium text-gray-900 dark:text-white mb-1">
                           <div className="flex items-center space-x-2">
                             <TeamLogo team={match.team1} size="w-6 h-6" />
-                            <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team1.short_name}</span>
+                            <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team1.short_name || match.team1.name}</span>
                           </div>
                           <div className="text-center px-2">
                             <div className="text-gray-400 dark:text-gray-500 font-bold">vs</div>
@@ -653,7 +681,7 @@ function HomePage({ navigateTo }) {
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team2.short_name}</span>
+                            <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team2.short_name || match.team2.name}</span>
                             <TeamLogo team={match.team2} size="w-6 h-6" />
                           </div>
                         </div>
@@ -691,24 +719,38 @@ function HomePage({ navigateTo }) {
                       className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
                       onClick={() => handleMatchClick(match)}
                     >
-                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-1 font-medium">
-                        Completed
+                      {/* Event Logo and Status Header */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          {/* Event Logo */}
+                          {match.event?.logo && (
+                            <img 
+                              src={getImageUrl(match.event.logo)}
+                              alt={match.event.name}
+                              className="w-5 h-5 rounded object-cover"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          )}
+                          <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                            Completed
+                          </span>
+                        </div>
                       </div>
                       <div className="text-center">
                         {/* Team displays with winner highlighting */}
                         <div className="flex items-center justify-between text-sm font-medium text-gray-900 dark:text-white mb-1">
                           <div className={`flex items-center space-x-2 ${match.team1_score <= match.team2_score ? 'opacity-60' : ''}`}>
                             <TeamLogo team={match.team1} size="w-6 h-6" />
-                            <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team1.short_name}</span>
+                            <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team1.short_name || match.team1.name}</span>
                           </div>
                           <div className="text-center px-2">
                             <div className="text-red-600 dark:text-red-400 font-bold text-lg">
                               <span className={match.team1_score > match.team2_score ? 'text-green-600 dark:text-green-400' : ''}>
-                                {match.team1_score}
+                                {match.team1_score || 0}
                               </span>
                               -
                               <span className={match.team2_score > match.team1_score ? 'text-green-600 dark:text-green-400' : ''}>
-                                {match.team2_score}
+                                {match.team2_score || 0}
                               </span>
                             </div>
                             <div className="text-xs text-gray-500 dark:text-gray-500">
@@ -716,13 +758,13 @@ function HomePage({ navigateTo }) {
                             </div>
                           </div>
                           <div className={`flex items-center space-x-2 ${match.team2_score <= match.team1_score ? 'opacity-60' : ''}`}>
-                            <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team2.short_name}</span>
+                            <span className="truncate text-gray-900 dark:text-gray-100 font-bold">{match.team2.short_name || match.team2.name}</span>
                             <TeamLogo team={match.team2} size="w-6 h-6" />
                           </div>
                         </div>
                         {/* Tournament info */}
                         <div className="text-xs text-gray-500 dark:text-gray-500">
-                          {match.event.name}
+                          {match.event?.name}
                         </div>
                       </div>
                     </div>

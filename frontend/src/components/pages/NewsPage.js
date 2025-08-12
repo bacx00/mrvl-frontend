@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
 import { getNewsFeaturedImageUrl } from '../../utils/imageUtils';
+import LazyImageOptimized from '../shared/LazyImageOptimized';
+import { trackNewsSearch, trackNewsView } from '../../utils/analyticsUtils';
 
 function NewsPage({ navigateTo }) {
   const { isAdmin, isModerator, api, user } = useAuth();
@@ -25,6 +27,11 @@ function NewsPage({ navigateTo }) {
       
       setNews(newsData);
       setCategories(categoriesData);
+      
+      // Track news search/filter if filters are applied
+      if (selectedCategory !== 'all' || sortBy !== 'latest') {
+        trackNewsSearch('', { category: selectedCategory, sort: sortBy }, newsData.length);
+      }
     } catch (error) {
       console.error('❌ NewsPage: Backend API failed:', error.message);
       setNews([]);
@@ -178,7 +185,13 @@ function NewsPage({ navigateTo }) {
             <div 
               key={article.id}
               className="card p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer border-l-4 border-transparent hover:border-red-600"
-              onClick={() => navigateTo && navigateTo('news-detail', { id: String(article.id || '') })}
+              onClick={() => {
+                if (navigateTo) {
+                  // Track news view from listing page
+                  trackNewsView(article, 'listing');
+                  navigateTo('news-detail', { id: String(article.id || '') });
+                }
+              }}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -286,19 +299,18 @@ function NewsPage({ navigateTo }) {
                   )}
                 </div>
 
-                {/* Thumbnail */}
-                {article.featured_image && (
-                  <div className="ml-4 flex-shrink-0">
-                    <img 
-                      src={getNewsFeaturedImageUrl(article)} 
-                      alt={article.title}
-                      className="w-20 h-20 object-cover rounded"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  </div>
-                )}
+                {/* Thumbnail - always show, using placeholder if needed */}
+                <div className="ml-4 flex-shrink-0">
+                  <img
+                    src={getNewsFeaturedImageUrl(article)} 
+                    alt={article.title}
+                    className="w-20 h-20 object-cover rounded bg-gray-100 dark:bg-gray-700"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = 'https://staging.mrvl.net/images/news-placeholder.svg';
+                    }}
+                  />
+                </div>
               </div>
             </div>
           ))}

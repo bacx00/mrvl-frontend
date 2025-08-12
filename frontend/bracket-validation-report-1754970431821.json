@@ -1,0 +1,233 @@
+{
+  "timestamp": "2025-08-12T03:47:11.237Z",
+  "summary": {
+    "totalTests": 17,
+    "passed": 16,
+    "failed": 1,
+    "warnings": 0
+  },
+  "categories": {
+    "api_endpoints": {
+      "passed": 5,
+      "failed": 0,
+      "total": 5,
+      "results": [
+        {
+          "endpoint": "List Tournaments",
+          "status": 200,
+          "passed": true,
+          "data": "object"
+        },
+        {
+          "endpoint": "List Teams",
+          "status": 200,
+          "passed": true,
+          "data": "object"
+        },
+        {
+          "endpoint": "List Matches",
+          "status": 200,
+          "passed": true,
+          "data": "object"
+        },
+        {
+          "endpoint": "Get Rankings",
+          "status": 200,
+          "passed": true,
+          "data": "object"
+        },
+        {
+          "endpoint": "Live Matches",
+          "status": 200,
+          "passed": true,
+          "data": "object"
+        }
+      ]
+    },
+    "frontend_components": {
+      "passed": 5,
+      "failed": 0,
+      "total": 5,
+      "results": [
+        {
+          "component": "LiquipediaDoubleEliminationBracket.js",
+          "exists": true,
+          "passed": true,
+          "issues": [],
+          "features": [
+            "Match Click Handling",
+            "Team Click Handling",
+            "Bracket Data Handling",
+            "Tournament Structure",
+            "React Hooks",
+            "Styling",
+            "Double Elimination Structure"
+          ]
+        },
+        {
+          "component": "LiquipediaSwissBracket.js",
+          "exists": true,
+          "passed": true,
+          "issues": [],
+          "features": [
+            "Match Click Handling",
+            "Team Click Handling",
+            "Bracket Data Handling",
+            "Tournament Structure",
+            "React Hooks",
+            "Styling",
+            "Swiss System Structure"
+          ]
+        },
+        {
+          "component": "LiquipediaRoundRobinBracket.js",
+          "exists": true,
+          "passed": true,
+          "issues": [],
+          "features": [
+            "Match Click Handling",
+            "Team Click Handling",
+            "Bracket Data Handling",
+            "Tournament Structure",
+            "React Hooks",
+            "Styling",
+            "Round Robin Structure"
+          ]
+        },
+        {
+          "component": "LiquipediaGSLBracket.js",
+          "exists": true,
+          "passed": true,
+          "issues": [],
+          "features": [
+            "Match Click Handling",
+            "Bracket Data Handling",
+            "Tournament Structure",
+            "React Hooks",
+            "Styling",
+            "GSL Format Structure"
+          ]
+        },
+        {
+          "component": "LiquipediaSingleEliminationBracket.js",
+          "exists": true,
+          "passed": true,
+          "issues": [],
+          "features": [
+            "Match Click Handling",
+            "Team Click Handling",
+            "Tournament Structure",
+            "Styling"
+          ]
+        }
+      ]
+    },
+    "visualization": {
+      "passed": 3,
+      "failed": 0,
+      "total": 3,
+      "results": [
+        {
+          "file": "liquipedia-tournament.css",
+          "exists": true,
+          "passed": true,
+          "features": {
+            "responsive": true,
+            "bracketStyles": true
+          }
+        },
+        {
+          "file": "tournament-bracket.css",
+          "exists": true,
+          "passed": true,
+          "features": {
+            "responsive": true,
+            "bracketStyles": true
+          }
+        },
+        {
+          "file": "bracket-clean.css",
+          "exists": true,
+          "passed": true,
+          "features": {
+            "responsive": true,
+            "bracketStyles": true
+          }
+        }
+      ]
+    },
+    "services": {
+      "passed": 3,
+      "failed": 0,
+      "total": 3,
+      "results": [
+        {
+          "service": "bracketApi.js",
+          "exists": true,
+          "passed": true,
+          "features": [
+            "Async Operations",
+            "HTTP Requests",
+            "Error Handling",
+            "Module Export",
+            "Bracket CRUD",
+            "Match Operations",
+            "Tournament Data"
+          ],
+          "issues": []
+        },
+        {
+          "service": "tournamentApi.js",
+          "exists": true,
+          "passed": true,
+          "features": [
+            "Async Operations",
+            "HTTP Requests",
+            "Error Handling",
+            "Module Export",
+            "Tournament CRUD",
+            "Team Management",
+            "Bracket Management"
+          ],
+          "issues": []
+        },
+        {
+          "service": "liveUpdateService.js",
+          "exists": true,
+          "passed": true,
+          "features": [
+            "Async Operations",
+            "HTTP Requests",
+            "Error Handling",
+            "Module Export",
+            "Real-time Connection",
+            "Event Subscription",
+            "Live Updates"
+          ],
+          "issues": []
+        }
+      ]
+    },
+    "backend_integration": {
+      "passed": 0,
+      "failed": 1,
+      "total": 1,
+      "results": [
+        {
+          "test": "Tournament Data",
+          "passed": false,
+          "error": "No tournaments in database"
+        }
+      ]
+    }
+  },
+  "issues": [],
+  "recommendations": [
+    {
+      "category": "Integration",
+      "priority": "HIGH",
+      "issue": "Backend integration has problems",
+      "solution": "Fix backend connectivity and data structure issues"
+    }
+  ]
+}

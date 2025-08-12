@@ -233,6 +233,39 @@ export const authAPI = {
     
     return response;
   },
+
+  // Profile management
+  updateProfile: async (data: Partial<User>): Promise<User> => {
+    const response = await apiPut<User>('user/profile', data);
+    
+    // Update local storage
+    if (typeof window !== 'undefined') {
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const updatedUser = { ...currentUser, ...response };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    }
+    
+    return response;
+  },
+
+  // Password change with proper security
+  changePassword: async (data: { current_password: string; new_password: string; new_password_confirmation: string }): Promise<void> => {
+    await apiPost('auth/change-password', data);
+  },
+
+  // Email change with verification
+  changeEmail: async (data: { new_email: string; password: string }): Promise<void> => {
+    await apiPost('auth/change-email', data);
+  },
+
+  // Password reset
+  forgotPassword: async (email: string): Promise<void> => {
+    await apiPost('auth/forgot-password', { email });
+  },
+
+  resetPassword: async (data: { token: string; email: string; password: string; password_confirmation: string }): Promise<void> => {
+    await apiPost('auth/reset-password', data);
+  },
 };
 
 // ═══════════════════════════════════════════════════════════════

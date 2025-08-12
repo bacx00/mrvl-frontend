@@ -1525,7 +1525,7 @@ function MatchForm({ matchId, navigateTo }) {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
-                  <span className="text-2xl font-bold text-blue-600">{selectedTeam1.short_name[0]}</span>
+                  <span className="text-2xl font-bold text-blue-600">{selectedTeam1.short_name ? selectedTeam1.short_name[0] : selectedTeam1.name[0]}</span>
                 </div>
                 <div className="text-white">
                   <div className="font-bold text-lg">{selectedTeam1.name}</div>
@@ -1557,7 +1557,7 @@ function MatchForm({ matchId, navigateTo }) {
                   <div className="text-blue-200 text-sm">{selectedTeam2.region}</div>
                 </div>
                 <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
-                  <span className="text-2xl font-bold text-blue-600">{selectedTeam2.short_name[0]}</span>
+                  <span className="text-2xl font-bold text-blue-600">{selectedTeam2.short_name ? selectedTeam2.short_name[0] : selectedTeam2.name[0]}</span>
                 </div>
               </div>
             </div>

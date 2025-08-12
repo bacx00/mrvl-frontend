@@ -22,14 +22,18 @@ function ForumMentionAutocomplete({
   const textareaRef = useRef(null);
   const dropdownRef = useRef(null);
 
-  // Search for mentions when query changes
+  // Search for mentions when query changes (with debouncing)
   useEffect(() => {
-    if (mentionQuery.length >= 1) {
-      searchMentions(mentionQuery, mentionType);
-    } else {
-      setMentionResults([]);
-      setShowDropdown(false);
-    }
+    const timeoutId = setTimeout(() => {
+      if (mentionQuery.length >= 1) {
+        searchMentions(mentionQuery, mentionType);
+      } else {
+        setMentionResults([]);
+        setShowDropdown(false);
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
   }, [mentionQuery, mentionType]);
 
   const searchMentions = async (query, type) => {
@@ -37,6 +41,10 @@ function ForumMentionAutocomplete({
     if (!safeQuery.trim()) return;
     
     setLoading(true);
+    
+    // Create abort controller for this request
+    const abortController = new AbortController();
+    
     try {
       let endpoint = '';
       if (type === 'user') {
@@ -47,18 +55,28 @@ function ForumMentionAutocomplete({
         endpoint = `/public/search/players?q=${encodeURIComponent(query)}&limit=10`;
       }
 
-      const response = await api.get(endpoint);
-      const results = response.data?.data || [];
+      const response = await api.get(endpoint, {
+        signal: abortController.signal
+      });
       
-      setMentionResults(results);
-      setShowDropdown(results.length > 0);
-      setSelectedIndex(0);
+      // Only update state if the request wasn't cancelled
+      if (!abortController.signal.aborted) {
+        const results = response.data?.data || [];
+        setMentionResults(results);
+        setShowDropdown(results.length > 0);
+        setSelectedIndex(0);
+      }
     } catch (error) {
-      console.error('Error searching mentions:', error);
-      setMentionResults([]);
-      setShowDropdown(false);
+      // Only log error if it's not an abort error
+      if (error.name !== 'AbortError' && !abortController.signal.aborted) {
+        console.error('Error searching mentions:', error);
+        setMentionResults([]);
+        setShowDropdown(false);
+      }
     } finally {
-      setLoading(false);
+      if (!abortController.signal.aborted) {
+        setLoading(false);
+      }
     }
   };
 
@@ -266,21 +284,48 @@ function ForumMentionAutocomplete({
       const viewportHeight = window.innerHeight;
       const viewportWidth = window.innerWidth;
       const isMobile = viewportWidth < 768;
+      const isTablet = viewportWidth >= 768 && viewportWidth < 1024;
       
       if (isMobile) {
-        // Mobile positioning - show at bottom of screen for better UX
+        // Mobile positioning - optimized for small screens
+        const keyboardHeight = 260; // Estimate virtual keyboard height
+        const availableHeight = viewportHeight - keyboardHeight;
+        const dropdownHeight = Math.min(200, availableHeight * 0.4);
+        
         return {
           position: 'fixed',
-          bottom: '80px',
-          left: '1rem',
-          right: '1rem',
-          maxHeight: '200px',
+          bottom: `${keyboardHeight + 10}px`,
+          left: '0.5rem',
+          right: '0.5rem',
+          maxHeight: `${dropdownHeight}px`,
           width: 'auto',
           minWidth: 'auto',
           maxWidth: 'none',
+          zIndex: 9999,
+          // Add mobile-specific styles
+          borderRadius: '12px',
+          backdropFilter: 'blur(10px)',
+          background: 'rgba(255, 255, 255, 0.95)',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         };
       }
       
+      if (isTablet) {
+        // Tablet positioning - balanced approach
+        return {
+          position: 'fixed',
+          top: Math.min(rect.bottom + 8, viewportHeight - 280),
+          left: Math.max(16, Math.min(rect.left, viewportWidth - 320)),
+          width: '300px',
+          maxHeight: '240px',
+          zIndex: 9999,
+          borderRadius: '8px',
+          background: 'white',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        };
+      }
+      
+      // Desktop positioning - original logic with improvements
       let top = rect.bottom + 4;
       let left = rect.left;
       
@@ -300,10 +345,11 @@ function ForumMentionAutocomplete({
         left: Math.max(0, left),
         minWidth: Math.max(rect.width, 300),
         maxWidth: 400,
+        zIndex: 9999,
       };
     } catch (error) {
       console.error('Error calculating dropdown position:', error);
-      return { top: 0, left: 0, minWidth: 300, maxWidth: 400 };
+      return { top: 0, left: 0, minWidth: 300, maxWidth: 400, zIndex: 9999 };
     }
   };
 
@@ -344,9 +390,13 @@ function ForumMentionAutocomplete({
                 <button
                   key={`${mention.type}-${mention.id}`}
                   onClick={() => selectMention(mention)}
-                  className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-3 ${
+                  className={`w-full px-3 py-3 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 flex items-center space-x-3 transition-colors duration-150 touch-manipulation ${
                     index === selectedIndex ? 'bg-blue-100 dark:bg-blue-900/20' : ''
                   }`}
+                  style={{ 
+                    minHeight: '56px', // Touch-friendly height
+                    WebkitTapHighlightColor: 'rgba(59, 130, 246, 0.1)'
+                  }}
                 >
                   {/* Avatar */}
                   <div className="flex-shrink-0">

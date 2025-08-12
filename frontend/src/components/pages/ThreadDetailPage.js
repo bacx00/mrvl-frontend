@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
 import UserDisplay from '../shared/UserDisplay';
 import ForumVotingButtons from '../shared/ForumVotingButtons';
-import MentionAutocomplete from '../shared/MentionAutocomplete';
+import ForumMentionAutocomplete from '../shared/ForumMentionAutocomplete';
 import MentionLink from '../shared/MentionLink';
 import MobileForumThread from '../mobile/MobileForumThread';
 import MobileTextEditor from '../mobile/MobileTextEditor';
@@ -636,11 +636,30 @@ function ThreadDetailPage({ params, navigateTo }) {
               <ForumVotingButtons
                 itemType="post"
                 itemId={post.id}
-                initialUpvotes={post.stats?.upvotes || post.upvotes || 0}
-                initialDownvotes={post.stats?.downvotes || post.downvotes || 0}
+                initialUpvotes={post.stats?.upvotes !== undefined ? post.stats.upvotes : (post.upvotes || 0)}
+                initialDownvotes={post.stats?.downvotes !== undefined ? post.stats.downvotes : (post.downvotes || 0)}
                 userVote={post.user_vote}
                 direction="horizontal"
                 size="xs"
+                onVoteChange={(voteData) => {
+                  // Update post vote counts in the posts array
+                  setPosts(prevPosts => prevPosts.map(p => {
+                    if (p.id === post.id) {
+                      return {
+                        ...p,
+                        stats: {
+                          ...p.stats,
+                          upvotes: voteData.vote_counts?.upvotes || p.stats?.upvotes || 0,
+                          downvotes: voteData.vote_counts?.downvotes || p.stats?.downvotes || 0
+                        },
+                        upvotes: voteData.vote_counts?.upvotes || p.upvotes || 0,
+                        downvotes: voteData.vote_counts?.downvotes || p.downvotes || 0,
+                        user_vote: voteData.user_vote
+                      };
+                    }
+                    return p;
+                  }));
+                }}
               />
             )}
           </div>
@@ -708,24 +727,13 @@ function ThreadDetailPage({ params, navigateTo }) {
                     Cancel
                   </button>
                 </div>
-                <MentionAutocomplete
+                <ForumMentionAutocomplete
                   value={replyContent}
-                  onChange={(e) => {
-                    // Enhanced handling for both string values and event objects
-                    let newValue = '';
-                    if (typeof e === 'string') {
-                      newValue = e;
-                    } else if (e && e.target && typeof e.target.value === 'string') {
-                      newValue = e.target.value;
-                    } else if (e && typeof e.value === 'string') {
-                      newValue = e.value;
-                    } else {
-                      console.warn('ThreadDetailPage: Unexpected reply content input:', typeof e, e);
-                      return;
-                    }
-                    setReplyContent(newValue);
+                  onChange={(value) => {
+                    // ForumMentionAutocomplete already handles the string conversion internally
+                    setReplyContent(value);
                   }}
-                  placeholder="Write your reply..."
+                  placeholder="Write your reply... (Use @ to mention users, @team: for teams, @player: for players)"
                   rows={3}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent"
                 />
@@ -916,6 +924,20 @@ function ThreadDetailPage({ params, navigateTo }) {
                   userVote={thread.user_vote}
                   direction="horizontal"
                   size="xs"
+                  onVoteChange={(voteData) => {
+                    // Update thread vote counts
+                    setThread(prevThread => ({
+                      ...prevThread,
+                      stats: {
+                        ...prevThread.stats,
+                        upvotes: voteData.vote_counts?.upvotes || prevThread.stats?.upvotes || 0,
+                        downvotes: voteData.vote_counts?.downvotes || prevThread.stats?.downvotes || 0
+                      },
+                      upvotes: voteData.vote_counts?.upvotes || prevThread.upvotes || 0,
+                      downvotes: voteData.vote_counts?.downvotes || prevThread.downvotes || 0,
+                      user_vote: voteData.user_vote
+                    }));
+                  }}
                 />
               </div>
 
@@ -995,30 +1017,16 @@ function ThreadDetailPage({ params, navigateTo }) {
         <div className="card p-6 mt-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Post Reply</h3>
           <form onSubmit={handleSubmitReply}>
-            <MentionAutocomplete
+            <ForumMentionAutocomplete
               value={replyContent}
-              onChange={(e) => {
-                // Enhanced handling for both string values and event objects
-                let newValue = '';
-                if (typeof e === 'string') {
-                  newValue = e;
-                } else if (e && e.target && typeof e.target.value === 'string') {
-                  newValue = e.target.value;
-                } else if (e && typeof e.value === 'string') {
-                  newValue = e.value;
-                } else {
-                  console.warn('ThreadDetailPage: Unexpected main reply content input:', typeof e, e);
-                  return;
-                }
-                setReplyContent(newValue);
-              }}
-              placeholder="Write your reply..."
+              onChange={setReplyContent}
+              placeholder="Write your reply... (Use @ to mention users, @team: for teams, @player: for players)"
               rows={4}
               className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent"
             />
             <div className="flex justify-between items-center mt-3">
               <div className="text-sm text-gray-500 dark:text-gray-500">
-                Use @username to mention someone
+                Use @ for users, @team: for teams, @player: for players
               </div>
               <button
                 type="submit"

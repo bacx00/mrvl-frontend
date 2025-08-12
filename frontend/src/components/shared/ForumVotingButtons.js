@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
 
 function ForumVotingButtons({ 
-  itemType, // 'thread' or 'post'
+  itemType, // 'thread', 'post', or 'match-comment'
   itemId,
   initialUpvotes = 0,
   initialDownvotes = 0,
@@ -16,6 +16,18 @@ function ForumVotingButtons({
   const [downvotes, setDownvotes] = useState(initialDownvotes);
   const [currentVote, setCurrentVote] = useState(userVote);
   const [loading, setLoading] = useState(false);
+  const [initialStateLoaded, setInitialStateLoaded] = useState(false);
+  
+  // Debug logging
+  if (itemType === 'post' && (initialUpvotes > 1 || initialDownvotes > 1)) {
+    console.log('ForumVotingButtons Debug:', {
+      itemType,
+      itemId,
+      initialUpvotes,
+      initialDownvotes,
+      userVote
+    });
+  }
 
   const sizeClasses = {
     xs: 'p-1 text-xs min-h-[36px] min-w-[36px]',
@@ -23,6 +35,50 @@ function ForumVotingButtons({
     md: 'p-2 text-base min-h-[44px] min-w-[44px]',
     lg: 'p-3 text-lg min-h-[48px] min-w-[48px]'
   };
+
+  // Fetch current vote state when component mounts or when itemId changes
+  const fetchVoteState = useCallback(async () => {
+    // For posts and match comments, we don't fetch - just use parent-provided state
+    if (itemType === 'post' || itemType === 'match-comment') {
+      setInitialStateLoaded(true);
+      return;
+    }
+    
+    if (!isAuthenticated || initialStateLoaded) return;
+    
+    // Only fetch for threads
+    if (itemType === 'thread') {
+      try {
+        const endpoint = `/forums/threads/${itemId}`;
+        const response = await api.get(endpoint);
+        const data = response.data?.data || response.data;
+        
+        if (data) {
+          // Update vote counts and user vote from server
+          setUpvotes(data.stats?.upvotes || data.upvotes || initialUpvotes);
+          setDownvotes(data.stats?.downvotes || data.downvotes || initialDownvotes);
+          setCurrentVote(data.user_vote || null);
+          setInitialStateLoaded(true);
+        }
+      } catch (error) {
+        console.warn('Could not fetch thread vote state:', error);
+        // Fallback to initial values provided by parent
+        setInitialStateLoaded(true);
+      }
+    }
+  }, [api, itemType, itemId, isAuthenticated, initialStateLoaded, initialUpvotes, initialDownvotes]);
+
+  useEffect(() => {
+    fetchVoteState();
+  }, [fetchVoteState]);
+
+  // Reset state when item changes
+  useEffect(() => {
+    setUpvotes(initialUpvotes);
+    setDownvotes(initialDownvotes);
+    setCurrentVote(userVote);
+    setInitialStateLoaded(false);
+  }, [itemId, initialUpvotes, initialDownvotes, userVote]);
 
   const handleVote = async (voteType) => {
     if (!isAuthenticated) {
@@ -34,50 +90,43 @@ function ForumVotingButtons({
 
     setLoading(true);
     
-    // Optimistic UI update for instant feedback with enhanced animations
-    const oldUpvotes = upvotes;
-    const oldDownvotes = downvotes;
-    const oldVote = currentVote;
+    // Store current state for potential rollback
+    const originalUpvotes = upvotes;
+    const originalDownvotes = downvotes;
+    const originalVote = currentVote;
     
     // Add visual feedback classes for button animations
     const buttonElement = document.querySelector(`[data-vote-type="${voteType}"]`);
     if (buttonElement) {
       buttonElement.classList.add('animate-pulse');
     }
-    
-    // Predict the outcome for immediate visual feedback
-    if (currentVote === voteType) {
-      // Removing existing vote
-      if (voteType === 'upvote') {
-        setUpvotes(prev => prev - 1);
-      } else {
-        setDownvotes(prev => prev - 1);
-      }
-      setCurrentVote(null);
-    } else if (currentVote) {
-      // Changing vote
-      if (voteType === 'upvote') {
-        setUpvotes(prev => prev + 1);
-        setDownvotes(prev => prev - 1);
-      } else {
-        setDownvotes(prev => prev + 1);
-        setUpvotes(prev => prev - 1);
-      }
-      setCurrentVote(voteType);
-    } else {
-      // New vote
-      if (voteType === 'upvote') {
-        setUpvotes(prev => prev + 1);
-      } else {
-        setDownvotes(prev => prev + 1);
-      }
-      setCurrentVote(voteType);
-    }
+
     try {
-      // Use forum-specific voting endpoints
-      const endpoint = itemType === 'thread' 
-        ? `/forums/threads/${itemId}/vote`
-        : `/forums/posts/${itemId}/vote`;
+      // Use appropriate voting endpoints based on item type
+      let endpoint;
+      if (itemType === 'thread') {
+        endpoint = `/forums/threads/${itemId}/vote`;
+      } else if (itemType === 'post') {
+        endpoint = `/forums/posts/${itemId}/vote`;
+      } else if (itemType === 'match-comment') {
+        endpoint = `/match-comments/${itemId}/vote`;
+      } else {
+        throw new Error(`Unknown item type: ${itemType}`);
+      }
+
+      // If user is trying to change their vote, handle it properly
+      if (currentVote && currentVote !== voteType) {
+        console.log(`Changing vote from ${currentVote} to ${voteType}`);
+        
+        // First, remove the existing vote by sending a DELETE request or the same vote again
+        try {
+          // Try sending the same vote (this should remove it in many APIs)
+          await api.post(endpoint, { vote_type: currentVote });
+          console.log('Existing vote removed');
+        } catch (removeError) {
+          console.log('Could not remove existing vote, proceeding with change');
+        }
+      }
 
       const payload = {
         vote_type: voteType
@@ -85,58 +134,124 @@ function ForumVotingButtons({
 
       const response = await api.post(endpoint, payload);
       
-      if (response?.data?.success) {
-        // CRITICAL FIX: Use actual vote counts from server response instead of recalculating
-        // This prevents double-counting since we already applied optimistic updates above
-        const serverCounts = response.data.vote_counts || response.data.updated_stats;
-        const serverUserVote = response.data.user_vote;
+      // Handle successful response
+      if (response?.data?.success !== false) {
+        const serverCounts = response.data?.vote_counts || response.data?.updated_stats || response.data?.stats;
+        const serverUserVote = response.data?.user_vote;
+        const action = response.data?.action || 'voted';
         
+        // Update state with server data
         if (serverCounts) {
-          // Use server-provided counts to ensure accuracy
           setUpvotes(serverCounts.upvotes || 0);
           setDownvotes(serverCounts.downvotes || 0);
+        } else {
+          // Fallback: calculate based on action if server doesn't provide counts
+          if (action === 'removed') {
+            setCurrentVote(null);
+            if (originalVote === 'upvote') {
+              setUpvotes(Math.max(0, originalUpvotes - 1));
+            } else if (originalVote === 'downvote') {
+              setDownvotes(Math.max(0, originalDownvotes - 1));
+            }
+          } else if (action === 'changed') {
+            setCurrentVote(voteType);
+            if (voteType === 'upvote' && originalVote === 'downvote') {
+              setUpvotes(originalUpvotes + 1);
+              setDownvotes(Math.max(0, originalDownvotes - 1));
+            } else if (voteType === 'downvote' && originalVote === 'upvote') {
+              setDownvotes(originalDownvotes + 1);
+              setUpvotes(Math.max(0, originalUpvotes - 1));
+            }
+          } else { // new vote
+            setCurrentVote(voteType);
+            if (voteType === 'upvote') {
+              setUpvotes(originalUpvotes + 1);
+            } else {
+              setDownvotes(originalDownvotes + 1);
+            }
+          }
         }
         
         // Set the actual vote state from server
-        setCurrentVote(serverUserVote);
+        if (serverUserVote !== undefined) {
+          setCurrentVote(serverUserVote);
+        }
 
         // Notify parent component with server data
         if (onVoteChange) {
           onVoteChange({
-            action: response.data.action,
+            action: action,
             vote_counts: serverCounts || {
               upvotes: upvotes,
               downvotes: downvotes,
               score: upvotes - downvotes
             },
-            user_vote: serverUserVote
+            user_vote: serverUserVote !== undefined ? serverUserVote : currentVote
           });
         }
+      } else {
+        // Handle API error response
+        const errorMsg = response.data?.message || 'Vote request failed';
+        console.warn('Vote request unsuccessful:', errorMsg);
+        alert(errorMsg);
       }
     } catch (error) {
-      console.error('Error voting:', error);
+      console.error('Vote request error:', error);
       
-      // Rollback optimistic updates on error
-      setUpvotes(oldUpvotes);
-      setDownvotes(oldDownvotes);
-      setCurrentVote(oldVote);
-      
-      let errorMessage = 'Failed to record vote';
-      
-      // Safe error message extraction
-      const safeErrorMsg = error.response?.data?.message || error.message;
-      
+      // Handle 409 Conflict - vote already exists
       if (error.response?.status === 409) {
-        errorMessage = 'You have already voted on this item';
-      } else if (error.response?.status === 401) {
-        errorMessage = 'Please log in to vote';
-      } else if (safeErrorMsg && typeof safeErrorMsg === 'string') {
-        errorMessage = safeErrorMsg;
-      } else if (typeof safeErrorMsg === 'object' && safeErrorMsg.message) {
-        errorMessage = String(safeErrorMsg.message);
+        console.log('Vote conflict (409) - this vote may already exist');
+        
+        // If same vote type, just ignore silently (user clicking same button twice)
+        if (currentVote === voteType) {
+          console.log('Same vote already exists - ignoring');
+          return;
+        }
+        
+        // For different vote types, this means the backend doesn't allow vote changes
+        // Let's try one more time with a different approach
+        try {
+          console.log('Attempting vote change with full refresh...');
+          
+          // Refresh vote state from server first
+          if (itemType === 'thread') {
+            const refreshResponse = await api.get(`/forums/threads/${itemId}`);
+            const data = refreshResponse.data?.data || refreshResponse.data;
+            if (data) {
+              setUpvotes(data.stats?.upvotes || 0);
+              setDownvotes(data.stats?.downvotes || 0);
+              setCurrentVote(data.user_vote || null);
+              console.log('Vote state refreshed - user current vote:', data.user_vote);
+            }
+          }
+          
+          // If still getting 409, inform user they can only have one vote
+          console.log('Vote change not supported by backend - showing user message');
+          alert('You can only have one vote per item. Your previous vote is still active.');
+          
+        } catch (refreshError) {
+          console.error('Could not refresh vote state:', refreshError);
+          alert('Unable to process vote. Please refresh the page and try again.');
+        }
+      } else {
+        // Handle other error types
+        let errorMessage = 'Failed to record vote';
+        
+        if (error.response?.status === 401) {
+          errorMessage = 'Please log in to vote';
+        } else if (error.response?.status === 403) {
+          errorMessage = 'You do not have permission to vote on this item';
+        } else if (error.response?.status === 404) {
+          errorMessage = 'This item no longer exists or has been deleted';
+        } else {
+          const safeErrorMsg = error.response?.data?.message || error.message;
+          if (safeErrorMsg && typeof safeErrorMsg === 'string') {
+            errorMessage = safeErrorMsg;
+          }
+        }
+        
+        alert(errorMessage);
       }
-      
-      alert(errorMessage);
     } finally {
       setLoading(false);
       

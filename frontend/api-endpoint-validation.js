@@ -36,7 +36,7 @@ class APIEndpointValidator {
       {
         name: 'Live Updates Stream',
         method: 'GET',
-        url: '/api/live-updates/stream/1',
+        url: '/api/live-updates/1/stream',
         expected: { type: 'sse', status: 200 },
         timeout: 5000
       },
@@ -261,7 +261,7 @@ class APIEndpointValidator {
       let liveUpdatesWorking = false;
       
       const liveUpdatePromise = new Promise((resolve) => {
-        const eventSource = new EventSource(`${BACKEND_URL}/api/live-updates/stream/${testMatch.id}`);
+        const eventSource = new EventSource(`${BACKEND_URL}/api/live-updates/${testMatch.id}/stream`);
         
         const timeout = setTimeout(() => {
           eventSource.close();

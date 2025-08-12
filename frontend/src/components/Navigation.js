@@ -298,10 +298,7 @@ function Navigation({ currentPage, navigateTo, onAuthClick, user: propUser }) {
     { id: 'rankings', label: 'Rankings' }
   ];
   
-  // Add Profile tab at the end for logged-in users
-  if (user) {
-    navigationItems.push({ id: 'profile', label: 'Profile' });
-  }
+  // Profile tab removed - looks horrible per user request
 
   // Special admin/moderator navigation items - these need to be added separately
   const specialNavItems = [];

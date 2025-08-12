@@ -1,0 +1,1139 @@
+/**
+ * Liquipedia-style Tournament System CSS
+ * Comprehensive styling for all bracket formats with responsive design
+ */
+
+/* ============================================
+   ROOT VARIABLES & COLOR SYSTEM
+   ============================================ */
+:root {
+  /* Liquipedia Brand Colors */
+  --liquipedia-blue: #006cb8;
+  --liquipedia-blue-dark: #004d87;
+  --liquipedia-blue-light: #1976d2;
+  --liquipedia-orange: #ff6600;
+  --liquipedia-orange-dark: #cc5200;
+  
+  /* Tournament Status Colors */
+  --tournament-live: #dc2626;
+  --tournament-live-glow: rgba(220, 38, 38, 0.3);
+  --tournament-upcoming: #2563eb;
+  --tournament-completed: #64748b;
+  --tournament-cancelled: #dc2626;
+  
+  /* Bracket Colors */
+  --bracket-bg: #ffffff;
+  --bracket-border: #d1d5db;
+  --bracket-match-bg: #f8fafc;
+  --bracket-match-hover: #f1f5f9;
+  --bracket-text: #1f2937;
+  --bracket-text-muted: #6b7280;
+  --bracket-connector: #9ca3af;
+  
+  /* Result Colors */
+  --winner: #059669;
+  --winner-bg: rgba(5, 150, 105, 0.1);
+  --loser: #9ca3af;
+  --loser-bg: rgba(156, 163, 175, 0.05);
+  --draw: #d97706;
+  --draw-bg: rgba(217, 119, 6, 0.1);
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.dark {
+  /* Dark Mode Tournament Colors */
+  --bracket-bg: #1f2937;
+  --bracket-border: #374151;
+  --bracket-match-bg: #374151;
+  --bracket-match-hover: #4b5563;
+  --bracket-text: #f9fafb;
+  --bracket-text-muted: #d1d5db;
+  --bracket-connector: #6b7280;
+  
+  /* Dark Mode Result Colors */
+  --winner: #10b981;
+  --winner-bg: rgba(16, 185, 129, 0.1);
+  --loser: #9ca3af;
+  --loser-bg: rgba(156, 163, 175, 0.05);
+  --draw: #f59e0b;
+  --draw-bg: rgba(245, 158, 11, 0.1);
+}
+
+/* ============================================
+   TOURNAMENT CARDS & LAYOUTS
+   ============================================ */
+
+.tournament-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.tournament-header {
+  background: linear-gradient(135deg, var(--liquipedia-blue) 0%, var(--liquipedia-blue-dark) 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.tournament-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>') repeat;
+  opacity: 0.3;
+}
+
+.tournament-card {
+  background: var(--bracket-bg);
+  border: 1px solid var(--bracket-border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.tournament-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--liquipedia-blue);
+}
+
+.tournament-card-banner {
+  height: 120px;
+  background: linear-gradient(45deg, var(--liquipedia-blue), var(--liquipedia-orange));
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  color: white;
+}
+
+.tournament-card-content {
+  padding: 1.5rem;
+}
+
+.tournament-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tournament-status.live {
+  background: var(--tournament-live);
+  color: white;
+  animation: pulse-live 2s infinite;
+}
+
+.tournament-status.upcoming {
+  background: var(--tournament-upcoming);
+  color: white;
+}
+
+.tournament-status.completed {
+  background: var(--tournament-completed);
+  color: white;
+}
+
+/* ============================================
+   BRACKET LAYOUTS
+   ============================================ */
+
+.bracket-container {
+  background: var(--bracket-bg);
+  border: 1px solid var(--bracket-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  overflow-x: auto;
+  overflow-y: visible;
+  position: relative;
+}
+
+.bracket-rounds {
+  display: flex;
+  gap: 3rem;
+  align-items: flex-start;
+  min-width: max-content;
+  padding: 1rem 0;
+}
+
+.bracket-round {
+  display: flex;
+  flex-direction: column;
+  min-width: 280px;
+  position: relative;
+}
+
+.bracket-round-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bracket-bg);
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--bracket-border);
+}
+
+.bracket-round-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--bracket-text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.bracket-round-date {
+  font-size: 0.75rem;
+  color: var(--bracket-text-muted);
+}
+
+.bracket-matches {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* ============================================
+   MATCH CARDS
+   ============================================ */
+
+.bracket-match {
+  background: var(--bracket-match-bg);
+  border: 1px solid var(--bracket-border);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.15s ease;
+  cursor: pointer;
+  position: relative;
+  min-width: 280px;
+}
+
+.bracket-match:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  background: var(--bracket-match-hover);
+}
+
+.bracket-match.live {
+  border-color: var(--tournament-live);
+  animation: pulse-glow 2s infinite;
+}
+
+.bracket-match.completed {
+  border-color: var(--winner);
+}
+
+.match-header {
+  padding: 0.5rem 0.75rem;
+  background: rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid var(--bracket-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.dark .match-header {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.match-format {
+  color: var(--bracket-text-muted);
+}
+
+.match-status {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.match-status.live {
+  color: var(--tournament-live);
+  animation: pulse-text 1.5s infinite;
+}
+
+.match-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse-dot 1.5s infinite;
+}
+
+.match-teams {
+  display: flex;
+  flex-direction: column;
+}
+
+.match-team {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  min-height: 3rem;
+  border-right: 3px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.match-team:first-child {
+  border-bottom: 1px solid var(--bracket-border);
+}
+
+.match-team.winner {
+  background: var(--winner-bg);
+  border-right-color: var(--winner);
+  font-weight: 600;
+}
+
+.match-team.loser {
+  opacity: 0.6;
+  background: var(--loser-bg);
+}
+
+.match-team.draw {
+  background: var(--draw-bg);
+  border-right-color: var(--draw);
+}
+
+.team-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.team-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--bracket-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.team-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.team-logo-placeholder {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--bracket-text-muted);
+}
+
+.team-name {
+  font-weight: 500;
+  color: var(--bracket-text);
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.team-name.placeholder {
+  font-style: italic;
+  color: var(--bracket-text-muted);
+}
+
+.team-country {
+  font-size: 0.75rem;
+  color: var(--bracket-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.team-seed {
+  background: var(--bracket-border);
+  color: var(--bracket-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  margin-right: 0.5rem;
+}
+
+.team-score {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--bracket-text);
+  min-width: 32px;
+  text-align: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--bracket-border);
+}
+
+.dark .team-score {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.team-score.winner {
+  color: var(--winner);
+  background: var(--winner-bg);
+  border-color: var(--winner);
+}
+
+.team-score.pending {
+  color: var(--bracket-text-muted);
+  font-size: 1rem;
+  font-weight: 400;
+  background: transparent;
+  border: none;
+}
+
+/* ============================================
+   BRACKET CONNECTORS
+   ============================================ */
+
+.bracket-connectors {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  width: 3rem;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.bracket-connector {
+  stroke: var(--bracket-connector);
+  stroke-width: 2;
+  fill: none;
+}
+
+.match-connector {
+  position: absolute;
+  right: -1.5rem;
+  top: 50%;
+  width: 1.5rem;
+  height: 2px;
+  background: var(--bracket-connector);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* Progressive spacing for tournament tree */
+.bracket-round:nth-child(1) .bracket-matches { gap: 1rem; }
+.bracket-round:nth-child(2) .bracket-matches { gap: 3rem; }
+.bracket-round:nth-child(3) .bracket-matches { gap: 7rem; }
+.bracket-round:nth-child(4) .bracket-matches { gap: 15rem; }
+.bracket-round:nth-child(5) .bracket-matches { gap: 31rem; }
+
+/* ============================================
+   DOUBLE ELIMINATION SPECIFIC
+   ============================================ */
+
+.double-elimination-section {
+  margin-bottom: 3rem;
+}
+
+.bracket-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.05), transparent);
+}
+
+.bracket-section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.5rem 1.5rem;
+  border-bottom: 3px solid;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bracket-section-title.upper-bracket {
+  color: var(--liquipedia-blue);
+  border-color: var(--liquipedia-blue);
+}
+
+.bracket-section-title.lower-bracket {
+  color: var(--tournament-live);
+  border-color: var(--tournament-live);
+}
+
+.bracket-section-title.grand-finals {
+  color: var(--liquipedia-orange);
+  border-color: var(--liquipedia-orange);
+}
+
+.grand-finals-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba(255, 102, 0, 0.05), rgba(0, 108, 184, 0.05));
+  border-radius: 12px;
+  border: 2px solid var(--liquipedia-orange);
+}
+
+.bracket-reset-indicator {
+  text-align: center;
+  padding: 1rem;
+  background: rgba(255, 102, 0, 0.1);
+  border-radius: 8px;
+  color: var(--liquipedia-orange);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================
+   SWISS SYSTEM SPECIFIC
+   ============================================ */
+
+.swiss-standings-table {
+  background: var(--bracket-bg);
+  border: 1px solid var(--bracket-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.swiss-standings-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.swiss-standings-table th {
+  background: rgba(0, 0, 0, 0.03);
+  padding: 0.75rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bracket-text-muted);
+  border-bottom: 1px solid var(--bracket-border);
+}
+
+.dark .swiss-standings-table th {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.swiss-standings-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  font-size: 0.875rem;
+}
+
+.dark .swiss-standings-table td {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.swiss-standings-table tr:hover {
+  background: var(--bracket-match-hover);
+}
+
+.swiss-standings-table .position {
+  font-weight: 700;
+  font-size: 1rem;
+  width: 3rem;
+  text-align: center;
+}
+
+.swiss-standings-table .team-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.swiss-standings-table .record {
+  font-weight: 600;
+}
+
+.swiss-standings-table .record .wins {
+  color: var(--winner);
+}
+
+.swiss-standings-table .record .losses {
+  color: var(--tournament-live);
+}
+
+.swiss-standings-table .record .draws {
+  color: var(--draw);
+}
+
+.qualification-status {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.qualification-status.qualified {
+  background: var(--winner-bg);
+  color: var(--winner);
+}
+
+.qualification-status.eliminated {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--tournament-live);
+}
+
+.qualification-status.safe {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--tournament-upcoming);
+}
+
+.qualification-status.danger {
+  background: var(--draw-bg);
+  color: var(--draw);
+}
+
+/* ============================================
+   ROUND ROBIN SPECIFIC
+   ============================================ */
+
+.round-robin-matrix {
+  background: var(--bracket-bg);
+  border: 1px solid var(--bracket-border);
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.round-robin-matrix table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.round-robin-matrix th,
+.round-robin-matrix td {
+  border: 1px solid var(--bracket-border);
+  text-align: center;
+  position: relative;
+}
+
+.round-robin-matrix th {
+  background: rgba(0, 0, 0, 0.03);
+  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 0.5rem;
+}
+
+.dark .round-robin-matrix th {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.round-robin-matrix td {
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.round-robin-matrix td:hover {
+  background: var(--bracket-match-hover);
+}
+
+.round-robin-matrix .team-header {
+  text-align: left;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.dark .round-robin-matrix .team-header {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.round-robin-matrix .self-match {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--bracket-text-muted);
+}
+
+.dark .round-robin-matrix .self-match {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.round-robin-matrix .match-result {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.round-robin-matrix .match-result.win {
+  background: var(--winner-bg);
+  color: var(--winner);
+}
+
+.round-robin-matrix .match-result.loss {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--tournament-live);
+}
+
+.round-robin-matrix .match-result.draw {
+  background: var(--draw-bg);
+  color: var(--draw);
+}
+
+/* ============================================
+   GSL FORMAT SPECIFIC
+   ============================================ */
+
+.gsl-group {
+  background: var(--bracket-bg);
+  border: 1px solid var(--bracket-border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.gsl-group-header {
+  background: linear-gradient(90deg, var(--liquipedia-blue), var(--liquipedia-blue-dark));
+  color: white;
+  padding: 1rem;
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+
+.gsl-bracket-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 1.5rem;
+}
+
+.gsl-phase {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.gsl-phase-header {
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--bracket-border);
+  background: var(--bracket-match-bg);
+}
+
+.gsl-phase-header.winners {
+  color: var(--winner);
+  border-color: var(--winner);
+  background: var(--winner-bg);
+}
+
+.gsl-phase-header.elimination {
+  color: var(--tournament-live);
+  border-color: var(--tournament-live);
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.gsl-phase-header.decider {
+  color: var(--liquipedia-orange);
+  border-color: var(--liquipedia-orange);
+  background: rgba(255, 102, 0, 0.1);
+}
+
+.gsl-matches-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  width: 100%;
+  max-width: 800px;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes pulse-live {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 var(--tournament-live-glow);
+  }
+  50% {
+    box-shadow: 0 0 0 4px var(--tournament-live-glow);
+  }
+}
+
+@keyframes pulse-text {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 1200px) {
+  .bracket-rounds {
+    gap: 2rem;
+  }
+  
+  .bracket-round {
+    min-width: 260px;
+  }
+  
+  .tournament-container {
+    padding: 0.75rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .bracket-rounds {
+    gap: 1.5rem;
+  }
+  
+  .bracket-round {
+    min-width: 240px;
+  }
+  
+  .bracket-match {
+    min-width: 240px;
+  }
+  
+  .team-name {
+    max-width: 140px;
+  }
+  
+  .tournament-header {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .bracket-container {
+    padding: 1rem;
+  }
+  
+  .bracket-rounds {
+    gap: 1rem;
+  }
+  
+  .bracket-round {
+    min-width: 220px;
+  }
+  
+  .bracket-match {
+    min-width: 220px;
+  }
+  
+  .team-info {
+    gap: 0.5rem;
+  }
+  
+  .team-logo {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .team-name {
+    max-width: 120px;
+    font-size: 0.8125rem;
+  }
+  
+  .team-score {
+    font-size: 1.125rem;
+    min-width: 28px;
+  }
+  
+  .match-team {
+    padding: 0.625rem;
+  }
+  
+  .tournament-header {
+    padding: 1rem;
+  }
+  
+  .tournament-card-banner {
+    height: 100px;
+  }
+  
+  /* Hide connectors on mobile for cleaner look */
+  .bracket-connectors,
+  .match-connector {
+    display: none;
+  }
+  
+  /* Simplify bracket spacing on mobile */
+  .bracket-round:nth-child(n) .bracket-matches {
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .bracket-round {
+    min-width: 200px;
+  }
+  
+  .bracket-match {
+    min-width: 200px;
+  }
+  
+  .team-name {
+    max-width: 100px;
+    font-size: 0.75rem;
+  }
+  
+  .team-score {
+    font-size: 1rem;
+    min-width: 24px;
+  }
+  
+  .match-header {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.6875rem;
+  }
+  
+  .match-team {
+    padding: 0.5rem;
+    min-height: 2.5rem;
+  }
+  
+  .tournament-header {
+    padding: 0.75rem;
+    text-align: center;
+  }
+  
+  .tournament-card-content {
+    padding: 1rem;
+  }
+  
+  /* Stack tournament stats on mobile */
+  .tournament-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  /* Simplify Swiss standings on mobile */
+  .swiss-standings-table th,
+  .swiss-standings-table td {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.75rem;
+  }
+  
+  /* Simplify round robin matrix on mobile */
+  .round-robin-matrix th,
+  .round-robin-matrix td {
+    padding: 0.25rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .bracket-round {
+    min-width: 180px;
+  }
+  
+  .bracket-match {
+    min-width: 180px;
+  }
+  
+  .team-name {
+    max-width: 80px;
+    font-size: 0.6875rem;
+  }
+  
+  .team-score {
+    font-size: 0.875rem;
+  }
+  
+  .tournament-container {
+    padding: 0.5rem;
+  }
+}
+
+/* Landscape orientation optimizations */
+@media (max-height: 500px) and (orientation: landscape) {
+  .bracket-container {
+    padding: 0.5rem;
+  }
+  
+  .bracket-round-header {
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+  }
+  
+  .bracket-matches {
+    gap: 1rem;
+  }
+  
+  .match-team {
+    padding: 0.375rem 0.5rem;
+    min-height: 2rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .tournament-container {
+    background: white;
+    color: black;
+  }
+  
+  .bracket-match {
+    border: 1px solid #ccc;
+    background: white;
+    break-inside: avoid;
+  }
+  
+  .tournament-header {
+    background: white;
+    color: black;
+    border: 2px solid #ccc;
+  }
+  
+  .bracket-connectors,
+  .match-connector {
+    display: block;
+  }
+  
+  /* Hide interactive elements in print */
+  .tournament-status.live {
+    animation: none;
+  }
+  
+  .bracket-match.live {
+    animation: none;
+  }
+}
+
+/* ============================================
+   LIVE MATCH INDICATORS - CRITICAL FIX
+   ============================================ */
+
+/* Live Match Indicator Container */
+.match-live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--tournament-live);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+/* Live Dot Container */
+.match-live-dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+}
+
+/* Animated Pulsing Ring */
+.match-live-dot-ping {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--tournament-live);
+  animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  opacity: 0.75;
+}
+
+/* Core Dot */
+.match-live-dot-core {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--tournament-live);
+  z-index: 1;
+}
+
+/* Ping Animation Keyframes */
+@keyframes ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.75;
+  }
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Dark Mode Support for Live Indicators */
+.dark .match-live-indicator {
+  color: #ef4444;
+}
+
+.dark .match-live-dot-ping,
+.dark .match-live-dot-core {
+  background: #ef4444;
+}
+
+/* Accessibility - Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .match-live-dot-ping {
+    animation: none;
+  }
+  
+  .match-live-indicator {
+    opacity: 1;
+  }
+}

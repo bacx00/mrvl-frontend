@@ -585,10 +585,9 @@ const MobileTextEditor = ({
       {showPreview && value && (
         <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
           <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Preview:</div>
-          <div 
-            className="prose dark:prose-invert max-w-none text-gray-800 dark:text-gray-200"
-            dangerouslySetInnerHTML={{ __html: value.replace(/\n/g, '<br>') }}
-          />
+          <div className="prose dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+            {value}
+          </div>
         </div>
       )}
 

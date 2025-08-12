@@ -1,4 +1,48 @@
+import React from 'react';
 import { API_CONFIG } from '../config';
+
+/**
+ * Check if a path is an external URL that should be blocked
+ */
+const isExternalUrl = (path) => {
+  if (!path || typeof path !== 'string') {
+    return false;
+  }
+  
+  // Allow our own backend URLs
+  if (path.includes('staging.mrvl.net') || path.includes('mrvl.net')) {
+    return false;
+  }
+  
+  // Block external HTTP/HTTPS URLs (but not our own)
+  if (/^https?:\/\//.test(path)) {
+    // Check if it's not our domain
+    if (!path.includes('staging.mrvl.net') && !path.includes('mrvl.net')) {
+      return true;
+    }
+    // If it IS our domain, return false to allow it
+    return false;
+  }
+  
+  // Block any URLs containing external domains
+  const blockedDomains = [
+    'liquipedia.net',
+    'liquipedia.org', 
+    'vlr.gg',
+    'hltv.org',
+    'cdn.',
+    'imgur.com',
+    'i.imgur.com'
+  ];
+  
+  for (const domain of blockedDomains) {
+    if (path.includes(domain)) {
+      return true;
+    }
+  }
+  
+  return false;
+};
 
 /**
  * CORE IMAGE URL HANDLER - This handles ALL image URLs across the website
@@ -19,6 +63,12 @@ export const getImageUrl = (imagePath, type = 'general') => {
       default:
         return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGM0Y0RjYiLz4KPHRleHQgeD0iMjAiIHk9IjI4IiBmb250LWZhbWlseT0ic3lzdGVtLXVpIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzZCNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+PzwvdGV4dD4KPC9zdmc+';
     }
+  }
+
+  // CRITICAL FIX: Block ALL external URLs including Liquipedia
+  if (typeof imagePath === 'string' && isExternalUrl(imagePath)) {
+    console.warn('🚨 External URL blocked:', imagePath, '- Using fallback for security');
+    return getImageUrl(null, type); // Return placeholder
   }
 
   // CRITICAL FIX: Handle blob URLs from image upload (temporary URLs)
@@ -75,100 +125,23 @@ export const getImageUrl = (imagePath, type = 'general') => {
 
 /**
  * Get team logo URL with proper fallback
+ * SIMPLIFIED: Backend now handles all logic, frontend just processes the response
  */
-// Enhanced team logo fallback system with Marvel Rivals themed images
 export const getTeamLogoUrl = (team) => {
-  console.log('🖼️ getTeamLogoUrl - Team:', team?.name, 'Logo path:', team?.logo);
+  // If team object has logo information from backend ImageHelper
+  if (team?.logo && typeof team.logo === 'object' && team.logo.url) {
+    console.log('🖼️ getTeamLogoUrl - Using backend ImageHelper response:', team.logo.url);
+    return getImageUrl(team.logo.url, 'team-logo');
+  }
   
-  // Remove team-specific hardcoded fallbacks - use question mark placeholder for all
-  const teamLogos = {};
-
-  // Check for specific team logo fallback first
-  if (team?.name && teamLogos[team.name]) {
-    console.log('🖼️ getTeamLogoUrl - Using specific fallback for:', team.name);
-    return teamLogos[team.name];
-  }
-
-  // Try to use the logo path from backend (if valid)
+  // If team has a simple logo path
   if (team?.logo && typeof team.logo === 'string' && team.logo.length > 0) {
-    let logoUrl = team.logo;
-    
-    // Skip blob URLs as they're invalid for our use case
-    if (logoUrl.startsWith('blob:')) {
-      console.log('🖼️ getTeamLogoUrl - Skipping blob URL:', logoUrl);
-      return getImageUrl(null, 'team-logo');
-    }
-    
-    // If it's already a full URL, use as is
-    if (logoUrl.startsWith('http')) {
-      console.log('🖼️ getTeamLogoUrl - Using full URL:', logoUrl);
-      return logoUrl;
-    }
-    
-    // CORRECT FIX: Backend paths that point to /storage/teams/logos/ are correct
-    // Backend returns: "/storage/teams/logos/sentinels-logo.png"
-    // Files are actually stored in: "/var/www/mrvl-backend/storage/app/public/teams/logos/"
-    // Accessible via: "/storage/teams/logos/" (due to storage symlink)
-    if (logoUrl.startsWith('/storage/teams/logos/')) {
-      logoUrl = `${API_CONFIG.BASE_URL}${logoUrl}`;
-      console.log('🖼️ getTeamLogoUrl - Using correct storage path:', logoUrl);
-      return logoUrl;
-    }
-    
-    // Handle other storage paths
-    if (logoUrl.startsWith('/storage/teams/')) {
-      const filename = logoUrl.replace('/storage/teams/', '');
-      logoUrl = `${API_CONFIG.BASE_URL}/teams/${filename}`;
-      console.log('🖼️ getTeamLogoUrl - Converted storage teams path:', logoUrl);
-      return logoUrl;
-    }
-    
-    // CRITICAL FIX: Team logos are in /public/teams/ directory, not /storage/
-    // Map common team names to actual logo filenames
-    const teamLogoMap = {
-      '100-thieves-logo.png': '100t-logo.png',
-      '100-thieves': '100t-logo.png',
-      '100thieves': '100t-logo.png',
-      'virtuspro-logo.png': 'virtuspro-logo.png',
-      'virtuspro': 'virtuspro-logo.png',
-      'sentinels-logo.png': 'sentinels-logo.png',
-      'sentinels': 'sentinels-logo.png',
-      'cloud9-logo.png': 'cloud9-logo.png',
-      'cloud9': 'cloud9-logo.png',
-      'fnatic-logo.png': 'fnatic-logo.png',
-      'fnatic': 'fnatic-logo.png'
-    };
-    
-    // Check if we need to map the filename
-    const fileName = logoUrl.split('/').pop(); // Get just the filename
-    if (teamLogoMap[fileName]) {
-      logoUrl = teamLogoMap[fileName];
-    } else if (teamLogoMap[logoUrl]) {
-      logoUrl = teamLogoMap[logoUrl];
-    }
-    
-    // Clean up the path to prevent double slashes
-    if (logoUrl.startsWith('/teams/')) {
-      logoUrl = `${API_CONFIG.BASE_URL}${logoUrl}`;
-    } else if (logoUrl.startsWith('teams/')) {
-      logoUrl = `${API_CONFIG.BASE_URL}/${logoUrl}`;
-    } else if (logoUrl.endsWith('-logo.png') || logoUrl.endsWith('-logo.svg')) {
-      // If it's just a filename like "sentinels-logo.png", it goes in /teams/
-      logoUrl = `${API_CONFIG.BASE_URL}/teams/${logoUrl}`;
-    } else if (logoUrl.startsWith('/')) {
-      // Default to /teams/ for team logos instead of /storage/
-      logoUrl = `${API_CONFIG.BASE_URL}/teams${logoUrl}`;
-    } else {
-      // Default to /teams/ for team logos instead of /storage/
-      logoUrl = `${API_CONFIG.BASE_URL}/teams/${logoUrl}`;
-    }
-    
-    console.log('🖼️ getTeamLogoUrl - Final URL:', logoUrl);
-    return logoUrl;
+    console.log('🖼️ getTeamLogoUrl - Using simple logo path:', team.logo);
+    return getImageUrl(team.logo, 'team-logo');
   }
-
+  
   // Generic fallback with question mark
-  console.log('🖼️ getTeamLogoUrl - Using generic fallback for:', team?.name);
+  console.log('🖼️ getTeamLogoUrl - Using fallback for team:', team?.name);
   return getImageUrl(null, 'team-logo');
 };
 
@@ -255,11 +228,18 @@ export const getEventLogoUrl = (event) => {
 
 /**
  * Get player avatar URL with proper fallback  
+ * SIMPLIFIED: Backend now handles all logic, frontend just processes the response
  */
 export const getPlayerAvatarUrl = (player) => {
   if (!player) return getImageUrl(null, 'player-avatar');
   
-  // FIXED: Check ALL possible avatar fields from backend response
+  // If player object has avatar information from backend ImageHelper
+  if (player?.avatar && typeof player.avatar === 'object' && player.avatar.url) {
+    console.log('🖼️ getPlayerAvatarUrl - Using backend ImageHelper response:', player.avatar.url);
+    return getImageUrl(player.avatar.url, 'player-avatar');
+  }
+  
+  // Check ALL possible avatar fields from backend response
   const avatarPath = player.avatar_url || player.avatarUrl || player.avatar;
   console.log('🖼️ getPlayerAvatarUrl - Player:', player.name || player.username || player.id, 'Avatar path:', avatarPath);
   
@@ -349,30 +329,44 @@ export const getEventBannerUrl = (event) => {
 
 /**
  * Get news featured image URL with fallback
+ * ENHANCED: Better debugging and error handling for news images
  */
 export const getNewsFeaturedImageUrl = (article) => {
-  if (!article) return getImageUrl(null, 'news-featured');
+  if (!article) {
+    console.log('🖼️ getNewsFeaturedImageUrl - No article provided, using fallback');
+    return getImageUrl(null, 'news-featured');
+  }
   
   const imagePath = article.featured_image_url || article.featuredImageUrl || article.image || article.featured_image;
   
+  console.log('🖼️ getNewsFeaturedImageUrl - Article:', article.title || article.id, 'Image path:', imagePath);
+  
   // CRITICAL FIX: Handle complex image objects from backend
   if (imagePath && typeof imagePath === 'object') {
+    console.log('🖼️ getNewsFeaturedImageUrl - Complex image object detected:', imagePath);
     // Backend returns: { url: "/images/news-placeholder.svg", exists: true, fallback: {...} }
     // Use the URL directly if it exists and is already complete
     const url = imagePath.url || imagePath.path || null;
     if (url && typeof url === 'string') {
       // If the URL already starts with API_CONFIG.BASE_URL or is a full URL, use as-is
       if (url.startsWith('http') || url.startsWith(API_CONFIG.BASE_URL)) {
+        console.log('🖼️ getNewsFeaturedImageUrl - Using complete URL from object:', url);
         return url;
       }
       // Otherwise, prepend the base URL to make it a complete URL
-      return `${API_CONFIG.BASE_URL}${url}`;
+      const completeUrl = `${API_CONFIG.BASE_URL}${url}`;
+      console.log('🖼️ getNewsFeaturedImageUrl - Built complete URL from object:', completeUrl);
+      return completeUrl;
     }
     // Fallback to generic placeholder handling
+    console.log('🖼️ getNewsFeaturedImageUrl - Invalid image object, using fallback');
     return getImageUrl(null, 'news-featured');
   }
   
-  return getImageUrl(imagePath, 'news-featured');
+  const finalUrl = getImageUrl(imagePath, 'news-featured');
+  console.log('🖼️ getNewsFeaturedImageUrl - Final URL:', finalUrl);
+  
+  return finalUrl;
 };
 
 /**
@@ -690,6 +684,8 @@ export const TeamLogo = ({ team, size = 'w-8 h-8', className = '' }) => {
  * This ensures consistent display across ALL pages
  */
 export const PlayerAvatar = ({ player, size = 'w-8 h-8', className = '' }) => {
+  const [imageError, setImageError] = React.useState(false);
+  
   if (!player) {
     return (
       <div className={`${size} rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-400 ${className}`}>
@@ -699,8 +695,26 @@ export const PlayerAvatar = ({ player, size = 'w-8 h-8', className = '' }) => {
   }
   
   const imageUrl = getPlayerAvatarUrl(player);
-  const playerName = player.name || player.username || player.real_name || 'Player';
-  const playerInitials = (player.username || player.name || 'P').substring(0, 2).toUpperCase();
+  const playerName = player.name || player.username || player.ign || player.real_name || 'Player';
+  // Get initials from ign, username or name
+  const getInitials = () => {
+    const nameToUse = player.ign || player.username || player.name || 'P';
+    const parts = nameToUse.split(' ');
+    if (parts.length > 1) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return nameToUse.substring(0, 2).toUpperCase();
+  };
+  const playerInitials = getInitials();
+  
+  // If image error occurred or using placeholder, show question mark fallback (same as teams)
+  if (imageError || !imageUrl || imageUrl.includes('placeholder')) {
+    return (
+      <div className={`${size} rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-lg ${className}`}>
+        ?
+      </div>
+    );
+  }
   
   return (
     <div className={`${size} rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden ${className}`}>
@@ -709,14 +723,8 @@ export const PlayerAvatar = ({ player, size = 'w-8 h-8', className = '' }) => {
         alt={playerName}
         className="w-full h-full object-cover"
         onError={(e) => {
-          // More descriptive error logging
-          if (playerName) {
-            console.log('🖼️ PlayerAvatar - Image failed to load:', imageUrl, 'for player:', playerName);
-          } else {
-            console.log('🖼️ PlayerAvatar - Image failed to load:', imageUrl, '(no player name)');
-          }
-          // Fallback to question mark placeholder
-          e.target.src = getImageUrl(null, 'player-avatar');
+          console.log('🖼️ PlayerAvatar - Image failed to load:', imageUrl, 'for player:', playerName);
+          setImageError(true);
         }}
         onLoad={() => {
           console.log('🖼️ PlayerAvatar - Image loaded successfully:', imageUrl, 'for player:', playerName);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
 
-function AdminOverview() {
+function AdminOverview({ navigateTo }) {
   const { api } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -23,6 +23,7 @@ function AdminOverview() {
       setLoading(false);
     }
   };
+
 
   if (loading) {
     return (
@@ -179,32 +180,6 @@ function AdminOverview() {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <QuickActionButton
-            label="Create Match"
-            icon="plus"
-            color="green"
-          />
-          <QuickActionButton
-            label="Add Team"
-            icon="users"
-            color="blue"
-          />
-          <QuickActionButton
-            label="New Event"
-            icon="calendar"
-            color="purple"
-          />
-          <QuickActionButton
-            label="Publish News"
-            icon="edit"
-            color="orange"
-          />
-        </div>
-      </div>
     </div>
   );
 }
@@ -271,19 +246,98 @@ function HealthIndicator({ label, status, uptime, usage, responseTime }) {
   );
 }
 
-function QuickActionButton({ label, icon, color }) {
+function BulkOperationSection({ title, icon, color, operations, selectedOps, onToggleOperation, onSelectAll, onClearAll, onExecute }) {
   const colorClasses = {
-    green: 'bg-green-600 hover:bg-green-700',
-    blue: 'bg-blue-600 hover:bg-blue-700',
-    purple: 'bg-purple-600 hover:bg-purple-700',
-    orange: 'bg-orange-600 hover:bg-orange-700'
+    blue: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-200',
+    green: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-900 dark:text-green-200',
+    purple: 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-200',
+    orange: 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800 text-orange-900 dark:text-orange-200',
+    indigo: 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200',
+    pink: 'bg-pink-50 dark:bg-pink-900/20 border-pink-200 dark:border-pink-800 text-pink-900 dark:text-pink-200'
   };
 
+  const buttonColorClasses = {
+    blue: 'bg-blue-600 hover:bg-blue-700 text-white',
+    green: 'bg-green-600 hover:bg-green-700 text-white',
+    purple: 'bg-purple-600 hover:bg-purple-700 text-white',
+    orange: 'bg-orange-600 hover:bg-orange-700 text-white',
+    indigo: 'bg-indigo-600 hover:bg-indigo-700 text-white',
+    pink: 'bg-pink-600 hover:bg-pink-700 text-white'
+  };
+
+  const allOperationIds = operations.map(op => op.id);
+  const isAllSelected = allOperationIds.length > 0 && allOperationIds.every(id => selectedOps.includes(id));
+
   return (
-    <button className={`${colorClasses[color]} text-white px-4 py-3 rounded-lg font-medium text-sm transition-colors duration-200 flex items-center justify-center space-x-2`}>
-      <IconComponent icon={icon} size={16} />
-      <span>{label}</span>
-    </button>
+    <div className={`rounded-lg border p-4 ${colorClasses[color]}`}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-2">
+          <IconComponent icon={icon} size={20} />
+          <h4 className="font-semibold text-sm">{title}</h4>
+        </div>
+        <div className="text-xs opacity-75">
+          {selectedOps.length} of {operations.length} selected
+        </div>
+      </div>
+
+      {/* Bulk Controls */}
+      <div className="flex items-center justify-between mb-3 text-xs">
+        <button
+          onClick={() => onSelectAll(allOperationIds)}
+          className="text-blue-600 dark:text-blue-400 hover:underline"
+          disabled={isAllSelected}
+        >
+          Select All
+        </button>
+        <button
+          onClick={onClearAll}
+          className="text-gray-600 dark:text-gray-400 hover:underline"
+          disabled={selectedOps.length === 0}
+        >
+          Clear All
+        </button>
+      </div>
+
+      {/* Operations List */}
+      <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
+        {operations.map((operation) => (
+          <div key={operation.id} className="flex items-start space-x-2">
+            <input
+              type="checkbox"
+              id={`${title.replace(/\s+/g, '_')}_${operation.id}`}
+              checked={selectedOps.includes(operation.id)}
+              onChange={() => onToggleOperation(operation.id)}
+              className="mt-1 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 focus:ring-2"
+            />
+            <div className="flex-1 min-w-0">
+              <label
+                htmlFor={`${title.replace(/\s+/g, '_')}_${operation.id}`}
+                className="text-xs font-medium cursor-pointer block"
+              >
+                {operation.label}
+              </label>
+              <p className="text-xs opacity-75 text-gray-600 dark:text-gray-400 mt-0.5">
+                {operation.description}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Execute Button */}
+      <button
+        onClick={onExecute}
+        disabled={selectedOps.length === 0}
+        className={`w-full px-3 py-2 rounded-md text-xs font-medium transition-colors duration-200 ${
+          selectedOps.length === 0
+            ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+            : `${buttonColorClasses[color]} hover:shadow-md`
+        }`}
+      >
+        Execute {selectedOps.length > 0 ? `(${selectedOps.length})` : ''} Operations
+      </button>
+    </div>
   );
 }
 

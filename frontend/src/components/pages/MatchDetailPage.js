@@ -7,7 +7,8 @@ import HeroImage from '../shared/HeroImage';
 import LiveScoringPanel from '../admin/LiveScoringPanel';
 import SimplifiedLiveScoring from '../admin/SimplifiedLiveScoring';
 import CommentSystemSimple from '../shared/CommentSystemSimple';
-import liveScoreManager from '../../utils/LiveScoreManager';
+import MatchComments from '../shared/MatchComments';
+import matchLiveSync from '../../utils/MatchLiveSync';
 
 // Error Boundary Component
 class MatchDetailErrorBoundary extends React.Component {
@@ -67,6 +68,29 @@ function MatchDetailPage({ matchId, navigateTo }) {
   const { user, isAuthenticated, api } = useAuth();
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://staging.mrvl.net';
   
+  // Calculate overall match score from map wins - MOVED TO TOP FOR SCOPE ACCESS
+  const calculateOverallScore = useCallback((mapsData) => {
+    if (!mapsData || mapsData.length === 0) {
+      return { team1Score: 0, team2Score: 0 };
+    }
+    
+    let team1Wins = 0;
+    let team2Wins = 0;
+    
+    mapsData.forEach(map => {
+      // Only count completed maps with definitive scores
+      if (map && (map.status === 'completed' || (map.team1_score > 0 || map.team2_score > 0))) {
+        if (map.team1_score > map.team2_score) {
+          team1Wins++;
+        } else if (map.team2_score > map.team1_score) {
+          team2Wins++;
+        }
+      }
+    });
+    
+    return { team1Score: team1Wins, team2Score: team2Wins };
+  }, []);
+  
   // Handle match updates from live scoring
   const handleMatchUpdate = useCallback((updatedData) => {
     console.log('MatchDetailPage: Handling match update:', updatedData);
@@ -84,32 +108,56 @@ function MatchDetailPage({ matchId, navigateTo }) {
     });
   }, []);
 
-  // ENHANCED: Real-time score update handler with immediate state updates
-  const handleLiveScoreUpdate = useCallback((updateData, source) => {
-    console.log(`🚀 MatchDetailPage received live update from ${source}:`, updateData);
-    
+  // ENHANCED: Comprehensive live update handler for ALL data types
+  const handleLiveScoreUpdate = useCallback((updateData, source = 'unknown') => {
     // Handle multiple data formats from different sources
     const scoreData = updateData.data || updateData;
     if (!scoreData) return;
 
-    // Use React's flushSync for immediate DOM updates (critical for live scoring)
-    React.flushSync(() => {
-      setMatch(prevMatch => {
-        if (!prevMatch) return prevMatch;
+    // Use standard setState for live updates to avoid flushSync errors
+    setMatch(prevMatch => {
+      if (!prevMatch) return prevMatch;
         
-        // Create deep copy to ensure re-render
+        // COMPREHENSIVE: Handle all update types - scores, player stats, hero selections
         const updatedMatch = {
           ...prevMatch,
-          // Update team scores with multiple format support
-          team1_score: scoreData.team1_score !== undefined ? scoreData.team1_score : 
+          // PRIORITY 1: Direct live scoring updates (series_score fields)
+          team1_score: scoreData.series_score_team1 !== undefined ? scoreData.series_score_team1 :
+                       scoreData.team1_score !== undefined ? scoreData.team1_score : 
                        scoreData.team1Score !== undefined ? scoreData.team1Score : 
-                       scoreData.series_score_team1 !== undefined ? scoreData.series_score_team1 : prevMatch.team1_score,
-          team2_score: scoreData.team2_score !== undefined ? scoreData.team2_score :
+                       prevMatch.team1_score || 0,
+          team2_score: scoreData.series_score_team2 !== undefined ? scoreData.series_score_team2 :
+                       scoreData.team2_score !== undefined ? scoreData.team2_score :
                        scoreData.team2Score !== undefined ? scoreData.team2Score :
-                       scoreData.series_score_team2 !== undefined ? scoreData.series_score_team2 : prevMatch.team2_score,
+                       prevMatch.team2_score || 0,
           
-          // Update maps data with deep merge for immediate player stats updates
-          maps: scoreData.maps ? JSON.parse(JSON.stringify(scoreData.maps)) : prevMatch.maps,
+          // ENHANCED: Update maps data with comprehensive player stats
+          maps: (() => {
+            if (scoreData.maps) {
+              return JSON.parse(JSON.stringify(scoreData.maps));
+            }
+            
+            // ADDED: Update current map with live player data if provided
+            if ((scoreData.team1_players || scoreData.team2_players) && prevMatch.maps) {
+              const updatedMaps = [...prevMatch.maps];
+              const currentMapIdx = currentMapIndex;
+              
+              if (updatedMaps[currentMapIdx]) {
+                updatedMaps[currentMapIdx] = {
+                  ...updatedMaps[currentMapIdx],
+                  // Update team compositions with live player data
+                  team1_composition: scoreData.team1_players || updatedMaps[currentMapIdx].team1_composition,
+                  team2_composition: scoreData.team2_players || updatedMaps[currentMapIdx].team2_composition,
+                  team1_players: scoreData.team1_players || updatedMaps[currentMapIdx].team1_players,
+                  team2_players: scoreData.team2_players || updatedMaps[currentMapIdx].team2_players
+                };
+              }
+              
+              return updatedMaps;
+            }
+            
+            return prevMatch.maps;
+          })(),
           
           // Update match status for immediate UI changes
           status: scoreData.status || prevMatch.status,
@@ -122,62 +170,99 @@ function MatchDetailPage({ matchId, navigateTo }) {
           live_update_timestamp: Date.now()
         };
         
-        // Force re-render of current map data if maps updated
-        if (scoreData.maps && JSON.stringify(scoreData.maps) !== JSON.stringify(prevMatch.maps)) {
-          console.log('🗺️ Maps data updated, forcing current map re-render');
-        }
-        
-        console.log('⚡ MatchDetailPage updated INSTANTLY with live data:', {
-          team1Score: updatedMatch.team1_score,
-          team2Score: updatedMatch.team2_score,
-          source,
-          eventType: updateData.eventType || updateData.type,
-          timestamp: updatedMatch.live_update_timestamp
-        });
-        
         return updatedMatch;
       });
-    });
 
     // Update current map index if specified in the update
     if (scoreData.current_map && scoreData.current_map !== currentMapIndex + 1) {
-      console.log(`🗺️ Switching to map ${scoreData.current_map}`);
-      React.flushSync(() => {
-        setCurrentMapIndex(scoreData.current_map - 1);
-      });
+      setCurrentMapIndex(scoreData.current_map - 1);
     }
   }, [currentMapIndex]);
+
+  // FIXED: Recalculate overall score only when maps data changes AND no explicit live scores exist
+  useEffect(() => {
+    if (match?.maps && match?.status !== 'live') {
+      const overallScore = calculateOverallScore(match.maps);
+      
+      // Only auto-calculate from maps if this is NOT a live match and we don't have explicit scores
+      const hasExplicitLiveScores = (match.series_score_team1 !== undefined || match.series_score_team2 !== undefined) ||
+                                    (match.team1_score > 0 || match.team2_score > 0);
+      
+      if (!hasExplicitLiveScores && (overallScore.team1Score !== match.team1_score || overallScore.team2Score !== match.team2_score)) {
+        console.log('🏆 Auto-calculating score from completed maps (non-live match):', overallScore);
+        setMatch(prevMatch => ({
+          ...prevMatch,
+          team1_score: overallScore.team1Score,
+          team2_score: overallScore.team2Score,
+          score_calculated_from_maps: true,
+          score_calculation_timestamp: Date.now()
+        }));
+      } else if (hasExplicitLiveScores) {
+        console.log('🏆 Live match with explicit scores, preserving live scores:', {
+          team1: match.team1_score,
+          team2: match.team2_score,
+          series_team1: match.series_score_team1,
+          series_team2: match.series_score_team2
+        });
+      }
+    }
+  }, [match?.maps, match?.status]);
 
   // Subscribe to live score updates when match loads
   useEffect(() => {
     const matchIdValue = getMatchId();
     
     if (matchIdValue && match) {
-      console.log(`🔔 MatchDetailPage subscribing to live updates for match ${matchIdValue}`);
+      console.log(`🔔 MatchDetailPage subscribing to efficient live updates for match ${matchIdValue}`);
       
-      const subscription = liveScoreManager.subscribe(
+      // FIXED: Subscribe to matchLiveSync for immediate local updates
+      const unsubscribeMatchLiveSync = matchLiveSync.subscribe(
         `match-detail-${matchIdValue}`,
+        parseInt(matchIdValue),
         handleLiveScoreUpdate,
         {
-          matchId: parseInt(matchIdValue),
-          updateType: 'all',
-          enableLiveConnection: true // Enable professional WebSocket/SSE connection
+          type: 'match_update'
         }
       );
 
-      // Monitor connection status
+      // ADDED: Also subscribe to LiveScoreManager for cross-component updates
+      import('../../utils/LiveScoreManager').then(({ default: liveScoreManager }) => {
+        liveScoreManager.subscribe(
+          `match-detail-page-${matchIdValue}`,
+          handleLiveScoreUpdate,
+          {
+            matchId: parseInt(matchIdValue),
+            updateType: 'all',
+            enableLiveConnection: true
+          }
+        );
+      });
+
+      // Simplified connection monitoring
       const statusInterval = setInterval(() => {
-        const status = liveScoreManager.getConnectionStatus(parseInt(matchIdValue));
-        setConnectionStatus(status);
-      }, 2000); // Check every 2 seconds
+        const status = matchLiveSync.getStatus();
+        setConnectionStatus({
+          connected: status.activeConnections > 0,
+          lastUpdate: Date.now()
+        });
+      }, 5000); // Check every 5 seconds instead of 2
       
       return () => {
         console.log(`🔕 MatchDetailPage unsubscribing from live updates for match ${matchIdValue}`);
-        liveScoreManager.unsubscribe(`match-detail-${matchIdValue}`);
+        unsubscribeMatchLiveSync();
+        
+        // Unsubscribe from LiveScoreManager
+        import('../../utils/LiveScoreManager').then(({ default: liveScoreManager }) => {
+          liveScoreManager.unsubscribe(`match-detail-page-${matchIdValue}`);
+        });
+        
         if (statusInterval) clearInterval(statusInterval);
       };
     }
   }, [match?.id, handleLiveScoreUpdate]);
+
+  // REMOVED: localStorage refresh to prevent reload loops
+  // Live updates now happen through real-time mechanisms only
 
   // Cleanup on unmount
   useEffect(() => {
@@ -227,14 +312,31 @@ function MatchDetailPage({ matchId, navigateTo }) {
         }
         
         if (matchData) {
+          // Ensure maps data is properly structured first
+          const mapsData = matchData.score?.maps || matchData.maps_data || matchData.maps || [];
+          
+          // Calculate overall score from map wins if not explicitly provided
+          const overallScore = calculateOverallScore(mapsData);
+          const hasExplicitScore = (matchData.team1_score !== undefined && matchData.team1_score !== null) || 
+                                   (matchData.score?.team1 !== undefined && matchData.score?.team1 !== null);
+          
+          console.log('🏆 Match loading - Explicit score:', hasExplicitScore, 'Calculated score:', overallScore);
+          
           // Transform API response to frontend-expected format
           const transformedMatch = {
             ...matchData,
-            // Fix score mapping: API returns score.team1/team2, frontend expects team1_score/team2_score
-            team1_score: matchData.score?.team1 ?? matchData.team1_score ?? 0,
-            team2_score: matchData.score?.team2 ?? matchData.team2_score ?? 0,
+            // FIXED: Always use direct API fields first, prioritizing live scoring fields
+            team1_score: matchData.team1_score ?? matchData.series_score_team1 ??
+                        matchData.score?.team1 ?? 
+                        (hasExplicitScore ? 0 : overallScore.team1Score),
+            team2_score: matchData.team2_score ?? matchData.series_score_team2 ??
+                        matchData.score?.team2 ?? 
+                        (hasExplicitScore ? 0 : overallScore.team2Score),
+            // Store both formats for compatibility
+            series_score_team1: matchData.series_score_team1 ?? matchData.team1_score ?? 0,
+            series_score_team2: matchData.series_score_team2 ?? matchData.team2_score ?? 0,
             // Ensure maps data is properly structured
-            maps: matchData.score?.maps || matchData.maps_data || matchData.maps || [],
+            maps: mapsData,
             // Handle URL structure: API returns broadcast object with arrays
             stream_url: matchData.broadcast?.streams?.[0] || matchData.stream_url,
             betting_url: matchData.broadcast?.betting?.[0] || matchData.betting_url, 
@@ -273,7 +375,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
     };
 
     loadMatch();
-  }, [matchId, api]);
+  }, [matchId, api, calculateOverallScore]);
 
 
   if (loading) {
@@ -973,23 +1075,11 @@ function MatchDetailPage({ matchId, navigateTo }) {
           </div>
         </div>
 
-        {/* Comments Section - Forum Style */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Match Discussion</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Share your thoughts, analysis, and reactions to this match
-            </p>
-          </div>
-          
-          <div className="p-6">
-            <CommentSystemSimple 
-              itemType="match" 
-              itemId={getMatchId()} 
-              className="space-y-4"
-            />
-          </div>
-        </div>
+        {/* Enhanced Forum-Style Match Comments */}
+        <MatchComments 
+          matchId={getMatchId()} 
+          navigateTo={navigateTo}
+        />
 
         {/* Enhanced Live Scoring Panel */}
         <SimplifiedLiveScoring

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import LiquipediaMatchCard from './LiquipediaMatchCard';
 import { TeamLogo } from '../utils/imageUtils';
+import '../styles/liquipedia-tournament.css';
 
 /**
  * Liquipedia-style Swiss System Bracket
@@ -8,6 +9,11 @@ import { TeamLogo } from '../utils/imageUtils';
  */
 function LiquipediaSwissBracket({
   bracket,
+  tournament,
+  tournamentId,
+  navigateTo,
+  isAdmin = false,
+  onMatchUpdate,
   onMatchClick,
   onTeamClick,
   hoveredMatch,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../../hooks';
 import liveScoreManager from '../../utils/LiveScoreManager';
+import { TeamLogo, getImageUrl } from '../../utils/imageUtils';
 
 function AdminMatches() {
   const { api } = useAuth();
@@ -374,12 +375,27 @@ function AdminMatches() {
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-4">
+                  {/* Event Logo */}
+                  {match.event?.logo && (
+                    <img 
+                      src={getImageUrl(match.event.logo)}
+                      alt={match.event_name}
+                      className="w-6 h-6 rounded object-cover"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  )}
                   <span className="text-sm text-gray-500 dark:text-gray-400">
                     {match.event_name || 'No Event'}
                   </span>
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(match.status)}`}>
                     {match.status || 'Unknown'}
                   </span>
+                  {match.status === 'live' && (
+                    <span className="flex items-center text-xs text-red-600 dark:text-red-400">
+                      <span className="w-2 h-2 bg-red-500 rounded-full mr-1 animate-pulse"></span>
+                      LIVE
+                    </span>
+                  )}
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">
                   {formatDate(match.scheduled_at)}
@@ -390,8 +406,11 @@ function AdminMatches() {
               <div className="flex items-center justify-between">
                 {/* Team 1 */}
                 <div className="flex-1">
-                  <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {match.team1_name || 'TBD'}
+                  <div className="flex items-center space-x-3">
+                    {match.team1 && <TeamLogo team={match.team1} size="w-8 h-8" />}
+                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {match.team1_name || 'TBD'}
+                    </div>
                   </div>
                 </div>
 
@@ -432,8 +451,11 @@ function AdminMatches() {
 
                 {/* Team 2 */}
                 <div className="flex-1 text-right">
-                  <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {match.team2_name || 'TBD'}
+                  <div className="flex items-center justify-end space-x-3">
+                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {match.team2_name || 'TBD'}
+                    </div>
+                    {match.team2 && <TeamLogo team={match.team2} size="w-8 h-8" />}
                   </div>
                 </div>
               </div>
