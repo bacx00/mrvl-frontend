@@ -311,10 +311,14 @@ export const getEventBannerUrl = (event) => {
   }
   
   // Priority 4: Use event logo as banner fallback
-  if (event.logo && event.logo !== null && event.logo.trim() !== '') {
-    const logoUrl = getEventLogoUrl(event);
-    // console.log('🖼️ getEventBannerUrl - Using logo as banner fallback:', logoUrl);
-    return logoUrl;
+  if (event.logo && event.logo !== null) {
+    // Handle both string and object logo formats
+    const logoValue = typeof event.logo === 'object' ? (event.logo.url || event.logo.path || '') : event.logo;
+    if (logoValue && typeof logoValue === 'string' && logoValue.trim() !== '') {
+      const logoUrl = getEventLogoUrl(event);
+      // console.log('🖼️ getEventBannerUrl - Using logo as banner fallback:', logoUrl);
+      return logoUrl;
+    }
   }
   
   // Priority 5: Default tournament banner based on event status

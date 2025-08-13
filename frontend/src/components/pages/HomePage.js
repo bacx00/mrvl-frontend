@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../hooks';
-import { TeamLogo, getNewsFeaturedImageUrl, getEventBannerUrl, getImageUrl } from '../../utils/imageUtils';
+import { TeamLogo, getNewsFeaturedImageUrl, getEventBannerUrl, getImageUrl, getEventLogoUrl } from '../../utils/imageUtils';
 import { formatTimeAgo, formatDateSafe } from '../../lib/utils.js';
 
 function HomePage({ navigateTo }) {
@@ -13,8 +13,10 @@ function HomePage({ navigateTo }) {
   const [bannerImageError, setBannerImageError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [dataFetched, setDataFetched] = useState(false);
-  const [matchesPage, setMatchesPage] = useState(1);
-  const matchesPerPage = 10;
+  const [upcomingPage, setUpcomingPage] = useState(1);
+  const [completedPage, setCompletedPage] = useState(1);
+  const [eventFilter, setEventFilter] = useState('live'); // 'live', 'upcoming', 'completed'
+  const matchesPerPage = 5;
 
   // Helper function to format category names
   const formatCategory = (category) => {
@@ -31,7 +33,7 @@ function HomePage({ navigateTo }) {
       'team-recruitment': 'Recruitment',
       'meta-discussion': 'Meta'
     };
-    return categoryMap[category] || 'Discussion';
+    return categoryMap[category] || '';
   };
 
   const fetchData = useCallback(async () => {
@@ -63,7 +65,7 @@ function HomePage({ navigateTo }) {
               name: match.event_name || match.event?.name || 'Marvel Rivals Championship 2025',
               tier: match.event?.tier || 'S'
             },
-            status: match.status || 'upcoming',
+            status: match.status === 'ongoing' ? 'live' : (match.status || 'upcoming'),
             format: match.format || 'BO3',
             time: match.scheduled_at 
               ? new Date(match.scheduled_at).toLocaleTimeString('en-US', { 
@@ -88,20 +90,54 @@ function HomePage({ navigateTo }) {
         const rawEvents = eventsResponse.value?.data?.data || eventsResponse.value?.data || [];
         
         if (Array.isArray(rawEvents) && rawEvents.length > 0) {
-          eventsData = rawEvents.map(event => ({
-            id: event.id,
-            name: event.name,
-            status: event.status,
-            stage: event.stage || 'Main Event',
-            prizePool: event.prize_pool || '$100,000',
-            teams: event.teams_count || 16,
-            region: event.region || 'International',
-            banner: event.banner,
-            logo: event.logo,
-            featured_image: event.featured_image,
-            banner_image: event.banner_image,
-            featured: event.featured
-          }));
+          eventsData = rawEvents.map(event => {
+            // Get prize pool from nested structure or direct field
+            let prizePoolValue = event.details?.prize_pool || event.prize_pool;
+            let formattedPrizePool = prizePoolValue;
+            
+            // If it's already formatted with $, use as is
+            if (formattedPrizePool && typeof formattedPrizePool === 'string' && formattedPrizePool.startsWith('$')) {
+              formattedPrizePool = formattedPrizePool;
+            } else if (formattedPrizePool) {
+              // Parse the amount and format it
+              const amount = parseFloat(formattedPrizePool);
+              if (!isNaN(amount)) {
+                formattedPrizePool = '$' + amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              }
+            }
+            
+            // Get format from details or direct field
+            const formatValue = event.details?.format || event.format;
+            const formatDisplay = formatValue ? formatValue.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Tournament';
+            
+            // Get dates from schedule or direct fields
+            const startDate = event.schedule?.start_date || event.start_date;
+            const endDate = event.schedule?.end_date || event.end_date;
+            
+            // Get region from details or direct field
+            const regionValue = event.details?.region || event.region || 'International';
+            
+            // Get teams count from participation or direct field
+            const teamsCount = event.participation?.max_teams || event.teams_count || 16;
+            
+            return {
+              id: event.id,
+              name: event.name,
+              status: event.status === 'ongoing' ? 'live' : event.status,
+              stage: event.stage || formatDisplay,
+              prizePool: formattedPrizePool || '$100,000',
+              teams: teamsCount,
+              region: regionValue,
+              format: formatDisplay,
+              start_date: startDate,
+              end_date: endDate,
+              banner: event.banner,
+              logo: event.logo,
+              featured_image: event.featured_image,
+              banner_image: event.banner_image,
+              featured: event.featured
+            };
+          });
           console.log('HomePage: Using REAL backend events:', eventsData.length);
         }
       }
@@ -115,10 +151,10 @@ function HomePage({ navigateTo }) {
           discussionsData = rawDiscussions.slice(0, 5).map(thread => ({
             id: thread.id,
             title: thread.title,
-            author: thread.user_name || thread.author?.name || 'MRVL User',
-            replies: thread.replies || thread.replies_count || thread.posts_count || 0,
-            lastActivity: thread.updated_at ? formatTimeAgo(thread.updated_at) : 'Recently',
-            category: formatCategory(thread.category || thread.category_slug)
+            author: thread.author?.username || thread.author?.name || thread.user_name || 'MRVL User',
+            replies: thread.stats?.replies || thread.replies || thread.replies_count || 0,
+            lastActivity: thread.meta?.last_reply_at_relative || thread.meta?.created_at_relative || (thread.updated_at ? formatTimeAgo(thread.updated_at) : 'Recently'),
+            category: formatCategory(thread.category?.name || thread.category || thread.category_slug)
           }));
         }
       }
@@ -129,7 +165,8 @@ function HomePage({ navigateTo }) {
         const rawNews = newsResponse.value?.data?.data || newsResponse.value?.data || [];
         
         if (Array.isArray(rawNews) && rawNews.length > 0) {
-          const featured = rawNews.filter(n => n.featured).slice(0, 3);
+          // Check for featured in meta object
+          const featured = rawNews.filter(n => n.meta?.featured || n.featured).slice(0, 3);
           newsData = featured.length > 0 ? featured : rawNews.slice(0, 3);
           console.log('HomePage: Using REAL backend news:', newsData.length);
         }
@@ -236,10 +273,25 @@ function HomePage({ navigateTo }) {
   const liveMatches = useMemo(() => matches.filter(m => m.status === 'live'), [matches]);
   const upcomingMatches = useMemo(() => matches.filter(m => m.status === 'upcoming'), [matches]);
   const completedMatches = useMemo(() => matches.filter(m => m.status === 'completed'), [matches]);
-  const liveEventsBanner = useMemo(() => liveEvents.filter(e => e.status === 'live'), [liveEvents]);
+  const liveEventsBanner = useMemo(() => liveEvents.filter(e => e.status === 'live' || e.status === 'ongoing'), [liveEvents]);
 
+  // Filter events based on selected filter
+  const filteredEvents = useMemo(() => {
+    switch(eventFilter) {
+      case 'live':
+        return liveEvents.filter(e => e.status === 'live' || e.status === 'ongoing');
+      case 'upcoming':
+        return liveEvents.filter(e => e.status === 'upcoming' || e.status === 'scheduled');
+      case 'completed':
+        return liveEvents.filter(e => e.status === 'completed');
+      default:
+        // Default to live events
+        return liveEvents.filter(e => e.status === 'live' || e.status === 'ongoing');
+    }
+  }, [liveEvents, eventFilter]);
+  
   // Only show banner for real featured/live events  
-  const featuredEvents = useMemo(() => liveEvents.filter(e => e.featured === true || e.status === 'live'), [liveEvents]);
+  const featuredEvents = useMemo(() => liveEvents.filter(e => e.featured === true || e.status === 'live' || e.status === 'ongoing'), [liveEvents]);
   const shouldShowBanner = featuredEvents.length > 0;
   
   console.log('HomePage: All events:', liveEvents.length);
@@ -311,11 +363,13 @@ function HomePage({ navigateTo }) {
                         <span>•</span>
                         <span>{discussion.lastActivity}</span>
                       </div>
-                      <div className="mt-1">
-                        <span className="inline-block px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded">
-                          {discussion.category}
-                        </span>
-                      </div>
+                      {discussion.category && (
+                        <div className="mt-1">
+                          <span className="inline-block px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded">
+                            {discussion.category}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))
@@ -336,45 +390,82 @@ function HomePage({ navigateTo }) {
         <div className="xl:col-span-6 space-y-4">
           {/* Events - Moved to top */}
           <div className="card">
-            <div 
-              className="px-3 py-2 border-b border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
-              onClick={() => handleNavigationClick('events')}
-            >
-              <h2 className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">
+            <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center">
+              <h2 
+                className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors px-2 -mx-2 py-1 rounded"
+                onClick={() => handleNavigationClick('events')}
+              >
                 Events
               </h2>
+              <select 
+                value={eventFilter}
+                onChange={(e) => setEventFilter(e.target.value)}
+                className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded border-0 focus:ring-2 focus:ring-red-500 outline-none cursor-pointer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <option value="live">Live</option>
+                <option value="upcoming">Upcoming</option>
+                <option value="completed">Completed</option>
+              </select>
             </div>
             <div className="divide-y divide-gray-200 dark:divide-gray-600">
-              {liveEvents.length > 0 ? (
-                liveEvents.slice(0, 5).map(event => (
-                  <div 
-                    key={event.id}
-                    className="px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
-                    onClick={() => handleEventClick(event)}
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {event.name}
+              {filteredEvents.length > 0 ? (
+                filteredEvents.slice(0, 5).map(event => {
+                  const eventLogoUrl = getEventLogoUrl(event);
+                  return (
+                    <div 
+                      key={event.id}
+                      className="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+                      onClick={() => handleEventClick(event)}
+                    >
+                      <div className="flex items-center gap-3">
+                        {/* Event Logo on Left */}
+                        <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden bg-gray-100 dark:bg-gray-700">
+                          <img 
+                            src={eventLogoUrl}
+                            alt={event.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.parentElement.innerHTML = `
+                                <div class="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-xs font-bold">
+                                  ${event.name.substring(0, 2).toUpperCase()}
+                                </div>
+                              `;
+                            }}
+                          />
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {event.region} • {event.stage}
+                        
+                        {/* Event Details */}
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                {event.name}
+                              </div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                {event.region} • {event.format || event.stage} • {event.teams} teams
+                              </div>
+                              {event.start_date && event.end_date && (
+                                <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                  {new Date(event.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(event.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-bold text-red-600 dark:text-red-400">
+                                {event.prizePool}
+                              </div>
+                              {(event.status === 'live' || event.status === 'ongoing') && (
+                                <div className="text-xs text-red-600 dark:text-red-400 font-bold animate-pulse mt-1">LIVE</div>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-bold text-red-600 dark:text-red-400">
-                          {event.prizePool}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {event.teams} teams
-                        </div>
-                        {event.status === 'live' && (
-                          <div className="text-xs text-red-600 dark:text-red-400 font-bold animate-pulse mt-1">LIVE</div>
-                        )}
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : loading ? (
                 <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                   <div className="animate-pulse">Loading events...</div>
@@ -386,78 +477,6 @@ function HomePage({ navigateTo }) {
               )}
             </div>
           </div>
-
-          {/* Live Event Banner - Show only for REAL live events */}
-          {shouldShowBanner && bannerEvent && (
-            <div 
-              className="card overflow-hidden cursor-pointer transform transition-all hover:scale-[1.01]"
-              onClick={() => handleEventClick(bannerEvent)}
-            >
-              {currentBannerUrl ? (
-                <div className="relative h-48 bg-gradient-to-br from-red-600 to-red-800">
-                  <img 
-                    src={currentBannerUrl}
-                    alt={bannerEvent.name}
-                    className={`w-full h-full object-cover transition-opacity duration-500 ${
-                      bannerImageLoaded ? 'opacity-100' : 'opacity-0'
-                    }`}
-                    onLoad={handleBannerImageLoad}
-                    onError={handleBannerImageError}
-                    loading="eager"
-                  />
-                  {!bannerImageLoaded && !bannerImageError && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-white">
-                        <div className="animate-pulse">Loading banner...</div>
-                      </div>
-                    </div>
-                  )}
-                  {bannerImageError && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-red-600 to-red-800">
-                      <div className="text-white text-center p-4">
-                        <h3 className="text-2xl font-bold mb-2">{bannerEvent.name}</h3>
-                        <p className="text-sm opacity-90">{bannerEvent.status === 'live' ? '🔴 LIVE NOW' : bannerEvent.stage}</p>
-                      </div>
-                    </div>
-                  )}
-                  {bannerEvent.status === 'live' && (
-                    <div className="absolute top-4 left-4">
-                      <span className="bg-red-600 text-white px-2 py-1 rounded text-xs font-bold animate-pulse">
-                        LIVE
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="relative h-48 bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center">
-                  <div className="text-white text-center p-4">
-                    <h3 className="text-2xl font-bold mb-2">{bannerEvent.name}</h3>
-                    <p className="text-sm opacity-90">{bannerEvent.status === 'live' ? '🔴 LIVE NOW' : bannerEvent.stage}</p>
-                    <p className="text-lg font-bold mt-2">{bannerEvent.prizePool}</p>
-                  </div>
-                  {bannerEvent.status === 'live' && (
-                    <div className="absolute top-4 left-4">
-                      <span className="bg-red-600 text-white px-2 py-1 rounded text-xs font-bold animate-pulse">
-                        LIVE
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-              <div className="p-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">{bannerEvent.name}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{bannerEvent.stage}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-red-600 dark:text-red-400">{bannerEvent.prizePool}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{bannerEvent.teams} teams</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Featured News - Normal cards with image on left */}
           <div className="card">
@@ -506,7 +525,7 @@ function HomePage({ navigateTo }) {
                           <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
                             <span>{article.author?.name || 'MRVL Staff'}</span>
                             <span>•</span>
-                            <span>{article.published_at ? formatTimeAgo(article.published_at) : 'Recently'}</span>
+                            <span>{(article.meta?.published_at || article.published_at) ? formatTimeAgo(article.meta?.published_at || article.published_at) : 'Recently'}</span>
                           </div>
                         </div>
                       </div>
@@ -529,6 +548,102 @@ function HomePage({ navigateTo }) {
 
         {/* Right Sidebar - All Matches with Pagination */}
         <div className="xl:col-span-3 space-y-4">
+          {/* Upcoming Matches */}
+          <div className="card">
+            <div 
+              className="px-3 py-2 border-b border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+              onClick={() => handleNavigationClick('matches')}
+            >
+              <h2 className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">
+                Upcoming Matches
+              </h2>
+            </div>
+            <div className="divide-y divide-gray-200 dark:divide-gray-600">
+              {(() => {
+                const startIndex = (upcomingPage - 1) * matchesPerPage;
+                const endIndex = startIndex + matchesPerPage;
+                const paginatedUpcoming = upcomingMatches.slice(startIndex, endIndex);
+                const totalPages = Math.ceil(upcomingMatches.length / matchesPerPage);
+
+                return (
+                  <>
+                    {paginatedUpcoming.length > 0 ? (
+                      paginatedUpcoming.map(match => (
+                  <div 
+                    key={match.id}
+                    className="px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+                    onClick={() => handleMatchClick(match)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="flex items-center gap-2">
+                          <TeamLogo team={match.team1} className="w-6 h-6" />
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {match.team1?.name || 'TBD'}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">vs</div>
+                        <div className="flex items-center gap-2">
+                          <TeamLogo team={match.team2} className="w-6 h-6" />
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {match.team2?.name || 'TBD'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-gray-600 dark:text-gray-400">{match.time}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{match.format}</div>
+                      </div>
+                    </div>
+                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {match.event.name}
+                    </div>
+                  </div>
+                      ))
+                    ) : loading ? (
+                      <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                        <div className="animate-pulse">Loading matches...</div>
+                      </div>
+                    ) : (
+                      <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                        No upcoming matches
+                      </div>
+                    )}
+                    
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                      <div className="px-3 py-2 flex justify-between items-center border-t border-gray-200 dark:border-gray-600">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setUpcomingPage(prev => Math.max(1, prev - 1));
+                          }}
+                          disabled={upcomingPage === 1}
+                          className="px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 dark:hover:bg-gray-600"
+                        >
+                          Previous
+                        </button>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                          Page {upcomingPage} of {totalPages}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setUpcomingPage(prev => Math.min(totalPages, prev + 1));
+                          }}
+                          disabled={upcomingPage === totalPages}
+                          className="px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 dark:hover:bg-gray-600"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+
           {/* Live Matches - Without red banner */}
           {liveMatches.length > 0 && (
             <div className="card">
@@ -576,87 +691,72 @@ function HomePage({ navigateTo }) {
             </div>
           )}
 
-          {/* All Matches with Pagination */}
+          {/* Completed Matches */}
           <div className="card">
-            <div 
-              className="px-3 py-2 border-b border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
-              onClick={() => handleNavigationClick('matches')}
-            >
-              <h2 className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">
-                All Matches
+            <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-600">
+              <h2 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                Recent Results
               </h2>
             </div>
             <div className="divide-y divide-gray-200 dark:divide-gray-600">
               {(() => {
-                // Combine upcoming and completed matches
-                const allMatches = [...upcomingMatches, ...completedMatches];
-                const startIndex = (matchesPage - 1) * matchesPerPage;
+                const startIndex = (completedPage - 1) * matchesPerPage;
                 const endIndex = startIndex + matchesPerPage;
-                const paginatedMatches = allMatches.slice(startIndex, endIndex);
-                const totalPages = Math.ceil(allMatches.length / matchesPerPage);
+                const paginatedCompleted = completedMatches.slice(startIndex, endIndex);
+                const totalPages = Math.ceil(completedMatches.length / matchesPerPage);
 
                 return (
                   <>
-                    {paginatedMatches.length > 0 ? (
-                      paginatedMatches.map(match => (
-                        <div 
-                          key={match.id}
-                          className="px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
-                          onClick={() => handleMatchClick(match)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3 flex-1">
-                              <div className="flex items-center gap-2">
-                                <TeamLogo team={match.team1} className="w-6 h-6" />
-                                <span className={`text-sm font-medium ${
-                                  match.status === 'completed' && match.team1_score > match.team2_score 
-                                    ? 'text-green-600 dark:text-green-400' 
-                                    : match.status === 'completed' 
-                                      ? 'text-gray-600 dark:text-gray-400'
-                                      : 'text-gray-900 dark:text-white'
-                                }`}>
-                                  {match.team1?.name || 'TBD'}
-                                </span>
-                              </div>
-                              <div className={`text-sm ${
-                                match.status === 'completed' 
-                                  ? 'font-bold text-gray-700 dark:text-gray-300' 
-                                  : 'text-gray-500 dark:text-gray-400'
-                              }`}>
-                                {match.status === 'completed' ? match.score : 'vs'}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <TeamLogo team={match.team2} className="w-6 h-6" />
-                                <span className={`text-sm font-medium ${
-                                  match.status === 'completed' && match.team2_score > match.team1_score 
-                                    ? 'text-green-600 dark:text-green-400' 
-                                    : match.status === 'completed'
-                                      ? 'text-gray-600 dark:text-gray-400'
-                                      : 'text-gray-900 dark:text-white'
-                                }`}>
-                                  {match.team2?.name || 'TBD'}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-xs text-gray-600 dark:text-gray-400">
-                                {match.status === 'completed' ? 'Completed' : match.time}
-                              </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">{match.format}</div>
-                            </div>
-                          </div>
-                          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            {match.event.name}
-                          </div>
+                    {paginatedCompleted.length > 0 ? (
+                      paginatedCompleted.map(match => (
+                  <div 
+                    key={match.id}
+                    className="px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+                    onClick={() => handleMatchClick(match)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="flex items-center gap-2">
+                          <TeamLogo team={match.team1} className="w-6 h-6" />
+                          <span className={`text-sm font-medium ${
+                            match.team1_score > match.team2_score 
+                              ? 'text-green-600 dark:text-green-400' 
+                              : 'text-gray-600 dark:text-gray-400'
+                          }`}>
+                            {match.team1?.name || 'TBD'}
+                          </span>
                         </div>
+                        <div className="text-lg font-bold text-gray-700 dark:text-gray-300">
+                          {match.score}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <TeamLogo team={match.team2} className="w-6 h-6" />
+                          <span className={`text-sm font-medium ${
+                            match.team2_score > match.team1_score 
+                              ? 'text-green-600 dark:text-green-400' 
+                              : 'text-gray-600 dark:text-gray-400'
+                          }`}>
+                            {match.team2?.name || 'TBD'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Completed</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{match.format}</div>
+                      </div>
+                    </div>
+                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {match.event.name}
+                    </div>
+                  </div>
                       ))
                     ) : loading ? (
                       <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                        <div className="animate-pulse">Loading matches...</div>
+                        <div className="animate-pulse">Loading results...</div>
                       </div>
                     ) : (
                       <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                        No matches available
+                        No recent results
                       </div>
                     )}
                     
@@ -666,22 +766,22 @@ function HomePage({ navigateTo }) {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setMatchesPage(prev => Math.max(1, prev - 1));
+                            setCompletedPage(prev => Math.max(1, prev - 1));
                           }}
-                          disabled={matchesPage === 1}
+                          disabled={completedPage === 1}
                           className="px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 dark:hover:bg-gray-600"
                         >
                           Previous
                         </button>
                         <span className="text-xs text-gray-600 dark:text-gray-400">
-                          Page {matchesPage} of {totalPages}
+                          Page {completedPage} of {totalPages}
                         </span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setMatchesPage(prev => Math.min(totalPages, prev + 1));
+                            setCompletedPage(prev => Math.min(totalPages, prev + 1));
                           }}
-                          disabled={matchesPage === totalPages}
+                          disabled={completedPage === totalPages}
                           className="px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 dark:hover:bg-gray-600"
                         >
                           Next
