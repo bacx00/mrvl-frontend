@@ -1,0 +1,890 @@
+/* Tablet VLR.gg-Inspired Styles - Enhanced for Marvel Rivals */
+
+/* ===================================
+   TABLET BREAKPOINTS & VARIABLES
+   =================================== */
+:root {
+  --tablet-header-height: 64px;
+  --tablet-sidebar-width: 320px;
+  --tablet-sidebar-collapsed: 64px;
+  --tablet-right-panel-width: 360px;
+  --tablet-content-padding: 24px;
+  --tablet-border-radius: 12px;
+  --tablet-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===================================
+   TABLET MEDIA QUERIES
+   =================================== */
+
+/* iPad Mini (768px - 834px) */
+@media (min-width: 768px) and (max-width: 834px) {
+  .tablet-layout-vlr {
+    --tablet-sidebar-width: 280px;
+    --tablet-right-panel-width: 320px;
+    --tablet-content-padding: 16px;
+  }
+}
+
+/* iPad Air / Pro 11" (834px - 1024px) */
+@media (min-width: 834px) and (max-width: 1024px) {
+  .tablet-layout-vlr {
+    --tablet-sidebar-width: 320px;
+    --tablet-right-panel-width: 360px;
+    --tablet-content-padding: 20px;
+  }
+}
+
+/* iPad Pro 12.9" (1024px - 1366px) */
+@media (min-width: 1024px) and (max-width: 1366px) {
+  .tablet-layout-vlr {
+    --tablet-sidebar-width: 360px;
+    --tablet-right-panel-width: 400px;
+    --tablet-content-padding: 24px;
+  }
+}
+
+/* ===================================
+   TABLET LAYOUT STRUCTURE
+   =================================== */
+.tablet-layout-vlr {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--vlr-surface);
+}
+
+/* Landscape vs Portrait */
+.tablet-layout-vlr.landscape {
+  flex-direction: row;
+}
+
+.tablet-layout-vlr.portrait {
+  flex-direction: column;
+}
+
+/* ===================================
+   TABLET HEADER
+   =================================== */
+.tablet-header-vlr {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: var(--tablet-header-height);
+  background: var(--vlr-background);
+  border-bottom: 2px solid var(--vlr-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--tablet-content-padding);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.tablet-header-left,
+.tablet-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.tablet-header-center {
+  flex: 1;
+  max-width: 500px;
+  margin: 0 24px;
+}
+
+/* Tablet Logo */
+.tablet-logo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.tablet-logo:active {
+  transform: scale(0.95);
+}
+
+/* Tablet Search Bar */
+.tablet-search-bar {
+  position: relative;
+  width: 100%;
+}
+
+.tablet-search-input {
+  width: 100%;
+  padding: 10px 16px 10px 40px;
+  background: var(--vlr-surface);
+  border: 2px solid transparent;
+  border-radius: 24px;
+  font-size: 14px;
+  color: var(--vlr-text-primary);
+  transition: all 0.2s ease;
+}
+
+.tablet-search-input:focus {
+  outline: none;
+  border-color: var(--vlr-primary);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.tablet-search-bar .search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--vlr-text-muted);
+  pointer-events: none;
+}
+
+/* Tablet Icon Buttons */
+.tablet-icon-btn,
+.tablet-menu-btn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  color: var(--vlr-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.tablet-icon-btn:hover,
+.tablet-menu-btn:hover {
+  background: var(--vlr-surface);
+}
+
+.tablet-icon-btn:active,
+.tablet-menu-btn:active {
+  transform: scale(0.95);
+  background: var(--vlr-primary);
+  color: white;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  min-width: 18px;
+  height: 18px;
+  background: var(--vlr-primary);
+  color: white;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+/* ===================================
+   CONTENT WRAPPER
+   =================================== */
+.tablet-content-wrapper {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ===================================
+   TABLET SIDEBAR
+   =================================== */
+.tablet-sidebar {
+  width: var(--tablet-sidebar-width);
+  background: var(--vlr-background);
+  border-right: 1px solid var(--vlr-border);
+  transition: var(--tablet-transition);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+}
+
+.tablet-sidebar.closed {
+  width: 0;
+  border-right: none;
+}
+
+.tablet-sidebar.open {
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.tablet-sidebar.active {
+  box-shadow: 2px 0 20px rgba(220, 38, 38, 0.1);
+}
+
+/* Sidebar Content */
+.tablet-sidebar-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-tabs {
+  display: flex;
+  background: var(--vlr-surface);
+  border-bottom: 1px solid var(--vlr-border);
+  padding: 8px;
+  gap: 8px;
+}
+
+.sidebar-tab {
+  flex: 1;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--vlr-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebar-tab:hover {
+  background: white;
+}
+
+.sidebar-tab.active {
+  background: var(--vlr-primary);
+  color: white;
+}
+
+.sidebar-section-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ===================================
+   MAIN CONTENT AREA
+   =================================== */
+.tablet-main-content {
+  flex: 1;
+  background: var(--vlr-surface);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: var(--tablet-transition);
+}
+
+.tablet-main-content.active {
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.05);
+}
+
+.tablet-content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--tablet-content-padding);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ===================================
+   RIGHT PANEL (OPTIONAL)
+   =================================== */
+.tablet-right-panel {
+  width: var(--tablet-right-panel-width);
+  background: var(--vlr-background);
+  border-left: 1px solid var(--vlr-border);
+  transition: var(--tablet-transition);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+}
+
+.tablet-right-panel.closed {
+  width: 0;
+  border-left: none;
+}
+
+.tablet-right-panel.open {
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.tablet-right-panel.active {
+  box-shadow: -2px 0 20px rgba(220, 38, 38, 0.1);
+}
+
+/* ===================================
+   LAYOUT VARIATIONS
+   =================================== */
+
+/* Single Panel Layout */
+.tablet-single-panel .tablet-sidebar,
+.tablet-single-panel .tablet-right-panel {
+  display: none;
+}
+
+.tablet-single-panel .tablet-main-content {
+  width: 100%;
+}
+
+/* Two Panel Layout */
+.tablet-two-panel.landscape .tablet-content-wrapper {
+  display: grid;
+  grid-template-columns: var(--tablet-sidebar-width) 1fr;
+}
+
+.tablet-two-panel.landscape .tablet-sidebar.closed ~ .tablet-main-content {
+  grid-column: 1 / -1;
+}
+
+.tablet-two-panel.portrait .tablet-sidebar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 60;
+}
+
+/* Three Panel Layout */
+.tablet-three-panel .tablet-content-wrapper {
+  display: grid;
+  grid-template-columns: var(--tablet-sidebar-width) 1fr var(--tablet-right-panel-width);
+}
+
+.tablet-three-panel .tablet-sidebar.closed {
+  width: var(--tablet-sidebar-collapsed);
+}
+
+.tablet-three-panel .tablet-right-panel.closed {
+  width: 0;
+}
+
+/* ===================================
+   TABLET RANKINGS LIST
+   =================================== */
+.tablet-rankings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ranking-item-tablet {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: white;
+  border: 1px solid var(--vlr-border);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.ranking-item-tablet:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.ranking-item-tablet .rank {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--vlr-text-muted);
+  min-width: 40px;
+}
+
+.ranking-item-tablet .team-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vlr-text-primary);
+  margin: 0 12px;
+}
+
+.ranking-item-tablet .points {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--vlr-primary);
+  margin-right: 8px;
+}
+
+.ranking-item-tablet .change {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ranking-item-tablet .change.up {
+  color: var(--vlr-success);
+}
+
+.ranking-item-tablet .change.down {
+  color: var(--vlr-primary);
+}
+
+.ranking-item-tablet .change.same {
+  color: var(--vlr-text-muted);
+}
+
+/* ===================================
+   TABLET EVENTS LIST
+   =================================== */
+.tablet-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.event-card-tablet {
+  background: white;
+  border: 1px solid var(--vlr-border);
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.event-card-tablet:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.event-card-tablet .event-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.event-card-tablet .event-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--vlr-text-primary);
+}
+
+.event-card-tablet .event-status {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.event-card-tablet .event-status.ongoing {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--vlr-success);
+}
+
+.event-card-tablet .event-status.upcoming {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--vlr-accent);
+}
+
+.event-card-tablet .event-details {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--vlr-text-secondary);
+}
+
+/* ===================================
+   SPLIT VIEW COMPONENT
+   =================================== */
+.tablet-split-view {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.split-panel {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.split-panel.left {
+  background: var(--vlr-background);
+  border-right: 1px solid var(--vlr-border);
+}
+
+.split-panel.right {
+  flex: 1;
+  background: var(--vlr-surface);
+}
+
+.split-panel.collapsed {
+  width: 0 !important;
+  overflow: hidden;
+}
+
+.split-panel.expanded {
+  width: 100% !important;
+}
+
+.split-divider {
+  width: 8px;
+  height: 100%;
+  background: var(--vlr-border);
+  cursor: col-resize;
+  position: relative;
+  user-select: none;
+  touch-action: none;
+  transition: background 0.2s ease;
+}
+
+.split-divider:hover {
+  background: var(--vlr-primary);
+}
+
+.divider-handle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--vlr-text-muted);
+  opacity: 0.3;
+}
+
+.collapse-toggle {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 32px;
+  height: 32px;
+  background: var(--vlr-primary);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+  transition: all 0.2s ease;
+}
+
+.collapse-toggle:hover {
+  transform: scale(1.1);
+}
+
+.collapse-toggle:active {
+  transform: scale(0.95);
+}
+
+/* ===================================
+   TABLET MATCH CARDS
+   =================================== */
+@media (min-width: 768px) and (max-width: 1366px) {
+  .mobile-match-card-vlr {
+    margin: 12px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .mobile-match-card-vlr:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  .match-teams-section {
+    padding: 16px;
+  }
+
+  .team-row-mobile {
+    padding: 12px 0;
+  }
+
+  .team-logo-mobile {
+    width: 36px;
+    height: 36px;
+  }
+
+  .team-name-mobile {
+    font-size: 16px;
+  }
+
+  .team-score-mobile {
+    font-size: 22px;
+  }
+}
+
+/* ===================================
+   TABLET TOURNAMENT BRACKETS
+   =================================== */
+@media (min-width: 768px) and (max-width: 1366px) {
+  .mobile-bracket-container-vlr {
+    height: calc(100vh - var(--tablet-header-height));
+    background: var(--vlr-surface);
+  }
+
+  .mobile-bracket-content {
+    padding: 24px;
+    gap: 24px;
+  }
+
+  .mobile-bracket-round {
+    min-width: 320px;
+  }
+
+  .bracket-match-mobile {
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .bracket-match-mobile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Zoom controls for tablet */
+  .mobile-zoom-controls {
+    bottom: 32px;
+    right: 32px;
+  }
+
+  .zoom-btn {
+    width: 52px;
+    height: 52px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* ===================================
+   TABLET PLAYER/TEAM PROFILES
+   =================================== */
+@media (min-width: 768px) and (max-width: 1366px) {
+  .mobile-player-header {
+    padding: 32px 24px;
+  }
+
+  .player-avatar-large {
+    width: 100px;
+    height: 100px;
+  }
+
+  .player-name-large {
+    font-size: 28px;
+  }
+
+  .mobile-player-stats {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding: 24px;
+  }
+
+  .stat-card-mobile {
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .stat-value {
+    font-size: 28px;
+  }
+}
+
+/* ===================================
+   TABLET FORUMS
+   =================================== */
+@media (min-width: 768px) and (max-width: 1366px) {
+  .mobile-forum-container {
+    padding: 16px;
+  }
+
+  .mobile-thread-card {
+    margin-bottom: 12px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .mobile-thread-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  .thread-header-mobile {
+    padding: 16px;
+  }
+
+  .thread-title-mobile {
+    font-size: 16px;
+  }
+
+  .thread-footer-mobile {
+    padding: 12px 16px;
+  }
+}
+
+/* ===================================
+   TABLET GESTURE SUPPORT
+   =================================== */
+@media (min-width: 768px) and (max-width: 1366px) {
+  /* Enhanced touch targets for tablets */
+  .touch-optimized {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  /* Swipe gestures */
+  .swipe-enabled {
+    touch-action: pan-y;
+  }
+
+  /* Pinch to zoom */
+  .zoom-enabled {
+    touch-action: pinch-zoom;
+  }
+
+  /* Smooth scrolling */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+}
+
+/* ===================================
+   TABLET PERFORMANCE OPTIMIZATIONS
+   =================================== */
+@media (min-width: 768px) and (max-width: 1366px) {
+  /* Hardware acceleration */
+  .tablet-optimized {
+    transform: translateZ(0);
+    will-change: transform;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Content visibility for performance */
+  .tablet-content-visibility {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 800px;
+  }
+
+  /* Reduce animations for better performance */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* ===================================
+   DARK MODE SUPPORT FOR TABLETS
+   =================================== */
+@media (min-width: 768px) and (max-width: 1366px) {
+  @media (prefers-color-scheme: dark) {
+    .tablet-layout-vlr {
+      background: var(--vlr-dark-background);
+    }
+
+    .tablet-header-vlr {
+      background: var(--vlr-dark-surface);
+      border-bottom-color: var(--vlr-primary-dark);
+    }
+
+    .tablet-sidebar,
+    .tablet-right-panel {
+      background: var(--vlr-dark-surface);
+      border-color: var(--vlr-dark-border);
+    }
+
+    .tablet-main-content {
+      background: var(--vlr-dark-background);
+    }
+
+    .tablet-search-input {
+      background: var(--vlr-dark-background);
+      color: var(--vlr-dark-text-primary);
+    }
+
+    .tablet-search-input:focus {
+      background: var(--vlr-dark-surface);
+    }
+  }
+}
+
+/* ===================================
+   ORIENTATION-SPECIFIC STYLES
+   =================================== */
+
+/* Portrait Orientation */
+@media (min-width: 768px) and (max-width: 1366px) and (orientation: portrait) {
+  .tablet-layout-vlr.portrait {
+    /* Hide sidebar by default in portrait */
+  }
+
+  .tablet-layout-vlr.portrait .tablet-sidebar {
+    position: fixed;
+    left: 0;
+    top: var(--tablet-header-height);
+    bottom: 0;
+    z-index: 60;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .tablet-layout-vlr.portrait .tablet-sidebar.closed {
+    transform: translateX(-100%);
+  }
+
+  .tablet-layout-vlr.portrait .tablet-main-content {
+    width: 100%;
+  }
+}
+
+/* Landscape Orientation */
+@media (min-width: 768px) and (max-width: 1366px) and (orientation: landscape) {
+  .tablet-layout-vlr.landscape {
+    /* Optimize for side-by-side view */
+  }
+
+  .tablet-layout-vlr.landscape .tablet-content-wrapper {
+    display: grid;
+    grid-template-columns: var(--tablet-sidebar-width) 1fr;
+  }
+
+  .tablet-layout-vlr.landscape .tablet-header-vlr {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ===================================
+   IPAD SPECIFIC OPTIMIZATIONS
+   =================================== */
+
+/* iPad Pro 12.9" specific */
+@media only screen 
+  and (min-device-width: 1024px) 
+  and (max-device-width: 1366px) 
+  and (-webkit-min-device-pixel-ratio: 2) {
+  
+  .tablet-layout-vlr {
+    --tablet-sidebar-width: 400px;
+    --tablet-right-panel-width: 440px;
+  }
+
+  /* Larger touch targets for iPad Pro */
+  .touch-optimized {
+    min-height: 52px;
+    min-width: 52px;
+  }
+
+  /* Enhanced grid layouts */
+  .mobile-player-stats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

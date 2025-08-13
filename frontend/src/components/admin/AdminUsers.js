@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../../hooks';
 import { getUserAvatarUrl, getHeroImageSync } from '../../utils/imageUtils';
 
@@ -28,7 +28,11 @@ function AdminUsers() {
     email: '',
     password: '',
     role: 'user',
-    status: 'active'
+    status: 'active',
+    hero_flair: '',
+    team_flair_id: '',
+    show_hero_flair: true,
+    show_team_flair: false
   });
   const [formErrors, setFormErrors] = useState({});
   const [formLoading, setFormLoading] = useState(false);
@@ -37,11 +41,30 @@ function AdminUsers() {
   const [selectedUsers, setSelectedUsers] = useState(new Set());
   const [showBulkActions, setShowBulkActions] = useState(false);
 
+  // Heroes data
+  const [heroes, setHeroes] = useState([]);
+  const [heroesLoading, setHeroesLoading] = useState(false);
+
   useEffect(() => {
     fetchUsers();
+    fetchHeroes();
   }, []);
 
-  const fetchUsers = async (page = 1, limit = 50) => {
+  const fetchHeroes = async () => {
+    try {
+      setHeroesLoading(true);
+      const response = await api.get('/heroes');
+      const heroesData = response?.data?.data || response?.data || response || [];
+      setHeroes(Array.isArray(heroesData) ? heroesData : []);
+    } catch (err) {
+      console.error('Error fetching heroes:', err);
+      setHeroes([]);
+    } finally {
+      setHeroesLoading(false);
+    }
+  };
+
+  const fetchUsers = useCallback(async (page = 1, limit = 50) => {
     try {
       setLoading(true);
       setError(null);
@@ -56,7 +79,7 @@ function AdminUsers() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [api]);
 
   const filteredUsers = useMemo(() => {
     let filtered = [...users];
@@ -162,7 +185,11 @@ function AdminUsers() {
       email: '',
       password: '',
       role: 'user',
-      status: 'active'
+      status: 'active',
+      hero_flair: '',
+      team_flair_id: '',
+      show_hero_flair: true,
+      show_team_flair: false
     });
     setFormErrors({});
     setShowCreateModal(true);
@@ -175,7 +202,11 @@ function AdminUsers() {
       email: user.email || '',
       password: '', // Don't prefill password
       role: user.role || 'user',
-      status: user.status || 'active'
+      status: user.status || 'active',
+      hero_flair: user.hero_flair || '',
+      team_flair_id: user.team_flair_id || '',
+      show_hero_flair: user.show_hero_flair ?? true,
+      show_team_flair: user.show_team_flair ?? false
     });
     setFormErrors({});
     setShowEditModal(true);
@@ -196,7 +227,11 @@ function AdminUsers() {
       email: '',
       password: '',
       role: 'user',
-      status: 'active'
+      status: 'active',
+      hero_flair: '',
+      team_flair_id: '',
+      show_hero_flair: true,
+      show_team_flair: false
     });
     setFormErrors({});
   };
@@ -673,6 +708,11 @@ function AdminUsers() {
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
                           {user.name}
+                          {user.hero_flair && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+                              {user.hero_flair}
+                            </span>
+                          )}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
                           {user.email}
@@ -886,6 +926,36 @@ function AdminUsers() {
                 </select>
                 {formErrors.status && <p className="text-red-500 text-xs mt-1">{formErrors.status}</p>}
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Hero Avatar
+                </label>
+                <select
+                  value={formData.hero_flair}
+                  onChange={(e) => setFormData({...formData, hero_flair: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                >
+                  <option value="">No Hero Selected</option>
+                  {heroes.map(hero => (
+                    <option key={hero.name} value={hero.name}>
+                      {hero.name}
+                    </option>
+                  ))}
+                </select>
+                {formErrors.hero_flair && <p className="text-red-500 text-xs mt-1">{formErrors.hero_flair}</p>}
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="create_show_hero_flair"
+                  checked={formData.show_hero_flair}
+                  onChange={(e) => setFormData({...formData, show_hero_flair: e.target.checked})}
+                  className="mr-2"
+                />
+                <label htmlFor="create_show_hero_flair" className="text-sm text-gray-700 dark:text-gray-300">
+                  Show hero avatar publicly
+                </label>
+              </div>
               <div className="flex justify-end space-x-3 pt-4">
                 <button
                   type="button"
@@ -990,6 +1060,36 @@ function AdminUsers() {
                 </select>
                 {formErrors.status && <p className="text-red-500 text-xs mt-1">{formErrors.status}</p>}
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Hero Avatar
+                </label>
+                <select
+                  value={formData.hero_flair}
+                  onChange={(e) => setFormData({...formData, hero_flair: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                >
+                  <option value="">No Hero Selected</option>
+                  {heroes.map(hero => (
+                    <option key={hero.name} value={hero.name}>
+                      {hero.name}
+                    </option>
+                  ))}
+                </select>
+                {formErrors.hero_flair && <p className="text-red-500 text-xs mt-1">{formErrors.hero_flair}</p>}
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="edit_show_hero_flair"
+                  checked={formData.show_hero_flair}
+                  onChange={(e) => setFormData({...formData, show_hero_flair: e.target.checked})}
+                  className="mr-2"
+                />
+                <label htmlFor="edit_show_hero_flair" className="text-sm text-gray-700 dark:text-gray-300">
+                  Show hero avatar publicly
+                </label>
+              </div>
               <div className="flex justify-end space-x-3 pt-4">
                 <button
                   type="button"
@@ -1026,11 +1126,16 @@ function AdminUsers() {
             </div>
             <div className="space-y-4">
               <div className="text-center">
-                <div className="h-16 w-16 mx-auto rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold text-xl mb-3">
-                  {(selectedUser.name || selectedUser.email || '?')[0].toUpperCase()}
+                <div className="h-16 w-16 mx-auto mb-3">
+                  <UserAvatar user={selectedUser} navigateToProfile={() => {}} />
                 </div>
                 <h4 className="text-xl font-semibold text-gray-900 dark:text-white">{selectedUser.name}</h4>
                 <p className="text-gray-600 dark:text-gray-400">{selectedUser.email}</p>
+                {selectedUser.hero_flair && (
+                  <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                    Hero: {selectedUser.hero_flair}
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div>
@@ -1114,13 +1219,13 @@ function UserAvatar({ user, navigateToProfile }) {
   // Check if user has a hero avatar selected
   let avatarUrl = null;
   
-  // First check if user has selected a hero
-  if (user.selected_hero || user.hero_name) {
-    const heroName = user.selected_hero || user.hero_name;
-    const heroImage = getHeroImageSync(heroName);
-    if (heroImage) {
-      avatarUrl = heroImage;
-      console.log('👤 Using hero avatar for user:', user.name, 'Hero:', heroName);
+  // First check if user has selected a hero (hero_flair field from backend)
+  if (user.hero_flair && user.show_hero_flair !== false) {
+    const heroImageFilename = getHeroImageSync(user.hero_flair);
+    if (heroImageFilename) {
+      // getHeroImageSync returns filename, need to construct full URL
+      avatarUrl = `/images/heroes/${heroImageFilename}`;
+      console.log('👤 Using hero avatar for user:', user.name, 'Hero:', user.hero_flair, 'URL:', avatarUrl);
     }
   }
   

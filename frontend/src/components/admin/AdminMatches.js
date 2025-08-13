@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../../hooks';
-import liveScoreManager from '../../utils/LiveScoreManager';
 import { TeamLogo, getImageUrl } from '../../utils/imageUtils';
 
 function AdminMatches() {
@@ -86,61 +85,8 @@ function AdminMatches() {
     setCurrentPage(1);
   }, [filters]);
 
-  // ENHANCED: Real-time score update handler for AdminMatches
-  const handleLiveScoreUpdate = useCallback((updateData, source) => {
-    console.log(`👨‍💼 AdminMatches received live update from ${source}:`, updateData);
-    
-    if (!updateData.data || !updateData.matchId) return;
-
-    const { matchId, data: scoreData } = updateData;
-    
-    setMatches(prevMatches => {
-      return prevMatches.map(match => {
-        if (match.id === matchId) {
-          const updatedMatch = {
-            ...match,
-            // Update scores
-            team1_score: scoreData.team1_score !== undefined ? scoreData.team1_score : match.team1_score,
-            team2_score: scoreData.team2_score !== undefined ? scoreData.team2_score : match.team2_score,
-            // Update status if provided
-            status: scoreData.status || match.status,
-            // Update maps if provided
-            maps_data: scoreData.maps || match.maps_data
-          };
-          
-          console.log(`✅ AdminMatches updated match ${matchId} with live scores:`, {
-            team1: updatedMatch.team1_score,
-            team2: updatedMatch.team2_score,
-            source
-          });
-          
-          return updatedMatch;
-        }
-        return match;
-      });
-    });
-  }, []);
-
-  // Subscribe to live score updates for admin matches
-  useEffect(() => {
-    if (matches.length > 0) {
-      console.log(`🔔 AdminMatches subscribing to live updates for ${matches.length} matches`);
-      
-      // Subscribe to updates for all matches
-      const subscription = liveScoreManager.subscribe(
-        'admin-matches',
-        handleLiveScoreUpdate,
-        {
-          updateType: 'all' // Admin needs all updates including status changes
-        }
-      );
-      
-      return () => {
-        console.log('🔕 AdminMatches unsubscribing from live updates');
-        liveScoreManager.unsubscribe('admin-matches');
-      };
-    }
-  }, [matches.length, handleLiveScoreUpdate]);
+  // AdminMatches shows static match list - no live updates needed
+  // Live updates are only between MatchDetailPage ↔ SimplifiedLiveScoring
 
   const handleDeleteMatch = async (matchId, matchName) => {
     if (window.confirm(`Are you sure you want to delete match "${matchName}"? This action cannot be undone.`)) {

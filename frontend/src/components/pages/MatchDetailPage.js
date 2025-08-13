@@ -199,38 +199,19 @@ function MatchDetailPage({ matchId, navigateTo }) {
         }
       );
 
-      // ADDED: Also subscribe to LiveScoreManager for cross-component updates
-      import('../../utils/LiveScoreManager').then(({ default: liveScoreManager }) => {
-        liveScoreManager.subscribe(
-          `match-detail-page-${matchIdValue}`,
-          handleLiveScoreUpdate,
-          {
-            matchId: parseInt(matchIdValue),
-            updateType: 'all',
-            enableLiveConnection: true
-          }
-        );
-      });
+      // Pure localStorage sync only
 
-      // Simplified connection monitoring
-      const statusInterval = setInterval(() => {
-        const status = matchLiveSync.getStatus();
-        setConnectionStatus({
-          connected: status.activeConnections > 0,
-          lastUpdate: Date.now()
-        });
-      }, 5000); // Check every 5 seconds instead of 2
+      // Set connected status for localStorage sync
+      setConnectionStatus({
+        connected: true,
+        lastUpdate: Date.now()
+      });
       
       return () => {
         console.log(`🔕 MatchDetailPage unsubscribing from live updates for match ${matchIdValue}`);
         unsubscribeMatchLiveSync();
         
-        // Unsubscribe from LiveScoreManager
-        import('../../utils/LiveScoreManager').then(({ default: liveScoreManager }) => {
-          liveScoreManager.unsubscribe(`match-detail-page-${matchIdValue}`);
-        });
-        
-        if (statusInterval) clearInterval(statusInterval);
+        // Clean localStorage only
       };
     }
   }, [match?.id, handleLiveScoreUpdate]);

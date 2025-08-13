@@ -1,18 +1,25 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useAuth } from '../../hooks';
+import { usePerformanceOptimization } from '../../hooks/usePerformanceOptimization';
 import { TeamLogo } from '../../utils/imageUtils';
 
 function TeamsPage({ navigateTo }) {
   const [teams, setTeams] = useState([]);
   const [selectedRegion, setSelectedRegion] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
   const { api } = useAuth();
+  
+  // Performance optimization hook
+  const { debouncedCallback, deduplicatedApiCall } = usePerformanceOptimization();
 
   const fetchTeams = useCallback(async () => {
     try {
+      setLoading(true);
       console.log('🔍 TeamsPage: Fetching teams from real API...');
       
-      const response = await api.get('/teams');
+      // Use API deduplication to prevent multiple simultaneous requests
+      const response = await deduplicatedApiCall('teams', () => api.get('/teams'));
       
       let teamsData = response?.data?.data || response?.data || response || [];
       console.log('✅ TeamsPage: Real teams data received:', teamsData.length, 'teams');
@@ -52,12 +59,21 @@ function TeamsPage({ navigateTo }) {
       console.error('❌ TeamsPage: Error fetching teams:', error);
       // NO MOCK DATA - Set empty array on error
       setTeams([]);
+    } finally {
+      setLoading(false);
     }
-  }, [api]);
+  }, [api, deduplicatedApiCall]);
 
   useEffect(() => {
     fetchTeams();
   }, [fetchTeams]);
+
+  // Debounced search handler
+  const handleSearchChange = useCallback((value) => {
+    debouncedCallback('search', () => {
+      setSearchTerm(value);
+    }, 300);
+  }, [debouncedCallback]);
 
   // Helper function to get country flag emoji
   const getCountryFlag = (country) => {
@@ -112,7 +128,7 @@ function TeamsPage({ navigateTo }) {
               type="text"
               placeholder="Search by team name..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
@@ -132,9 +148,19 @@ function TeamsPage({ navigateTo }) {
         </div>
       </div>
 
-      {/* Teams Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-        {filteredTeams.map(team => (
+      {/* Loading State */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading teams...</p>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Teams Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+            {filteredTeams.map(team => (
           <div key={team.id} className="glass rounded-xl p-6 hover:transform hover:scale-105 transition-all duration-300">
             <div className="text-center mb-6">
               {/* FIXED: Use proper TeamLogo component - NO EMOJIS */}
@@ -258,21 +284,23 @@ function TeamsPage({ navigateTo }) {
             </div>
           </div>
         ))}
-      </div>
+          </div>
 
-      {filteredTeams.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-gray-500 dark:text-gray-400 mb-4">No teams found matching your criteria</div>
-          <button 
-            onClick={() => {
-              setSearchTerm('');
-              setSelectedRegion('all');
-            }}
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Clear filters
-          </button>
-        </div>
+          {filteredTeams.length === 0 && !loading && (
+            <div className="text-center py-12">
+              <div className="text-gray-500 dark:text-gray-400 mb-4">No teams found matching your criteria</div>
+              <button 
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedRegion('all');
+                }}
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

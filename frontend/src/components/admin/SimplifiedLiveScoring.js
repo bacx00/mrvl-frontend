@@ -5,7 +5,6 @@ import { useAuth } from '../../hooks';
 import { HEROES } from '../../constants/marvelRivalsData';
 import { getHeroImageSync, getHeroRole, getTeamLogoUrl } from '../../utils/imageUtils';
 import matchLiveSync from '../../utils/MatchLiveSync';
-import liveScoreManager from '../../utils/LiveScoreManager';
 
 // Error Boundary Component
 class LiveScoringErrorBoundary extends React.Component {
@@ -108,10 +107,7 @@ const SimplifiedLiveScoring = ({
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
-      // Unsubscribe from LiveScoreManager
-      if (match?.id) {
-        liveScoreManager.unsubscribe(`simplified-live-scoring-${match.id}`);
-      }
+      // Clean up localStorage sync only
     };
   }, [match?.id]);
 
@@ -346,33 +342,13 @@ const SimplifiedLiveScoring = ({
         
         setLastUpdate(new Date().toLocaleTimeString());
         
-        // FIXED: Broadcast real-time update through LiveScoreManager to immediately update MatchDetailPage
-        liveScoreManager.broadcastScoreUpdate(match.id, result.data || dataToSave, {
-          source: 'SimplifiedLiveScoring',
-          version: matchVersionRef.current,
-          type: 'live_score_update',
-          timestamp: now
-        });
-        
-        // ADDED: Also broadcast via matchLiveSync for immediate component communication
-        matchLiveSync.broadcastUpdate(match.id, {
+        // Simple localStorage broadcast only
+        matchLiveSync.broadcast(match.id, {
           type: 'score_update',
           data: result.data || dataToSave,
           source: 'SimplifiedLiveScoring',
           timestamp: now
         });
-        
-        // CRITICAL: Broadcast via localStorage for cross-tab and fallback sync
-        if (window.localStorage) {
-          const broadcastData = {
-            ...validatedData,
-            matchId: match.id,
-            timestamp: now,
-            source: 'SimplifiedLiveScoring'
-          };
-          localStorage.setItem(`live_match_${match.id}`, JSON.stringify(broadcastData));
-          localStorage.setItem(`match_${match.id}_updated`, now.toString());
-        }
         
       } catch (error) {
         console.error('Debounced save error:', error);

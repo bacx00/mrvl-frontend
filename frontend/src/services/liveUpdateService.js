@@ -680,13 +680,25 @@ class LiveUpdateService {
 }
 
 // Create singleton instance
-const liveUpdateService = new LiveUpdateService();
+// Disabled to improve performance - not needed for current implementation
+// const liveUpdateService = new LiveUpdateService();
 
-// Export both instance and class
-export default liveUpdateService;
+// Export a stub that does nothing to prevent errors
+const liveUpdateServiceStub = {
+  subscribe: () => {},
+  unsubscribe: () => {},
+  subscribeToMatch: () => {},
+  unsubscribeFromMatch: () => {},
+  subscribeToBracket: () => {},
+  unsubscribeFromBracket: () => {},
+  subscribeToForum: () => {},
+  unsubscribeFromForum: () => {},
+  cleanup: () => {},
+  reconnect: () => {},
+  getConnectionState: () => 'disabled',
+  isConnected: () => false
+};
+
+// Export stub instead of real service
+export default liveUpdateServiceStub;
 export { LiveUpdateService, CONNECTION_STATES, TRANSPORT_TYPES };
-
-// For debugging in browser console
-if (typeof window !== 'undefined') {
-  window.liveUpdateService = liveUpdateService;
-}

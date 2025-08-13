@@ -1,0 +1,336 @@
+{
+  "summary": {
+    "totalTests": 63,
+    "successful": 3,
+    "warnings": 20,
+    "errors": 17,
+    "timestamp": "2025-08-13T07:18:44.784Z"
+  },
+  "testResults": [
+    {
+      "timestamp": "2025-08-13T07:18:42.520Z",
+      "type": "test",
+      "message": "🔐 Testing user registration with different hero avatars..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:42.706Z",
+      "type": "error",
+      "message": "❌ User registration failed: Admin Test User - The route api/register could not be found."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:42.772Z",
+      "type": "error",
+      "message": "❌ User registration failed: Moderator Test User - The route api/register could not be found."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:42.839Z",
+      "type": "error",
+      "message": "❌ User registration failed: Regular Test User - The route api/register could not be found."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:42.913Z",
+      "type": "error",
+      "message": "❌ User registration failed: VIP Test User - The route api/register could not be found."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:42.914Z",
+      "type": "test",
+      "message": "🔒 Testing password strength validation..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:42.967Z",
+      "type": "warning",
+      "message": "⚠️  Weak password accepted: \"password\""
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.052Z",
+      "type": "warning",
+      "message": "⚠️  Weak password accepted: \"Password\""
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.116Z",
+      "type": "warning",
+      "message": "⚠️  Weak password accepted: \"Password1\""
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.193Z",
+      "type": "warning",
+      "message": "⚠️  Weak password accepted: \"12345678\""
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.252Z",
+      "type": "warning",
+      "message": "⚠️  Weak password accepted: \"P@ss\""
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.301Z",
+      "type": "warning",
+      "message": "⚠️  Weak password accepted: \"\""
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.301Z",
+      "type": "test",
+      "message": "🔑 Testing login flow and session management..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.301Z",
+      "type": "test",
+      "message": "🚫 Testing login rate limiting..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.691Z",
+      "type": "warning",
+      "message": "⚠️  Rate limiting may not be working properly"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.691Z",
+      "type": "test",
+      "message": "🔄 Testing password reset flow..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.691Z",
+      "type": "test",
+      "message": "👥 Testing role-based access control..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.691Z",
+      "type": "test",
+      "message": "🔐 Testing unauthenticated access restrictions..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.781Z",
+      "type": "success",
+      "message": "✅ unauthenticated correctly denied access to /admin/users"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.833Z",
+      "type": "error",
+      "message": "Request failed: Unexpected token < in JSON at position 0"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.833Z",
+      "type": "warning",
+      "message": "⚠️  unauthenticated may have unauthorized access to /admin/roles"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.875Z",
+      "type": "error",
+      "message": "Request failed: Unexpected token < in JSON at position 0"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.875Z",
+      "type": "warning",
+      "message": "⚠️  unauthenticated may have unauthorized access to /admin/permissions"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.927Z",
+      "type": "error",
+      "message": "Request failed: Unexpected token < in JSON at position 0"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.927Z",
+      "type": "warning",
+      "message": "⚠️  unauthenticated may have unauthorized access to /admin/settings"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.927Z",
+      "type": "test",
+      "message": "📝 Testing user management CRUD operations..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.927Z",
+      "type": "error",
+      "message": "❌ No admin token available for CRUD tests"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.927Z",
+      "type": "test",
+      "message": "🦸 Testing hero avatar display functionality..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.927Z",
+      "type": "test",
+      "message": "🖼️ Testing hero image loading..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:43.977Z",
+      "type": "error",
+      "message": "❌ Hero image missing: Black Widow (black-widow-headbig.webp)"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.029Z",
+      "type": "error",
+      "message": "❌ Hero image missing: Spider-Man (spider-man-headbig.webp)"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.094Z",
+      "type": "error",
+      "message": "❌ Hero image missing: Iron Man (iron-man-headbig.webp)"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.147Z",
+      "type": "error",
+      "message": "❌ Hero image missing: Captain America (captain-america-headbig.webp)"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.194Z",
+      "type": "error",
+      "message": "❌ Hero image missing: Thor (thor-headbig.webp)"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.194Z",
+      "type": "test",
+      "message": "👮 Testing admin users tab hero display..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.194Z",
+      "type": "error",
+      "message": "❌ No admin token for hero display test"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.194Z",
+      "type": "test",
+      "message": "🔄 Testing hero avatar fallback mechanisms..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.194Z",
+      "type": "success",
+      "message": "✅ Fallback test user created with non-existent hero: NonExistentHero"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.194Z",
+      "type": "info",
+      "message": "   Frontend should display fallback avatar (? or initials)"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.194Z",
+      "type": "test",
+      "message": "🎫 Testing session management..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.194Z",
+      "type": "error",
+      "message": "❌ No user token for session tests"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.195Z",
+      "type": "test",
+      "message": "📊 Testing user activity tracking..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.195Z",
+      "type": "error",
+      "message": "❌ No user token for activity tests"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.195Z",
+      "type": "test",
+      "message": "🛡️ Testing for security vulnerabilities..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.195Z",
+      "type": "test",
+      "message": "💉 Testing SQL injection prevention..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.241Z",
+      "type": "warning",
+      "message": "⚠️  Potential SQL injection vulnerability"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.286Z",
+      "type": "warning",
+      "message": "⚠️  Potential SQL injection vulnerability"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.331Z",
+      "type": "warning",
+      "message": "⚠️  Potential SQL injection vulnerability"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.332Z",
+      "type": "test",
+      "message": "🕸️ Testing XSS prevention..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.382Z",
+      "type": "warning",
+      "message": "⚠️  Potential XSS vulnerability"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.436Z",
+      "type": "warning",
+      "message": "⚠️  Potential XSS vulnerability"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.489Z",
+      "type": "warning",
+      "message": "⚠️  Potential XSS vulnerability"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.489Z",
+      "type": "test",
+      "message": "🔒 Testing CSRF protection..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.570Z",
+      "type": "success",
+      "message": "✅ CSRF test completed (status: 401)"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.570Z",
+      "type": "info",
+      "message": "   Implementation should validate Origin/Referer headers"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.571Z",
+      "type": "test",
+      "message": "✏️ Testing input validation..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.628Z",
+      "type": "warning",
+      "message": "⚠️  Invalid input may have been accepted"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.681Z",
+      "type": "warning",
+      "message": "⚠️  Invalid input may have been accepted"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.730Z",
+      "type": "warning",
+      "message": "⚠️  Invalid input may have been accepted"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.783Z",
+      "type": "warning",
+      "message": "⚠️  Invalid input may have been accepted"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.783Z",
+      "type": "test",
+      "message": "🧹 Cleaning up test users..."
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.783Z",
+      "type": "error",
+      "message": "❌ No admin token for cleanup"
+    },
+    {
+      "timestamp": "2025-08-13T07:18:44.784Z",
+      "type": "test",
+      "message": "📊 Generating comprehensive security test report..."
+    }
+  ],
+  "recommendations": [
+    "Address critical errors in authentication system immediately",
+    "Enhance password policy enforcement",
+    "Implement additional input sanitization and output encoding",
+    "Regular security audits and penetration testing",
+    "Implement security headers (HSTS, CSP, X-Frame-Options)",
+    "Monitor authentication logs for suspicious activity",
+    "Consider implementing 2FA for admin accounts"
+  ],
+  "securityScore": 0
+}

@@ -128,7 +128,8 @@ export const updateMetaTags = (metaTags) => {
 
     // Handle different types of meta tags
     if (key === 'title') {
-      document.title = value;
+      // Keep title constant - don't change it
+      // document.title = value;
       return;
     } else if (key.startsWith('og:')) {
       selector = `meta[property="${key}"]`;

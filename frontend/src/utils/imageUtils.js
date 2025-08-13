@@ -88,7 +88,7 @@ export const getImageUrl = (imagePath, type = 'general') => {
     // CRITICAL FIX: Replace old domain with correct one
     if (imagePath.includes('1039tfjgievqa983.mrvl.net')) {
       const correctedUrl = imagePath.replace('https://1039tfjgievqa983.mrvl.net', API_CONFIG.BASE_URL);
-      console.log('🔄 Correcting old domain URL:', imagePath, '→', correctedUrl);
+      // Correcting old domain URL
       return correctedUrl;
     }
     return imagePath;
@@ -130,18 +130,18 @@ export const getImageUrl = (imagePath, type = 'general') => {
 export const getTeamLogoUrl = (team) => {
   // If team object has logo information from backend ImageHelper
   if (team?.logo && typeof team.logo === 'object' && team.logo.url) {
-    console.log('🖼️ getTeamLogoUrl - Using backend ImageHelper response:', team.logo.url);
+    // console.log('🖼️ getTeamLogoUrl - Using backend ImageHelper response:', team.logo.url);
     return getImageUrl(team.logo.url, 'team-logo');
   }
   
   // If team has a simple logo path
   if (team?.logo && typeof team.logo === 'string' && team.logo.length > 0) {
-    console.log('🖼️ getTeamLogoUrl - Using simple logo path:', team.logo);
+    // console.log('🖼️ getTeamLogoUrl - Using simple logo path:', team.logo);
     return getImageUrl(team.logo, 'team-logo');
   }
   
   // Generic fallback with question mark
-  console.log('🖼️ getTeamLogoUrl - Using fallback for team:', team?.name);
+  // console.log('🖼️ getTeamLogoUrl - Using fallback for team:', team?.name);
   return getImageUrl(null, 'team-logo');
 };
 
@@ -153,10 +153,10 @@ export const getTeamFlagUrl = (team) => {
   
   // FIXED: Check ALL possible flag fields from backend response
   const flagPath = team.flag_url || team.flagUrl || team.flag;
-  console.log('🖼️ getTeamFlagUrl - Team:', team.name || team.id, 'Flag path:', flagPath);
+  // console.log('🖼️ getTeamFlagUrl - Team:', team.name || team.id, 'Flag path:', flagPath);
   
   const finalUrl = getImageUrl(flagPath, 'team-logo');
-  console.log('🖼️ getTeamFlagUrl - Final URL:', finalUrl);
+  // console.log('🖼️ getTeamFlagUrl - Final URL:', finalUrl);
   
   return finalUrl;
 };
@@ -173,18 +173,18 @@ export const getEventLogoUrl = (event) => {
   
   // If logo is an object with url property (new API format)
   if (logoPath && typeof logoPath === 'object' && logoPath.url) {
-    console.log('🖼️ getEventLogoUrl - Event:', event.name || event.id, 'Logo object:', logoPath);
+    // console.log('🖼️ getEventLogoUrl - Event:', event.name || event.id, 'Logo object:', logoPath);
     let url = logoPath.url;
     
     // Fix double slash URLs like "//storage/events/logos/..." or "//events/mrvl-invitational.jpg"
     if (url.startsWith('//storage/') || url.startsWith('//events/')) {
       url = `${API_CONFIG.BASE_URL}${url.substring(1)}`; // Remove one slash and add domain
-      console.log('🖼️ getEventLogoUrl - Fixed double slash URL:', url);
+      // console.log('🖼️ getEventLogoUrl - Fixed double slash URL:', url);
     }
     // Fix single slash URLs like "/events/mrvl-invitational.jpg" or "/storage/..."
     else if (url.startsWith('/events/') || url.startsWith('/storage/')) {
       url = `${API_CONFIG.BASE_URL}${url}`;
-      console.log('🖼️ getEventLogoUrl - Added domain to URL:', url);
+      // console.log('🖼️ getEventLogoUrl - Added domain to URL:', url);
     }
     
     return url;
@@ -192,7 +192,7 @@ export const getEventLogoUrl = (event) => {
   
   // Check various possible logo fields for backwards compatibility
   logoPath = logoPath || event.logo_url || event.logoUrl;
-  console.log('🖼️ getEventLogoUrl - Event:', event.name || event.id, 'Logo path:', logoPath);
+  // console.log('🖼️ getEventLogoUrl - Event:', event.name || event.id, 'Logo path:', logoPath);
   
   if (!logoPath) {
     return getImageUrl(null, 'team-logo');
@@ -200,14 +200,14 @@ export const getEventLogoUrl = (event) => {
   
   // If it's already a full URL, return as is
   if (typeof logoPath === 'string' && (logoPath.startsWith('http://') || logoPath.startsWith('https://'))) {
-    console.log('🖼️ getEventLogoUrl - Using full URL:', logoPath);
+    // console.log('🖼️ getEventLogoUrl - Using full URL:', logoPath);
     return logoPath;
   }
   
   // If it starts with /storage/, build the full URL
   if (typeof logoPath === 'string' && logoPath.startsWith('/storage/')) {
     const finalUrl = `${API_CONFIG.BASE_URL}${logoPath}`;
-    console.log('🖼️ getEventLogoUrl - Built URL from /storage/ path:', finalUrl);
+    // console.log('🖼️ getEventLogoUrl - Built URL from /storage/ path:', finalUrl);
     return finalUrl;
   }
   
@@ -215,13 +215,13 @@ export const getEventLogoUrl = (event) => {
   if (typeof logoPath === 'string' && (logoPath.startsWith('events/') || logoPath.startsWith('/events/'))) {
     const cleanPath = logoPath.startsWith('/') ? logoPath : `/${logoPath}`;
     const finalUrl = `${API_CONFIG.BASE_URL}${cleanPath}`;
-    console.log('🖼️ getEventLogoUrl - Built URL from public events/ path:', finalUrl);
+    // console.log('🖼️ getEventLogoUrl - Built URL from public events/ path:', finalUrl);
     return finalUrl;
   }
   
   // Default case - treat as storage path
   const finalUrl = getImageUrl(logoPath, 'team-logo');
-  console.log('🖼️ getEventLogoUrl - Final URL:', finalUrl);
+  // console.log('🖼️ getEventLogoUrl - Final URL:', finalUrl);
   
   return finalUrl;
 };
@@ -235,16 +235,16 @@ export const getPlayerAvatarUrl = (player) => {
   
   // If player object has avatar information from backend ImageHelper
   if (player?.avatar && typeof player.avatar === 'object' && player.avatar.url) {
-    console.log('🖼️ getPlayerAvatarUrl - Using backend ImageHelper response:', player.avatar.url);
+    // console.log('🖼️ getPlayerAvatarUrl - Using backend ImageHelper response:', player.avatar.url);
     return getImageUrl(player.avatar.url, 'player-avatar');
   }
   
   // Check ALL possible avatar fields from backend response
   const avatarPath = player.avatar_url || player.avatarUrl || player.avatar;
-  console.log('🖼️ getPlayerAvatarUrl - Player:', player.name || player.username || player.id, 'Avatar path:', avatarPath);
+  // console.log('🖼️ getPlayerAvatarUrl - Player:', player.name || player.username || player.id, 'Avatar path:', avatarPath);
   
   const finalUrl = getImageUrl(avatarPath, 'player-avatar');
-  console.log('🖼️ getPlayerAvatarUrl - Final URL:', finalUrl);
+  // console.log('🖼️ getPlayerAvatarUrl - Final URL:', finalUrl);
   
   return finalUrl;
 };
@@ -265,10 +265,10 @@ export const getUserAvatarUrl = (user) => {
   
   // Check ALL possible avatar fields from backend response
   const avatarPath = user.avatar_url || user.avatarUrl || user.avatar;
-  console.log('🖼️ getUserAvatarUrl - User:', user.name || user.username || user.id, 'Avatar path:', avatarPath);
+  // console.log('🖼️ getUserAvatarUrl - User:', user.name || user.username || user.id, 'Avatar path:', avatarPath);
   
   const finalUrl = getImageUrl(avatarPath, 'player-avatar');
-  console.log('🖼️ getUserAvatarUrl - Final URL:', finalUrl);
+  // console.log('🖼️ getUserAvatarUrl - Final URL:', finalUrl);
   
   return finalUrl;
 };
@@ -283,37 +283,37 @@ export const getEventBannerUrl = (event) => {
     return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDgwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9InRvdXJuYW1lbnQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgo8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojZGMyNjI2O3N0b3Atb3BhY2l0eToxIiAvPgo8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiNiOTFjMWM7c3RvcC1vcGFjaXR5OjEiIC8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPHJlY3Qgd2lkdGg9IjgwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjdG91cm5hbWVudCkiLz4KPHN2ZyB4PSIzNzUiIHk9IjEyNSIgd2lkdGg9IjUwIiBoZWlnaHQ9IjUwIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjgiPgo8cGF0aCBkPSJNMTIgMkw0IDdsOSA1IDkgLTUtOEwyWk0xMiAyMWwtOC01aDJsNiAyIDYtMmgyTDEyIDIxWiIvPgo8L3N2Zz4KPHR5cGUgeD0iNDAwIiB5PSIxNjAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIG9wYWNpdHk9IjAuNyI+VE9VUk5BTUVOVCA8L3R5cGU+Cjwvc3ZnPg==';
   }
   
-  console.log('🖼️ getEventBannerUrl - Event:', event.name || event.id);
-  console.log('🖼️ getEventBannerUrl - Banner field:', event.banner);
-  console.log('🖼️ getEventBannerUrl - Logo field:', event.logo);
-  console.log('🖼️ getEventBannerUrl - Featured image:', event.featured_image);
-  console.log('🖼️ getEventBannerUrl - Banner image:', event.banner_image);
+  // console.log('🖼️ getEventBannerUrl - Event:', event.name || event.id);
+  // console.log('🖼️ getEventBannerUrl - Banner field:', event.banner);
+  // console.log('🖼️ getEventBannerUrl - Logo field:', event.logo);
+  // console.log('🖼️ getEventBannerUrl - Featured image:', event.featured_image);
+  // console.log('🖼️ getEventBannerUrl - Banner image:', event.banner_image);
   
   // Priority 1: Use banner field if available
   if (event.banner && event.banner !== null && event.banner.trim() !== '') {
     const bannerUrl = getImageUrl(event.banner, 'event-banner');
-    console.log('🖼️ getEventBannerUrl - Using banner field:', bannerUrl);
+    // console.log('🖼️ getEventBannerUrl - Using banner field:', bannerUrl);
     return bannerUrl;
   }
   
   // Priority 2: Use banner_image field if available  
   if (event.banner_image && event.banner_image !== null && event.banner_image.trim() !== '') {
     const bannerUrl = getImageUrl(event.banner_image, 'event-banner');
-    console.log('🖼️ getEventBannerUrl - Using banner_image field:', bannerUrl);
+    // console.log('🖼️ getEventBannerUrl - Using banner_image field:', bannerUrl);
     return bannerUrl;
   }
   
   // Priority 3: Use featured_image field if available
   if (event.featured_image && event.featured_image !== null && event.featured_image.trim() !== '') {
     const bannerUrl = getImageUrl(event.featured_image, 'event-banner');
-    console.log('🖼️ getEventBannerUrl - Using featured_image field:', bannerUrl);
+    // console.log('🖼️ getEventBannerUrl - Using featured_image field:', bannerUrl);
     return bannerUrl;
   }
   
   // Priority 4: Use event logo as banner fallback
   if (event.logo && event.logo !== null && event.logo.trim() !== '') {
     const logoUrl = getEventLogoUrl(event);
-    console.log('🖼️ getEventBannerUrl - Using logo as banner fallback:', logoUrl);
+    // console.log('🖼️ getEventBannerUrl - Using logo as banner fallback:', logoUrl);
     return logoUrl;
   }
   
@@ -323,7 +323,7 @@ export const getEventBannerUrl = (event) => {
     ? 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDgwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9ImxpdmUiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgo8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojZGMyNjI2O3N0b3Atb3BhY2l0eToxIiAvPgo8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiNiOTFjMWM7c3RvcC1vcGFjaXR5OjEiIC8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPHJlY3Qgd2lkdGg9IjgwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjbGl2ZSkiLz4KPHN2ZyB4PSIzNzUiIHk9IjEyNSIgd2lkdGg9IjUwIiBoZWlnaHQ9IjUwIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjgiPgo8Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIzIiBmaWxsPSJ3aGl0ZSI+PGFuaW1hdGUgYXR0cmlidXRlTmFtZT0icmFkaXVzIiB2YWx1ZXM9IjM7NTszIiBkdXI9IjFzIiByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIvPjwvY2lyY2xlPgo8L3N2Zz4KPHR5cGUgeD0iNDAwIiB5PSIxNjAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE2IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkxJVkUgVE9VUk5BTUVOVCA8L3R5cGU+Cjwvc3ZnPg=='
     : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDgwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9InVwY29taW5nIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj4KPHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6IzI1NjNlYjtzdG9wLW9wYWNpdHk6MSIgLz4KPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMWQ0ZWQ4O3N0b3Atb3BhY2l0eToxIiAvPgo8L2xpbmVhckdyYWRpZW50Pgo8L2RlZnM+CjxyZWN0IHdpZHRoPSI4MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI3VwY29taW5nKSIvPgo8c3ZnIHg9IjM3NSIgeT0iMTI1IiB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuOCI+CjxwYXRoIGQ9Ik0xMiAyTDEzLjA5IDguMjZMMjIgOUwxNiAxNEwxNy4xOCAyMkwxMiAxOEw2LjgyIDIyTDggMTRMMiA5TDEwLjkxIDguMjZMMTIgMloiLz4KPC9zdmc+Cjx0ZXh0IHg9IjQwMCIgeT0iMTcwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBvcGFjaXR5PSIwLjciPlVQQ09NSU5HIFRPVVJOQU1FTlQgPC90ZXh0Pgo8L3N2Zz4=';
     
-  console.log('🖼️ getEventBannerUrl - Using default banner (', isLive ? 'live' : 'upcoming', ')');
+  // console.log('🖼️ getEventBannerUrl - Using default banner (', isLive ? 'live' : 'upcoming', ')');
   return defaultBanner;
 };
 
@@ -333,38 +333,38 @@ export const getEventBannerUrl = (event) => {
  */
 export const getNewsFeaturedImageUrl = (article) => {
   if (!article) {
-    console.log('🖼️ getNewsFeaturedImageUrl - No article provided, using fallback');
+    // console.log('🖼️ getNewsFeaturedImageUrl - No article provided, using fallback');
     return getImageUrl(null, 'news-featured');
   }
   
   const imagePath = article.featured_image_url || article.featuredImageUrl || article.image || article.featured_image;
   
-  console.log('🖼️ getNewsFeaturedImageUrl - Article:', article.title || article.id, 'Image path:', imagePath);
+  // console.log('🖼️ getNewsFeaturedImageUrl - Article:', article.title || article.id, 'Image path:', imagePath);
   
   // CRITICAL FIX: Handle complex image objects from backend
   if (imagePath && typeof imagePath === 'object') {
-    console.log('🖼️ getNewsFeaturedImageUrl - Complex image object detected:', imagePath);
+    // console.log('🖼️ getNewsFeaturedImageUrl - Complex image object detected:', imagePath);
     // Backend returns: { url: "/images/news-placeholder.svg", exists: true, fallback: {...} }
     // Use the URL directly if it exists and is already complete
     const url = imagePath.url || imagePath.path || null;
     if (url && typeof url === 'string') {
       // If the URL already starts with API_CONFIG.BASE_URL or is a full URL, use as-is
       if (url.startsWith('http') || url.startsWith(API_CONFIG.BASE_URL)) {
-        console.log('🖼️ getNewsFeaturedImageUrl - Using complete URL from object:', url);
+        // console.log('🖼️ getNewsFeaturedImageUrl - Using complete URL from object:', url);
         return url;
       }
       // Otherwise, prepend the base URL to make it a complete URL
       const completeUrl = `${API_CONFIG.BASE_URL}${url}`;
-      console.log('🖼️ getNewsFeaturedImageUrl - Built complete URL from object:', completeUrl);
+      // console.log('🖼️ getNewsFeaturedImageUrl - Built complete URL from object:', completeUrl);
       return completeUrl;
     }
     // Fallback to generic placeholder handling
-    console.log('🖼️ getNewsFeaturedImageUrl - Invalid image object, using fallback');
+    // console.log('🖼️ getNewsFeaturedImageUrl - Invalid image object, using fallback');
     return getImageUrl(null, 'news-featured');
   }
   
   const finalUrl = getImageUrl(imagePath, 'news-featured');
-  console.log('🖼️ getNewsFeaturedImageUrl - Final URL:', finalUrl);
+  // console.log('🖼️ getNewsFeaturedImageUrl - Final URL:', finalUrl);
   
   return finalUrl;
 };
@@ -667,12 +667,8 @@ export const TeamLogo = ({ team, size = 'w-8 h-8', className = '' }) => {
         alt={teamName}
         className="w-full h-full object-cover"
         onError={(e) => {
-          console.log('🖼️ TeamLogo - Image failed to load:', imageUrl, 'for team:', teamName);
-          // Fallback to question mark placeholder
+          // Silently fallback to question mark placeholder
           e.target.src = getImageUrl(null, 'team-logo');
-        }}
-        onLoad={() => {
-          console.log('🖼️ TeamLogo - Image loaded successfully:', imageUrl, 'for team:', teamName);
         }}
       />
     </div>
@@ -723,11 +719,11 @@ export const PlayerAvatar = ({ player, size = 'w-8 h-8', className = '' }) => {
         alt={playerName}
         className="w-full h-full object-cover"
         onError={(e) => {
-          console.log('🖼️ PlayerAvatar - Image failed to load:', imageUrl, 'for player:', playerName);
+          // console.log('🖼️ PlayerAvatar - Image failed to load:', imageUrl, 'for player:', playerName);
           setImageError(true);
         }}
         onLoad={() => {
-          console.log('🖼️ PlayerAvatar - Image loaded successfully:', imageUrl, 'for player:', playerName);
+          // console.log('🖼️ PlayerAvatar - Image loaded successfully:', imageUrl, 'for player:', playerName);
         }}
       />
     </div>

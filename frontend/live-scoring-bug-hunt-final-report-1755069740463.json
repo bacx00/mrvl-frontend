@@ -1,0 +1,85 @@
+{
+  "timestamp": "2025-08-13T07:22:20.462Z",
+  "backend_url": "https://staging.mrvl.net",
+  "test_admin": "test-bug-hunter@mrvl.com",
+  "summary": {
+    "total_tests": 5,
+    "passed": 0,
+    "failed": 5,
+    "critical_bugs": 6,
+    "overall_status": "BUGS_REQUIRE_ATTENTION"
+  },
+  "detailed_results": [
+    {
+      "test": "Admin Authentication",
+      "status": "FAIL",
+      "duration": "773ms",
+      "details": {},
+      "issues": [
+        "Authentication failed with status 200",
+        "Response: {\"success\":true,\"token\":\"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIzIiwianRpIjoiN2FiNGVhMTZiNmY0N2FhNzM2NGQzMzdjNWQyYWNiNGMyNzVhNDgwMzdjMGRiZGVhMWRhZTgwNTA0NTRjMjZkMDliNGJiNWZmMTkxN2ZmZjUiLCJpYXQiOjE3NTUwNjk3NDAuMTgwMTY1MDUyNDEzOTQwNDI5Njg3NSwibmJmIjoxNzU1MDY5NzQwLjE4MDE2OTEwNTUyOTc4NTE1NjI1LCJleHAiOjE3ODY2MDU3NDAuMTY2MDE5OTE2NTM0NDIzODI4MTI1LCJzdWIiOiI3NiIsInNjb3BlcyI6W119.nP8Q62aWRAqBckfoUcUyxuLgCyBO1abPKzsLDg2wHbSptViqhuZJRij6DuOeeew0No85C1tKaIkM-Rc0Zvuen65SG6L29v0HbCSOZhfkV_lDJ34E6GFHqkU5ig8PZn43YUJyjUn8s2C2soL5EqN2C-CpIcERt2T0xbSzZcZYMVvptNfvbv5-xA6fr4HUiC9pe8cZijDvEjzNmL9_-h24kvnNEX2hs7OSTDrsUBTusVh3lnLKjAy4oYAjKUNK0e7-pYWHLG1XKGmnsbbvDb8QF201fSqGTo9U6zZLMbrXhp46l36-nsx2ytITrFh0Ki8574YNWFCymlirykixoJsRbgN1kUMFr1LfoYGUpqVJdywVSH70pExG_k02jappfbmQnKY0Iqr6ID-y9f-NiutP39NoYJsqjsxjcU-rpRvS1c2Up1-6cNaR25U9mMPcF7xZNW3Y-h_O1vyLW-X4yRb5KFVrmwiXZ-89TH_6rmy7Ge9BZu0Eg5jYZEFaPx4Wh2uNP5W6xuR_S6xy28iLbCjgDtcw1JNmc1SfSL6A4-vpMd-lBD5CVmhemYjDjD6HTKx9315FCxGA7XNYVP3IdEcLaQM_5GuciUY7JhRt5RfKI6IAhegq4tv41LrKHLbJLC0EtCsGmjLs1qfNY70PKQluCblorrT3EHW2IF2CIf0ex0k\",\"user\":{\"id\":76,\"name\":\"Bug Hunter Admin\",\"email\":\"test-bug-hunter@mrvl.com\",\"role\":\"admin\",\"roles\":[\"admin\"],\"role_display_name\":\"Administrator\",\"avatar\":null,\"hero_flair\":null,\"team_flair\":null,\"team_flair_id\":null,\"show_hero_flair\":true,\"show_team_flair\":false,\"use_hero_as_avatar\":false,\"created_at\":\"2025-08-13T07:21:04.000000Z\"}}"
+      ],
+      "fixes": [
+        "Admin user credentials may be incorrect",
+        "Check Laravel Passport/Sanctum configuration",
+        "Verify auth endpoints are working"
+      ]
+    },
+    {
+      "test": "Critical API Route: /admin/matches/{id}/update-live-stats",
+      "status": "FAIL",
+      "duration": "1ms",
+      "details": {},
+      "issues": [
+        "No auth token"
+      ],
+      "fixes": [
+        "Fix authentication first"
+      ]
+    },
+    {
+      "test": "Database Persistence",
+      "status": "FAIL",
+      "duration": "0ms",
+      "details": {},
+      "issues": [
+        "No auth token"
+      ],
+      "fixes": []
+    },
+    {
+      "test": "SSE Endpoint Availability",
+      "status": "FAIL",
+      "duration": "179ms",
+      "details": {},
+      "issues": [
+        "No matches for SSE testing"
+      ],
+      "fixes": []
+    },
+    {
+      "test": "Real-time Synchronization",
+      "status": "FAIL",
+      "duration": "1ms",
+      "details": {},
+      "issues": [
+        "No auth token"
+      ],
+      "fixes": []
+    }
+  ],
+  "critical_bugs": [
+    "Admin Authentication: Authentication failed with status 200",
+    "Admin Authentication: Response: {\"success\":true,\"token\":\"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIzIiwianRpIjoiN2FiNGVhMTZiNmY0N2FhNzM2NGQzMzdjNWQyYWNiNGMyNzVhNDgwMzdjMGRiZGVhMWRhZTgwNTA0NTRjMjZkMDliNGJiNWZmMTkxN2ZmZjUiLCJpYXQiOjE3NTUwNjk3NDAuMTgwMTY1MDUyNDEzOTQwNDI5Njg3NSwibmJmIjoxNzU1MDY5NzQwLjE4MDE2OTEwNTUyOTc4NTE1NjI1LCJleHAiOjE3ODY2MDU3NDAuMTY2MDE5OTE2NTM0NDIzODI4MTI1LCJzdWIiOiI3NiIsInNjb3BlcyI6W119.nP8Q62aWRAqBckfoUcUyxuLgCyBO1abPKzsLDg2wHbSptViqhuZJRij6DuOeeew0No85C1tKaIkM-Rc0Zvuen65SG6L29v0HbCSOZhfkV_lDJ34E6GFHqkU5ig8PZn43YUJyjUn8s2C2soL5EqN2C-CpIcERt2T0xbSzZcZYMVvptNfvbv5-xA6fr4HUiC9pe8cZijDvEjzNmL9_-h24kvnNEX2hs7OSTDrsUBTusVh3lnLKjAy4oYAjKUNK0e7-pYWHLG1XKGmnsbbvDb8QF201fSqGTo9U6zZLMbrXhp46l36-nsx2ytITrFh0Ki8574YNWFCymlirykixoJsRbgN1kUMFr1LfoYGUpqVJdywVSH70pExG_k02jappfbmQnKY0Iqr6ID-y9f-NiutP39NoYJsqjsxjcU-rpRvS1c2Up1-6cNaR25U9mMPcF7xZNW3Y-h_O1vyLW-X4yRb5KFVrmwiXZ-89TH_6rmy7Ge9BZu0Eg5jYZEFaPx4Wh2uNP5W6xuR_S6xy28iLbCjgDtcw1JNmc1SfSL6A4-vpMd-lBD5CVmhemYjDjD6HTKx9315FCxGA7XNYVP3IdEcLaQM_5GuciUY7JhRt5RfKI6IAhegq4tv41LrKHLbJLC0EtCsGmjLs1qfNY70PKQluCblorrT3EHW2IF2CIf0ex0k\",\"user\":{\"id\":76,\"name\":\"Bug Hunter Admin\",\"email\":\"test-bug-hunter@mrvl.com\",\"role\":\"admin\",\"roles\":[\"admin\"],\"role_display_name\":\"Administrator\",\"avatar\":null,\"hero_flair\":null,\"team_flair\":null,\"team_flair_id\":null,\"show_hero_flair\":true,\"show_team_flair\":false,\"use_hero_as_avatar\":false,\"created_at\":\"2025-08-13T07:21:04.000000Z\"}}",
+    "Critical API Route: /admin/matches/{id}/update-live-stats: No auth token",
+    "Database Persistence: No auth token",
+    "SSE Endpoint Availability: No matches for SSE testing",
+    "Real-time Synchronization: No auth token"
+  ],
+  "recommended_fixes": [
+    "Admin Authentication: Admin user credentials may be incorrect",
+    "Admin Authentication: Check Laravel Passport/Sanctum configuration",
+    "Admin Authentication: Verify auth endpoints are working",
+    "Critical API Route: /admin/matches/{id}/update-live-stats: Fix authentication first"
+  ]
+}

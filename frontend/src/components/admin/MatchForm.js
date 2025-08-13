@@ -9,7 +9,6 @@ import {
   getMapPool,
   getModeRotation
 } from '../../constants/marvelRivalsData';
-import liveScoreManager from '../../utils/LiveScoreManager';
 
 // COMPLETE MARVEL RIVALS CONFIGURATION - SYNCHRONIZED WITH CONSTANTS
 const MARVEL_RIVALS_CONFIG = {
@@ -652,14 +651,11 @@ function MatchForm({ matchId, navigateTo }) {
       newFormData.team1_score = team1_wins;
       newFormData.team2_score = team2_wins;
 
-      // Send real-time update to backend if match exists and is live
-      if (matchId && newFormData.status === 'live' && (field === 'team1_score' || field === 'team2_score')) {
-        sendLiveScoreUpdate(newFormData);
-      }
+      // Live updates disabled in MatchForm - only in SimplifiedLiveScoring
 
       return newFormData;
     });
-  }, [matchId, calculateMapWinner, sendLiveScoreUpdate]);
+  }, [matchId, calculateMapWinner]);
 
 
   // REMOVED: Manual map winner selection - now calculated automatically based on scores

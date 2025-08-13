@@ -1,0 +1,77 @@
+{
+  "timestamp": "2025-08-13T07:20:43.192Z",
+  "summary": {
+    "totalTests": 5,
+    "passedTests": 0,
+    "criticalIssues": 5,
+    "overallStatus": "BUGS_FOUND"
+  },
+  "tests": [
+    {
+      "test": "Admin Authentication",
+      "status": "FAIL",
+      "duration": "355ms",
+      "details": {
+        "success": false,
+        "message": "Invalid credentials"
+      },
+      "issues": [
+        "Authentication failed - Status: 401"
+      ],
+      "recommendations": [
+        "Verify admin credentials exist in database",
+        "Check if auth/login endpoint is working",
+        "Verify Laravel Passport/Sanctum configuration"
+      ]
+    },
+    {
+      "test": "API Route: /admin/matches/{id}/update-live-stats",
+      "status": "FAIL",
+      "duration": "0ms",
+      "details": {},
+      "issues": [
+        "No authentication token available"
+      ],
+      "recommendations": [
+        "Fix authentication first"
+      ]
+    },
+    {
+      "test": "Database Persistence of Live Updates",
+      "status": "FAIL",
+      "duration": "0ms",
+      "details": {},
+      "issues": [
+        "No authentication token available"
+      ],
+      "recommendations": [
+        "Fix authentication first"
+      ]
+    },
+    {
+      "test": "SSE Endpoint Availability",
+      "status": "FAIL",
+      "duration": "111ms",
+      "details": {},
+      "issues": [
+        "No matches available for SSE testing"
+      ],
+      "recommendations": []
+    },
+    {
+      "test": "Real-time Synchronization",
+      "status": "FAIL",
+      "duration": "0ms",
+      "details": {},
+      "issues": [
+        "No authentication token available"
+      ],
+      "recommendations": []
+    }
+  ],
+  "environment": {
+    "backendUrl": "https://staging.mrvl.net",
+    "nodeVersion": "v18.20.8",
+    "testRunner": "MRVL Bug Hunter Specialist"
+  }
+}

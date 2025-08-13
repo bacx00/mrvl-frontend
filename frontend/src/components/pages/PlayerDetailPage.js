@@ -280,6 +280,15 @@ function PlayerDetailPage({ params, navigateTo }) {
     }
   };
 
+  const getDivisionByRating = (rating) => {
+    if (rating >= 1800) return 'Grandmaster';
+    if (rating >= 1600) return 'Master';
+    if (rating >= 1400) return 'Diamond';
+    if (rating >= 1200) return 'Platinum';
+    if (rating >= 1000) return 'Gold';
+    return 'Silver';
+  };
+
   const formatKDA = (k, d, a) => {
     if (d === 0) return '∞';
     return ((k + a) / d).toFixed(2);
@@ -321,38 +330,44 @@ function PlayerDetailPage({ params, navigateTo }) {
 
   return (
     <div className="animate-fade-in">
-      {/* VLR.gg Style Player Header */}
+      {/* VLR.gg Style Player Header - Matching Team Profile */}
       <div className="card mb-8">
         <div className="border border-white dark:border-gray-300 p-8 bg-gray-50 dark:bg-gray-800">
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-6">
-              <PlayerAvatar player={player} size="w-24 h-24" className="ring-4 ring-white/20" />
+              <PlayerAvatar 
+                player={player} 
+                size="w-24 h-24" 
+                className="ring-4 ring-white/20"
+              />
               <div>
                 <h1 className="text-4xl font-bold text-gray-900 dark:text-white">{player.username}</h1>
                 {player.realName && (
                   <div className="text-xl text-gray-600 dark:text-gray-300 mb-2">{player.realName}</div>
                 )}
                 <div className="flex items-center space-x-4 mb-3">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(player.role)}`}>
-                    {player.role}
-                  </span>
                   <div className="flex items-center space-x-2">
                     <span className="text-lg">{player.flag || getCountryFlag(player.country)}</span>
                     <span className="text-gray-600 dark:text-gray-300">{countryNames[player.country] || player.country}</span>
                   </div>
+                  {player.age && (
+                    <span className="text-gray-600 dark:text-gray-300">• Age: {player.age}</span>
+                  )}
+                  {player.region && (
+                    <span className="text-gray-600 dark:text-gray-300">• {player.region}</span>
+                  )}
                 </div>
-                {/* Enhanced Social Links */}
+                {/* Social Links - VLR.gg Style */}
                 {player.socialMedia && Object.values(player.socialMedia).some(link => link) && (
-                  <div className="flex items-center flex-wrap gap-3">
+                  <div className="flex items-center space-x-4">
                     {player.socialMedia.twitter && (
                       <a 
                         href={`https://twitter.com/${player.socialMedia.twitter}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="flex items-center space-x-1 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-sm hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                        className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
                       >
-                        <span>🐦</span>
-                        <span>Twitter</span>
+                        Twitter
                       </a>
                     )}
                     {player.socialMedia.twitch && (
@@ -360,21 +375,9 @@ function PlayerDetailPage({ params, navigateTo }) {
                         href={`https://twitch.tv/${player.socialMedia.twitch}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="flex items-center space-x-1 px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded-full text-sm hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
+                        className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
                       >
-                        <span>📺</span>
-                        <span>Twitch</span>
-                      </a>
-                    )}
-                    {player.socialMedia.youtube && (
-                      <a 
-                        href={`https://youtube.com/@${player.socialMedia.youtube}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="flex items-center space-x-1 px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 rounded-full text-sm hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-                      >
-                        <span>📹</span>
-                        <span>YouTube</span>
+                        Twitch
                       </a>
                     )}
                     {player.socialMedia.instagram && (
@@ -382,52 +385,71 @@ function PlayerDetailPage({ params, navigateTo }) {
                         href={`https://instagram.com/${player.socialMedia.instagram}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="flex items-center space-x-1 px-3 py-1 bg-pink-100 dark:bg-pink-900/30 text-pink-800 dark:text-pink-300 rounded-full text-sm hover:bg-pink-200 dark:hover:bg-pink-900/50 transition-colors"
+                        className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
                       >
-                        <span>📷</span>
-                        <span>Instagram</span>
-                      </a>
-                    )}
-                    {player.socialMedia.discord && (
-                      <a 
-                        href={`https://discord.gg/${player.socialMedia.discord}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="flex items-center space-x-1 px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300 rounded-full text-sm hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors"
-                      >
-                        <span>💬</span>
-                        <span>Discord</span>
-                      </a>
-                    )}
-                    {player.socialMedia.tiktok && (
-                      <a 
-                        href={`https://tiktok.com/@${player.socialMedia.tiktok}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="flex items-center space-x-1 px-3 py-1 bg-black text-white dark:bg-gray-800 dark:text-gray-200 rounded-full text-sm hover:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
-                      >
-                        <span>🎵</span>
-                        <span>TikTok</span>
-                      </a>
-                    )}
-                    {player.socialMedia.facebook && (
-                      <a 
-                        href={player.socialMedia.facebook} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="flex items-center space-x-1 px-3 py-1 bg-blue-600 text-white dark:bg-blue-700 dark:text-blue-100 rounded-full text-sm hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
-                      >
-                        <span>📘</span>
-                        <span>Facebook</span>
+                        Instagram
                       </a>
                     )}
                   </div>
                 )}
               </div>
             </div>
+            {/* Right Side - Stats Section */}
             <div className="text-right">
-              <div className="text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(player.totalEarnings)}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Total Earnings</div>
+              {/* Rating and Rank */}
+              <div className="mb-4">
+                <div className="flex items-center justify-end space-x-2 mb-2">
+                  <div className="text-3xl font-bold text-gray-900 dark:text-white">{player.rating || 1500}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Rating</div>
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  #{player.rank || 'Unranked'} • {player.division || getDivisionByRating(player.rating || 1500)}
+                </div>
+              </div>
+              
+              {/* Role Badge */}
+              {player.role && (
+                <div className="mb-4">
+                  <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                    player.role === 'Duelist' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
+                    player.role === 'Vanguard' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
+                    player.role === 'Strategist' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                    'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+                  }`}>
+                    {player.role}
+                  </span>
+                </div>
+              )}
+              
+              {/* Current Team */}
+              {player.currentTeam && (
+                <div className="mb-4">
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Team</div>
+                  <div 
+                    className="flex items-center justify-end space-x-2 cursor-pointer hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                    onClick={() => navigateTo('team-detail', { id: player.currentTeam.id })}
+                  >
+                    <TeamLogo team={player.currentTeam} size="w-6 h-6" />
+                    <span className="font-medium text-gray-900 dark:text-white">{player.currentTeam.short_name || player.currentTeam.name}</span>
+                  </div>
+                </div>
+              )}
+              
+              {/* Additional Stats */}
+              <div className="space-y-2 text-sm">
+                {player.totalEarnings > 0 && (
+                  <div>
+                    <div className="font-bold text-green-600 dark:text-green-400">{formatCurrency(player.totalEarnings)}</div>
+                    <div className="text-gray-500 dark:text-gray-400">Earnings</div>
+                  </div>
+                )}
+                {player.winRate !== undefined && (
+                  <div>
+                    <div className="font-bold text-blue-600 dark:text-blue-400">{player.winRate}%</div>
+                    <div className="text-gray-500 dark:text-gray-400">Win Rate</div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Scoring Sync Verification</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .test-section {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        .info { color: #60a5fa; }
+        button {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: 600;
+        }
+        button:hover {
+            background: #b91c1c;
+        }
+        .log {
+            background: #0f0f0f;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-active { background: #4ade80; animation: pulse 2s infinite; }
+        .status-inactive { background: #6b7280; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .test-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .score-display {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            background: #374151;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Live Scoring Real-Time Synchronization Verification</h1>
+    <p class="info">This page verifies that changes in SimplifiedLiveScoring panel immediately reflect on MatchDetailPage.</p>
+
+    <div class="test-section">
+        <h2>📊 Connection Status</h2>
+        <div id="connection-status">
+            <span class="status-indicator status-inactive" id="status-dot"></span>
+            <span id="status-text">Checking connection...</span>
+        </div>
+        <div class="log" id="connection-log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎮 Current Match Data</h2>
+        <div class="test-grid">
+            <div>
+                <h3>Series Score</h3>
+                <div class="score-display" id="series-score">0 - 0</div>
+            </div>
+            <div>
+                <h3>Current Map Score</h3>
+                <div class="score-display" id="map-score">0 - 0</div>
+            </div>
+        </div>
+        <div>
+            <h3>Player Data (Team 1)</h3>
+            <div id="team1-players" class="log">No player data</div>
+            <h3>Player Data (Team 2)</h3>
+            <div id="team2-players" class="log">No player data</div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Test Controls</h2>
+        <p>These buttons simulate live scoring updates to test synchronization:</p>
+        
+        <button onclick="testScoreUpdate()">📊 Test Score Update</button>
+        <button onclick="testHeroChange()">🦸 Test Hero Change</button>
+        <button onclick="testMapSwitch()">🗺️ Test Map Switch</button>
+        <button onclick="testPlayerStats()">📈 Test Player Stats</button>
+        <button onclick="clearTests()">🧹 Clear Tests</button>
+        
+        <div class="log" id="test-log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📡 Live Update Log</h2>
+        <div class="log" id="update-log"></div>
+    </div>
+
+    <script>
+        // Test configuration
+        const TEST_MATCH_ID = 1; // Change to actual match ID being tested
+        let updateCount = 0;
+        
+        // Logging functions
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('update-log');
+            const colorClass = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
+            logElement.innerHTML += `<div class="${colorClass}">[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function testLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('test-log');
+            const colorClass = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
+            logElement.innerHTML += `<div class="${colorClass}">[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        // Update display functions
+        function updateScoreDisplay(data) {
+            const seriesScore = document.getElementById('series-score');
+            const mapScore = document.getElementById('map-score');
+            
+            const team1Series = data.series_score_team1 || data.team1_score || 0;
+            const team2Series = data.series_score_team2 || data.team2_score || 0;
+            const team1Map = data.current_map_team1_score || 0;
+            const team2Map = data.current_map_team2_score || 0;
+            
+            seriesScore.textContent = `${team1Series} - ${team2Series}`;
+            mapScore.textContent = `${team1Map} - ${team2Map}`;
+        }
+
+        function updatePlayerDisplay(data) {
+            const team1Element = document.getElementById('team1-players');
+            const team2Element = document.getElementById('team2-players');
+            
+            if (data.team1_players && data.team1_players.length > 0) {
+                team1Element.innerHTML = data.team1_players.map(p => 
+                    `${p.username || p.name || 'Unknown'}: ${p.hero || 'No Hero'} (${p.kills || 0}/${p.deaths || 0}/${p.assists || 0})`
+                ).join('<br>');
+            }
+            
+            if (data.team2_players && data.team2_players.length > 0) {
+                team2Element.innerHTML = data.team2_players.map(p => 
+                    `${p.username || p.name || 'Unknown'}: ${p.hero || 'No Hero'} (${p.kills || 0}/${p.deaths || 0}/${p.assists || 0})`
+                ).join('<br>');
+            }
+        }
+
+        // Test functions
+        function testScoreUpdate() {
+            updateCount++;
+            const testData = {
+                series_score_team1: updateCount,
+                series_score_team2: Math.floor(updateCount / 2),
+                team1_score: updateCount,
+                team2_score: Math.floor(updateCount / 2),
+                current_map_team1_score: 10 + updateCount,
+                current_map_team2_score: 8 + Math.floor(updateCount / 2),
+                current_map: 1,
+                matchId: TEST_MATCH_ID,
+                timestamp: Date.now(),
+                source: 'VerificationTest',
+                type: 'score_update'
+            };
+            
+            simulateUpdate(testData, 'Score Update Test');
+            testLog(`Score update test ${updateCount} fired`, 'success');
+        }
+
+        function testHeroChange() {
+            const heroes = ['Iron Man', 'Spider-Man', 'Doctor Strange', 'Wolverine', 'Captain America', 'Thor'];
+            const randomHero1 = heroes[Math.floor(Math.random() * heroes.length)];
+            const randomHero2 = heroes[Math.floor(Math.random() * heroes.length)];
+            
+            const testData = {
+                series_score_team1: 1,
+                series_score_team2: 0,
+                team1_score: 1,
+                team2_score: 0,
+                team1_players: [{
+                    id: 1,
+                    username: 'TestPlayer1',
+                    hero: randomHero1,
+                    kills: 10,
+                    deaths: 2,
+                    assists: 5
+                }],
+                team2_players: [{
+                    id: 2,
+                    username: 'TestPlayer2',
+                    hero: randomHero2,
+                    kills: 8,
+                    deaths: 3,
+                    assists: 7
+                }],
+                matchId: TEST_MATCH_ID,
+                timestamp: Date.now(),
+                source: 'VerificationTest',
+                type: 'hero_selection_update'
+            };
+            
+            simulateUpdate(testData, 'Hero Change Test');
+            testLog(`Hero change test: ${randomHero1} vs ${randomHero2}`, 'success');
+        }
+
+        function testMapSwitch() {
+            const newMap = (updateCount % 3) + 1;
+            const testData = {
+                series_score_team1: 1,
+                series_score_team2: 1,
+                team1_score: 1,
+                team2_score: 1,
+                current_map: newMap,
+                current_map_team1_score: 0,
+                current_map_team2_score: 0,
+                maps: {
+                    1: { team1Score: 25, team2Score: 20, status: 'completed', winner: 1 },
+                    2: { team1Score: 18, team2Score: 25, status: 'completed', winner: 2 },
+                    3: { team1Score: 0, team2Score: 0, status: 'active', winner: null }
+                },
+                matchId: TEST_MATCH_ID,
+                timestamp: Date.now(),
+                source: 'VerificationTest',
+                type: 'map_change'
+            };
+            
+            simulateUpdate(testData, 'Map Switch Test');
+            testLog(`Map switch test: Switched to Map ${newMap}`, 'success');
+        }
+
+        function testPlayerStats() {
+            const testData = {
+                series_score_team1: 1,
+                series_score_team2: 0,
+                team1_score: 1,
+                team2_score: 0,
+                team1_players: [{
+                    id: 1,
+                    username: 'SuperPlayer',
+                    hero: 'Iron Man',
+                    kills: 15 + updateCount,
+                    deaths: 2,
+                    assists: 12 + updateCount,
+                    damage: 20000 + (updateCount * 1000),
+                    healing: 0,
+                    blocked: 0,
+                    kda: ((15 + updateCount + 12 + updateCount) / 2).toFixed(2)
+                }],
+                team2_players: [{
+                    id: 2,
+                    username: 'ProPlayer',
+                    hero: 'Spider-Man',
+                    kills: 12 + updateCount,
+                    deaths: 3,
+                    assists: 10 + updateCount,
+                    damage: 18000 + (updateCount * 800),
+                    healing: 0,
+                    blocked: 0,
+                    kda: ((12 + updateCount + 10 + updateCount) / 3).toFixed(2)
+                }],
+                matchId: TEST_MATCH_ID,
+                timestamp: Date.now(),
+                source: 'VerificationTest',
+                type: 'player_stats_update'
+            };
+            
+            simulateUpdate(testData, 'Player Stats Test');
+            testLog(`Player stats test: Updated kills and damage`, 'success');
+        }
+
+        function clearTests() {
+            document.getElementById('test-log').innerHTML = '';
+            document.getElementById('update-log').innerHTML = '';
+            updateCount = 0;
+            testLog('Test logs cleared', 'info');
+        }
+
+        // Core simulation function
+        function simulateUpdate(testData, testName) {
+            try {
+                // Method 1: Direct MatchLiveSync (same-tab)
+                if (window.matchLiveSync) {
+                    window.matchLiveSync.handleLiveUpdate(TEST_MATCH_ID, testData);
+                    log(`📡 Direct MatchLiveSync: ${testName}`, 'success');
+                }
+                
+                // Method 2: localStorage (cross-tab)
+                localStorage.setItem(`live_match_${TEST_MATCH_ID}`, JSON.stringify(testData));
+                log(`💾 localStorage: ${testName}`, 'info');
+                
+                // Update display
+                updateScoreDisplay(testData);
+                updatePlayerDisplay(testData);
+                
+            } catch (error) {
+                log(`❌ Error in ${testName}: ${error.message}`, 'error');
+            }
+        }
+
+        // Monitor localStorage changes
+        window.addEventListener('storage', (e) => {
+            if (e.key === `live_match_${TEST_MATCH_ID}` && e.newValue) {
+                try {
+                    const data = JSON.parse(e.newValue);
+                    log(`📦 Received localStorage update: ${data.type || 'update'}`, 'success');
+                    updateScoreDisplay(data);
+                    updatePlayerDisplay(data);
+                } catch (error) {
+                    log(`❌ Error parsing localStorage update: ${error.message}`, 'error');
+                }
+            }
+        });
+
+        // Check for MatchLiveSync availability
+        function checkConnection() {
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            const connectionLog = document.getElementById('connection-log');
+            
+            if (window.matchLiveSync) {
+                statusDot.className = 'status-indicator status-active';
+                statusText.textContent = 'MatchLiveSync Available';
+                connectionLog.innerHTML += '<div class="success">✅ MatchLiveSync detected and available</div>';
+                
+                const status = window.matchLiveSync.getStatus();
+                connectionLog.innerHTML += `<div class="info">📊 Active connections: ${status.activeConnections}</div>`;
+                connectionLog.innerHTML += `<div class="info">👥 Subscribers: ${status.subscribers}</div>`;
+            } else {
+                statusDot.className = 'status-indicator status-inactive';
+                statusText.textContent = 'MatchLiveSync Not Available';
+                connectionLog.innerHTML += '<div class="warning">⚠️ MatchLiveSync not detected - only localStorage sync available</div>';
+            }
+            
+            // Test localStorage
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                connectionLog.innerHTML += '<div class="success">✅ localStorage available</div>';
+            } catch (error) {
+                connectionLog.innerHTML += '<div class="error">❌ localStorage not available</div>';
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            checkConnection();
+            log('🎯 Live Scoring Sync Verification Ready', 'success');
+            log(`📋 Testing Match ID: ${TEST_MATCH_ID}`, 'info');
+            log('🔥 Click test buttons to verify synchronization!', 'warning');
+        });
+
+        // Instructions
+        setTimeout(() => {
+            log('📚 INSTRUCTIONS:', 'warning');
+            log('1. Open MatchDetailPage in another tab', 'info');
+            log('2. Click test buttons on this page', 'info');  
+            log('3. Check if MatchDetailPage updates immediately', 'info');
+            log('4. Verify scores, heroes, and player stats change', 'info');
+        }, 1000);
+    </script>
+</body>
+</html>

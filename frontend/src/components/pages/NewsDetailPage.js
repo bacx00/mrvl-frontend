@@ -47,9 +47,19 @@ function NewsDetailPage({ params, navigateTo }) {
   const articleId = params?.id;
 
   useEffect(() => {
-    if (articleId) {
-      fetchArticle();
-    }
+    let mounted = true;
+    
+    const loadArticle = async () => {
+      if (articleId && mounted) {
+        await fetchArticle();
+      }
+    };
+    
+    loadArticle();
+    
+    return () => {
+      mounted = false;
+    };
   }, [articleId]);
 
   // Initialize analytics and SEO when article loads

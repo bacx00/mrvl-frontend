@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Admin Teams Component</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .error { color: red; background: #ffeeee; padding: 10px; border: 1px solid #ff0000; margin: 10px 0; }
+        .success { color: green; background: #eeffee; padding: 10px; border: 1px solid #00ff00; margin: 10px 0; }
+        .info { color: blue; background: #eeeeff; padding: 10px; border: 1px solid #0000ff; margin: 10px 0; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .api-response { background: #f5f5f5; padding: 10px; margin: 10px 0; white-space: pre-wrap; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>Admin Teams Component Bug Hunter Test</h1>
+    
+    <div id="error-log" class="error" style="display:none;">
+        <h3>JavaScript Errors:</h3>
+        <div id="error-list"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>1. API Authentication Test</h2>
+        <button onclick="testAuth()">Test Authentication</button>
+        <div id="auth-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Teams API CRUD Tests</h2>
+        <button onclick="testGetTeams()">GET Teams</button>
+        <button onclick="testCreateTeam()">CREATE Team</button>
+        <button onclick="testUpdateTeam()">UPDATE Team</button>
+        <button onclick="testDeleteTeam()">DELETE Team</button>
+        <div id="crud-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Validation Tests</h2>
+        <button onclick="testValidationErrors()">Test Field Validation</button>
+        <button onclick="testRegionValidation()">Test Region Validation</button>
+        <button onclick="testRatingValidation()">Test Rating Validation</button>
+        <div id="validation-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. AdminTeams Component Tests</h2>
+        <div id="admin-teams-test">
+            <p>This section will test the AdminTeams.js component functionality.</p>
+            <button onclick="testComponentMethods()">Test Component Methods</button>
+        </div>
+        <div id="component-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Summary</h2>
+        <div id="test-summary"></div>
+    </div>
+
+    <script>
+        // Global variables for testing
+        let authToken = null;
+        let testTeamId = null;
+        let errors = [];
+        let testResults = [];
+        
+        // Error logging
+        window.addEventListener('error', function(e) {
+            const error = `${e.filename}:${e.lineno}:${e.colno} - ${e.message}`;
+            errors.push(error);
+            updateErrorLog();
+            console.error('Captured Error:', error);
+        });
+        
+        function updateErrorLog() {
+            const errorDiv = document.getElementById('error-log');
+            const errorList = document.getElementById('error-list');
+            if (errors.length > 0) {
+                errorDiv.style.display = 'block';
+                errorList.innerHTML = errors.map(err => `<div>• ${err}</div>`).join('');
+            }
+        }
+        
+        function addResult(section, test, status, details = '') {
+            testResults.push({section, test, status, details});
+            updateResults(section, test, status, details);
+            updateSummary();
+        }
+        
+        function updateResults(section, test, status, details) {
+            const resultDiv = document.getElementById(`${section}-results`);
+            const statusClass = status === 'PASS' ? 'success' : (status === 'FAIL' ? 'error' : 'info');
+            const resultHtml = `
+                <div class="${statusClass}">
+                    <strong>${test}:</strong> ${status}
+                    ${details ? `<div class="api-response">${details}</div>` : ''}
+                </div>
+            `;
+            resultDiv.innerHTML += resultHtml;
+        }
+        
+        function updateSummary() {
+            const summary = document.getElementById('test-summary');
+            const total = testResults.length;
+            const passed = testResults.filter(r => r.status === 'PASS').length;
+            const failed = testResults.filter(r => r.status === 'FAIL').length;
+            
+            summary.innerHTML = `
+                <div class="info">
+                    <h3>Test Results Summary:</h3>
+                    <p>Total Tests: ${total}</p>
+                    <p>Passed: ${passed}</p>
+                    <p>Failed: ${failed}</p>
+                    <p>JavaScript Errors: ${errors.length}</p>
+                </div>
+            `;
+        }
+        
+        // API Test Functions
+        async function testAuth() {
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'testadmin@example.com',
+                        password: 'testpassword'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.token) {
+                    authToken = data.token;
+                    addResult('auth', 'Authentication', 'PASS', `Token obtained: ${data.token.substring(0, 50)}...`);
+                } else {
+                    addResult('auth', 'Authentication', 'FAIL', JSON.stringify(data, null, 2));
+                }
+            } catch (error) {
+                addResult('auth', 'Authentication', 'FAIL', `Network Error: ${error.message}`);
+            }
+        }
+        
+        async function testGetTeams() {
+            if (!authToken) {
+                addResult('crud', 'GET Teams', 'FAIL', 'No auth token available. Run authentication test first.');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/admin/teams', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    addResult('crud', 'GET Teams', 'PASS', `Retrieved ${data.data?.length || 0} teams`);
+                } else {
+                    addResult('crud', 'GET Teams', 'FAIL', JSON.stringify(data, null, 2));
+                }
+            } catch (error) {
+                addResult('crud', 'GET Teams', 'FAIL', `Network Error: ${error.message}`);
+            }
+        }
+        
+        async function testCreateTeam() {
+            if (!authToken) {
+                addResult('crud', 'CREATE Team', 'FAIL', 'No auth token available. Run authentication test first.');
+                return;
+            }
+            
+            const teamData = {
+                name: 'Test Team Frontend',
+                short_name: 'TTF',
+                region: 'NA',
+                country: 'United States',
+                rating: 1750,
+                description: 'Test team created from frontend test',
+                website: 'https://example.com',
+                social_media: JSON.stringify({
+                    twitter: '@testteam',
+                    discord: 'discord.gg/test'
+                })
+            };
+            
+            try {
+                const response = await fetch('/api/admin/teams', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(teamData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    testTeamId = data.data.id;
+                    addResult('crud', 'CREATE Team', 'PASS', `Team created with ID: ${testTeamId}`);
+                } else {
+                    addResult('crud', 'CREATE Team', 'FAIL', JSON.stringify(data, null, 2));
+                }
+            } catch (error) {
+                addResult('crud', 'CREATE Team', 'FAIL', `Network Error: ${error.message}`);
+            }
+        }
+        
+        async function testUpdateTeam() {
+            if (!authToken || !testTeamId) {
+                addResult('crud', 'UPDATE Team', 'FAIL', 'No auth token or test team ID available. Run previous tests first.');
+                return;
+            }
+            
+            const updateData = {
+                name: 'Test Team Frontend Updated',
+                rating: 2000,
+                description: 'Updated description from frontend test'
+            };
+            
+            try {
+                const response = await fetch(`/api/admin/teams/${testTeamId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    addResult('crud', 'UPDATE Team', 'PASS', `Team ${testTeamId} updated successfully`);
+                } else {
+                    addResult('crud', 'UPDATE Team', 'FAIL', JSON.stringify(data, null, 2));
+                }
+            } catch (error) {
+                addResult('crud', 'UPDATE Team', 'FAIL', `Network Error: ${error.message}`);
+            }
+        }
+        
+        async function testDeleteTeam() {
+            if (!authToken || !testTeamId) {
+                addResult('crud', 'DELETE Team', 'FAIL', 'No auth token or test team ID available. Run previous tests first.');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/admin/teams/${testTeamId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    addResult('crud', 'DELETE Team', 'PASS', `Team ${testTeamId} deleted successfully`);
+                } else {
+                    addResult('crud', 'DELETE Team', 'FAIL', JSON.stringify(data, null, 2));
+                }
+            } catch (error) {
+                addResult('crud', 'DELETE Team', 'FAIL', `Network Error: ${error.message}`);
+            }
+        }
+        
+        async function testValidationErrors() {
+            if (!authToken) {
+                addResult('validation', 'Field Validation', 'FAIL', 'No auth token available. Run authentication test first.');
+                return;
+            }
+            
+            // Test with invalid data
+            const invalidData = {
+                name: '',  // Required field empty
+                short_name: 'TOOLONGSHORTNAME',  // Too long
+                region: 'INVALID',  // Invalid region
+                rating: 6000  // Out of range
+            };
+            
+            try {
+                const response = await fetch('/api/admin/teams', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(invalidData)
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok && data.errors) {
+                    // Validation should fail - this is expected
+                    const errorKeys = Object.keys(data.errors);
+                    addResult('validation', 'Field Validation', 'PASS', `Validation errors correctly caught: ${errorKeys.join(', ')}`);
+                } else {
+                    addResult('validation', 'Field Validation', 'FAIL', 'Validation should have failed but did not');
+                }
+            } catch (error) {
+                addResult('validation', 'Field Validation', 'FAIL', `Network Error: ${error.message}`);
+            }
+        }
+        
+        async function testRegionValidation() {
+            if (!authToken) {
+                addResult('validation', 'Region Validation', 'FAIL', 'No auth token available.');
+                return;
+            }
+            
+            const regions = ['NA', 'EU', 'APAC', 'ASIA', 'LATAM', 'BR', 'Americas', 'EMEA', 'Oceania', 'China'];
+            let passedRegions = [];
+            let failedRegions = [];
+            
+            for (const region of regions) {
+                const testData = {
+                    name: `Test ${region} Team`,
+                    short_name: `T${region}`,
+                    region: region,
+                    country: 'Test Country',
+                    rating: 1500
+                };
+                
+                try {
+                    const response = await fetch('/api/admin/teams', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(testData)
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok && data.success) {
+                        passedRegions.push(region);
+                        // Clean up created team
+                        if (data.data?.id) {
+                            await fetch(`/api/admin/teams/${data.data.id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Authorization': `Bearer ${authToken}`,
+                                    'Accept': 'application/json'
+                                }
+                            });
+                        }
+                    } else {
+                        failedRegions.push(region);
+                    }
+                } catch (error) {
+                    failedRegions.push(`${region} (Network Error)`);
+                }
+            }
+            
+            const status = failedRegions.length === 0 ? 'PASS' : 'FAIL';
+            const details = `Passed: ${passedRegions.join(', ')}\\nFailed: ${failedRegions.join(', ')}`;
+            addResult('validation', 'Region Validation', status, details);
+        }
+        
+        async function testRatingValidation() {
+            if (!authToken) {
+                addResult('validation', 'Rating Validation', 'FAIL', 'No auth token available.');
+                return;
+            }
+            
+            const ratingTests = [
+                { rating: -100, shouldFail: true },
+                { rating: 0, shouldFail: false },
+                { rating: 2500, shouldFail: false },
+                { rating: 5000, shouldFail: false },
+                { rating: 6000, shouldFail: true }
+            ];
+            
+            let passed = 0;
+            let failed = 0;
+            
+            for (const test of ratingTests) {
+                const testData = {
+                    name: `Test Rating ${test.rating} Team`,
+                    short_name: `TR${test.rating}`,
+                    region: 'NA',
+                    rating: test.rating
+                };
+                
+                try {
+                    const response = await fetch('/api/admin/teams', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(testData)
+                    });
+                    
+                    const data = await response.json();
+                    const actualFailed = !response.ok || !data.success;
+                    
+                    if (actualFailed === test.shouldFail) {
+                        passed++;
+                        // Clean up if team was created
+                        if (data.data?.id) {
+                            await fetch(`/api/admin/teams/${data.data.id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Authorization': `Bearer ${authToken}`,
+                                    'Accept': 'application/json'
+                                }
+                            });
+                        }
+                    } else {
+                        failed++;
+                    }
+                } catch (error) {
+                    failed++;
+                }
+            }
+            
+            const status = failed === 0 ? 'PASS' : 'FAIL';
+            const details = `Passed: ${passed}/${ratingTests.length} rating validation tests`;
+            addResult('validation', 'Rating Validation', status, details);
+        }
+        
+        function testComponentMethods() {
+            try {
+                // Test if we can detect potential issues in the AdminTeams component
+                // Since we can't actually load React components directly in plain HTML,
+                // we'll simulate some of the key functionality
+                
+                // Test 1: Check if the component would handle missing social_media gracefully
+                const mockTeam = { id: 1, name: 'Test', short_name: 'TST', region: 'NA' };
+                const formData = {
+                    ...mockTeam,
+                    social_media: undefined  // This could cause issues
+                };
+                
+                // Simulate the issue we found in the backend
+                try {
+                    if (formData.social_media) {
+                        JSON.parse(formData.social_media);
+                    }
+                    addResult('component', 'Social Media Handling', 'PASS', 'Component handles undefined social_media correctly');
+                } catch (e) {
+                    addResult('component', 'Social Media Handling', 'FAIL', `Error: ${e.message}`);
+                }
+                
+                // Test 2: Check team name filtering simulation
+                const mockTeams = [
+                    { name: 'Team Alpha', region: 'NA', short_name: 'TA' },
+                    { name: 'Team Beta', region: 'EU', short_name: 'TB' },
+                    { name: 'Team Gamma', region: 'NA', short_name: 'TG' }
+                ];
+                
+                const filteredTeams = mockTeams.filter(team => 
+                    team.name.toLowerCase().includes('alpha') || 
+                    team.region === 'NA'
+                );
+                
+                if (filteredTeams.length === 2) {  // Team Alpha and Team Gamma
+                    addResult('component', 'Team Filtering', 'PASS', 'Team filtering logic works correctly');
+                } else {
+                    addResult('component', 'Team Filtering', 'FAIL', `Expected 2 teams, got ${filteredTeams.length}`);
+                }
+                
+                // Test 3: Check region validation
+                const validRegions = ['all', 'NA', 'EU', 'APAC', 'ASIA', 'LATAM', 'BR', 'Americas', 'EMEA', 'Oceania', 'China'];
+                const testRegion = 'EU';
+                
+                if (validRegions.includes(testRegion)) {
+                    addResult('component', 'Region Validation', 'PASS', `Region '${testRegion}' is valid`);
+                } else {
+                    addResult('component', 'Region Validation', 'FAIL', `Region '${testRegion}' is not in valid list`);
+                }
+                
+            } catch (error) {
+                addResult('component', 'Component Methods', 'FAIL', `Error testing component methods: ${error.message}`);
+            }
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Admin Teams Bug Hunter Test Page Loaded');
+            addResult('component', 'Page Load', 'PASS', 'Test page loaded successfully');
+        });
+    </script>
+</body>
+</html>

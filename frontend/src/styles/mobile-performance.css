@@ -1,0 +1,410 @@
+/* Mobile Performance-First CSS Architecture */
+/* Critical path styles for tournament platform mobile optimization */
+
+/* =================================
+   CRITICAL ABOVE-THE-FOLD STYLES
+   ================================= */
+
+/* Critical layout styles - inline these */
+:root {
+  --mobile-header-height: 60px;
+  --mobile-bottom-nav-height: 64px;
+  --mobile-content-padding: 16px;
+  --mobile-touch-target: 44px;
+  --mobile-safe-area-top: env(safe-area-inset-top);
+  --mobile-safe-area-bottom: env(safe-area-inset-bottom);
+}
+
+/* Performance-critical base styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #0f0f23;
+  color: white;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Critical layout container */
+.mobile-app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height */
+  padding-top: var(--mobile-safe-area-top);
+  padding-bottom: var(--mobile-safe-area-bottom);
+}
+
+/* Above-the-fold tournament header */
+.mobile-tournament-header {
+  height: var(--mobile-header-height);
+  background: #1a1a2e;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--mobile-content-padding);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  contain: layout style paint;
+}
+
+/* =================================
+   PERFORMANCE OPTIMIZATIONS
+   ================================= */
+
+/* GPU acceleration for smooth scrolling */
+.mobile-scroll-container {
+  -webkit-overflow-scrolling: touch;
+  transform: translateZ(0);
+  will-change: scroll-position;
+  scroll-behavior: smooth;
+}
+
+/* Hardware acceleration for animations */
+.mobile-animated {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* Optimize repaints and reflows */
+.mobile-card {
+  contain: layout style paint;
+  transform: translateZ(0);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* =================================
+   TOUCH OPTIMIZATION
+   ================================= */
+
+/* Enhanced touch targets */
+.touch-optimized {
+  min-height: var(--mobile-touch-target);
+  min-width: var(--mobile-touch-target);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1);
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+  position: relative;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+/* Touch feedback states */
+.touch-optimized:active {
+  transform: scale(0.95);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.touch-optimized::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity 0.3s, transform 0.3s;
+  pointer-events: none;
+}
+
+.touch-optimized:active::before {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.1s, transform 0.1s;
+}
+
+/* Prevent zoom on form elements */
+input, select, textarea {
+  font-size: 16px; /* Prevents zoom on iOS */
+  touch-action: manipulation;
+}
+
+/* =================================
+   LOADING STATES & SKELETONS
+   ================================= */
+
+/* Performance-optimized skeleton loader */
+@keyframes skeleton-pulse {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+.skeleton-loader {
+  background: linear-gradient(
+    90deg, 
+    #2a2a35 25%, 
+    #3a3a45 50%, 
+    #2a2a35 75%
+  );
+  background-size: 200px 100%;
+  animation: skeleton-pulse 2s infinite linear;
+  contain: strict;
+}
+
+/* Match card skeleton */
+.skeleton-match-card {
+  height: 120px;
+  border-radius: 8px;
+  margin: 8px 16px;
+}
+
+/* Team logo skeleton */
+.skeleton-team-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+/* =================================
+   MOBILE LAYOUT COMPONENTS
+   ================================= */
+
+/* Tournament match cards - mobile optimized */
+.mobile-match-card {
+  background: #2a2a35;
+  border-radius: 8px;
+  margin: 8px 16px;
+  padding: 16px;
+  position: relative;
+  contain: layout style paint;
+  transform: translateZ(0);
+}
+
+.mobile-match-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, 
+    rgba(220, 38, 38, 0.1) 0%, 
+    rgba(220, 38, 38, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.mobile-match-card:active::after {
+  opacity: 1;
+}
+
+/* Team sections in match cards */
+.mobile-team-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 8px 0;
+}
+
+.mobile-team-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.mobile-team-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #1a1a2e;
+  flex-shrink: 0;
+}
+
+.mobile-team-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-team-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-team-score {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  min-width: 32px;
+  text-align: center;
+}
+
+/* Live match indicators */
+.mobile-live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ef4444;
+  text-transform: uppercase;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+.mobile-live-dot {
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  animation: live-pulse 2s infinite;
+}
+
+/* =================================
+   NAVIGATION OPTIMIZATIONS
+   ================================= */
+
+/* Bottom navigation - performance optimized */
+.mobile-bottom-nav {
+  height: var(--mobile-bottom-nav-height);
+  background: #1a1a2e;
+  border-top: 1px solid #333340;
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  contain: layout style paint;
+  transform: translateZ(0);
+  padding-bottom: var(--mobile-safe-area-bottom);
+}
+
+.mobile-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px;
+  color: #a3a3a3;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  touch-action: manipulation;
+  min-height: var(--mobile-touch-target);
+}
+
+.mobile-nav-item.active {
+  color: #dc2626;
+}
+
+.mobile-nav-item:active {
+  transform: scale(0.95);
+}
+
+/* =================================
+   RESPONSIVE BREAKPOINTS
+   ================================= */
+
+/* Small phones */
+@media (max-width: 375px) {
+  :root {
+    --mobile-content-padding: 12px;
+  }
+  
+  .mobile-match-card {
+    margin: 6px 12px;
+    padding: 12px;
+  }
+  
+  .mobile-team-name {
+    font-size: 14px;
+  }
+}
+
+/* Large phones and small tablets */
+@media (min-width: 414px) and (max-width: 767px) {
+  .mobile-match-card {
+    max-width: 600px;
+    margin: 8px auto;
+  }
+}
+
+/* =================================
+   PERFORMANCE HINTS
+   ================================= */
+
+/* Hint to browsers about content changes */
+.tournament-live-section {
+  contain: layout style paint;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 400px;
+}
+
+/* Optimize off-screen content */
+.mobile-upcoming-matches {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 800px;
+}
+
+/* GPU layer optimization for smooth scrolling */
+.mobile-scroll-view {
+  contain: strict;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  transform: translateZ(0);
+}
+
+/* =================================
+   REDUCED MOTION SUPPORT
+   ================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .mobile-live-dot {
+    animation: none;
+  }
+  
+  .skeleton-loader {
+    animation: none;
+    background: #2a2a35;
+  }
+}
+
+/* =================================
+   HIGH CONTRAST MODE SUPPORT
+   ================================= */
+
+@media (prefers-contrast: high) {
+  .mobile-match-card {
+    border: 2px solid white;
+  }
+  
+  .mobile-team-name {
+    color: white;
+    font-weight: 700;
+  }
+  
+  .touch-optimized:active {
+    border: 2px solid white;
+  }
+}

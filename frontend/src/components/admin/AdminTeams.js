@@ -229,7 +229,7 @@ function AdminTeams({ navigateTo }) {
     }
   };
 
-  const regions = ['all', 'NA', 'EU', 'APAC'];
+  const regions = ['all', 'NA', 'EU', 'APAC', 'ASIA', 'LATAM', 'BR', 'CN', 'KR', 'JP', 'Americas', 'EMEA', 'Oceania', 'China'];
 
   if (loading) {
     return (
@@ -536,8 +536,16 @@ function AdminTeams({ navigateTo }) {
                     <option value="NA">North America</option>
                     <option value="EU">Europe</option>
                     <option value="APAC">Asia-Pacific</option>
+                    <option value="ASIA">Asia</option>
                     <option value="LATAM">Latin America</option>
                     <option value="BR">Brazil</option>
+                    <option value="CN">China</option>
+                    <option value="KR">Korea</option>
+                    <option value="JP">Japan</option>
+                    <option value="Americas">Americas</option>
+                    <option value="EMEA">EMEA</option>
+                    <option value="Oceania">Oceania</option>
+                    <option value="China">China (Alt)</option>
                   </select>
                 </div>
                 

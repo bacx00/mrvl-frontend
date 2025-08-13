@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AuthProvider, ThemeProvider, useAuth, useTheme } from './hooks';
 import Navigation from './components/Navigation';
 import AuthModal from './components/AuthModal';
 import ErrorBoundary from './components/shared/ErrorBoundary';
+import Footer from './components/Footer';
+import Breadcrumbs from './components/shared/Breadcrumbs';
 
-// Import all page components
+// Direct imports - no lazy loading
 import HomePage from './components/pages/HomePage';
 import NewsPage from './components/pages/NewsPage';
 import NewsDetailPage from './components/pages/NewsDetailPage';
@@ -28,8 +30,6 @@ import StatsPage from './components/pages/StatsPage';
 import SearchPage from './components/pages/SearchPage';
 import TestPage from './components/pages/TestPage';
 import PasswordReset from './components/pages/PasswordReset';
-import Footer from './components/Footer';
-import Breadcrumbs from './components/shared/Breadcrumbs';
 
 // Footer pages
 import ContactPage from './components/pages/footer/ContactPage';
@@ -37,7 +37,7 @@ import PrivacyPage from './components/pages/footer/PrivacyPage';
 import TermsPage from './components/pages/footer/TermsPage';
 import CareersPage from './components/pages/footer/CareersPage';
 
-// Import Admin Components
+// Admin Components
 import RoleBasedDashboard from './components/RoleBasedDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
 import TeamForm from './components/admin/TeamForm';
@@ -177,8 +177,8 @@ function AppContent() {
     };
   }, []);
 
-  // Navigation handler with history support
-  const navigateTo = (page, params = {}) => {
+  // Navigation handler with history support - memoized to prevent recreation
+  const navigateTo = useCallback((page, params = {}) => {
     console.log('🧭 Navigating to:', page, params);
     setCurrentPage(page);
     
@@ -200,21 +200,21 @@ function AppContent() {
     }
     
     window.scrollTo(0, 0);
-  };
+  }, []);
 
-  // Handle authentication modal
-  const handleAuthClick = () => {
+  // Handle authentication modal - memoized callbacks
+  const handleAuthClick = useCallback(() => {
     console.log('🔑 App.js: Auth button clicked from navigation');
     setShowAuthModal(true);
-  };
+  }, []);
 
-  const handleAuthClose = () => {
+  const handleAuthClose = useCallback(() => {
     console.log('🔑 App.js: Auth modal closed');
     setShowAuthModal(false);
-  };
+  }, []);
 
-  // FIXED: Admin access - REMOVED demo credentials
-  const renderPageComponent = () => {
+  // Memoize the current page component to prevent re-creation
+  const pageComponent = useMemo(() => {
     const CurrentPageComponent = ROUTES[currentPage] || HomePage;
     
     // Check if this is an admin page
@@ -248,7 +248,7 @@ function AppContent() {
     
     // FIXED: Pass navigateTo and params properly to all components
     return <CurrentPageComponent navigateTo={navigateTo} params={pageParams} onAuthClick={handleAuthClick} />;
-  };
+  }, [currentPage, pageParams, user]); // Remove navigateTo and handleAuthClick from dependencies
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-all duration-300">
@@ -270,7 +270,7 @@ function AppContent() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
-        {renderPageComponent()}
+        {pageComponent}
       </main>
 
       {/* Footer */}

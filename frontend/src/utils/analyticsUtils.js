@@ -294,6 +294,11 @@ const getDeviceType = () => {
 };
 
 const sendToBackendAnalytics = async (eventType, data) => {
+  // Disabled to improve performance - analytics endpoint not implemented
+  return;
+  
+  // Original code commented out
+  /*
   try {
     // Only send to backend if we have an API endpoint
     const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://staging.mrvl.net';
@@ -316,6 +321,7 @@ const sendToBackendAnalytics = async (eventType, data) => {
   } catch (error) {
     console.debug('Analytics backend not available:', error.message);
   }
+  */
 };
 
 const sendPerformanceData = (data) => {

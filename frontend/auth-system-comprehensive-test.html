@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Authentication System Bug Hunt - MRVL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .bug-critical { @apply border-l-4 border-red-600 bg-red-50 p-4 mb-4; }
+        .bug-high { @apply border-l-4 border-orange-600 bg-orange-50 p-4 mb-4; }
+        .bug-medium { @apply border-l-4 border-yellow-600 bg-yellow-50 p-4 mb-4; }
+        .bug-low { @apply border-l-4 border-blue-600 bg-blue-50 p-4 mb-4; }
+        .test-pass { @apply text-green-600; }
+        .test-fail { @apply text-red-600; }
+        .test-skip { @apply text-gray-600; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto py-8 px-4">
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">🔍 Authentication System Bug Hunt</h1>
+            <p class="text-gray-600">Comprehensive testing of user authentication and management system</p>
+            <div class="mt-4 p-4 bg-blue-100 border border-blue-300 rounded">
+                <p class="text-blue-800"><strong>Environment:</strong> staging.mrvl.net</p>
+                <p class="text-blue-800"><strong>Focus Areas:</strong> Hero images, avatars, auth edge cases, sessions, roles, security</p>
+            </div>
+        </header>
+
+        <!-- Test Controls -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-2xl font-bold mb-4">Test Controls</h2>
+            <div class="flex flex-wrap gap-4">
+                <button onclick="runAllTests()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                    Run All Tests
+                </button>
+                <button onclick="runHeroImageTests()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                    Hero Image Tests
+                </button>
+                <button onclick="runAvatarTests()" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
+                    Avatar Tests
+                </button>
+                <button onclick="runSecurityTests()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                    Security Tests
+                </button>
+                <button onclick="clearResults()" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+                    Clear Results
+                </button>
+            </div>
+            
+            <div class="mt-4">
+                <label class="flex items-center">
+                    <input type="checkbox" id="autoCleanup" checked class="mr-2">
+                    Auto-cleanup test data
+                </label>
+            </div>
+        </div>
+
+        <!-- Test Results Summary -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-2xl font-bold mb-4">Test Results Summary</h2>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4" id="testSummary">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-gray-400" id="totalTests">0</div>
+                    <div class="text-gray-600">Total Tests</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-green-600" id="passedTests">0</div>
+                    <div class="text-gray-600">Passed</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-red-600" id="failedTests">0</div>
+                    <div class="text-gray-600">Failed</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-orange-600" id="bugsFound">0</div>
+                    <div class="text-gray-600">Bugs Found</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-red-600" id="criticalBugs">0</div>
+                    <div class="text-gray-600">Critical</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8" id="progressSection" style="display: none;">
+            <h3 class="text-xl font-bold mb-2">Testing Progress</h3>
+            <div class="bg-gray-200 rounded-full h-4 mb-2">
+                <div class="bg-blue-600 h-4 rounded-full transition-all duration-300" id="progressBar" style="width: 0%"></div>
+            </div>
+            <p id="progressText" class="text-sm text-gray-600">Ready to start testing...</p>
+        </div>
+
+        <!-- Bug Reports -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-2xl font-bold mb-4">🐛 Bug Reports</h2>
+            <div id="bugReports">
+                <p class="text-gray-500">No bugs detected yet. Run tests to begin analysis.</p>
+            </div>
+        </div>
+
+        <!-- Detailed Test Results -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold mb-4">📊 Detailed Test Results</h2>
+            <div id="testResults">
+                <p class="text-gray-500">Test results will appear here...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE_URL = 'https://staging.mrvl.net/api';
+        const HEROES = [
+            'Black Widow', 'Hawkeye', 'Star-Lord', 'Punisher', 'Winter Soldier',
+            'Spider-Man', 'Iron Man', 'Storm', 'Scarlet Witch', 'Moon Knight',
+            'Hulk', 'Groot', 'Doctor Strange', 'Magneto', 'Captain America',
+            'Mantis', 'Luna Snow', 'Adam Warlock', 'Jeff the Land Shark', 'Loki'
+        ];
+
+        // Test State
+        let testResults = [];
+        let bugReports = [];
+        let currentProgress = 0;
+        let totalTests = 0;
+        let testTokens = {};
+
+        // Utility Functions
+        function updateProgress(current, total, message) {
+            currentProgress = current;
+            totalTests = total;
+            const percentage = Math.round((current / total) * 100);
+            
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = message;
+            
+            if (current === total) {
+                setTimeout(() => {
+                    document.getElementById('progressSection').style.display = 'none';
+                }, 2000);
+            } else {
+                document.getElementById('progressSection').style.display = 'block';
+            }
+        }
+
+        function updateSummary() {
+            const passed = testResults.filter(r => r.status === 'pass').length;
+            const failed = testResults.filter(r => r.status === 'fail').length;
+            const critical = bugReports.filter(b => b.severity === 'critical').length;
+
+            document.getElementById('totalTests').textContent = testResults.length;
+            document.getElementById('passedTests').textContent = passed;
+            document.getElementById('failedTests').textContent = failed;
+            document.getElementById('bugsFound').textContent = bugReports.length;
+            document.getElementById('criticalBugs').textContent = critical;
+        }
+
+        async function makeRequest(endpoint, method = 'GET', data = null, token = null) {
+            try {
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                };
+
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const config = {
+                    method,
+                    headers
+                };
+
+                if (data && method !== 'GET') {
+                    config.body = JSON.stringify(data);
+                }
+
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+                let result;
+                
+                try {
+                    result = await response.json();
+                } catch (e) {
+                    result = { message: 'Invalid JSON response' };
+                }
+
+                return {
+                    status: response.status,
+                    success: response.ok,
+                    data: result
+                };
+            } catch (error) {
+                return {
+                    status: 0,
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+
+        function reportBug(severity, category, title, description, reproduction, impact, evidence = null) {
+            const bug = {
+                id: `BUG-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                severity,
+                category,
+                title,
+                description,
+                reproduction,
+                impact,
+                evidence,
+                discovered_at: new Date().toISOString()
+            };
+
+            bugReports.push(bug);
+            updateSummary();
+            displayBugReports();
+            
+            console.log(`🐛 [${severity.toUpperCase()}] ${category}: ${title}`);
+            return bug;
+        }
+
+        function addTestResult(testName, status, message, details = null) {
+            const result = {
+                name: testName,
+                status,
+                message,
+                details,
+                timestamp: new Date().toISOString()
+            };
+
+            testResults.push(result);
+            updateSummary();
+            displayTestResults();
+            
+            return result;
+        }
+
+        function displayBugReports() {
+            const container = document.getElementById('bugReports');
+            
+            if (bugReports.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">No bugs detected yet. Run tests to begin analysis.</p>';
+                return;
+            }
+
+            const sortedBugs = bugReports.sort((a, b) => {
+                const severityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+                return severityOrder[b.severity] - severityOrder[a.severity];
+            });
+
+            container.innerHTML = sortedBugs.map(bug => `
+                <div class="bug-${bug.severity}">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-bold text-lg">${bug.title}</h4>
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full ${getBadgeClass(bug.severity)}">
+                            ${bug.severity.toUpperCase()}
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-700 mb-2"><strong>Category:</strong> ${bug.category}</p>
+                    <p class="text-gray-700 mb-3">${bug.description}</p>
+                    <div class="mb-3">
+                        <strong class="text-sm">Impact:</strong>
+                        <p class="text-sm text-gray-600">${bug.impact}</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong class="text-sm">Reproduction Steps:</strong>
+                        <ol class="list-decimal list-inside text-sm text-gray-600 ml-4">
+                            ${bug.reproduction.map(step => `<li>${step}</li>`).join('')}
+                        </ol>
+                    </div>
+                    ${bug.evidence ? `<div class="mb-2">
+                        <strong class="text-sm">Evidence:</strong>
+                        <pre class="text-xs bg-gray-100 p-2 rounded mt-1 overflow-x-auto">${JSON.stringify(bug.evidence, null, 2)}</pre>
+                    </div>` : ''}
+                    <p class="text-xs text-gray-500">Bug ID: ${bug.id} | Discovered: ${new Date(bug.discovered_at).toLocaleString()}</p>
+                </div>
+            `).join('');
+        }
+
+        function getBadgeClass(severity) {
+            const classes = {
+                critical: 'bg-red-100 text-red-800',
+                high: 'bg-orange-100 text-orange-800',
+                medium: 'bg-yellow-100 text-yellow-800',
+                low: 'bg-blue-100 text-blue-800'
+            };
+            return classes[severity] || 'bg-gray-100 text-gray-800';
+        }
+
+        function displayTestResults() {
+            const container = document.getElementById('testResults');
+            
+            if (testResults.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">Test results will appear here...</p>';
+                return;
+            }
+
+            const groupedResults = testResults.reduce((groups, result) => {
+                const category = result.name.split(' - ')[0];
+                if (!groups[category]) groups[category] = [];
+                groups[category].push(result);
+                return groups;
+            }, {});
+
+            container.innerHTML = Object.entries(groupedResults).map(([category, results]) => `
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold mb-3 text-gray-800">${category}</h3>
+                    <div class="space-y-2">
+                        ${results.map(result => `
+                            <div class="flex items-center justify-between p-3 border rounded ${getResultClass(result.status)}">
+                                <div class="flex-1">
+                                    <div class="font-medium">${result.name.split(' - ').slice(1).join(' - ')}</div>
+                                    <div class="text-sm text-gray-600">${result.message}</div>
+                                    ${result.details ? `<details class="mt-2"><summary class="text-xs cursor-pointer text-gray-500">View Details</summary><pre class="text-xs bg-gray-100 p-2 rounded mt-1 overflow-x-auto">${JSON.stringify(result.details, null, 2)}</pre></details>` : ''}
+                                </div>
+                                <div class="ml-4">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(result.status)}">
+                                        ${result.status.toUpperCase()}
+                                    </span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getResultClass(status) {
+            const classes = {
+                pass: 'bg-green-50 border-green-200',
+                fail: 'bg-red-50 border-red-200',
+                skip: 'bg-gray-50 border-gray-200'
+            };
+            return classes[status] || 'bg-gray-50 border-gray-200';
+        }
+
+        function getStatusBadgeClass(status) {
+            const classes = {
+                pass: 'bg-green-100 text-green-800',
+                fail: 'bg-red-100 text-red-800',
+                skip: 'bg-gray-100 text-gray-800'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        async function createTestUser(userData) {
+            try {
+                const response = await makeRequest('/register', 'POST', userData);
+                
+                if (response.success) {
+                    const token = response.data.token || response.data.access_token;
+                    const userId = response.data.user?.id || response.data.id;
+                    
+                    return {
+                        success: true,
+                        userId,
+                        token,
+                        userData: response.data
+                    };
+                } else {
+                    return { success: false, error: response.data };
+                }
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Test Suites
+        async function runHeroImageTests() {
+            updateProgress(0, 5, 'Testing hero image functionality...');
+            
+            // Test 1: Create user with hero flair
+            updateProgress(1, 5, 'Creating test user with hero flair...');
+            const testUser = await createTestUser({
+                name: `hero_test_${Date.now()}`,
+                email: `hero_test_${Date.now()}@test.com`,
+                password: 'HeroTest123!',
+                role: 'user'
+            });
+
+            if (!testUser.success) {
+                addTestResult('Hero Images - User Creation', 'fail', 'Failed to create test user for hero testing', testUser.error);
+                reportBug('high', 'Hero Images', 'Cannot create test user with hero flair', 
+                    'User creation fails when testing hero image functionality',
+                    ['Try to register user for hero testing', 'Registration fails'],
+                    'Cannot test hero image functionality',
+                    testUser.error
+                );
+                return;
+            }
+
+            addTestResult('Hero Images - User Creation', 'pass', 'Successfully created test user for hero testing');
+            testTokens.heroTest = testUser.token;
+
+            // Test 2: Update user with hero flair
+            updateProgress(2, 5, 'Setting hero flair...');
+            const heroUpdateResult = await makeRequest('/user/profile', 'PUT', {
+                hero_flair: 'Black Widow',
+                show_hero_flair: true
+            }, testUser.token);
+
+            if (heroUpdateResult.success) {
+                addTestResult('Hero Images - Hero Flair Update', 'pass', 'Successfully updated user hero flair');
+            } else {
+                addTestResult('Hero Images - Hero Flair Update', 'fail', 'Failed to update hero flair', heroUpdateResult.data);
+                reportBug('medium', 'Hero Images', 'Hero flair update fails', 
+                    'Cannot update user hero_flair field',
+                    ['Login as user', 'Try to update hero_flair', 'Update fails'],
+                    'Users cannot select hero avatars',
+                    heroUpdateResult.data
+                );
+            }
+
+            // Test 3: Check hero image URL generation
+            updateProgress(3, 5, 'Testing hero image URLs...');
+            for (let i = 0; i < 3; i++) {
+                const hero = HEROES[i];
+                const heroImageUrl = `https://staging.mrvl.net/images/heroes/${hero.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}-headbig.webp`;
+                
+                try {
+                    const imageResponse = await fetch(heroImageUrl, { method: 'HEAD' });
+                    if (imageResponse.ok) {
+                        addTestResult('Hero Images - Image Access', 'pass', `Hero image accessible: ${hero}`);
+                    } else {
+                        addTestResult('Hero Images - Image Access', 'fail', `Hero image not accessible: ${hero} (${imageResponse.status})`);
+                        reportBug('medium', 'Hero Images', `Hero image missing: ${hero}`, 
+                            `Hero image URL returns ${imageResponse.status}: ${heroImageUrl}`,
+                            [`Select ${hero} as hero flair`, 'Hero image should load', 'Image returns 404 or error'],
+                            'Selected hero avatars do not display properly',
+                            { hero, url: heroImageUrl, status: imageResponse.status }
+                        );
+                    }
+                } catch (error) {
+                    addTestResult('Hero Images - Image Access', 'fail', `Error accessing hero image: ${hero}`);
+                    reportBug('medium', 'Hero Images', `Network error accessing hero image: ${hero}`, 
+                        `Network error when trying to load hero image: ${error.message}`,
+                        [`Select ${hero} as hero flair`, 'Check browser network tab', 'Image request fails'],
+                        'Hero images fail to load due to network issues',
+                        { hero, error: error.message }
+                    );
+                }
+            }
+
+            // Test 4: Admin users endpoint hero display
+            updateProgress(4, 5, 'Testing admin hero display...');
+            const adminUsersResponse = await makeRequest('/admin/users', 'GET', null, testUser.token);
+            
+            if (!adminUsersResponse.success) {
+                addTestResult('Hero Images - Admin Display', 'skip', 'Cannot access admin endpoint (expected for regular users)');
+            } else {
+                const users = adminUsersResponse.data.data || adminUsersResponse.data || [];
+                const usersWithHeroFlair = users.filter(user => user.hero_flair);
+                
+                if (usersWithHeroFlair.length === 0) {
+                    addTestResult('Hero Images - Admin Display', 'fail', 'No hero flair data in admin users response');
+                    reportBug('medium', 'Hero Images', 'Hero flair not shown in admin interface', 
+                        'Admin users endpoint does not include hero_flair data',
+                        ['Login as admin', 'Go to users management', 'Check user data', 'Hero flair missing'],
+                        'Administrators cannot see user hero avatars in management interface',
+                        { responseStructure: users[0] || 'No users found' }
+                    );
+                } else {
+                    addTestResult('Hero Images - Admin Display', 'pass', `Found ${usersWithHeroFlair.length} users with hero flair data`);
+                }
+            }
+
+            updateProgress(5, 5, 'Hero image tests completed');
+        }
+
+        async function runAvatarTests() {
+            updateProgress(0, 4, 'Testing avatar system...');
+            
+            // Test 1: Avatar selection with different types
+            updateProgress(1, 4, 'Testing avatar selection...');
+            const avatarTests = [
+                { type: 'hero', hero_flair: 'Spider-Man', show_hero_flair: true },
+                { type: 'none', hero_flair: null, show_hero_flair: false },
+                { type: 'invalid', hero_flair: 'NonExistentHero', show_hero_flair: true }
+            ];
+
+            for (const test of avatarTests) {
+                const testUser = await createTestUser({
+                    name: `avatar_${test.type}_${Date.now()}`,
+                    email: `avatar_${test.type}_${Date.now()}@test.com`,
+                    password: 'AvatarTest123!'
+                });
+
+                if (testUser.success) {
+                    // Try to set avatar data
+                    const updateResponse = await makeRequest('/user/profile', 'PUT', {
+                        hero_flair: test.hero_flair,
+                        show_hero_flair: test.show_hero_flair
+                    }, testUser.token);
+
+                    if (test.type === 'invalid' && updateResponse.success) {
+                        addTestResult('Avatar System - Invalid Hero', 'fail', 'System accepted invalid hero name');
+                        reportBug('medium', 'Avatar System', 'Invalid hero names accepted', 
+                            'System allows setting non-existent hero names as hero_flair',
+                            ['Set hero_flair to "NonExistentHero"', 'Update succeeds'],
+                            'Users can have broken avatar references',
+                            { attempted_hero: test.hero_flair, response: updateResponse.data }
+                        );
+                    } else if (test.type !== 'invalid') {
+                        if (updateResponse.success) {
+                            addTestResult('Avatar System - Valid Selection', 'pass', `Avatar type '${test.type}' works correctly`);
+                        } else {
+                            addTestResult('Avatar System - Valid Selection', 'fail', `Avatar type '${test.type}' failed to update`);
+                        }
+                    }
+
+                    testTokens[`avatar_${test.type}`] = testUser.token;
+                }
+            }
+
+            updateProgress(2, 4, 'Testing avatar URL generation...');
+            
+            // Test 2: Avatar URL consistency
+            const profileResponse = await makeRequest('/user', 'GET', null, testTokens.avatar_hero);
+            if (profileResponse.success) {
+                const user = profileResponse.data.data || profileResponse.data;
+                
+                if (user.hero_flair && user.show_hero_flair) {
+                    addTestResult('Avatar System - URL Generation', 'pass', 'Profile returns hero flair data correctly');
+                } else {
+                    addTestResult('Avatar System - URL Generation', 'fail', 'Hero flair data inconsistent in profile');
+                    reportBug('medium', 'Avatar System', 'Avatar data inconsistent', 
+                        'Hero flair data not consistently returned in user profile',
+                        ['Set hero avatar', 'Fetch user profile', 'Hero data missing or incorrect'],
+                        'Avatar display inconsistency across interface',
+                        user
+                    );
+                }
+            }
+
+            updateProgress(4, 4, 'Avatar tests completed');
+        }
+
+        async function runSecurityTests() {
+            updateProgress(0, 8, 'Running security tests...');
+            
+            // Test 1: Empty credentials
+            updateProgress(1, 8, 'Testing empty credentials...');
+            const emptyCredentialsTest = await makeRequest('/login', 'POST', {
+                email: '',
+                password: ''
+            });
+
+            if (emptyCredentialsTest.success) {
+                addTestResult('Security - Empty Credentials', 'fail', 'Empty credentials accepted');
+                reportBug('critical', 'Authentication Security', 'Empty credentials bypass', 
+                    'Login endpoint accepts empty email and password',
+                    ['Send POST to /login with empty email and password', 'Login succeeds'],
+                    'Critical security vulnerability - authentication bypass',
+                    emptyCredentialsTest.data
+                );
+            } else {
+                addTestResult('Security - Empty Credentials', 'pass', 'Empty credentials properly rejected');
+            }
+
+            // Test 2: SQL injection attempts
+            updateProgress(2, 8, 'Testing SQL injection protection...');
+            const sqlInjectionTests = [
+                "admin'; DROP TABLE users; --",
+                "' OR '1'='1",
+                "admin' UNION SELECT * FROM users --"
+            ];
+
+            for (const injection of sqlInjectionTests) {
+                const injectionTest = await makeRequest('/login', 'POST', {
+                    email: injection,
+                    password: 'password'
+                });
+
+                if (injectionTest.success || (injectionTest.data && JSON.stringify(injectionTest.data).toLowerCase().includes('sql'))) {
+                    addTestResult('Security - SQL Injection', 'fail', `SQL injection vulnerability detected: ${injection}`);
+                    reportBug('critical', 'Authentication Security', 'SQL injection vulnerability', 
+                        `Potential SQL injection with payload: ${injection}`,
+                        [`Try login with email: "${injection}"`, 'Check for SQL errors or successful login'],
+                        'Critical security vulnerability - database compromise possible',
+                        { payload: injection, response: injectionTest.data }
+                    );
+                } else {
+                    addTestResult('Security - SQL Injection', 'pass', `SQL injection attempt blocked: ${injection.substring(0, 20)}...`);
+                }
+            }
+
+            // Test 3: Rate limiting
+            updateProgress(3, 8, 'Testing rate limiting...');
+            const rapidRequests = [];
+            for (let i = 0; i < 8; i++) {
+                rapidRequests.push(makeRequest('/login', 'POST', {
+                    email: 'nonexistent@test.com',
+                    password: 'wrongpassword'
+                }));
+            }
+
+            const rapidResults = await Promise.all(rapidRequests);
+            const rateLimitedRequests = rapidResults.filter(r => r.status === 429).length;
+            const successfulRequests = rapidResults.filter(r => r.status !== 429).length;
+
+            if (rateLimitedRequests === 0 && successfulRequests === 8) {
+                addTestResult('Security - Rate Limiting', 'fail', 'No rate limiting detected');
+                reportBug('medium', 'Authentication Security', 'No rate limiting on login attempts', 
+                    'System processes unlimited rapid login attempts without rate limiting',
+                    ['Make 8+ rapid login attempts', 'All requests processed without delay'],
+                    'Brute force attacks not prevented',
+                    { total_requests: 8, rate_limited: rateLimitedRequests, processed: successfulRequests }
+                );
+            } else if (rateLimitedRequests > 0) {
+                addTestResult('Security - Rate Limiting', 'pass', `Rate limiting active - ${rateLimitedRequests} requests blocked`);
+            } else {
+                addTestResult('Security - Rate Limiting', 'skip', 'Rate limiting test inconclusive');
+            }
+
+            // Test 4: Password strength validation
+            updateProgress(4, 8, 'Testing password validation...');
+            const weakPasswords = ['123', 'password', 'aaaaaaa', 'Password'];
+
+            for (const weakPassword of weakPasswords) {
+                const weakPassTest = await createTestUser({
+                    name: `weak_pass_${Date.now()}`,
+                    email: `weak_pass_${Date.now()}@test.com`,
+                    password: weakPassword
+                });
+
+                if (weakPassTest.success) {
+                    addTestResult('Security - Password Strength', 'fail', `Weak password accepted: ${weakPassword}`);
+                    reportBug('medium', 'Authentication Security', 'Weak passwords accepted', 
+                        `Password "${weakPassword}" was accepted despite being weak`,
+                        [`Try to register with password: "${weakPassword}"`, 'Registration succeeds'],
+                        'Users can create easily compromised accounts',
+                        { attempted_password: weakPassword }
+                    );
+                } else {
+                    addTestResult('Security - Password Strength', 'pass', `Weak password rejected: ${weakPassword}`);
+                }
+            }
+
+            // Test 5: Token validation
+            updateProgress(5, 8, 'Testing token validation...');
+            const malformedTokens = [
+                'invalid_token',
+                'Bearer invalid',
+                null,
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid.signature'
+            ];
+
+            for (const token of malformedTokens) {
+                const tokenTest = await makeRequest('/user', 'GET', null, token);
+                
+                if (tokenTest.success) {
+                    addTestResult('Security - Token Validation', 'fail', `Malformed token accepted: ${token || 'null'}`);
+                    reportBug('critical', 'Authentication Security', 'Invalid tokens accepted', 
+                        `Malformed token was accepted: ${token}`,
+                        [`Use malformed token: "${token}"`, 'Make authenticated request', 'Request succeeds'],
+                        'Authentication can be bypassed with invalid tokens',
+                        { token, response: tokenTest.data }
+                    );
+                } else {
+                    addTestResult('Security - Token Validation', 'pass', `Malformed token rejected: ${token || 'null'}`);
+                }
+            }
+
+            // Test 6: User enumeration
+            updateProgress(6, 8, 'Testing user enumeration...');
+            const enumerationTest = await makeRequest('/login', 'POST', {
+                email: 'definitely_nonexistent_user_12345@nowhere.com',
+                password: 'password'
+            });
+
+            if (enumerationTest.data && typeof enumerationTest.data.message === 'string') {
+                const message = enumerationTest.data.message.toLowerCase();
+                if (message.includes('user not found') || message.includes('email does not exist') || message.includes('no user')) {
+                    addTestResult('Security - User Enumeration', 'fail', 'User enumeration possible through error messages');
+                    reportBug('low', 'Authentication Security', 'User enumeration vulnerability', 
+                        'Login error messages reveal whether email addresses exist',
+                        ['Try to login with non-existent email', 'Error message reveals email existence'],
+                        'Attackers can enumerate valid email addresses',
+                        { error_message: enumerationTest.data.message }
+                    );
+                } else {
+                    addTestResult('Security - User Enumeration', 'pass', 'Generic error messages prevent user enumeration');
+                }
+            }
+
+            // Test 7: Session management
+            updateProgress(7, 8, 'Testing session management...');
+            const testUser = await createTestUser({
+                name: `session_test_${Date.now()}`,
+                email: `session_test_${Date.now()}@test.com`,
+                password: 'SessionTest123!'
+            });
+
+            if (testUser.success) {
+                // Test logout token invalidation
+                const logoutResult = await makeRequest('/logout', 'POST', {}, testUser.token);
+                if (logoutResult.success) {
+                    const postLogoutTest = await makeRequest('/user', 'GET', null, testUser.token);
+                    if (postLogoutTest.success) {
+                        addTestResult('Security - Session Management', 'fail', 'Token still valid after logout');
+                        reportBug('medium', 'Authentication Security', 'Session not invalidated on logout', 
+                            'Authentication token remains valid after successful logout',
+                            ['Login', 'Logout', 'Try to use old token', 'Token still works'],
+                            'Users remain authenticated after logout',
+                            { logout_response: logoutResult.data, token_still_valid: postLogoutTest.data }
+                        );
+                    } else {
+                        addTestResult('Security - Session Management', 'pass', 'Token properly invalidated after logout');
+                    }
+                } else {
+                    addTestResult('Security - Session Management', 'skip', 'Logout functionality not available');
+                }
+            }
+
+            updateProgress(8, 8, 'Security tests completed');
+        }
+
+        async function runAllTests() {
+            clearResults();
+            
+            const testSuites = [
+                { name: 'Hero Image Tests', func: runHeroImageTests },
+                { name: 'Avatar Tests', func: runAvatarTests },
+                { name: 'Security Tests', func: runSecurityTests }
+            ];
+
+            for (let i = 0; i < testSuites.length; i++) {
+                updateProgress(i, testSuites.length, `Running ${testSuites[i].name}...`);
+                await testSuites[i].func();
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Brief pause between suites
+            }
+
+            updateProgress(testSuites.length, testSuites.length, 'All tests completed!');
+
+            // Auto-cleanup if enabled
+            if (document.getElementById('autoCleanup').checked) {
+                await cleanupTestData();
+            }
+        }
+
+        async function cleanupTestData() {
+            console.log('🧹 Cleaning up test data...');
+            // Note: Cleanup would require admin permissions, which test users don't have
+            // This is just a placeholder for potential cleanup logic
+        }
+
+        function clearResults() {
+            testResults = [];
+            bugReports = [];
+            testTokens = {};
+            updateSummary();
+            displayBugReports();
+            displayTestResults();
+            document.getElementById('progressSection').style.display = 'none';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 Authentication Bug Hunt Tool Loaded');
+            console.log('Ready to test authentication system...');
+        });
+    </script>
+</body>
+</html>

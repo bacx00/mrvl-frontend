@@ -14,9 +14,9 @@
     <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="pragma" content="no-cache" />
     <meta http-equiv="expires" content="0" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
+    <link rel="alternate icon" href="/favicon.ico?v=2" type="image/x-icon" />
+    <link rel="apple-touch-icon" href="/favicon.svg?v=2" />
     <link rel="manifest" href="/manifest.json" />
     
     <meta name="description" content="MRVL - The ultimate Marvel Rivals esports platform for competitive gaming, tournaments, teams, and community." />
@@ -41,7 +41,6 @@
     <link rel="dns-prefetch" href="//api.example.com">
     
     <!-- Preload Critical Resources -->
-    <link rel="preload" href="/favicon.svg" as="image" type="image/svg+xml">
     <link rel="preload" href="https://fonts.bunny.net/css?family=inter:400,500,600,700&family=space-grotesk:400,500,600,700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.bunny.net/css?family=inter:400,500,600,700&family=space-grotesk:400,500,600,700&display=swap"></noscript>
     
@@ -107,65 +106,5 @@
     <!-- React Root -->
     <div id="root"></div>
     
-    <!-- Service Worker Registration -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js')
-            .then(function(registration) {
-              console.log('MRVL SW registered: ', registration.scope);
-              
-              // Check for updates
-              registration.addEventListener('updatefound', function() {
-                const newWorker = registration.installing;
-                newWorker.addEventListener('statechange', function() {
-                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    // Show update notification
-                    if (window.showUpdateNotification) {
-                      window.showUpdateNotification();
-                    }
-                  }
-                });
-              });
-            })
-            .catch(function(error) {
-              console.log('MRVL SW registration failed: ', error);
-            });
-          
-          // Handle service worker messages
-          navigator.serviceWorker.addEventListener('message', function(event) {
-            if (event.data && event.data.type === 'CACHE_UPDATED') {
-              console.log('Cache updated for:', event.data.url);
-            }
-          });
-        });
-      }
-
-      // PWA install prompt
-      let deferredPrompt;
-      window.addEventListener('beforeinstallprompt', function(e) {
-        e.preventDefault();
-        deferredPrompt = e;
-        
-        // Show install button or banner
-        if (window.showInstallPrompt) {
-          window.showInstallPrompt(deferredPrompt);
-        }
-      });
-
-      // Track PWA install
-      window.addEventListener('appinstalled', function() {
-        console.log('MRVL PWA installed successfully');
-        deferredPrompt = null;
-        
-        // Analytics tracking
-        if (window.gtag) {
-          window.gtag('event', 'pwa_install', {
-            event_category: 'PWA',
-            event_label: 'MRVL'
-          });
-        }
-      });
-    </script>
   </body>
 </html>

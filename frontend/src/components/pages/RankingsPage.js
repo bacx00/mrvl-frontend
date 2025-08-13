@@ -6,14 +6,18 @@ function RankingsPage({ navigateTo }) {
   const [selectedRegion, setSelectedRegion] = useState('World');
   const [rankings, setRankings] = useState([]);
   const [rankingsType, setRankingsType] = useState('teams'); // 'teams' or 'players'
+  const [loading, setLoading] = useState(false);
   const { api } = useAuth();
 
   useEffect(() => {
     fetchRankings();
-  }, [selectedRegion]);
+  }, [selectedRegion, api]);
 
   const fetchRankings = async () => {
+    if (loading) return; // Prevent duplicate requests
+    
     try {
+      setLoading(true);
       console.log('RankingsPage: Fetching REAL LIVE BACKEND RANKINGS...');
       
       // Fetch teams with proper ELO ratings
@@ -61,6 +65,8 @@ function RankingsPage({ navigateTo }) {
     } catch (error) {
       console.error('RankingsPage: Backend API failed:', error);
       setRankings([]); // NO MOCK DATA - Show empty state instead
+    } finally {
+      setLoading(false);
     }
   };
 

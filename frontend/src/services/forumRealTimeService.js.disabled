@@ -1,0 +1,522 @@
+/**
+ * Enhanced Forum Real-Time Service
+ * Provides WebSocket-like functionality for live forum updates without Redis dependency
+ * Uses polling, localStorage, and event-driven architecture for real-time feel
+ */
+
+class ForumRealTimeService {
+  constructor() {
+    this.isActive = false;
+    this.pollingInterval = null;
+    this.eventListeners = new Map();
+    this.lastUpdateTime = null;
+    this.connectionRetries = 0;
+    this.maxRetries = 3;
+    this.pollingRate = 5000; // 5 seconds
+    this.throttleRate = 1000; // 1 second
+    this.lastEventTime = 0;
+    this.api = null;
+    
+    // Storage keys for cross-tab communication
+    this.storageKeys = {
+      liveUpdates: 'forum_live_updates',
+      lastUpdate: 'forum_last_update',
+      userActivity: 'forum_user_activity'
+    };
+    
+    // Bind methods
+    this.handleStorageChange = this.handleStorageChange.bind(this);
+    this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
+    this.handleBeforeUnload = this.handleBeforeUnload.bind(this);
+    
+    // Set up browser event listeners
+    this.setupBrowserEvents();
+  }
+
+  /**
+   * Initialize the real-time service
+   */
+  async initialize(apiInstance) {
+    this.api = apiInstance;
+    
+    try {
+      await this.start();
+      console.log('🔄 Forum real-time service initialized');
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to initialize forum real-time service:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Start the real-time service
+   */
+  async start() {
+    if (this.isActive) return;
+    
+    this.isActive = true;
+    this.lastUpdateTime = Date.now();
+    this.connectionRetries = 0;
+    
+    // Start polling for updates
+    this.startPolling();
+    
+    // Mark user as online
+    this.updateUserActivity();
+    
+    // Emit connection event
+    this.emit('connected', { timestamp: this.lastUpdateTime });
+    
+    console.log('✅ Forum real-time service started');
+  }
+
+  /**
+   * Stop the real-time service
+   */
+  stop() {
+    if (!this.isActive) return;
+    
+    this.isActive = false;
+    
+    // Stop polling
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
+    
+    // Clear user activity
+    this.clearUserActivity();
+    
+    // Emit disconnection event
+    this.emit('disconnected', { timestamp: Date.now() });
+    
+    console.log('🔴 Forum real-time service stopped');
+  }
+
+  /**
+   * Subscribe to real-time events
+   */
+  on(event, callback) {
+    if (!this.eventListeners.has(event)) {
+      this.eventListeners.set(event, new Set());
+    }
+    this.eventListeners.get(event).add(callback);
+    
+    // Return unsubscribe function
+    return () => {
+      const listeners = this.eventListeners.get(event);
+      if (listeners) {
+        listeners.delete(callback);
+      }
+    };
+  }
+
+  /**
+   * Unsubscribe from events
+   */
+  off(event, callback) {
+    const listeners = this.eventListeners.get(event);
+    if (listeners) {
+      listeners.delete(callback);
+    }
+  }
+
+  /**
+   * Emit events to subscribers
+   */
+  emit(event, data) {
+    const listeners = this.eventListeners.get(event);
+    if (listeners) {
+      listeners.forEach(callback => {
+        try {
+          callback(data);
+        } catch (error) {
+          console.error(`Error in event listener for ${event}:`, error);
+        }
+      });
+    }
+  }
+
+  /**
+   * Subscribe to thread updates
+   */
+  subscribeToThread(threadId, callback) {
+    return this.on(`thread:${threadId}`, callback);
+  }
+
+  /**
+   * Subscribe to forum updates
+   */
+  subscribeToForum(callback) {
+    return this.on('forum:update', callback);
+  }
+
+  /**
+   * Generic subscribe method (alias for subscribeToForum)
+   */
+  subscribe(callback) {
+    return this.subscribeToForum(callback);
+  }
+
+  /**
+   * Subscribe to vote updates
+   */
+  subscribeToVotes(callback) {
+    return this.on('vote:update', callback);
+  }
+
+  /**
+   * Subscribe to user activity updates
+   */
+  subscribeToUserActivity(callback) {
+    return this.on('user:activity', callback);
+  }
+
+  /**
+   * Start polling for updates
+   */
+  startPolling() {
+    if (this.pollingInterval) return;
+    
+    this.pollingInterval = setInterval(async () => {
+      if (!this.isActive || !document.hasFocus()) return;
+      
+      try {
+        await this.pollForUpdates();
+        this.connectionRetries = 0;
+      } catch (error) {
+        console.error('Polling error:', error);
+        this.handlePollingError();
+      }
+    }, this.pollingRate);
+  }
+
+  /**
+   * Poll for live updates
+   */
+  async pollForUpdates() {
+    if (!this.api) return;
+    
+    try {
+      // Get live updates since last check
+      const response = await this.api.get(`/forums/live-updates?since=${this.lastUpdateTime}`);
+      const updates = response.data?.updates || [];
+      
+      if (updates.length > 0) {
+        this.processUpdates(updates);
+        this.lastUpdateTime = Math.max(...updates.map(u => new Date(u.timestamp).getTime()));
+        this.storeLastUpdateTime();
+      }
+      
+      // Also poll for user activity
+      this.pollUserActivity();
+      
+    } catch (error) {
+      // Handle specific errors
+      if (error.response?.status === 429) {
+        // Rate limited - slow down polling
+        this.pollingRate = Math.min(this.pollingRate * 1.5, 30000);
+      } else if (error.response?.status >= 500) {
+        // Server error - retry with backoff
+        throw error;
+      }
+      // Other errors are logged but don't stop polling
+    }
+  }
+
+  /**
+   * Process incoming updates
+   */
+  processUpdates(updates) {
+    updates.forEach(update => {
+      this.throttleEvent(() => {
+        switch (update.type) {
+          case 'thread_created':
+            this.emit('forum:update', {
+              type: 'thread_created',
+              thread: update.data,
+              timestamp: update.timestamp
+            });
+            break;
+            
+          case 'post_created':
+            this.emit(`thread:${update.thread_id}`, {
+              type: 'post_created',
+              post: update.data,
+              timestamp: update.timestamp
+            });
+            this.emit('forum:update', {
+              type: 'post_created',
+              thread_id: update.thread_id,
+              post: update.data,
+              timestamp: update.timestamp
+            });
+            break;
+            
+          case 'vote_updated':
+            this.emit('vote:update', {
+              type: 'vote_updated',
+              target_type: update.target_type,
+              target_id: update.target_id,
+              vote_data: update.data,
+              timestamp: update.timestamp
+            });
+            
+            // Also emit to specific thread if it's a thread vote
+            if (update.target_type === 'thread') {
+              this.emit(`thread:${update.target_id}`, {
+                type: 'vote_updated',
+                vote_data: update.data,
+                timestamp: update.timestamp
+              });
+            }
+            break;
+            
+          case 'thread_updated':
+            this.emit(`thread:${update.thread_id}`, {
+              type: 'thread_updated',
+              changes: update.data,
+              timestamp: update.timestamp
+            });
+            this.emit('forum:update', {
+              type: 'thread_updated',
+              thread_id: update.thread_id,
+              changes: update.data,
+              timestamp: update.timestamp
+            });
+            break;
+            
+          case 'user_activity':
+            this.emit('user:activity', {
+              type: 'user_activity',
+              activity: update.data,
+              timestamp: update.timestamp
+            });
+            break;
+            
+          default:
+            // Generic update
+            this.emit('forum:update', update);
+        }
+      });
+    });
+  }
+
+  /**
+   * Throttle events to prevent spam
+   */
+  throttleEvent(callback) {
+    const now = Date.now();
+    if (now - this.lastEventTime >= this.throttleRate) {
+      this.lastEventTime = now;
+      callback();
+    }
+  }
+
+  /**
+   * Handle polling errors with retry logic
+   */
+  handlePollingError() {
+    this.connectionRetries++;
+    
+    if (this.connectionRetries >= this.maxRetries) {
+      // Temporarily stop polling and emit error
+      this.stop();
+      this.emit('error', {
+        type: 'connection_failed',
+        retries: this.connectionRetries,
+        timestamp: Date.now()
+      });
+      
+      // Try to reconnect after delay
+      setTimeout(() => {
+        if (!this.isActive) {
+          this.start();
+        }
+      }, 10000);
+    } else {
+      // Increase polling rate temporarily
+      this.pollingRate = Math.min(this.pollingRate * 1.2, 15000);
+    }
+  }
+
+  /**
+   * Poll for user activity (online users, etc.)
+   */
+  async pollUserActivity() {
+    try {
+      const response = await this.api.get('/forums/activity/online-users');
+      const activity = response.data || {};
+      
+      this.emit('user:activity', {
+        type: 'online_users',
+        count: activity.count || 0,
+        users: activity.users || [],
+        timestamp: Date.now()
+      });
+      
+    } catch (error) {
+      // Don't log user activity errors as they're not critical
+    }
+  }
+
+  /**
+   * Update user activity status
+   */
+  updateUserActivity() {
+    const activity = {
+      timestamp: Date.now(),
+      page: window.location.pathname,
+      session_id: this.getSessionId()
+    };
+    
+    localStorage.setItem(this.storageKeys.userActivity, JSON.stringify(activity));
+    
+    // Send to server
+    if (this.api) {
+      this.api.post('/forums/activity/heartbeat', activity).catch(() => {
+        // Ignore errors for activity updates
+      });
+    }
+  }
+
+  /**
+   * Clear user activity
+   */
+  clearUserActivity() {
+    localStorage.removeItem(this.storageKeys.userActivity);
+  }
+
+  /**
+   * Store last update time for cross-tab sync
+   */
+  storeLastUpdateTime() {
+    localStorage.setItem(this.storageKeys.lastUpdate, this.lastUpdateTime.toString());
+  }
+
+  /**
+   * Get session ID for tracking
+   */
+  getSessionId() {
+    let sessionId = sessionStorage.getItem('forum_session_id');
+    if (!sessionId) {
+      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      sessionStorage.setItem('forum_session_id', sessionId);
+    }
+    return sessionId;
+  }
+
+  /**
+   * Setup browser event listeners
+   */
+  setupBrowserEvents() {
+    // Listen for localStorage changes (cross-tab communication)
+    window.addEventListener('storage', this.handleStorageChange);
+    
+    // Listen for visibility changes
+    document.addEventListener('visibilitychange', this.handleVisibilityChange);
+    
+    // Listen for page unload
+    window.addEventListener('beforeunload', this.handleBeforeUnload);
+    
+    // Update activity periodically
+    setInterval(() => {
+      if (this.isActive && document.hasFocus()) {
+        this.updateUserActivity();
+      }
+    }, 30000); // Every 30 seconds
+  }
+
+  /**
+   * Handle localStorage changes for cross-tab communication
+   */
+  handleStorageChange(event) {
+    if (event.key === this.storageKeys.liveUpdates) {
+      try {
+        const update = JSON.parse(event.newValue || '{}');
+        this.emit('cross_tab_update', update);
+      } catch (error) {
+        // Ignore parse errors
+      }
+    }
+  }
+
+  /**
+   * Handle page visibility changes
+   */
+  handleVisibilityChange() {
+    if (document.hidden) {
+      // Page is hidden - reduce polling
+      this.pollingRate = Math.max(this.pollingRate * 2, 30000);
+    } else {
+      // Page is visible - resume normal polling
+      this.pollingRate = 5000;
+      if (this.isActive) {
+        this.updateUserActivity();
+        // Force immediate poll for updates
+        this.pollForUpdates();
+      }
+    }
+  }
+
+  /**
+   * Handle page unload
+   */
+  handleBeforeUnload() {
+    this.clearUserActivity();
+  }
+
+  /**
+   * Manually trigger update check
+   */
+  async forceUpdate() {
+    if (!this.isActive) return;
+    
+    try {
+      await this.pollForUpdates();
+      this.emit('force_update_complete', { timestamp: Date.now() });
+    } catch (error) {
+      this.emit('force_update_error', { error: error.message, timestamp: Date.now() });
+    }
+  }
+
+  /**
+   * Get connection status
+   */
+  getStatus() {
+    return {
+      isActive: this.isActive,
+      lastUpdateTime: this.lastUpdateTime,
+      pollingRate: this.pollingRate,
+      connectionRetries: this.connectionRetries,
+      listenersCount: Array.from(this.eventListeners.values())
+        .reduce((total, listeners) => total + listeners.size, 0)
+    };
+  }
+
+  /**
+   * Cleanup method
+   */
+  destroy() {
+    this.stop();
+    
+    // Remove browser event listeners
+    window.removeEventListener('storage', this.handleStorageChange);
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    window.removeEventListener('beforeunload', this.handleBeforeUnload);
+    
+    // Clear all event listeners
+    this.eventListeners.clear();
+    
+    console.log('🗑️ Forum real-time service destroyed');
+  }
+}
+
+// Create singleton instance
+const forumRealTimeService = new ForumRealTimeService();
+
+export default forumRealTimeService;
+
+// Export the class for testing
+export { ForumRealTimeService };

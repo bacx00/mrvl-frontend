@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useAuth } from '../../hooks';
+import { usePerformanceOptimization } from '../../hooks/usePerformanceOptimization';
 import { PlayerAvatar } from '../../utils/imageUtils';
 
 function PlayersPage({ navigateTo }) {
@@ -9,13 +10,16 @@ function PlayersPage({ navigateTo }) {
   const [selectedRole, setSelectedRole] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const { api } = useAuth();
+  
+  // Performance optimization
+  const { debouncedCallback, deduplicatedApiCall } = usePerformanceOptimization();
 
   const fetchPlayers = useCallback(async () => {
     try {
       setLoading(true);
       console.log('🔍 PlayersPage: Fetching players from real API...');
       
-      const response = await api.get('/players');
+      const response = await deduplicatedApiCall('players', () => api.get('/players'));
       
       let playersData = response?.data?.data || response?.data || response || [];
       console.log('✅ PlayersPage: Real players data received:', playersData.length, 'players');
@@ -107,7 +111,7 @@ function PlayersPage({ navigateTo }) {
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, deduplicatedApiCall]);
 
   useEffect(() => {
     fetchPlayers();
