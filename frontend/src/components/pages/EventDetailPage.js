@@ -146,7 +146,7 @@ function EventDetailPage({ params, navigateTo }) {
       
       const response = await api.post(`/admin/events/${eventId}/generate-bracket`, {
         format: format,
-        seeding_method: 'seed',
+        seeding_method: 'rating',
         shuffle_seeds: false
       });
       
@@ -486,7 +486,7 @@ function EventDetailPage({ params, navigateTo }) {
           {/* Bracket Tab */}
           {activeTab === 'bracket' && (
             <div>
-              {bracket ? (
+              {bracket && bracket.length > 0 ? (
                 <LiquipediaBracket 
                   bracket={bracket} 
                   event={event}

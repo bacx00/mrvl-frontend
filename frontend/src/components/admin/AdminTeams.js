@@ -144,11 +144,32 @@ function AdminTeams({ navigateTo }) {
       region: 'NA',
       country: '',
       rating: 1500,
+      elo_rating: '',
+      peak_elo: '',
+      earnings: '',
+      wins: '',
+      losses: '',
+      matches_played: '',
+      win_rate: '',
+      current_streak_count: '',
+      current_streak_type: 'none',
+      founded_date: '',
       description: '',
+      achievements: '',
+      manager: '',
+      owner: '',
+      captain: '',
+      status: 'Active',
+      coach_name: '',
+      coach_nationality: '',
       website: '',
       social_media: {
         twitter: '',
-        discord: ''
+        instagram: '',
+        youtube: '',
+        discord: '',
+        tiktok: '',
+        website: ''
       }
     });
     setShowCreateModal(true);
@@ -162,11 +183,32 @@ function AdminTeams({ navigateTo }) {
       region: team.region || 'NA',
       country: team.country || '',
       rating: team.rating || 1500,
+      elo_rating: team.elo_rating || '',
+      peak_elo: team.peak_elo || '',
+      earnings: team.earnings || '',
+      wins: team.wins || '',
+      losses: team.losses || '',
+      matches_played: team.matches_played || '',
+      win_rate: team.win_rate || '',
+      current_streak_count: team.current_streak_count || '',
+      current_streak_type: team.current_streak_type || 'none',
+      founded_date: team.founded_date || '',
       description: team.description || '',
+      achievements: team.achievements || '',
+      manager: team.manager || '',
+      owner: team.owner || '',
+      captain: team.captain || '',
+      status: team.status || 'Active',
+      coach_name: team.coach_name || '',
+      coach_nationality: team.coach_nationality || '',
       website: team.website || '',
       social_media: {
         twitter: team.social_media?.twitter || '',
-        discord: team.social_media?.discord || ''
+        instagram: team.social_media?.instagram || '',
+        youtube: team.social_media?.youtube || '',
+        discord: team.social_media?.discord || '',
+        tiktok: team.social_media?.tiktok || '',
+        website: team.social_media?.website || ''
       }
     });
     setShowEditModal(true);
@@ -182,11 +224,32 @@ function AdminTeams({ navigateTo }) {
       region: 'NA',
       country: '',
       rating: 1500,
+      elo_rating: '',
+      peak_elo: '',
+      earnings: '',
+      wins: '',
+      losses: '',
+      matches_played: '',
+      win_rate: '',
+      current_streak_count: '',
+      current_streak_type: 'none',
+      founded_date: '',
       description: '',
+      achievements: '',
+      manager: '',
+      owner: '',
+      captain: '',
+      status: 'Active',
+      coach_name: '',
+      coach_nationality: '',
       website: '',
       social_media: {
         twitter: '',
-        discord: ''
+        instagram: '',
+        youtube: '',
+        discord: '',
+        tiktok: '',
+        website: ''
       }
     });
   };
@@ -641,6 +704,299 @@ function AdminTeams({ navigateTo }) {
                     placeholder="Discord server invite"
                   />
                 </div>
+                
+                {/* Additional Social Media Fields */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Instagram
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.social_media.instagram}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      social_media: {...formData.social_media, instagram: e.target.value}
+                    })}
+                    className="form-input"
+                    placeholder="@teamhandle"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    YouTube
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.social_media.youtube}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      social_media: {...formData.social_media, youtube: e.target.value}
+                    })}
+                    className="form-input"
+                    placeholder="YouTube channel"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    TikTok
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.social_media.tiktok}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      social_media: {...formData.social_media, tiktok: e.target.value}
+                    })}
+                    className="form-input"
+                    placeholder="TikTok handle"
+                  />
+                </div>
+              </div>
+              
+              {/* Team Statistics & Performance Section */}
+              <div className="border-t pt-6">
+                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Team Statistics & Performance</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      ELO Rating
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.elo_rating}
+                      onChange={(e) => setFormData({...formData, elo_rating: e.target.value})}
+                      className="form-input"
+                      placeholder="2400"
+                      min="0"
+                      max="5000"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Peak ELO
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.peak_elo}
+                      onChange={(e) => setFormData({...formData, peak_elo: e.target.value})}
+                      className="form-input"
+                      placeholder="2600"
+                      min="0"
+                      max="5000"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Total Earnings ($)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.earnings}
+                      onChange={(e) => setFormData({...formData, earnings: e.target.value})}
+                      className="form-input"
+                      placeholder="50000"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Wins
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.wins}
+                      onChange={(e) => setFormData({...formData, wins: e.target.value})}
+                      className="form-input"
+                      placeholder="100"
+                      min="0"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Losses
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.losses}
+                      onChange={(e) => setFormData({...formData, losses: e.target.value})}
+                      className="form-input"
+                      placeholder="30"
+                      min="0"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Matches Played
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.matches_played}
+                      onChange={(e) => setFormData({...formData, matches_played: e.target.value})}
+                      className="form-input"
+                      placeholder="130"
+                      min="0"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Win Rate (%)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.win_rate}
+                      onChange={(e) => setFormData({...formData, win_rate: e.target.value})}
+                      className="form-input"
+                      placeholder="76.9"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Current Streak Count
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.current_streak_count}
+                      onChange={(e) => setFormData({...formData, current_streak_count: e.target.value})}
+                      className="form-input"
+                      placeholder="5"
+                      min="0"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Current Streak Type
+                    </label>
+                    <select
+                      value={formData.current_streak_type}
+                      onChange={(e) => setFormData({...formData, current_streak_type: e.target.value})}
+                      className="form-input"
+                    >
+                      <option value="none">None</option>
+                      <option value="win">Win Streak</option>
+                      <option value="loss">Loss Streak</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Founded Date
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.founded_date}
+                      onChange={(e) => setFormData({...formData, founded_date: e.target.value})}
+                      className="form-input"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Manager
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.manager}
+                      onChange={(e) => setFormData({...formData, manager: e.target.value})}
+                      className="form-input"
+                      placeholder="John Smith"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Owner
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.owner}
+                      onChange={(e) => setFormData({...formData, owner: e.target.value})}
+                      className="form-input"
+                      placeholder="Team Organization LLC"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Team Captain
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.captain}
+                      onChange={(e) => setFormData({...formData, captain: e.target.value})}
+                      className="form-input"
+                      placeholder="Player IGN"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Team Status
+                    </label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({...formData, status: e.target.value})}
+                      className="form-input"
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                      <option value="Disbanded">Disbanded</option>
+                      <option value="Suspended">Suspended</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Coach Name
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.coach_name}
+                      onChange={(e) => setFormData({...formData, coach_name: e.target.value})}
+                      className="form-input"
+                      placeholder="Coach Name"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Coach Nationality
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.coach_nationality}
+                      onChange={(e) => setFormData({...formData, coach_nationality: e.target.value})}
+                      className="form-input"
+                      placeholder="United States"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Team Achievements
+                </label>
+                <textarea
+                  value={formData.achievements}
+                  onChange={(e) => setFormData({...formData, achievements: e.target.value})}
+                  className="form-input"
+                  rows="3"
+                  placeholder="Major tournament wins, championships, notable accomplishments..."
+                />
               </div>
               
               <div>

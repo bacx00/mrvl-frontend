@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MRVL Forum & News System - Comprehensive Test Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #ccc;
+            font-size: 1.1rem;
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #4ecdc4, #44bd87);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 8px 20px rgba(78, 205, 196, 0.3);
+        }
+
+        .status-bar {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+
+        .status-indicator.running {
+            background: #ffd700;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-indicator.pass {
+            background: #4ecdc4;
+        }
+
+        .status-indicator.fail {
+            background: #ff6b6b;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .test-output {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 400px;
+            margin-bottom: 20px;
+            overflow-y: auto;
+            max-height: 500px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .log-entry {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .log-timestamp {
+            color: #888;
+            font-size: 11px;
+            min-width: 80px;
+        }
+
+        .log-level {
+            min-width: 20px;
+            font-size: 16px;
+        }
+
+        .log-message {
+            flex: 1;
+            word-break: break-word;
+        }
+
+        .log-entry.info .log-message {
+            color: #4ecdc4;
+        }
+
+        .log-entry.error .log-message {
+            color: #ff6b6b;
+        }
+
+        .log-entry.warn .log-message {
+            color: #ffd700;
+        }
+
+        .results-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .result-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .result-card h3 {
+            color: #4ecdc4;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .test-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .test-item:last-child {
+            border-bottom: none;
+        }
+
+        .test-name {
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        .test-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .test-status.pass {
+            background: rgba(78, 205, 196, 0.2);
+            color: #4ecdc4;
+        }
+
+        .test-status.fail {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+
+        .test-status.warn {
+            background: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+        }
+
+        .test-status.skip {
+            background: rgba(136, 136, 136, 0.2);
+            color: #888;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #ccc;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card.total .stat-number {
+            color: #4ecdc4;
+        }
+
+        .stat-card.passed .stat-number {
+            color: #44bd87;
+        }
+
+        .stat-card.failed .stat-number {
+            color: #ff6b6b;
+        }
+
+        .stat-card.warnings .stat-number {
+            color: #ffd700;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #4ecdc4, #44bd87);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .recommendations {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .recommendations h3 {
+            color: #ffd700;
+            margin-bottom: 15px;
+        }
+
+        .recommendation-item {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+        }
+
+        .recommendation-item:last-child {
+            border-bottom: none;
+        }
+
+        .recommendation-priority {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .recommendation-priority.critical {
+            color: #ff6b6b;
+        }
+
+        .recommendation-priority.high {
+            color: #ff8c42;
+        }
+
+        .recommendation-priority.medium {
+            color: #ffd700;
+        }
+
+        .download-section {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .test-controls {
+                justify-content: center;
+            }
+
+            .results-section {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 MRVL Forum & News Test Suite</h1>
+            <p>Comprehensive testing of forum threads, posts, news articles, comments, and voting systems</p>
+        </div>
+
+        <div class="test-controls">
+            <button id="runTestsBtn" class="btn">🚀 Run All Tests</button>
+            <button id="clearLogsBtn" class="btn btn-secondary">🗑️ Clear Logs</button>
+            <button id="downloadReportBtn" class="btn btn-secondary hidden">📊 Download Report</button>
+            <select id="testEnvironment" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 8px; border-radius: 4px;">
+                <option value="https://staging.mrvl.net">Staging Environment</option>
+                <option value="https://mrvl.net">Production Environment</option>
+                <option value="http://localhost:3000">Local Development</option>
+            </select>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <div id="statusIndicator" class="status-indicator"></div>
+                <span id="statusText">Ready to test</span>
+            </div>
+            <div class="status-item">
+                <span id="progressText">0%</span>
+            </div>
+            <div class="status-item">
+                <span id="durationText">0s</span>
+            </div>
+        </div>
+
+        <div class="progress-bar">
+            <div id="progressFill" class="progress-fill"></div>
+        </div>
+
+        <div class="test-output" id="testOutput">
+            <div class="log-entry info">
+                <div class="log-timestamp">Ready</div>
+                <div class="log-level">✅</div>
+                <div class="log-message">Test interface loaded. Click "Run All Tests" to begin comprehensive testing.</div>
+            </div>
+        </div>
+
+        <div id="resultsContainer" class="hidden">
+            <div class="summary-stats">
+                <div class="stat-card total">
+                    <div id="totalTests" class="stat-number">0</div>
+                    <div class="stat-label">Total Tests</div>
+                </div>
+                <div class="stat-card passed">
+                    <div id="passedTests" class="stat-number">0</div>
+                    <div class="stat-label">Passed</div>
+                </div>
+                <div class="stat-card failed">
+                    <div id="failedTests" class="stat-number">0</div>
+                    <div class="stat-label">Failed</div>
+                </div>
+                <div class="stat-card warnings">
+                    <div id="warningTests" class="stat-number">0</div>
+                    <div class="stat-label">Warnings</div>
+                </div>
+            </div>
+
+            <div class="results-section" id="resultsSection">
+                <!-- Results will be populated dynamically -->
+            </div>
+
+            <div id="recommendationsContainer" class="recommendations hidden">
+                <h3>📋 Recommendations</h3>
+                <div id="recommendationsList">
+                    <!-- Recommendations will be populated dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <div class="download-section">
+            <p style="color: #ccc; margin-bottom: 15px;">
+                This test suite validates the Marvel Rivals tournament platform's forum and news systems,
+                with special focus on voting system fixes and cross-system integration.
+            </p>
+        </div>
+    </div>
+
+    <script src="comprehensive-forum-news-test.js"></script>
+    <script>
+        class TestInterface {
+            constructor() {
+                this.testInstance = null;
+                this.startTime = null;
+                this.intervalId = null;
+                this.currentTestReport = null;
+                
+                this.initializeEventListeners();
+            }
+
+            initializeEventListeners() {
+                document.getElementById('runTestsBtn').addEventListener('click', () => this.runTests());
+                document.getElementById('clearLogsBtn').addEventListener('click', () => this.clearLogs());
+                document.getElementById('downloadReportBtn').addEventListener('click', () => this.downloadReport());
+            }
+
+            updateStatus(text, type = 'info') {
+                const statusIndicator = document.getElementById('statusIndicator');
+                const statusText = document.getElementById('statusText');
+                
+                statusIndicator.className = `status-indicator ${type}`;
+                statusText.textContent = text;
+            }
+
+            updateProgress(percentage) {
+                const progressFill = document.getElementById('progressFill');
+                const progressText = document.getElementById('progressText');
+                
+                progressFill.style.width = `${percentage}%`;
+                progressText.textContent = `${Math.round(percentage)}%`;
+            }
+
+            updateDuration() {
+                if (this.startTime) {
+                    const elapsed = Math.round((Date.now() - this.startTime) / 1000);
+                    document.getElementById('durationText').textContent = `${elapsed}s`;
+                }
+            }
+
+            addLogEntry(message, level = 'info', timestamp = null) {
+                const output = document.getElementById('testOutput');
+                const entry = document.createElement('div');
+                entry.className = `log-entry ${level}`;
+                
+                const timeStr = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+                const levelIcon = level === 'error' ? '❌' : level === 'warn' ? '⚠️' : '✅';
+                
+                entry.innerHTML = `
+                    <div class="log-timestamp">${timeStr}</div>
+                    <div class="log-level">${levelIcon}</div>
+                    <div class="log-message">${message}</div>
+                `;
+                
+                output.appendChild(entry);
+                output.scrollTop = output.scrollHeight;
+            }
+
+            clearLogs() {
+                const output = document.getElementById('testOutput');
+                output.innerHTML = `
+                    <div class="log-entry info">
+                        <div class="log-timestamp">Ready</div>
+                        <div class="log-level">✅</div>
+                        <div class="log-message">Logs cleared. Ready for new test run.</div>
+                    </div>
+                `;
+                
+                document.getElementById('resultsContainer').classList.add('hidden');
+                document.getElementById('downloadReportBtn').classList.add('hidden');
+                this.updateStatus('Ready to test');
+                this.updateProgress(0);
+            }
+
+            async runTests() {
+                const runBtn = document.getElementById('runTestsBtn');
+                const environment = document.getElementById('testEnvironment').value;
+                
+                runBtn.disabled = true;
+                runBtn.textContent = '🔄 Running Tests...';
+                
+                this.startTime = Date.now();
+                this.intervalId = setInterval(() => this.updateDuration(), 1000);
+                
+                this.updateStatus('Running tests...', 'running');
+                this.addLogEntry('🚀 Starting comprehensive test suite...');
+                this.addLogEntry(`Environment: ${environment}`);
+                
+                try {
+                    // Create test instance with custom base URL
+                    this.testInstance = new ComprehensiveForumNewsTest();
+                    this.testInstance.baseUrl = environment;
+                    
+                    // Override log method to capture output
+                    const originalLog = this.testInstance.log.bind(this.testInstance);
+                    this.testInstance.log = (message, level = 'info') => {
+                        originalLog(message, level);
+                        this.addLogEntry(message, level);
+                        
+                        // Update progress based on test completion
+                        this.updateTestProgress();
+                    };
+                    
+                    // Run tests
+                    const report = await this.testInstance.runAllTests();
+                    this.currentTestReport = report;
+                    
+                    // Update final status
+                    const successRate = report.metadata.successRate;
+                    if (successRate >= 90) {
+                        this.updateStatus(`Tests completed - ${successRate}% success`, 'pass');
+                    } else if (successRate >= 70) {
+                        this.updateStatus(`Tests completed - ${successRate}% success`, 'warn');
+                    } else {
+                        this.updateStatus(`Tests completed - ${successRate}% success`, 'fail');
+                    }
+                    
+                    this.updateProgress(100);
+                    this.displayResults(report);
+                    
+                } catch (error) {
+                    this.updateStatus('Test failed', 'fail');
+                    this.addLogEntry(`💥 Test suite failed: ${error.message}`, 'error');
+                } finally {
+                    clearInterval(this.intervalId);
+                    runBtn.disabled = false;
+                    runBtn.textContent = '🚀 Run All Tests';
+                    document.getElementById('downloadReportBtn').classList.remove('hidden');
+                }
+            }
+
+            updateTestProgress() {
+                if (!this.testInstance || !this.testInstance.results) return;
+                
+                // Estimate progress based on completed test categories
+                let completedCategories = 0;
+                let totalCategories = 6; // forum, news, voting, moderation, integration, performance
+                
+                if (this.testInstance.results.forum.threads.length > 0) completedCategories++;
+                if (this.testInstance.results.forum.posts.length > 0) completedCategories++;
+                if (this.testInstance.results.forum.voting.length > 0) completedCategories++;
+                if (this.testInstance.results.news.articles.length > 0) completedCategories++;
+                if (this.testInstance.results.integration.authentication.length > 0) completedCategories++;
+                if (this.testInstance.results.performance.length > 0) completedCategories++;
+                
+                const progress = Math.min(95, (completedCategories / totalCategories) * 100);
+                this.updateProgress(progress);
+            }
+
+            displayResults(report) {
+                document.getElementById('resultsContainer').classList.remove('hidden');
+                
+                // Update summary stats
+                document.getElementById('totalTests').textContent = report.metadata.totalTests;
+                document.getElementById('passedTests').textContent = report.metadata.passedTests;
+                document.getElementById('failedTests').textContent = report.metadata.failedTests;
+                document.getElementById('warningTests').textContent = report.metadata.warningTests;
+                
+                // Create result cards
+                const resultsSection = document.getElementById('resultsSection');
+                resultsSection.innerHTML = '';
+                
+                // Forum Results
+                this.createResultCard('Forum System', {
+                    'Thread Operations': report.detailedResults.forum.threads,
+                    'Post Operations': report.detailedResults.forum.posts,
+                    'Voting System': report.detailedResults.forum.voting,
+                    'Moderation': report.detailedResults.forum.moderation
+                }, resultsSection);
+                
+                // News Results
+                this.createResultCard('News System', {
+                    'Article Operations': report.detailedResults.news.articles,
+                    'Comment System': report.detailedResults.news.comments,
+                    'News Voting': report.detailedResults.news.voting
+                }, resultsSection);
+                
+                // Voting Results
+                this.createResultCard('Voting System', {
+                    'Duplicate Prevention': report.detailedResults.voting.duplicateVotePrevention,
+                    'Vote Switching': report.detailedResults.voting.voteSwitching,
+                    'Vote Removal': report.detailedResults.voting.voteRemoval
+                }, resultsSection);
+                
+                // Integration Results
+                this.createResultCard('Integration', {
+                    'Authentication': report.detailedResults.integration.authentication,
+                    'Permissions': report.detailedResults.integration.permissions,
+                    'Data Consistency': report.detailedResults.integration.dataConsistency
+                }, resultsSection);
+                
+                // Performance Results
+                if (report.detailedResults.performance.length > 0) {
+                    this.createResultCard('Performance', {
+                        'API Response Times': report.detailedResults.performance
+                    }, resultsSection);
+                }
+                
+                // Display recommendations
+                if (report.recommendations && report.recommendations.length > 0) {
+                    this.displayRecommendations(report.recommendations);
+                }
+            }
+
+            createResultCard(title, testGroups, container) {
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                
+                let cardContent = `<h3>${title}</h3>`;
+                
+                for (const [groupName, tests] of Object.entries(testGroups)) {
+                    if (tests && tests.length > 0) {
+                        cardContent += `<h4 style="color: #ccc; margin: 15px 0 10px 0; font-size: 14px;">${groupName}</h4>`;
+                        
+                        tests.forEach(test => {
+                            const statusClass = test.status.toLowerCase();
+                            cardContent += `
+                                <div class="test-item">
+                                    <div class="test-name">${test.test}</div>
+                                    <div class="test-status ${statusClass}">${test.status}</div>
+                                </div>
+                            `;
+                        });
+                    }
+                }
+                
+                card.innerHTML = cardContent;
+                container.appendChild(card);
+            }
+
+            displayRecommendations(recommendations) {
+                const container = document.getElementById('recommendationsContainer');
+                const list = document.getElementById('recommendationsList');
+                
+                list.innerHTML = '';
+                
+                recommendations.forEach(rec => {
+                    const item = document.createElement('div');
+                    item.className = 'recommendation-item';
+                    
+                    item.innerHTML = `
+                        <div class="recommendation-priority ${rec.priority.toLowerCase()}">${rec.priority}: ${rec.area}</div>
+                        <div style="color: #ccc; margin: 5px 0;">${rec.issue}</div>
+                        <div style="color: #4ecdc4; font-size: 14px;">${rec.recommendation}</div>
+                    `;
+                    
+                    list.appendChild(item);
+                });
+                
+                container.classList.remove('hidden');
+            }
+
+            downloadReport() {
+                if (!this.currentTestReport) return;
+                
+                const blob = new Blob([JSON.stringify(this.currentTestReport, null, 2)], { 
+                    type: 'application/json' 
+                });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `mrvl-forum-news-test-report-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                this.addLogEntry('📊 Test report downloaded', 'info');
+            }
+        }
+
+        // Initialize interface when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new TestInterface();
+        });
+    </script>
+</body>
+</html>

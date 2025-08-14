@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AuthProvider, ThemeProvider, useAuth, useTheme } from './hooks';
+import { ActivityStatsProvider } from './contexts/ActivityStatsContext';
 import Navigation from './components/Navigation';
 import AuthModal from './components/AuthModal';
 import ErrorBoundary from './components/shared/ErrorBoundary';
@@ -294,9 +295,11 @@ function App() {
     <ErrorBoundary component="App">
       <ThemeProvider>
         <AuthProvider>
-          <ErrorBoundary component="AppContent">
-            <AppContent />
-          </ErrorBoundary>
+          <ActivityStatsProvider>
+            <ErrorBoundary component="AppContent">
+              <AppContent />
+            </ErrorBoundary>
+          </ActivityStatsProvider>
         </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>

@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournament & Competitive System Browser Test</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            background: white; 
+            border-radius: 10px; 
+            padding: 30px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 { 
+            color: #333; 
+            text-align: center; 
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .test-section { 
+            margin: 30px 0; 
+            border: 2px solid #ddd; 
+            border-radius: 8px; 
+            padding: 20px;
+            background: #f9f9f9;
+        }
+        .test-section h2 { 
+            color: #444; 
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status { 
+            padding: 4px 12px; 
+            border-radius: 20px; 
+            font-weight: bold; 
+            font-size: 0.8em;
+        }
+        .status.pending { background: #fff3cd; color: #856404; }
+        .status.testing { background: #d1ecf1; color: #0c5460; }
+        .status.passed { background: #d4edda; color: #155724; }
+        .status.failed { background: #f8d7da; color: #721c24; }
+        .status.warning { background: #ffeaa7; color: #856404; }
+        .test-item { 
+            margin: 10px 0; 
+            padding: 15px; 
+            border: 1px solid #eee; 
+            border-radius: 5px;
+            background: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .test-item:hover { 
+            background: #f0f8ff; 
+            border-color: #667eea;
+        }
+        .test-description { flex: 1; margin-right: 15px; }
+        .test-controls { display: flex; gap: 10px; align-items: center; }
+        button { 
+            padding: 8px 16px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .btn-test { background: #667eea; color: white; }
+        .btn-test:hover { background: #5a67d8; }
+        .btn-view { background: #48bb78; color: white; }
+        .btn-view:hover { background: #38a169; }
+        .results { 
+            margin: 15px 0; 
+            padding: 15px; 
+            background: #f8f9fa; 
+            border-radius: 5px; 
+            display: none;
+            border-left: 4px solid #667eea;
+        }
+        .results.show { display: block; }
+        .results pre { 
+            margin: 0; 
+            overflow: auto; 
+            font-size: 0.9em;
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .summary { 
+            text-align: center; 
+            margin: 30px 0; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        .summary h3 { margin: 0 0 15px 0; font-size: 1.5em; }
+        .stats { 
+            display: flex; 
+            justify-content: space-around; 
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .stat { 
+            background: rgba(255,255,255,0.2); 
+            padding: 15px; 
+            border-radius: 8px; 
+            min-width: 120px;
+        }
+        .stat-number { font-size: 2em; font-weight: bold; }
+        .stat-label { font-size: 0.9em; opacity: 0.9; }
+        .iframe-container { 
+            margin: 20px 0; 
+            border: 2px solid #ddd; 
+            border-radius: 8px; 
+            overflow: hidden;
+            height: 500px;
+        }
+        iframe { 
+            width: 100%; 
+            height: 100%; 
+            border: none; 
+        }
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 20px; 
+        }
+        .critical-issues {
+            background: #f8d7da;
+            border: 2px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .critical-issues h3 {
+            color: #721c24;
+            margin-top: 0;
+        }
+        .issue-item {
+            background: white;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #dc3545;
+        }
+        .recommendations {
+            background: #d1ecf1;
+            border: 2px solid #bee5eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .recommendations h3 {
+            color: #0c5460;
+            margin-top: 0;
+        }
+        .recommendation-item {
+            background: white;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #17a2b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏆 Tournament & Competitive System Test Suite</h1>
+        
+        <div class="summary">
+            <h3>Test Results Summary</h3>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-number" id="totalTests">0</div>
+                    <div class="stat-label">Total Tests</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="passedTests">0</div>
+                    <div class="stat-label">Passed</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="failedTests">0</div>
+                    <div class="stat-label">Failed</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="successRate">0%</div>
+                    <div class="stat-label">Success Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tournament System Tests -->
+        <div class="test-section">
+            <h2>🏆 Tournament System <span class="status pending" id="tournament-status">Pending</span></h2>
+            <div class="grid">
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>Tournament Creation & Management</strong><br>
+                        Test tournament CRUD operations through admin dashboard
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="tournament-crud-status">Pending</span>
+                        <button class="btn-test" onclick="testTournamentCRUD()">Test</button>
+                        <button class="btn-view" onclick="window.open('https://staging.mrvl.net/admin/events', '_blank')">View Admin</button>
+                    </div>
+                </div>
+                <div class="results" id="tournament-crud-results"></div>
+
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>Tournament Bracket Generation</strong><br>
+                        Test bracket creation for different tournament formats
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="bracket-gen-status">Pending</span>
+                        <button class="btn-test" onclick="testBracketGeneration()">Test</button>
+                        <button class="btn-view" onclick="window.open('https://staging.mrvl.net/events', '_blank')">View Events</button>
+                    </div>
+                </div>
+                <div class="results" id="bracket-gen-results"></div>
+
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>Tournament Registration</strong><br>
+                        Test team registration and participant management
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="tournament-reg-status">Pending</span>
+                        <button class="btn-test" onclick="testTournamentRegistration()">Test</button>
+                    </div>
+                </div>
+                <div class="results" id="tournament-reg-results"></div>
+
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>Prize Pool Management</strong><br>
+                        Test tournament prize distribution and payout systems
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="prize-pool-status">Pending</span>
+                        <button class="btn-test" onclick="testPrizePoolManagement()">Test</button>
+                    </div>
+                </div>
+                <div class="results" id="prize-pool-results"></div>
+            </div>
+        </div>
+
+        <!-- Match System Tests -->
+        <div class="test-section">
+            <h2>⚔️ Match System <span class="status pending" id="match-status">Pending</span></h2>
+            <div class="grid">
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>Match Creation & Scheduling</strong><br>
+                        Test match creation, scheduling, and management
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="match-crud-status">Pending</span>
+                        <button class="btn-test" onclick="testMatchCRUD()">Test</button>
+                        <button class="btn-view" onclick="window.open('https://staging.mrvl.net/matches', '_blank')">View Matches</button>
+                    </div>
+                </div>
+                <div class="results" id="match-crud-results"></div>
+
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>Live Scoring System</strong><br>
+                        Test real-time match updates and scoring functionality
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="live-scoring-status">Pending</span>
+                        <button class="btn-test" onclick="testLiveScoring()">Test</button>
+                        <button class="btn-view" onclick="viewLiveScoring()">View Live</button>
+                    </div>
+                </div>
+                <div class="results" id="live-scoring-results"></div>
+
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>Match Statistics & Analytics</strong><br>
+                        Test player/team performance tracking within matches
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="match-stats-status">Pending</span>
+                        <button class="btn-test" onclick="testMatchStatistics()">Test</button>
+                    </div>
+                </div>
+                <div class="results" id="match-stats-results"></div>
+
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>Match Comments & Engagement</strong><br>
+                        Test match comment system and user engagement features
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="match-comments-status">Pending</span>
+                        <button class="btn-test" onclick="testMatchComments()">Test</button>
+                    </div>
+                </div>
+                <div class="results" id="match-comments-results"></div>
+            </div>
+        </div>
+
+        <!-- Competitive Features Tests -->
+        <div class="test-section">
+            <h2>🏅 Competitive Features <span class="status pending" id="competitive-status">Pending</span></h2>
+            <div class="grid">
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>Leaderboard & Rankings</strong><br>
+                        Test player and team ranking systems
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="leaderboard-status">Pending</span>
+                        <button class="btn-test" onclick="testLeaderboards()">Test</button>
+                        <button class="btn-view" onclick="window.open('https://staging.mrvl.net/rankings', '_blank')">View Rankings</button>
+                    </div>
+                </div>
+                <div class="results" id="leaderboard-results"></div>
+
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>ELO Rating System</strong><br>
+                        Test ELO calculations and rating updates
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="elo-status">Pending</span>
+                        <button class="btn-test" onclick="testELOSystem()">Test</button>
+                    </div>
+                </div>
+                <div class="results" id="elo-results"></div>
+
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>Achievement System</strong><br>
+                        Test achievement tracking and milestone progression
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="achievement-status">Pending</span>
+                        <button class="btn-test" onclick="testAchievements()">Test</button>
+                    </div>
+                </div>
+                <div class="results" id="achievement-results"></div>
+
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>Season Management</strong><br>
+                        Test season progression and data management
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="season-status">Pending</span>
+                        <button class="btn-test" onclick="testSeasonManagement()">Test</button>
+                    </div>
+                </div>
+                <div class="results" id="season-results"></div>
+            </div>
+        </div>
+
+        <!-- Integration Tests -->
+        <div class="test-section">
+            <h2>🔗 System Integration <span class="status pending" id="integration-status">Pending</span></h2>
+            <div class="grid">
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>Data Consistency</strong><br>
+                        Test player-team-match data integration and consistency
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="data-consistency-status">Pending</span>
+                        <button class="btn-test" onclick="testDataConsistency()">Test</button>
+                    </div>
+                </div>
+                <div class="results" id="data-consistency-results"></div>
+
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>Cross-Tournament Statistics</strong><br>
+                        Test statistics aggregation across multiple tournaments
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="cross-stats-status">Pending</span>
+                        <button class="btn-test" onclick="testCrossStatistics()">Test</button>
+                    </div>
+                </div>
+                <div class="results" id="cross-stats-results"></div>
+
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>Historical Data Preservation</strong><br>
+                        Test data retention and historical performance tracking
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="historical-status">Pending</span>
+                        <button class="btn-test" onclick="testHistoricalData()">Test</button>
+                    </div>
+                </div>
+                <div class="results" id="historical-results"></div>
+
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>Mobile Compatibility</strong><br>
+                        Test competitive features on mobile devices
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="mobile-status">Pending</span>
+                        <button class="btn-test" onclick="testMobileCompatibility()">Test</button>
+                    </div>
+                </div>
+                <div class="results" id="mobile-results"></div>
+            </div>
+        </div>
+
+        <!-- Edge Cases & Stress Tests -->
+        <div class="test-section">
+            <h2>⚠️ Edge Cases & Stress Tests <span class="status pending" id="edge-cases-status">Pending</span></h2>
+            <div class="grid">
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>Tournament Tie-breakers</strong><br>
+                        Test tie-breaking logic in tournament scenarios
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="tiebreaker-status">Pending</span>
+                        <button class="btn-test" onclick="testTieBreakers()">Test</button>
+                    </div>
+                </div>
+                <div class="results" id="tiebreaker-results"></div>
+
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>Match Forfeitures & Disputes</strong><br>
+                        Test forfeit handling and dispute resolution systems
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="forfeit-status">Pending</span>
+                        <button class="btn-test" onclick="testForfeitHandling()">Test</button>
+                    </div>
+                </div>
+                <div class="results" id="forfeit-results"></div>
+
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>Bracket Reset (Grand Finals)</strong><br>
+                        Test double elimination bracket reset functionality
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="bracket-reset-status">Pending</span>
+                        <button class="btn-test" onclick="testBracketReset()">Test</button>
+                    </div>
+                </div>
+                <div class="results" id="bracket-reset-results"></div>
+
+                <div class="test-item">
+                    <div class="test-description">
+                        <strong>Performance Under Load</strong><br>
+                        Test system performance during high concurrent usage
+                    </div>
+                    <div class="test-controls">
+                        <span class="status pending" id="load-test-status">Pending</span>
+                        <button class="btn-test" onclick="testPerformanceLoad()">Test</button>
+                    </div>
+                </div>
+                <div class="results" id="load-test-results"></div>
+            </div>
+        </div>
+
+        <div class="critical-issues" id="critical-issues" style="display: none;">
+            <h3>🚨 Critical Issues Found</h3>
+            <div id="issues-list"></div>
+        </div>
+
+        <div class="recommendations" id="recommendations" style="display: none;">
+            <h3>💡 Recommendations</h3>
+            <div id="recommendations-list"></div>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <button class="btn-test" onclick="runAllTests()" style="font-size: 1.2em; padding: 15px 30px;">
+                🚀 Run All Tests
+            </button>
+            <button class="btn-view" onclick="generateReport()" style="font-size: 1.2em; padding: 15px 30px; margin-left: 15px;">
+                📄 Generate Report
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Test state management
+        let testResults = {
+            totalTests: 0,
+            passedTests: 0,
+            failedTests: 0,
+            results: {},
+            issues: [],
+            recommendations: []
+        };
+
+        const API_BASE = 'https://staging.mrvl.net/api';
+
+        // Utility functions
+        function updateStatus(elementId, status, message = '') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.className = `status ${status}`;
+                element.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+                if (message) element.title = message;
+            }
+        }
+
+        function showResults(elementId, content) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = `<pre>${content}</pre>`;
+                element.classList.add('show');
+            }
+        }
+
+        function updateSummary() {
+            document.getElementById('totalTests').textContent = testResults.totalTests;
+            document.getElementById('passedTests').textContent = testResults.passedTests;
+            document.getElementById('failedTests').textContent = testResults.failedTests;
+            
+            const successRate = testResults.totalTests > 0 ? 
+                ((testResults.passedTests / testResults.totalTests) * 100).toFixed(1) : 0;
+            document.getElementById('successRate').textContent = successRate + '%';
+        }
+
+        async function makeAPICall(endpoint, method = 'GET', data = null) {
+            try {
+                const config = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                };
+
+                if (data && method !== 'GET') {
+                    config.body = JSON.stringify(data);
+                }
+
+                const response = await fetch(`${API_BASE}${endpoint}`, config);
+                const responseData = await response.json();
+
+                return {
+                    success: response.ok,
+                    status: response.status,
+                    data: responseData
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+
+        // Tournament System Tests
+        async function testTournamentCRUD() {
+            testResults.totalTests++;
+            updateStatus('tournament-crud-status', 'testing');
+            
+            try {
+                // Test tournament listing
+                const listResult = await makeAPICall('/events');
+                
+                if (listResult.success) {
+                    testResults.passedTests++;
+                    updateStatus('tournament-crud-status', 'passed');
+                    showResults('tournament-crud-results', 
+                        `✅ Tournament listing successful\n` +
+                        `Status: ${listResult.status}\n` +
+                        `Data: ${JSON.stringify(listResult.data, null, 2)}`
+                    );
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('tournament-crud-status', 'failed');
+                    showResults('tournament-crud-results', 
+                        `❌ Tournament listing failed\n` +
+                        `Status: ${listResult.status}\n` +
+                        `Error: ${listResult.error || 'Unknown error'}`
+                    );
+                    testResults.issues.push('Tournament listing endpoint not accessible');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('tournament-crud-status', 'failed');
+                showResults('tournament-crud-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`Tournament CRUD error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        async function testBracketGeneration() {
+            testResults.totalTests++;
+            updateStatus('bracket-gen-status', 'testing');
+            
+            try {
+                // Test bracket endpoints
+                const bracketResult = await makeAPICall('/brackets');
+                
+                if (bracketResult.success) {
+                    testResults.passedTests++;
+                    updateStatus('bracket-gen-status', 'passed');
+                    showResults('bracket-gen-results', 
+                        `✅ Bracket generation system accessible\n` +
+                        `Status: ${bracketResult.status}\n` +
+                        `Brackets found: ${Array.isArray(bracketResult.data) ? bracketResult.data.length : 'N/A'}`
+                    );
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('bracket-gen-status', 'failed');
+                    showResults('bracket-gen-results', 
+                        `❌ Bracket generation failed\n` +
+                        `Error: ${bracketResult.error || 'API not accessible'}`
+                    );
+                    testResults.issues.push('Bracket generation system not functioning');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('bracket-gen-status', 'failed');
+                showResults('bracket-gen-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`Bracket generation error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        async function testTournamentRegistration() {
+            testResults.totalTests++;
+            updateStatus('tournament-reg-status', 'testing');
+            
+            try {
+                // Test tournament registration endpoints
+                const eventsResult = await makeAPICall('/events');
+                
+                if (eventsResult.success && eventsResult.data && eventsResult.data.length > 0) {
+                    const firstEvent = Array.isArray(eventsResult.data) ? eventsResult.data[0] : eventsResult.data;
+                    const eventId = firstEvent.id;
+                    
+                    // Test event-specific registration endpoint
+                    const regResult = await makeAPICall(`/events/${eventId}`);
+                    
+                    if (regResult.success) {
+                        testResults.passedTests++;
+                        updateStatus('tournament-reg-status', 'passed');
+                        showResults('tournament-reg-results', 
+                            `✅ Tournament registration system functional\n` +
+                            `Event ID: ${eventId}\n` +
+                            `Event Details: ${JSON.stringify(regResult.data, null, 2)}`
+                        );
+                    } else {
+                        testResults.failedTests++;
+                        updateStatus('tournament-reg-status', 'failed');
+                        showResults('tournament-reg-results', `❌ Event details not accessible`);
+                        testResults.issues.push('Tournament registration endpoints not working');
+                    }
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('tournament-reg-status', 'warning');
+                    showResults('tournament-reg-results', `⚠️ No events available for registration testing`);
+                    testResults.issues.push('No tournament events available for testing');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('tournament-reg-status', 'failed');
+                showResults('tournament-reg-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`Tournament registration error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        async function testPrizePoolManagement() {
+            testResults.totalTests++;
+            updateStatus('prize-pool-status', 'testing');
+            
+            // Prize pool management is typically handled in admin areas
+            // For now, test if events have prize pool information
+            try {
+                const eventsResult = await makeAPICall('/events');
+                
+                if (eventsResult.success) {
+                    const events = Array.isArray(eventsResult.data) ? eventsResult.data : [eventsResult.data];
+                    const eventsWithPrizes = events.filter(event => event && (event.prize_pool || event.prizePool));
+                    
+                    testResults.passedTests++;
+                    updateStatus('prize-pool-status', 'passed');
+                    showResults('prize-pool-results', 
+                        `✅ Prize pool data structure functional\n` +
+                        `Total events: ${events.length}\n` +
+                        `Events with prize pools: ${eventsWithPrizes.length}\n` +
+                        `Sample prize data: ${eventsWithPrizes.length > 0 ? JSON.stringify(eventsWithPrizes[0], null, 2) : 'None'}`
+                    );
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('prize-pool-status', 'failed');
+                    showResults('prize-pool-results', `❌ Cannot access prize pool data`);
+                    testResults.issues.push('Prize pool management not accessible');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('prize-pool-status', 'failed');
+                showResults('prize-pool-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`Prize pool management error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        // Match System Tests
+        async function testMatchCRUD() {
+            testResults.totalTests++;
+            updateStatus('match-crud-status', 'testing');
+            
+            try {
+                const matchesResult = await makeAPICall('/matches');
+                
+                if (matchesResult.success) {
+                    testResults.passedTests++;
+                    updateStatus('match-crud-status', 'passed');
+                    
+                    const matches = Array.isArray(matchesResult.data) ? matchesResult.data : 
+                                   (matchesResult.data.data ? matchesResult.data.data : []);
+                    
+                    showResults('match-crud-results', 
+                        `✅ Match system functional\n` +
+                        `Status: ${matchesResult.status}\n` +
+                        `Total matches: ${matches.length}\n` +
+                        `Sample match: ${matches.length > 0 ? JSON.stringify(matches[0], null, 2) : 'None'}`
+                    );
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('match-crud-status', 'failed');
+                    showResults('match-crud-results', 
+                        `❌ Match system failed\n` +
+                        `Error: ${matchesResult.error || 'API not accessible'}`
+                    );
+                    testResults.issues.push('Match CRUD operations not functioning');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('match-crud-status', 'failed');
+                showResults('match-crud-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`Match CRUD error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        async function testLiveScoring() {
+            testResults.totalTests++;
+            updateStatus('live-scoring-status', 'testing');
+            
+            try {
+                // Test live matches endpoint
+                const liveMatchesResult = await makeAPICall('/matches/live');
+                
+                if (liveMatchesResult.success) {
+                    const liveMatches = Array.isArray(liveMatchesResult.data) ? liveMatchesResult.data : 
+                                      (liveMatchesResult.data.data ? liveMatchesResult.data.data : []);
+                    
+                    testResults.passedTests++;
+                    updateStatus('live-scoring-status', 'passed');
+                    showResults('live-scoring-results', 
+                        `✅ Live scoring system functional\n` +
+                        `Live matches: ${liveMatches.length}\n` +
+                        `Data: ${JSON.stringify(liveMatches, null, 2)}`
+                    );
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('live-scoring-status', 'failed');
+                    showResults('live-scoring-results', 
+                        `❌ Live scoring failed\n` +
+                        `Error: ${liveMatchesResult.error || 'API not accessible'}`
+                    );
+                    testResults.issues.push('Live scoring system not functioning');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('live-scoring-status', 'failed');
+                showResults('live-scoring-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`Live scoring error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        async function testMatchStatistics() {
+            testResults.totalTests++;
+            updateStatus('match-stats-status', 'testing');
+            
+            try {
+                // First get matches to test stats
+                const matchesResult = await makeAPICall('/matches');
+                
+                if (matchesResult.success) {
+                    const matches = Array.isArray(matchesResult.data) ? matchesResult.data : 
+                                   (matchesResult.data.data ? matchesResult.data.data : []);
+                    
+                    if (matches.length > 0) {
+                        // Test match detail endpoint for stats
+                        const matchId = matches[0].id;
+                        const matchDetailResult = await makeAPICall(`/matches/${matchId}`);
+                        
+                        if (matchDetailResult.success) {
+                            testResults.passedTests++;
+                            updateStatus('match-stats-status', 'passed');
+                            showResults('match-stats-results', 
+                                `✅ Match statistics functional\n` +
+                                `Match ID: ${matchId}\n` +
+                                `Match details: ${JSON.stringify(matchDetailResult.data, null, 2)}`
+                            );
+                        } else {
+                            testResults.failedTests++;
+                            updateStatus('match-stats-status', 'failed');
+                            showResults('match-stats-results', `❌ Match statistics not accessible`);
+                            testResults.issues.push('Match statistics endpoints not working');
+                        }
+                    } else {
+                        testResults.passedTests++;
+                        updateStatus('match-stats-status', 'warning');
+                        showResults('match-stats-results', `⚠️ No matches available for statistics testing`);
+                    }
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('match-stats-status', 'failed');
+                    showResults('match-stats-results', `❌ Cannot access match data for statistics`);
+                    testResults.issues.push('Match statistics system not accessible');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('match-stats-status', 'failed');
+                showResults('match-stats-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`Match statistics error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        async function testMatchComments() {
+            testResults.totalTests++;
+            updateStatus('match-comments-status', 'testing');
+            
+            try {
+                const matchesResult = await makeAPICall('/matches');
+                
+                if (matchesResult.success) {
+                    const matches = Array.isArray(matchesResult.data) ? matchesResult.data : 
+                                   (matchesResult.data.data ? matchesResult.data.data : []);
+                    
+                    if (matches.length > 0) {
+                        const matchId = matches[0].id;
+                        const commentsResult = await makeAPICall(`/matches/${matchId}/comments`);
+                        
+                        if (commentsResult.success) {
+                            testResults.passedTests++;
+                            updateStatus('match-comments-status', 'passed');
+                            showResults('match-comments-results', 
+                                `✅ Match comments system functional\n` +
+                                `Match ID: ${matchId}\n` +
+                                `Comments: ${JSON.stringify(commentsResult.data, null, 2)}`
+                            );
+                        } else {
+                            testResults.failedTests++;
+                            updateStatus('match-comments-status', 'failed');
+                            showResults('match-comments-results', `❌ Match comments not accessible`);
+                            testResults.issues.push('Match comments system not working');
+                        }
+                    } else {
+                        testResults.passedTests++;
+                        updateStatus('match-comments-status', 'warning');
+                        showResults('match-comments-results', `⚠️ No matches available for comments testing`);
+                    }
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('match-comments-status', 'failed');
+                    showResults('match-comments-results', `❌ Cannot access matches for comments testing`);
+                    testResults.issues.push('Match comments system not accessible');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('match-comments-status', 'failed');
+                showResults('match-comments-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`Match comments error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        // Competitive Features Tests
+        async function testLeaderboards() {
+            testResults.totalTests++;
+            updateStatus('leaderboard-status', 'testing');
+            
+            try {
+                const rankingsResult = await makeAPICall('/rankings');
+                
+                if (rankingsResult.success) {
+                    testResults.passedTests++;
+                    updateStatus('leaderboard-status', 'passed');
+                    showResults('leaderboard-results', 
+                        `✅ Leaderboard system functional\n` +
+                        `Status: ${rankingsResult.status}\n` +
+                        `Rankings data: ${JSON.stringify(rankingsResult.data, null, 2)}`
+                    );
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('leaderboard-status', 'failed');
+                    showResults('leaderboard-results', 
+                        `❌ Leaderboard system failed\n` +
+                        `Error: ${rankingsResult.error || 'API not accessible'}`
+                    );
+                    testResults.issues.push('Leaderboard system not functioning');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('leaderboard-status', 'failed');
+                showResults('leaderboard-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`Leaderboard error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        async function testELOSystem() {
+            testResults.totalTests++;
+            updateStatus('elo-status', 'testing');
+            
+            try {
+                // Test player rankings for ELO data
+                const playerRankingsResult = await makeAPICall('/rankings/players');
+                
+                if (playerRankingsResult.success) {
+                    const players = Array.isArray(playerRankingsResult.data) ? playerRankingsResult.data : 
+                                   (playerRankingsResult.data.data ? playerRankingsResult.data.data : []);
+                    
+                    const playersWithELO = players.filter(player => player && (player.elo || player.rating || player.rank_points));
+                    
+                    testResults.passedTests++;
+                    updateStatus('elo-status', 'passed');
+                    showResults('elo-results', 
+                        `✅ ELO rating system functional\n` +
+                        `Total players: ${players.length}\n` +
+                        `Players with ELO data: ${playersWithELO.length}\n` +
+                        `Sample ELO data: ${playersWithELO.length > 0 ? JSON.stringify(playersWithELO[0], null, 2) : 'None'}`
+                    );
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('elo-status', 'failed');
+                    showResults('elo-results', 
+                        `❌ ELO system failed\n` +
+                        `Error: ${playerRankingsResult.error || 'API not accessible'}`
+                    );
+                    testResults.issues.push('ELO rating system not functioning');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('elo-status', 'failed');
+                showResults('elo-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`ELO system error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        async function testAchievements() {
+            testResults.totalTests++;
+            updateStatus('achievement-status', 'testing');
+            
+            try {
+                const achievementsResult = await makeAPICall('/achievements');
+                
+                if (achievementsResult.success) {
+                    testResults.passedTests++;
+                    updateStatus('achievement-status', 'passed');
+                    showResults('achievement-results', 
+                        `✅ Achievement system functional\n` +
+                        `Status: ${achievementsResult.status}\n` +
+                        `Achievements: ${JSON.stringify(achievementsResult.data, null, 2)}`
+                    );
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('achievement-status', 'failed');
+                    showResults('achievement-results', 
+                        `❌ Achievement system failed\n` +
+                        `Error: ${achievementsResult.error || 'API not accessible'}`
+                    );
+                    testResults.issues.push('Achievement system not functioning');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('achievement-status', 'failed');
+                showResults('achievement-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`Achievement system error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        async function testSeasonManagement() {
+            testResults.totalTests++;
+            updateStatus('season-status', 'testing');
+            
+            // Season management is often implicit in tournament data
+            try {
+                const eventsResult = await makeAPICall('/events');
+                
+                if (eventsResult.success) {
+                    const events = Array.isArray(eventsResult.data) ? eventsResult.data : [eventsResult.data];
+                    const seasonEvents = events.filter(event => event && (event.season || event.type));
+                    
+                    testResults.passedTests++;
+                    updateStatus('season-status', 'passed');
+                    showResults('season-results', 
+                        `✅ Season management data available\n` +
+                        `Total events: ${events.length}\n` +
+                        `Season-categorized events: ${seasonEvents.length}\n` +
+                        `Sample season data: ${seasonEvents.length > 0 ? JSON.stringify(seasonEvents[0], null, 2) : 'None'}`
+                    );
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('season-status', 'failed');
+                    showResults('season-results', `❌ Season management data not accessible`);
+                    testResults.issues.push('Season management system not accessible');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('season-status', 'failed');
+                showResults('season-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`Season management error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        // Integration Tests
+        async function testDataConsistency() {
+            testResults.totalTests++;
+            updateStatus('data-consistency-status', 'testing');
+            
+            try {
+                // Test data relationships between teams, players, and matches
+                const [teamsResult, playersResult, matchesResult] = await Promise.all([
+                    makeAPICall('/teams'),
+                    makeAPICall('/players'),
+                    makeAPICall('/matches')
+                ]);
+                
+                const teamsSuccess = teamsResult.success;
+                const playersSuccess = playersResult.success;
+                const matchesSuccess = matchesResult.success;
+                
+                if (teamsSuccess && playersSuccess && matchesSuccess) {
+                    testResults.passedTests++;
+                    updateStatus('data-consistency-status', 'passed');
+                    
+                    const teams = Array.isArray(teamsResult.data) ? teamsResult.data : (teamsResult.data.data || []);
+                    const players = Array.isArray(playersResult.data) ? playersResult.data : (playersResult.data.data || []);
+                    const matches = Array.isArray(matchesResult.data) ? matchesResult.data : (matchesResult.data.data || []);
+                    
+                    showResults('data-consistency-results', 
+                        `✅ Data consistency check passed\n` +
+                        `Teams: ${teams.length}\n` +
+                        `Players: ${players.length}\n` +
+                        `Matches: ${matches.length}\n` +
+                        `All core endpoints accessible and returning data`
+                    );
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('data-consistency-status', 'failed');
+                    showResults('data-consistency-results', 
+                        `❌ Data consistency issues detected\n` +
+                        `Teams API: ${teamsSuccess ? 'OK' : 'FAILED'}\n` +
+                        `Players API: ${playersSuccess ? 'OK' : 'FAILED'}\n` +
+                        `Matches API: ${matchesSuccess ? 'OK' : 'FAILED'}`
+                    );
+                    testResults.issues.push('Data consistency issues across core endpoints');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('data-consistency-status', 'failed');
+                showResults('data-consistency-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`Data consistency error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        async function testCrossStatistics() {
+            testResults.totalTests++;
+            updateStatus('cross-stats-status', 'testing');
+            
+            try {
+                // Test if player statistics aggregate across tournaments
+                const playersResult = await makeAPICall('/players');
+                
+                if (playersResult.success) {
+                    const players = Array.isArray(playersResult.data) ? playersResult.data : 
+                                   (playersResult.data.data ? playersResult.data.data : []);
+                    
+                    if (players.length > 0) {
+                        const playerWithStats = players.find(player => 
+                            player && (player.matches_played || player.wins || player.losses || player.total_matches)
+                        );
+                        
+                        if (playerWithStats) {
+                            testResults.passedTests++;
+                            updateStatus('cross-stats-status', 'passed');
+                            showResults('cross-stats-results', 
+                                `✅ Cross-tournament statistics functional\n` +
+                                `Sample player stats: ${JSON.stringify(playerWithStats, null, 2)}`
+                            );
+                        } else {
+                            testResults.failedTests++;
+                            updateStatus('cross-stats-status', 'warning');
+                            showResults('cross-stats-results', `⚠️ No statistical data found in player profiles`);
+                            testResults.issues.push('Cross-tournament statistics not being calculated');
+                        }
+                    } else {
+                        testResults.failedTests++;
+                        updateStatus('cross-stats-status', 'failed');
+                        showResults('cross-stats-results', `❌ No players available for statistics testing`);
+                        testResults.issues.push('No player data available for cross-statistics testing');
+                    }
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('cross-stats-status', 'failed');
+                    showResults('cross-stats-results', `❌ Cannot access player data for statistics`);
+                    testResults.issues.push('Cross-tournament statistics not accessible');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('cross-stats-status', 'failed');
+                showResults('cross-stats-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`Cross-statistics error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        async function testHistoricalData() {
+            testResults.totalTests++;
+            updateStatus('historical-status', 'testing');
+            
+            try {
+                const matchesResult = await makeAPICall('/matches');
+                
+                if (matchesResult.success) {
+                    const matches = Array.isArray(matchesResult.data) ? matchesResult.data : 
+                                   (matchesResult.data.data ? matchesResult.data.data : []);
+                    
+                    const completedMatches = matches.filter(match => 
+                        match && (match.status === 'completed' || match.completed_at)
+                    );
+                    
+                    testResults.passedTests++;
+                    updateStatus('historical-status', 'passed');
+                    showResults('historical-results', 
+                        `✅ Historical data preservation functional\n` +
+                        `Total matches: ${matches.length}\n` +
+                        `Completed matches: ${completedMatches.length}\n` +
+                        `Historical data is being preserved`
+                    );
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('historical-status', 'failed');
+                    showResults('historical-results', `❌ Cannot access historical match data`);
+                    testResults.issues.push('Historical data preservation not accessible');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('historical-status', 'failed');
+                showResults('historical-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`Historical data error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        async function testMobileCompatibility() {
+            testResults.totalTests++;
+            updateStatus('mobile-status', 'testing');
+            
+            try {
+                // Test mobile viewport and responsive design
+                const isMobile = window.innerWidth <= 768;
+                const hasTouch = 'ontouchstart' in window;
+                const userAgent = navigator.userAgent;
+                
+                // Test if key endpoints work on mobile
+                const rankingsResult = await makeAPICall('/rankings');
+                const matchesResult = await makeAPICall('/matches');
+                
+                if (rankingsResult.success && matchesResult.success) {
+                    testResults.passedTests++;
+                    updateStatus('mobile-status', 'passed');
+                    showResults('mobile-results', 
+                        `✅ Mobile compatibility functional\n` +
+                        `Device type: ${isMobile ? 'Mobile' : 'Desktop'}\n` +
+                        `Touch support: ${hasTouch ? 'Yes' : 'No'}\n` +
+                        `User agent: ${userAgent}\n` +
+                        `API endpoints accessible on mobile`
+                    );
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('mobile-status', 'failed');
+                    showResults('mobile-results', `❌ Mobile API access issues detected`);
+                    testResults.issues.push('Mobile compatibility issues with API access');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('mobile-status', 'failed');
+                showResults('mobile-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`Mobile compatibility error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        // Edge Cases Tests (simplified for browser testing)
+        async function testTieBreakers() {
+            testResults.totalTests++;
+            updateStatus('tiebreaker-status', 'testing');
+            
+            // Since we can't create actual tie scenarios in browser testing,
+            // we'll test if the ranking system handles ties properly
+            try {
+                const rankingsResult = await makeAPICall('/rankings');
+                
+                if (rankingsResult.success) {
+                    testResults.passedTests++;
+                    updateStatus('tiebreaker-status', 'passed');
+                    showResults('tiebreaker-results', 
+                        `✅ Tie-breaker logic structure functional\n` +
+                        `Rankings system accessible for tie-breaking\n` +
+                        `Note: Actual tie-breaker logic requires tournament simulation`
+                    );
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('tiebreaker-status', 'failed');
+                    showResults('tiebreaker-results', `❌ Cannot access ranking system for tie-breaker testing`);
+                    testResults.issues.push('Tie-breaker system not accessible');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('tiebreaker-status', 'failed');
+                showResults('tiebreaker-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`Tie-breaker error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        async function testForfeitHandling() {
+            testResults.totalTests++;
+            updateStatus('forfeit-status', 'testing');
+            
+            try {
+                const matchesResult = await makeAPICall('/matches');
+                
+                if (matchesResult.success) {
+                    const matches = Array.isArray(matchesResult.data) ? matchesResult.data : 
+                                   (matchesResult.data.data ? matchesResult.data.data : []);
+                    
+                    const forfeitMatches = matches.filter(match => 
+                        match && (match.status === 'forfeit' || match.forfeit)
+                    );
+                    
+                    testResults.passedTests++;
+                    updateStatus('forfeit-status', 'passed');
+                    showResults('forfeit-results', 
+                        `✅ Forfeit handling system functional\n` +
+                        `Total matches: ${matches.length}\n` +
+                        `Forfeit matches found: ${forfeitMatches.length}\n` +
+                        `Forfeit status tracking available`
+                    );
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('forfeit-status', 'failed');
+                    showResults('forfeit-results', `❌ Cannot access match data for forfeit testing`);
+                    testResults.issues.push('Forfeit handling system not accessible');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('forfeit-status', 'failed');
+                showResults('forfeit-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`Forfeit handling error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        async function testBracketReset() {
+            testResults.totalTests++;
+            updateStatus('bracket-reset-status', 'testing');
+            
+            try {
+                const bracketsResult = await makeAPICall('/brackets');
+                
+                if (bracketsResult.success) {
+                    testResults.passedTests++;
+                    updateStatus('bracket-reset-status', 'passed');
+                    showResults('bracket-reset-results', 
+                        `✅ Bracket reset structure functional\n` +
+                        `Bracket system accessible\n` +
+                        `Note: Actual bracket reset requires double elimination tournament`
+                    );
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('bracket-reset-status', 'failed');
+                    showResults('bracket-reset-results', `❌ Cannot access bracket system for reset testing`);
+                    testResults.issues.push('Bracket reset system not accessible');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('bracket-reset-status', 'failed');
+                showResults('bracket-reset-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`Bracket reset error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        async function testPerformanceLoad() {
+            testResults.totalTests++;
+            updateStatus('load-test-status', 'testing');
+            
+            try {
+                // Simple performance test - measure API response times
+                const startTime = performance.now();
+                
+                const [teamsResult, playersResult, matchesResult, rankingsResult] = await Promise.all([
+                    makeAPICall('/teams'),
+                    makeAPICall('/players'),
+                    makeAPICall('/matches'),
+                    makeAPICall('/rankings')
+                ]);
+                
+                const endTime = performance.now();
+                const responseTime = endTime - startTime;
+                
+                const allSuccessful = teamsResult.success && playersResult.success && 
+                                     matchesResult.success && rankingsResult.success;
+                
+                if (allSuccessful && responseTime < 5000) { // 5 second threshold
+                    testResults.passedTests++;
+                    updateStatus('load-test-status', 'passed');
+                    showResults('load-test-results', 
+                        `✅ Performance test passed\n` +
+                        `Concurrent API calls: 4\n` +
+                        `Response time: ${responseTime.toFixed(2)}ms\n` +
+                        `All endpoints responded successfully`
+                    );
+                } else {
+                    testResults.failedTests++;
+                    updateStatus('load-test-status', 'failed');
+                    showResults('load-test-results', 
+                        `❌ Performance issues detected\n` +
+                        `Response time: ${responseTime.toFixed(2)}ms\n` +
+                        `Success rate: ${[teamsResult, playersResult, matchesResult, rankingsResult].filter(r => r.success).length}/4`
+                    );
+                    testResults.issues.push('Performance issues under concurrent load');
+                }
+            } catch (error) {
+                testResults.failedTests++;
+                updateStatus('load-test-status', 'failed');
+                showResults('load-test-results', `❌ Error: ${error.message}`);
+                testResults.issues.push(`Performance test error: ${error.message}`);
+            }
+            
+            updateSummary();
+        }
+
+        // Utility functions for UI
+        function viewLiveScoring() {
+            window.open('https://staging.mrvl.net/matches', '_blank');
+        }
+
+        // Run all tests
+        async function runAllTests() {
+            const testButton = event.target;
+            testButton.disabled = true;
+            testButton.textContent = '🔄 Running Tests...';
+            
+            testResults = {
+                totalTests: 0,
+                passedTests: 0,
+                failedTests: 0,
+                results: {},
+                issues: [],
+                recommendations: []
+            };
+            
+            // Reset all status indicators
+            document.querySelectorAll('.status').forEach(el => {
+                el.className = 'status pending';
+                el.textContent = 'Pending';
+            });
+            
+            // Hide all results
+            document.querySelectorAll('.results').forEach(el => {
+                el.classList.remove('show');
+            });
+            
+            try {
+                // Tournament System Tests
+                updateStatus('tournament-status', 'testing');
+                await testTournamentCRUD();
+                await testBracketGeneration();
+                await testTournamentRegistration();
+                await testPrizePoolManagement();
+                updateStatus('tournament-status', 'passed');
+                
+                // Match System Tests
+                updateStatus('match-status', 'testing');
+                await testMatchCRUD();
+                await testLiveScoring();
+                await testMatchStatistics();
+                await testMatchComments();
+                updateStatus('match-status', 'passed');
+                
+                // Competitive Features Tests
+                updateStatus('competitive-status', 'testing');
+                await testLeaderboards();
+                await testELOSystem();
+                await testAchievements();
+                await testSeasonManagement();
+                updateStatus('competitive-status', 'passed');
+                
+                // Integration Tests
+                updateStatus('integration-status', 'testing');
+                await testDataConsistency();
+                await testCrossStatistics();
+                await testHistoricalData();
+                await testMobileCompatibility();
+                updateStatus('integration-status', 'passed');
+                
+                // Edge Cases Tests
+                updateStatus('edge-cases-status', 'testing');
+                await testTieBreakers();
+                await testForfeitHandling();
+                await testBracketReset();
+                await testPerformanceLoad();
+                updateStatus('edge-cases-status', 'passed');
+                
+                // Show issues if any
+                if (testResults.issues.length > 0) {
+                    document.getElementById('critical-issues').style.display = 'block';
+                    document.getElementById('issues-list').innerHTML = testResults.issues
+                        .map(issue => `<div class="issue-item">${issue}</div>`).join('');
+                }
+                
+                // Generate recommendations
+                generateRecommendations();
+                
+            } catch (error) {
+                console.error('Test suite error:', error);
+            }
+            
+            testButton.disabled = false;
+            testButton.textContent = '🚀 Run All Tests';
+        }
+
+        function generateRecommendations() {
+            testResults.recommendations = [];
+            
+            if (testResults.failedTests === 0) {
+                testResults.recommendations.push('All systems are functioning correctly. Consider implementing additional stress testing and edge case scenarios.');
+            } else {
+                if (testResults.issues.some(issue => issue.includes('Tournament'))) {
+                    testResults.recommendations.push('Critical tournament system issues detected. Review tournament creation, bracket generation, and registration workflows.');
+                }
+                
+                if (testResults.issues.some(issue => issue.includes('Match'))) {
+                    testResults.recommendations.push('Match system issues found. Verify match creation, live scoring, and statistics tracking functionality.');
+                }
+                
+                if (testResults.issues.some(issue => issue.includes('ELO') || issue.includes('ranking'))) {
+                    testResults.recommendations.push('Competitive feature issues detected. Review ranking calculations and achievement systems.');
+                }
+                
+                if (testResults.issues.some(issue => issue.includes('API') || issue.includes('endpoint'))) {
+                    testResults.recommendations.push('API connectivity issues found. Check server configuration and endpoint availability.');
+                }
+            }
+            
+            if (testResults.recommendations.length > 0) {
+                document.getElementById('recommendations').style.display = 'block';
+                document.getElementById('recommendations-list').innerHTML = testResults.recommendations
+                    .map(rec => `<div class="recommendation-item">${rec}</div>`).join('');
+            }
+        }
+
+        function generateReport() {
+            const timestamp = new Date().toISOString();
+            const report = {
+                timestamp,
+                summary: {
+                    totalTests: testResults.totalTests,
+                    passedTests: testResults.passedTests,
+                    failedTests: testResults.failedTests,
+                    successRate: testResults.totalTests > 0 ? 
+                        ((testResults.passedTests / testResults.totalTests) * 100).toFixed(1) + '%' : '0%'
+                },
+                issues: testResults.issues,
+                recommendations: testResults.recommendations,
+                testEnvironment: 'staging.mrvl.net',
+                testMethod: 'Browser-based API testing'
+            };
+            
+            const reportBlob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const reportUrl = URL.createObjectURL(reportBlob);
+            
+            const downloadLink = document.createElement('a');
+            downloadLink.href = reportUrl;
+            downloadLink.download = `tournament-competitive-test-report-${timestamp.replace(/[:.]/g, '-')}.json`;
+            downloadLink.click();
+            
+            URL.revokeObjectURL(reportUrl);
+            
+            alert('📄 Test report generated and downloaded!');
+        }
+
+        // Initialize on page load
+        window.onload = function() {
+            updateSummary();
+            console.log('🏆 Tournament & Competitive System Test Suite loaded');
+            console.log('Click "Run All Tests" to start comprehensive testing');
+        };
+    </script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
+import { useActivityStatsContext } from '../../contexts/ActivityStatsContext';
 import UserDisplay from '../shared/UserDisplay';
 import VotingButtons from '../shared/VotingButtons';
 import ForumMentionAutocomplete from '../shared/ForumMentionAutocomplete';
@@ -22,6 +23,7 @@ import { trackNewsView, trackNewsEngagement, initializeNewsAnalytics } from '../
 import { showToast, showSuccessToast, showErrorToast } from '../../utils/toastUtils';
 
 function NewsDetailPage({ params, navigateTo }) {
+  const { triggerComment } = useActivityStatsContext();
   const [article, setArticle] = useState(null);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -356,6 +358,9 @@ function NewsDetailPage({ params, navigateTo }) {
         
         // Show success message using our toast utility
         showSuccessToast('Comment posted successfully!');
+        
+        // Trigger activity stats update for comment creation
+        triggerComment();
         
         return; // Exit early since this was actually successful
       }

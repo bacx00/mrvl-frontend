@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks';
+import useActivityStats from '../../hooks/useActivityStats';
 import HeroImage, { HeroPortrait } from '../shared/HeroImage';
 import { getImageUrl } from '../../utils/imageUtils';
 import { createErrorHandler, retryOperation, ERROR_CODES } from '../../utils/errorHandler';
@@ -37,15 +38,22 @@ function SimpleUserProfile({ navigateTo, params }) {
   const [loading, setLoading] = useState(false);
   const [showHeroAvatarModal, setShowHeroAvatarModal] = useState(false);
   const [availableFlairs, setAvailableFlairs] = useState({ heroes: {}, teams: [] });
-  const [userStats, setUserStats] = useState({
-    total_comments: 0,
-    total_forum_posts: 0,
-    total_forum_threads: 0,
-    total_votes: 0,
-    days_active: 0
-  });
   const [errors, setErrors] = useState({});
   const [networkStatus, setNetworkStatus] = useState('online');
+  
+  // Use the activity stats hook for real-time updates
+  const { 
+    stats: userStats, 
+    loading: statsLoading, 
+    error: statsError, 
+    lastUpdated: statsLastUpdated,
+    triggerUpdate: triggerStatsUpdate 
+  } = useActivityStats(targetUserId, {
+    updateInterval: 30000, // Update every 30 seconds
+    enableRealTimeUpdates: true,
+    enableActivityTriggers: true,
+    debounceDelay: 2000
+  });
   
   // Error handler for API calls
   const handleError = createErrorHandler({
@@ -427,23 +435,9 @@ function SimpleUserProfile({ navigateTo, params }) {
   };
 
 
-  const fetchUserStats = useCallback(async () => {
-    try {
-      const endpoint = targetUserId && !isOwnProfile 
-        ? `/admin/users/${targetUserId}/activity`
-        : '/user/profile/activity';
-      const response = await api.get(endpoint);
-      const data = response.data?.data || {};
-      setUserStats(data.stats || {});
-    } catch (error) {
-      console.error('Error fetching user stats:', error);
-    }
-  }, [api, targetUserId, isOwnProfile]);
-
   useEffect(() => {
     fetchAvailableFlairs();
-    fetchUserStats();
-  }, [fetchAvailableFlairs, fetchUserStats]);
+  }, [fetchAvailableFlairs]);
 
 
 
@@ -695,31 +689,57 @@ function SimpleUserProfile({ navigateTo, params }) {
 
       {/* User Stats */}
       <div className="card p-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Activity Stats</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Activity Stats</h2>
+          <div className="flex items-center space-x-2">
+            {statsLoading && (
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+            )}
+            {statsLastUpdated && (
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                Updated: {new Date(statsLastUpdated).toLocaleTimeString()}
+              </span>
+            )}
+            {statsError && (
+              <span className="text-xs text-red-500 dark:text-red-400">
+                Update failed
+              </span>
+            )}
+          </div>
+        </div>
+        
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <div className={`text-2xl font-bold text-blue-600 dark:text-blue-400 transition-all duration-300 ${statsLoading ? 'opacity-50' : ''}`}>
               {userStats.total_forum_threads || 0}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Forum Threads</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+            <div className={`text-2xl font-bold text-green-600 dark:text-green-400 transition-all duration-300 ${statsLoading ? 'opacity-50' : ''}`}>
               {userStats.total_forum_posts || 0}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Forum Posts</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+            <div className={`text-2xl font-bold text-purple-600 dark:text-purple-400 transition-all duration-300 ${statsLoading ? 'opacity-50' : ''}`}>
               {userStats.total_comments || 0}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Comments</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+            <div className={`text-2xl font-bold text-orange-600 dark:text-orange-400 transition-all duration-300 ${statsLoading ? 'opacity-50' : ''}`}>
               {userStats.days_active || 0}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">Days Active</div>
+          </div>
+        </div>
+        
+        {/* Live Update Indicator */}
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span>Live updates every 30 seconds</span>
           </div>
         </div>
       </div>

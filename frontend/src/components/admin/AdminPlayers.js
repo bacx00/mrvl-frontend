@@ -157,9 +157,30 @@ function AdminPlayers({ navigateTo }) {
     setFormData({
       name: '',
       ign: '',
+      real_name: '',
+      username: '',
       country: '',
       role: 'DPS',
       rating: 1500,
+      elo_rating: '',
+      peak_elo: '',
+      skill_rating: '',
+      earnings: '',
+      total_earnings: '',
+      wins: '',
+      losses: '',
+      total_matches: '',
+      kda: '',
+      main_hero: '',
+      hero_pool: '',
+      status: 'active',
+      nationality: '',
+      jersey_number: '',
+      birth_date: '',
+      age: '',
+      region: '',
+      team_id: '',
+      biography: '',
       description: ''
     });
     setShowCreateModal(true);
@@ -170,9 +191,30 @@ function AdminPlayers({ navigateTo }) {
     setFormData({
       name: player.name || '',
       ign: player.ign || '',
+      real_name: player.real_name || '',
+      username: player.username || '',
       country: player.country || '',
       role: player.role || 'DPS',
       rating: player.rating || 1500,
+      elo_rating: player.elo_rating || '',
+      peak_elo: player.peak_elo || '',
+      skill_rating: player.skill_rating || '',
+      earnings: player.earnings || '',
+      total_earnings: player.total_earnings || '',
+      wins: player.wins || '',
+      losses: player.losses || '',
+      total_matches: player.total_matches || '',
+      kda: player.kda || '',
+      main_hero: player.main_hero || '',
+      hero_pool: player.hero_pool || '',
+      status: player.status || 'active',
+      nationality: player.nationality || '',
+      jersey_number: player.jersey_number || '',
+      birth_date: player.birth_date || '',
+      age: player.age || '',
+      region: player.region || '',
+      team_id: player.team_id || '',
+      biography: player.biography || '',
       description: player.description || ''
     });
     setShowEditModal(true);
@@ -185,9 +227,30 @@ function AdminPlayers({ navigateTo }) {
     setFormData({
       name: '',
       ign: '',
+      real_name: '',
+      username: '',
       country: '',
       role: 'DPS',
       rating: 1500,
+      elo_rating: '',
+      peak_elo: '',
+      skill_rating: '',
+      earnings: '',
+      total_earnings: '',
+      wins: '',
+      losses: '',
+      total_matches: '',
+      kda: '',
+      main_hero: '',
+      hero_pool: '',
+      status: 'active',
+      nationality: '',
+      jersey_number: '',
+      birth_date: '',
+      age: '',
+      region: '',
+      team_id: '',
+      biography: '',
       description: ''
     });
   };
@@ -733,6 +796,307 @@ function AdminPlayers({ navigateTo }) {
                     max="5000"
                   />
                 </div>
+              </div>
+              
+              {/* Performance & Statistics Section */}
+              <div className="border-t pt-6">
+                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Performance & Statistics</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Real Name
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.real_name}
+                      onChange={(e) => setFormData({...formData, real_name: e.target.value})}
+                      className="form-input"
+                      placeholder="John Smith"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Username
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.username}
+                      onChange={(e) => setFormData({...formData, username: e.target.value})}
+                      className="form-input"
+                      placeholder="johndoe123"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      ELO Rating
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.elo_rating}
+                      onChange={(e) => setFormData({...formData, elo_rating: e.target.value})}
+                      className="form-input"
+                      placeholder="2400"
+                      min="0"
+                      max="5000"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Peak ELO
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.peak_elo}
+                      onChange={(e) => setFormData({...formData, peak_elo: e.target.value})}
+                      className="form-input"
+                      placeholder="2600"
+                      min="0"
+                      max="5000"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Skill Rating
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.skill_rating}
+                      onChange={(e) => setFormData({...formData, skill_rating: e.target.value})}
+                      className="form-input"
+                      placeholder="3200"
+                      min="0"
+                      max="5000"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Earnings ($)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.earnings}
+                      onChange={(e) => setFormData({...formData, earnings: e.target.value})}
+                      className="form-input"
+                      placeholder="25000"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Total Earnings ($)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.total_earnings}
+                      onChange={(e) => setFormData({...formData, total_earnings: e.target.value})}
+                      className="form-input"
+                      placeholder="75000"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Wins
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.wins}
+                      onChange={(e) => setFormData({...formData, wins: e.target.value})}
+                      className="form-input"
+                      placeholder="150"
+                      min="0"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Losses
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.losses}
+                      onChange={(e) => setFormData({...formData, losses: e.target.value})}
+                      className="form-input"
+                      placeholder="45"
+                      min="0"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Total Matches
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.total_matches}
+                      onChange={(e) => setFormData({...formData, total_matches: e.target.value})}
+                      className="form-input"
+                      placeholder="195"
+                      min="0"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      KDA Ratio
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.kda}
+                      onChange={(e) => setFormData({...formData, kda: e.target.value})}
+                      className="form-input"
+                      placeholder="1.45"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Main Hero
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.main_hero}
+                      onChange={(e) => setFormData({...formData, main_hero: e.target.value})}
+                      className="form-input"
+                      placeholder="Spider-Man"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Hero Pool
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.hero_pool}
+                      onChange={(e) => setFormData({...formData, hero_pool: e.target.value})}
+                      className="form-input"
+                      placeholder="Spider-Man, Iron Man, Star-Lord"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Player Status
+                    </label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({...formData, status: e.target.value})}
+                      className="form-input"
+                    >
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                      <option value="retired">Retired</option>
+                      <option value="suspended">Suspended</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Nationality
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.nationality}
+                      onChange={(e) => setFormData({...formData, nationality: e.target.value})}
+                      className="form-input"
+                      placeholder="American"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Jersey Number
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.jersey_number}
+                      onChange={(e) => setFormData({...formData, jersey_number: e.target.value})}
+                      className="form-input"
+                      placeholder="10"
+                      min="0"
+                      max="99"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Birth Date
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.birth_date}
+                      onChange={(e) => setFormData({...formData, birth_date: e.target.value})}
+                      className="form-input"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Age
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.age}
+                      onChange={(e) => setFormData({...formData, age: e.target.value})}
+                      className="form-input"
+                      placeholder="22"
+                      min="16"
+                      max="50"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Region
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.region}
+                      onChange={(e) => setFormData({...formData, region: e.target.value})}
+                      className="form-input"
+                      placeholder="NA"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Team ID
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.team_id}
+                      onChange={(e) => setFormData({...formData, team_id: e.target.value})}
+                      className="form-input"
+                      placeholder="1"
+                      min="0"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Biography
+                </label>
+                <textarea
+                  value={formData.biography}
+                  onChange={(e) => setFormData({...formData, biography: e.target.value})}
+                  className="form-input"
+                  rows="3"
+                  placeholder="Player background, career highlights, achievements..."
+                />
               </div>
               
               <div>

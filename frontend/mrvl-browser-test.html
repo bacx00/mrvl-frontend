@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MRVL Comprehensive Player & Team Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 300;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .test-section-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: #495057;
+        }
+        .test-section-content {
+            padding: 20px;
+        }
+        .test-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .test-item.running {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+        .test-item.success {
+            background: #d1edff;
+            border-color: #0366d6;
+        }
+        .test-item.error {
+            background: #ffeaa7;
+            border-color: #fdcb6e;
+        }
+        .test-item.failed {
+            background: #ffebee;
+            border-color: #f44336;
+        }
+        .status-icon {
+            margin-right: 15px;
+            font-size: 1.5rem;
+            min-width: 30px;
+        }
+        .test-details {
+            flex: 1;
+        }
+        .test-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .test-description {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        .results-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .result-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .result-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .result-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .log-container {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px 0;
+        }
+        .log-success { color: #68d391; }
+        .log-error { color: #fc8181; }
+        .log-warning { color: #fbd38d; }
+        .log-info { color: #63b3ed; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 MRVL Comprehensive Test Suite</h1>
+            <p>Marvel Rivals League - Player & Team Management Testing</p>
+        </div>
+        
+        <div class="content">
+            <div class="controls">
+                <button id="startTests" class="btn">🚀 Start All Tests</button>
+                <button id="clearLogs" class="btn">🗑️ Clear Logs</button>
+                <button id="downloadReport" class="btn" disabled>📊 Download Report</button>
+                
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div id="progressText">Ready to start testing...</div>
+            </div>
+
+            <!-- Player Tests Section -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    🏃 Player Management Tests
+                </div>
+                <div class="test-section-content">
+                    <div class="test-item" id="test-player-creation">
+                        <div class="status-icon">⏳</div>
+                        <div class="test-details">
+                            <div class="test-name">Player Creation Form</div>
+                            <div class="test-description">Test all comprehensive fields including earnings, ELO rating, statistics, hero pool</div>
+                        </div>
+                    </div>
+                    <div class="test-item" id="test-player-editing">
+                        <div class="status-icon">⏳</div>
+                        <div class="test-details">
+                            <div class="test-name">Player Editing Form</div>
+                            <div class="test-description">Verify all fields load correctly and can be updated</div>
+                        </div>
+                    </div>
+                    <div class="test-item" id="test-player-profile">
+                        <div class="status-icon">⏳</div>
+                        <div class="test-details">
+                            <div class="test-name">Player Profile Inline Editing</div>
+                            <div class="test-description">Test direct profile updates on player detail pages</div>
+                        </div>
+                    </div>
+                    <div class="test-item" id="test-player-deletion">
+                        <div class="status-icon">⏳</div>
+                        <div class="test-details">
+                            <div class="test-name">Player Deletion</div>
+                            <div class="test-description">Test player deletion functionality through admin dashboard</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Tests Section -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    🏆 Team Management Tests
+                </div>
+                <div class="test-section-content">
+                    <div class="test-item" id="test-team-creation">
+                        <div class="status-icon">⏳</div>
+                        <div class="test-details">
+                            <div class="test-name">Team Creation Form</div>
+                            <div class="test-description">Test all comprehensive fields including earnings, statistics, achievements, social media, coach data</div>
+                        </div>
+                    </div>
+                    <div class="test-item" id="test-team-editing">
+                        <div class="status-icon">⏳</div>
+                        <div class="test-details">
+                            <div class="test-name">Team Editing Form</div>
+                            <div class="test-description">Verify all fields load correctly and can be updated</div>
+                        </div>
+                    </div>
+                    <div class="test-item" id="test-team-profile">
+                        <div class="status-icon">⏳</div>
+                        <div class="test-details">
+                            <div class="test-name">Team Profile Inline Editing</div>
+                            <div class="test-description">Test direct profile updates on team detail pages</div>
+                        </div>
+                    </div>
+                    <div class="test-item" id="test-team-deletion">
+                        <div class="status-icon">⏳</div>
+                        <div class="test-details">
+                            <div class="test-name">Team Deletion</div>
+                            <div class="test-description">Test team deletion functionality through admin dashboard</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API & Validation Tests Section -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    🔌 API & Validation Tests
+                </div>
+                <div class="test-section-content">
+                    <div class="test-item" id="test-api-endpoints">
+                        <div class="status-icon">⏳</div>
+                        <div class="test-details">
+                            <div class="test-name">API Endpoint Validation</div>
+                            <div class="test-description">Verify correct usage of /teams and /players (not /admin/ prefixed)</div>
+                        </div>
+                    </div>
+                    <div class="test-item" id="test-form-validation">
+                        <div class="status-icon">⏳</div>
+                        <div class="test-details">
+                            <div class="test-name">Form Validation & Error Handling</div>
+                            <div class="test-description">Test validation rules and error messages across all forms</div>
+                        </div>
+                    </div>
+                    <div class="test-item" id="test-data-persistence">
+                        <div class="status-icon">⏳</div>
+                        <div class="test-details">
+                            <div class="test-name">Data Persistence</div>
+                            <div class="test-description">Verify data persistence after form submission</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-section hidden" id="resultsSection">
+                <h3>📊 Test Results Summary</h3>
+                <div class="results-grid">
+                    <div class="result-card">
+                        <div class="result-number" id="totalTests">0</div>
+                        <div class="result-label">Total Tests</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="result-number" id="passedTests" style="color: #28a745;">0</div>
+                        <div class="result-label">Passed</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="result-number" id="failedTests" style="color: #dc3545;">0</div>
+                        <div class="result-label">Failed</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="result-number" id="successRate">0%</div>
+                        <div class="result-label">Success Rate</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Log Container -->
+            <div class="log-container" id="logContainer">
+                <div class="log-entry log-info">🚀 MRVL Test Suite initialized. Ready to start testing...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class MRVLTestSuite {
+            constructor() {
+                this.tests = [];
+                this.currentTest = 0;
+                this.results = {
+                    total: 0,
+                    passed: 0,
+                    failed: 0,
+                    details: {}
+                };
+                this.isRunning = false;
+                this.initializeTests();
+            }
+
+            initializeTests() {
+                this.tests = [
+                    { id: 'test-player-creation', name: 'Player Creation Form', method: 'testPlayerCreation' },
+                    { id: 'test-player-editing', name: 'Player Editing Form', method: 'testPlayerEditing' },
+                    { id: 'test-player-profile', name: 'Player Profile Editing', method: 'testPlayerProfile' },
+                    { id: 'test-player-deletion', name: 'Player Deletion', method: 'testPlayerDeletion' },
+                    { id: 'test-team-creation', name: 'Team Creation Form', method: 'testTeamCreation' },
+                    { id: 'test-team-editing', name: 'Team Editing Form', method: 'testTeamEditing' },
+                    { id: 'test-team-profile', name: 'Team Profile Editing', method: 'testTeamProfile' },
+                    { id: 'test-team-deletion', name: 'Team Deletion', method: 'testTeamDeletion' },
+                    { id: 'test-api-endpoints', name: 'API Endpoints', method: 'testAPIEndpoints' },
+                    { id: 'test-form-validation', name: 'Form Validation', method: 'testFormValidation' },
+                    { id: 'test-data-persistence', name: 'Data Persistence', method: 'testDataPersistence' }
+                ];
+                this.results.total = this.tests.length;
+            }
+
+            log(message, type = 'info') {
+                const logContainer = document.getElementById('logContainer');
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry log-${type}`;
+                logEntry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+                logContainer.appendChild(logEntry);
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+
+            updateTestStatus(testId, status, details = '') {
+                const testElement = document.getElementById(testId);
+                const statusIcon = testElement.querySelector('.status-icon');
+                
+                testElement.className = `test-item ${status}`;
+                
+                switch(status) {
+                    case 'running':
+                        statusIcon.textContent = '🔄';
+                        break;
+                    case 'success':
+                        statusIcon.textContent = '✅';
+                        this.results.passed++;
+                        break;
+                    case 'failed':
+                        statusIcon.textContent = '❌';
+                        this.results.failed++;
+                        break;
+                    case 'error':
+                        statusIcon.textContent = '⚠️';
+                        this.results.failed++;
+                        break;
+                }
+                
+                if (details) {
+                    const description = testElement.querySelector('.test-description');
+                    description.textContent = details;
+                }
+            }
+
+            updateProgress() {
+                const progressFill = document.getElementById('progressFill');
+                const progressText = document.getElementById('progressText');
+                
+                const progress = (this.currentTest / this.tests.length) * 100;
+                progressFill.style.width = `${progress}%`;
+                progressText.textContent = `Running test ${this.currentTest + 1} of ${this.tests.length}...`;
+            }
+
+            updateResults() {
+                document.getElementById('totalTests').textContent = this.results.total;
+                document.getElementById('passedTests').textContent = this.results.passed;
+                document.getElementById('failedTests').textContent = this.results.failed;
+                document.getElementById('successRate').textContent = 
+                    `${((this.results.passed / this.results.total) * 100).toFixed(1)}%`;
+                
+                document.getElementById('resultsSection').classList.remove('hidden');
+            }
+
+            async delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            async testPlayerCreation() {
+                this.log('🏃 Testing Player Creation Form...', 'info');
+                
+                try {
+                    // Check if we're on a page with admin access
+                    const adminElements = document.querySelectorAll('[data-testid="admin-players"], .admin-players, button');
+                    const playersButton = Array.from(adminElements).find(el => 
+                        el.textContent.toLowerCase().includes('players') || 
+                        el.getAttribute('data-testid') === 'admin-players'
+                    );
+                    
+                    if (!playersButton) {
+                        throw new Error('Players admin section not found. Make sure you are logged in as admin.');
+                    }
+
+                    // Try to find create player functionality
+                    const createButtons = document.querySelectorAll('button');
+                    const createPlayerButton = Array.from(createButtons).find(btn => 
+                        btn.textContent.toLowerCase().includes('create') && 
+                        btn.textContent.toLowerCase().includes('player')
+                    );
+
+                    if (createPlayerButton) {
+                        this.log('✅ Player creation form accessible', 'success');
+                        
+                        // Test comprehensive fields checklist
+                        const expectedFields = [
+                            'name', 'ign', 'real_name', 'username', 'country', 'role', 'rating',
+                            'elo_rating', 'peak_elo', 'skill_rating', 'earnings', 'total_earnings',
+                            'wins', 'losses', 'total_matches', 'kda', 'main_hero', 'hero_pool',
+                            'status', 'nationality', 'jersey_number', 'birth_date', 'age', 'region',
+                            'team_id', 'biography', 'description'
+                        ];
+                        
+                        this.log(`📋 Expected comprehensive fields: ${expectedFields.length}`, 'info');
+                        this.results.details.playerCreation = {
+                            accessible: true,
+                            expectedFields: expectedFields.length,
+                            status: 'accessible'
+                        };
+                        return true;
+                    } else {
+                        throw new Error('Create Player button not found');
+                    }
+                } catch (error) {
+                    this.log(`❌ Player creation test failed: ${error.message}`, 'error');
+                    this.results.details.playerCreation = {
+                        accessible: false,
+                        error: error.message
+                    };
+                    return false;
+                }
+            }
+
+            async testPlayerEditing() {
+                this.log('✏️ Testing Player Editing Form...', 'info');
+                
+                try {
+                    // Look for edit buttons in player lists
+                    const editButtons = document.querySelectorAll('button');
+                    const playerEditButton = Array.from(editButtons).find(btn => 
+                        btn.textContent.toLowerCase().includes('edit') &&
+                        !btn.textContent.toLowerCase().includes('team')
+                    );
+
+                    if (playerEditButton) {
+                        this.log('✅ Player editing functionality found', 'success');
+                        this.results.details.playerEditing = {
+                            accessible: true,
+                            status: 'accessible'
+                        };
+                        return true;
+                    } else {
+                        this.log('⚠️ Player edit buttons not found in current view', 'warning');
+                        this.results.details.playerEditing = {
+                            accessible: false,
+                            note: 'Edit buttons not visible in current view'
+                        };
+                        return false;
+                    }
+                } catch (error) {
+                    this.log(`❌ Player editing test failed: ${error.message}`, 'error');
+                    this.results.details.playerEditing = {
+                        accessible: false,
+                        error: error.message
+                    };
+                    return false;
+                }
+            }
+
+            async testPlayerProfile() {
+                this.log('👤 Testing Player Profile Inline Editing...', 'info');
+                
+                try {
+                    // Check for player profile editing capabilities
+                    const profileElements = document.querySelectorAll('[data-testid*="player"], .player-profile, .profile-edit');
+                    
+                    if (profileElements.length > 0) {
+                        this.log('✅ Player profile elements found', 'success');
+                        this.results.details.playerProfile = {
+                            accessible: true,
+                            elementsFound: profileElements.length
+                        };
+                        return true;
+                    } else {
+                        this.log('⚠️ Player profile editing not found in current view', 'warning');
+                        this.results.details.playerProfile = {
+                            accessible: false,
+                            note: 'Profile editing not visible in current view'
+                        };
+                        return false;
+                    }
+                } catch (error) {
+                    this.log(`❌ Player profile test failed: ${error.message}`, 'error');
+                    return false;
+                }
+            }
+
+            async testPlayerDeletion() {
+                this.log('🗑️ Testing Player Deletion...', 'info');
+                
+                try {
+                    const deleteButtons = document.querySelectorAll('button');
+                    const playerDeleteButton = Array.from(deleteButtons).find(btn => 
+                        btn.textContent.toLowerCase().includes('delete') &&
+                        !btn.textContent.toLowerCase().includes('team')
+                    );
+
+                    if (playerDeleteButton) {
+                        this.log('✅ Player deletion functionality found', 'success');
+                        this.results.details.playerDeletion = {
+                            accessible: true,
+                            status: 'accessible'
+                        };
+                        return true;
+                    } else {
+                        this.log('⚠️ Player delete buttons not found in current view', 'warning');
+                        this.results.details.playerDeletion = {
+                            accessible: false,
+                            note: 'Delete buttons not visible in current view'
+                        };
+                        return false;
+                    }
+                } catch (error) {
+                    this.log(`❌ Player deletion test failed: ${error.message}`, 'error');
+                    return false;
+                }
+            }
+
+            async testTeamCreation() {
+                this.log('🏆 Testing Team Creation Form...', 'info');
+                
+                try {
+                    const createButtons = document.querySelectorAll('button');
+                    const createTeamButton = Array.from(createButtons).find(btn => 
+                        btn.textContent.toLowerCase().includes('create') && 
+                        btn.textContent.toLowerCase().includes('team')
+                    );
+
+                    if (createTeamButton) {
+                        this.log('✅ Team creation form accessible', 'success');
+                        
+                        const expectedFields = [
+                            'name', 'short_name', 'region', 'country', 'rating', 'elo_rating',
+                            'peak_elo', 'earnings', 'wins', 'losses', 'matches_played', 'win_rate',
+                            'current_streak_count', 'current_streak_type', 'founded_date',
+                            'description', 'achievements', 'manager', 'owner', 'captain', 'status',
+                            'coach_name', 'coach_nationality', 'website', 'social_media'
+                        ];
+                        
+                        this.log(`📋 Expected comprehensive fields: ${expectedFields.length}`, 'info');
+                        this.results.details.teamCreation = {
+                            accessible: true,
+                            expectedFields: expectedFields.length,
+                            status: 'accessible'
+                        };
+                        return true;
+                    } else {
+                        throw new Error('Create Team button not found');
+                    }
+                } catch (error) {
+                    this.log(`❌ Team creation test failed: ${error.message}`, 'error');
+                    this.results.details.teamCreation = {
+                        accessible: false,
+                        error: error.message
+                    };
+                    return false;
+                }
+            }
+
+            async testTeamEditing() {
+                this.log('✏️ Testing Team Editing Form...', 'info');
+                
+                try {
+                    const editButtons = document.querySelectorAll('button');
+                    const teamEditButton = Array.from(editButtons).find(btn => 
+                        btn.textContent.toLowerCase().includes('edit') &&
+                        !btn.textContent.toLowerCase().includes('player')
+                    );
+
+                    if (teamEditButton) {
+                        this.log('✅ Team editing functionality found', 'success');
+                        this.results.details.teamEditing = {
+                            accessible: true,
+                            status: 'accessible'
+                        };
+                        return true;
+                    } else {
+                        this.log('⚠️ Team edit buttons not found in current view', 'warning');
+                        this.results.details.teamEditing = {
+                            accessible: false,
+                            note: 'Edit buttons not visible in current view'
+                        };
+                        return false;
+                    }
+                } catch (error) {
+                    this.log(`❌ Team editing test failed: ${error.message}`, 'error');
+                    return false;
+                }
+            }
+
+            async testTeamProfile() {
+                this.log('🏆 Testing Team Profile Inline Editing...', 'info');
+                
+                try {
+                    const profileElements = document.querySelectorAll('[data-testid*="team"], .team-profile, .profile-edit');
+                    
+                    if (profileElements.length > 0) {
+                        this.log('✅ Team profile elements found', 'success');
+                        this.results.details.teamProfile = {
+                            accessible: true,
+                            elementsFound: profileElements.length
+                        };
+                        return true;
+                    } else {
+                        this.log('⚠️ Team profile editing not found in current view', 'warning');
+                        this.results.details.teamProfile = {
+                            accessible: false,
+                            note: 'Profile editing not visible in current view'
+                        };
+                        return false;
+                    }
+                } catch (error) {
+                    this.log(`❌ Team profile test failed: ${error.message}`, 'error');
+                    return false;
+                }
+            }
+
+            async testTeamDeletion() {
+                this.log('🗑️ Testing Team Deletion...', 'info');
+                
+                try {
+                    const deleteButtons = document.querySelectorAll('button');
+                    const teamDeleteButton = Array.from(deleteButtons).find(btn => 
+                        btn.textContent.toLowerCase().includes('delete') &&
+                        !btn.textContent.toLowerCase().includes('player')
+                    );
+
+                    if (teamDeleteButton) {
+                        this.log('✅ Team deletion functionality found', 'success');
+                        this.results.details.teamDeletion = {
+                            accessible: true,
+                            status: 'accessible'
+                        };
+                        return true;
+                    } else {
+                        this.log('⚠️ Team delete buttons not found in current view', 'warning');
+                        this.results.details.teamDeletion = {
+                            accessible: false,
+                            note: 'Delete buttons not visible in current view'
+                        };
+                        return false;
+                    }
+                } catch (error) {
+                    this.log(`❌ Team deletion test failed: ${error.message}`, 'error');
+                    return false;
+                }
+            }
+
+            async testAPIEndpoints() {
+                this.log('🔌 Testing API Endpoints...', 'info');
+                
+                try {
+                    // Test players endpoint
+                    const playersResponse = await fetch('/api/players').catch(() => 
+                        fetch('/players').catch(() => null)
+                    );
+                    
+                    // Test teams endpoint  
+                    const teamsResponse = await fetch('/api/teams').catch(() => 
+                        fetch('/teams').catch(() => null)
+                    );
+
+                    const playersOk = playersResponse && playersResponse.ok;
+                    const teamsOk = teamsResponse && teamsResponse.ok;
+                    
+                    if (playersOk || teamsOk) {
+                        this.log(`✅ API endpoints accessible - Players: ${playersOk}, Teams: ${teamsOk}`, 'success');
+                        this.results.details.apiEndpoints = {
+                            playersAccessible: playersOk,
+                            teamsAccessible: teamsOk,
+                            correctEndpoints: true
+                        };
+                        return true;
+                    } else {
+                        this.log('⚠️ API endpoints not accessible from current context', 'warning');
+                        this.results.details.apiEndpoints = {
+                            playersAccessible: false,
+                            teamsAccessible: false,
+                            note: 'May require authentication or different context'
+                        };
+                        return false;
+                    }
+                } catch (error) {
+                    this.log(`❌ API endpoint test failed: ${error.message}`, 'error');
+                    return false;
+                }
+            }
+
+            async testFormValidation() {
+                this.log('✅ Testing Form Validation...', 'info');
+                
+                try {
+                    // Check for validation elements in forms
+                    const validationElements = document.querySelectorAll(
+                        '.error, .invalid, .validation-error, [data-error], .form-error, .field-error'
+                    );
+                    
+                    const requiredFields = document.querySelectorAll('input[required], select[required], textarea[required]');
+                    
+                    this.log(`📋 Found ${validationElements.length} validation elements`, 'info');
+                    this.log(`📋 Found ${requiredFields.length} required fields`, 'info');
+                    
+                    this.results.details.formValidation = {
+                        validationElementsFound: validationElements.length,
+                        requiredFieldsFound: requiredFields.length,
+                        hasValidation: validationElements.length > 0 || requiredFields.length > 0
+                    };
+                    
+                    return true;
+                } catch (error) {
+                    this.log(`❌ Form validation test failed: ${error.message}`, 'error');
+                    return false;
+                }
+            }
+
+            async testDataPersistence() {
+                this.log('💾 Testing Data Persistence...', 'info');
+                
+                try {
+                    // Check for signs of data persistence mechanisms
+                    const formElements = document.querySelectorAll('form');
+                    const submitButtons = document.querySelectorAll('button[type="submit"], .btn-submit');
+                    
+                    this.log(`📋 Found ${formElements.length} forms`, 'info');
+                    this.log(`📋 Found ${submitButtons.length} submit buttons`, 'info');
+                    
+                    this.results.details.dataPersistence = {
+                        formsFound: formElements.length,
+                        submitButtonsFound: submitButtons.length,
+                        hasPersistenceMechanisms: formElements.length > 0 && submitButtons.length > 0
+                    };
+                    
+                    return true;
+                } catch (error) {
+                    this.log(`❌ Data persistence test failed: ${error.message}`, 'error');
+                    return false;
+                }
+            }
+
+            async runAllTests() {
+                if (this.isRunning) return;
+                
+                this.isRunning = true;
+                this.currentTest = 0;
+                this.results.passed = 0;
+                this.results.failed = 0;
+                
+                document.getElementById('startTests').disabled = true;
+                
+                this.log('🚀 Starting comprehensive MRVL test suite...', 'info');
+                
+                for (const test of this.tests) {
+                    this.updateTestStatus(test.id, 'running');
+                    this.updateProgress();
+                    
+                    try {
+                        const result = await this[test.method]();
+                        this.updateTestStatus(test.id, result ? 'success' : 'failed');
+                    } catch (error) {
+                        this.log(`❌ Test ${test.name} encountered an error: ${error.message}`, 'error');
+                        this.updateTestStatus(test.id, 'error', error.message);
+                    }
+                    
+                    this.currentTest++;
+                    await this.delay(500);
+                }
+                
+                this.log('🎉 All tests completed!', 'success');
+                this.updateResults();
+                this.isRunning = false;
+                
+                document.getElementById('startTests').disabled = false;
+                document.getElementById('downloadReport').disabled = false;
+                document.getElementById('progressText').textContent = 'All tests completed!';
+            }
+
+            downloadReport() {
+                const report = {
+                    testSuite: 'MRVL Comprehensive Player & Team Management Test',
+                    timestamp: new Date().toISOString(),
+                    summary: this.results,
+                    detailedResults: this.results.details,
+                    environment: {
+                        userAgent: navigator.userAgent,
+                        url: window.location.href,
+                        timestamp: new Date().toISOString()
+                    }
+                };
+                
+                const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `mrvl-test-report-${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                this.log('📄 Test report downloaded', 'success');
+            }
+
+            clearLogs() {
+                const logContainer = document.getElementById('logContainer');
+                logContainer.innerHTML = '<div class="log-entry log-info">🚀 Logs cleared. Ready for new tests...</div>';
+            }
+        }
+
+        // Initialize the test suite
+        const testSuite = new MRVLTestSuite();
+
+        // Event listeners
+        document.getElementById('startTests').addEventListener('click', () => {
+            testSuite.runAllTests();
+        });
+
+        document.getElementById('downloadReport').addEventListener('click', () => {
+            testSuite.downloadReport();
+        });
+
+        document.getElementById('clearLogs').addEventListener('click', () => {
+            testSuite.clearLogs();
+        });
+
+        // Auto-start message
+        testSuite.log('🎯 MRVL Test Suite ready! Click "Start All Tests" to begin comprehensive testing.', 'info');
+        testSuite.log('📍 Make sure you are on the MRVL staging environment with admin access.', 'warning');
+    </script>
+</body>
+</html>

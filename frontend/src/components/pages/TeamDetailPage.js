@@ -71,7 +71,20 @@ function TeamDetailPage({ params, navigateTo }) {
         website: teamData.website,
         earnings: teamData.earnings || teamData.total_earnings || 0,
         social_media: teamData.social_media || teamData.social_links || {},
-        achievements: teamData.achievements || [],
+        achievements: (() => {
+          if (Array.isArray(teamData.achievements)) {
+            return teamData.achievements;
+          }
+          if (typeof teamData.achievements === 'string') {
+            try {
+              const parsed = JSON.parse(teamData.achievements);
+              return Array.isArray(parsed) ? parsed : [];
+            } catch {
+              return [];
+            }
+          }
+          return [];
+        })(),
         description: teamData.description,
         created_at: teamData.created_at,
         division: teamData.division,
@@ -304,18 +317,18 @@ function TeamDetailPage({ params, navigateTo }) {
         platform: editFormData.platform,
         game: editFormData.game,
         status: editFormData.status,
-        social_media: {
+        social_media: JSON.stringify({
           twitter: editFormData.twitter,
           instagram: editFormData.instagram,
           youtube: editFormData.youtube,
           facebook: editFormData.facebook,
           website: editFormData.website_url,
           discord: editFormData.discord,
-        }
+        })
       };
 
       // Update team via API
-      const response = await api.put(`/admin/teams/${teamId}`, updateData);
+      const response = await api.put(`/teams/${teamId}`, updateData);
       
       if (response.data || response.success !== false) {
         // Refetch team data to get updated information

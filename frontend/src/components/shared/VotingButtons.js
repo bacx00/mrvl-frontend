@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../hooks';
+import { useActivityStatsContext } from '../../contexts/ActivityStatsContext';
 import { showToast, showSuccessToast, showErrorToast, showWarningToast } from '../../utils/toastUtils';
 
 function VotingButtons({ 
@@ -14,6 +15,7 @@ function VotingButtons({
   direction = 'horizontal' // 'horizontal' or 'vertical'
 }) {
   const { api, user, isAuthenticated } = useAuth();
+  const { triggerVote } = useActivityStatsContext();
   const [upvotes, setUpvotes] = useState(initialUpvotes);
   const [downvotes, setDownvotes] = useState(initialDownvotes);
   const [currentVote, setCurrentVote] = useState(userVote);
@@ -111,24 +113,37 @@ function VotingButtons({
         response = await api.post('/user/votes/', payload);
       }
       
-      // ENHANCED: Better response validation - Accept any successful status code
-      // Fix: Don't require all conditions, just check that it's not explicitly failed
-      const isSuccess = response && (response.status >= 200 && response.status < 300) && 
-                       (response.data?.success !== false);
+      // FIXED: Proper response validation that works with actual API response structure
+      // The API returns success directly in response, not nested in response.data
+      console.log('📄 Raw Response:', response);
+      console.log('✅ API Success:', response.data || response);
+      
+      const isSuccess = response && (
+        // Check if response has explicit success field (direct API response)
+        response.success === true ||
+        // Check if response.data has success field (axios wrapped response)
+        response.data?.success === true ||
+        // Fallback: if no explicit success field, check HTTP status (but not if explicit failure)
+        (response.status >= 200 && response.status < 300 && 
+         response.data?.success !== false && response.success !== false)
+      );
       
       console.log('Vote response validation:', {
+        responseSuccess: response?.success,
+        dataSuccess: response?.data?.success,
         status: response?.status,
-        success: response?.data?.success,
         isSuccess
       });
       
       if (isSuccess) {
         // Update state based on new vote counts from API
-        const voteCounts = response.data?.vote_counts || response.data?.data?.vote_counts || response.data?.updated_stats;
-        const newUserVote = response.data?.user_vote !== undefined ? response.data?.user_vote : 
-                           (response.data?.data?.user_vote !== undefined ? response.data?.data?.user_vote : 
-                           response.data?.vote_type);
-        const action = response.data?.action || response.data?.data?.action;
+        // Handle both direct response and axios-wrapped response structures
+        const responseData = response.data || response;
+        const voteCounts = responseData?.vote_counts || responseData?.data?.vote_counts || responseData?.updated_stats;
+        const newUserVote = responseData?.user_vote !== undefined ? responseData?.user_vote : 
+                           (responseData?.data?.user_vote !== undefined ? responseData?.data?.user_vote : 
+                           responseData?.vote_type);
+        const action = responseData?.action || responseData?.data?.action;
         
         console.log('Vote response:', { voteCounts, newUserVote, action });
         
@@ -165,6 +180,9 @@ function VotingButtons({
         const message = action === 'removed' ? 'Vote removed' : 
                        action === 'updated' ? 'Vote updated' : 'Vote recorded';
         showSuccessToast(message, 2000);
+
+        // Trigger activity stats update for voting
+        triggerVote();
 
         // Notify parent component
         if (onVoteChange) {

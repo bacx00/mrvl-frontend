@@ -92,56 +92,101 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
     const team1Players = [];
     const team2Players = [];
     
+    // Get current map number and access the correct map data
+    const currentMapNumber = data.current_map || data.currentMap || matchData.currentMap || 1;
+    const maps = data.maps || [];
+    const currentMapData = Array.isArray(maps) ? maps[currentMapNumber - 1] : maps[currentMapNumber];
+    
+    // Get player compositions from current map
+    const team1Composition = currentMapData?.team1_composition || data.team1_players || [];
+    const team2Composition = currentMapData?.team2_composition || data.team2_players || [];
+    
     // Process team 1 players
     for (let i = 0; i < 6; i++) {
-      const playerData = data.team1_players?.[i] || {};
+      const playerData = team1Composition[i] || {};
+      const kda = (playerData.eliminations || 0) + (playerData.assists || 0);
+      const kdaRatio = playerData.deaths > 0 ? (kda / playerData.deaths).toFixed(2) : kda.toFixed(2);
+      
       team1Players.push({
-        id: playerData.id || `t1_p${i}`,
-        name: playerData.name || `Player ${i + 1}`,
+        id: playerData.player_id || playerData.id || `t1_p${i}`,
+        name: playerData.name || playerData.username || `Player ${i + 1}`,
         hero: playerData.hero || '',
-        role: playerData.hero ? getHeroRole(playerData.hero) : '',
-        kills: playerData.kills || 0,
+        role: playerData.role || (playerData.hero ? getHeroRole(playerData.hero) : ''),
+        kills: playerData.eliminations || 0,
         deaths: playerData.deaths || 0,
         assists: playerData.assists || 0,
         damage: playerData.damage || 0,
         healing: playerData.healing || 0,
-        blocked: playerData.blocked || 0,
-        kda: '0.00',
+        blocked: playerData.damage_blocked || 0,
+        kda: kdaRatio,
         isAlive: true
       });
     }
     
     // Process team 2 players
     for (let i = 0; i < 6; i++) {
-      const playerData = data.team2_players?.[i] || {};
+      const playerData = team2Composition[i] || {};
+      const kda = (playerData.eliminations || 0) + (playerData.assists || 0);
+      const kdaRatio = playerData.deaths > 0 ? (kda / playerData.deaths).toFixed(2) : kda.toFixed(2);
+      
       team2Players.push({
-        id: playerData.id || `t2_p${i}`,
-        name: playerData.name || `Player ${i + 1}`,
+        id: playerData.player_id || playerData.id || `t2_p${i}`,
+        name: playerData.name || playerData.username || `Player ${i + 1}`,
         hero: playerData.hero || '',
-        role: playerData.hero ? getHeroRole(playerData.hero) : '',
-        kills: playerData.kills || 0,
+        role: playerData.role || (playerData.hero ? getHeroRole(playerData.hero) : ''),
+        kills: playerData.eliminations || 0,
         deaths: playerData.deaths || 0,
         assists: playerData.assists || 0,
         damage: playerData.damage || 0,
         healing: playerData.healing || 0,
-        blocked: playerData.blocked || 0,
-        kda: '0.00',
+        blocked: playerData.damage_blocked || 0,
+        kda: kdaRatio,
         isAlive: true
       });
     }
     
     // Process maps data
-    const currentMapNumber = data.current_map || 1;
-    const mapsData = data.maps || {};
+    const mapsData = data.maps || [];
     const processedMaps = {};
+    const totalMaps = Array.isArray(mapsData) ? mapsData.length : (data.total_maps || 5);
     
-    for (let i = 1; i <= (data.total_maps || 5); i++) {
-      processedMaps[i] = {
-        team1Score: mapsData[i]?.team1_score || 0,
-        team2Score: mapsData[i]?.team2_score || 0,
-        status: mapsData[i]?.status || (i === currentMapNumber ? 'active' : i < currentMapNumber ? 'completed' : 'pending'),
-        winner: mapsData[i]?.winner || null
-      };
+    if (Array.isArray(mapsData)) {
+      // Handle array format (from our API)
+      mapsData.forEach((map, index) => {
+        const mapNumber = index + 1;
+        processedMaps[mapNumber] = {
+          team1Score: map.team1_score || 0,
+          team2Score: map.team2_score || 0,
+          status: map.status || 'pending',
+          winner: map.winner_id || null,
+          mapName: map.map_name || `Map ${mapNumber}`,
+          mode: map.mode || 'Push'
+        };
+      });
+      
+      // Fill remaining maps up to 5 if needed
+      for (let i = mapsData.length + 1; i <= 5; i++) {
+        processedMaps[i] = {
+          team1Score: 0,
+          team2Score: 0,
+          status: 'pending',
+          winner: null,
+          mapName: `Map ${i}`,
+          mode: 'Push'
+        };
+      }
+    } else {
+      // Handle object format (legacy)
+      for (let i = 1; i <= totalMaps; i++) {
+        processedMaps[i] = {
+          team1Score: mapsData[i]?.team1_score || 0,
+          team2Score: mapsData[i]?.team2_score || 0,
+          status: mapsData[i]?.status || (i === currentMapNumber ? 'active' : i < currentMapNumber ? 'completed' : 'pending'),
+          winner: mapsData[i]?.winner || null,
+          mapName: mapsData[i]?.map_name || `Map ${i}`,
+          mode: mapsData[i]?.mode || 'Push'
+        };
+      }
     }
     
     setMatchData({
@@ -153,8 +198,8 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
       team1Players,
       team2Players,
       currentMap: currentMapNumber,
-      totalMaps: data.total_maps || 5,
-      matchTimer: matchData.matchTimer,
+      totalMaps: totalMaps,
+      matchTimer: matchData.matchTimer || '00:00',
       maps: processedMaps
     });
   };
@@ -296,20 +341,25 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
     saveMatchData();
   };
 
-  const switchMap = (mapNumber) => {
-    const newMatchData = { ...matchData };
-    newMatchData.currentMap = mapNumber;
+  const switchMap = async (mapNumber) => {
+    if (!match?.id) return;
     
-    // Update current scores to reflect the selected map
-    const mapData = newMatchData.maps[mapNumber];
-    newMatchData.team1Score = mapData.team1Score;
-    newMatchData.team2Score = mapData.team2Score;
+    // Update UI immediately 
+    setMatchData(prev => {
+      const newData = { ...prev };
+      newData.currentMap = mapNumber;
+      
+      // Update current scores to reflect the selected map
+      if (newData.maps && newData.maps[mapNumber]) {
+        newData.team1Score = newData.maps[mapNumber].team1Score || 0;
+        newData.team2Score = newData.maps[mapNumber].team2Score || 0;
+      }
+      
+      return newData;
+    });
     
-    // Mark map status
-    newMatchData.maps[mapNumber].status = 'active';
-    
-    setMatchData(newMatchData);
-    saveMatchData();
+    // Reload player data for the selected map
+    await loadMatchData();
   };
 
   const endCurrentMap = () => {
@@ -360,25 +410,35 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
 
         {/* Map Selector */}
         <div className="p-4 border-b border-gray-700">
-          <div className="flex gap-2">
-            {[1, 2, 3, 4, 5].slice(0, matchData.totalMaps).map(mapNum => (
-              <button
-                key={mapNum}
-                onClick={() => switchMap(mapNum)}
-                className={`px-4 py-2 rounded ${
-                  matchData.currentMap === mapNum
-                    ? 'bg-blue-600 text-white'
-                    : matchData.maps[mapNum].status === 'completed'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-700 text-gray-300'
-                }`}
-              >
-                Map {mapNum}
-                {matchData.maps[mapNum].winner && (
-                  <Trophy size={16} className="inline ml-1" />
-                )}
-              </button>
-            ))}
+          <div className="flex gap-2 flex-wrap">
+            {[1, 2, 3, 4, 5].slice(0, matchData.totalMaps).map(mapNum => {
+              const mapData = matchData.maps && matchData.maps[mapNum] ? matchData.maps[mapNum] : { status: 'pending', winner: null };
+              return (
+                <button
+                  key={mapNum}
+                  onClick={() => switchMap(mapNum)}
+                  className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+                    matchData.currentMap === mapNum
+                      ? 'bg-blue-600 text-white shadow-lg'
+                      : mapData.status === 'completed'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  <div className="flex items-center gap-1">
+                    {mapData.mapName || `Map ${mapNum}`}
+                    {mapData.winner && (
+                      <Trophy size={14} className="text-yellow-400" />
+                    )}
+                  </div>
+                  {mapData.status === 'completed' && (
+                    <div className="text-xs mt-1">
+                      {mapData.team1Score}-{mapData.team2Score}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -466,96 +526,160 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
         <div className="p-4">
           <button
             onClick={() => setExpandedStats(!expandedStats)}
-            className="flex items-center gap-2 text-white mb-4"
+            className="flex items-center gap-2 text-white mb-4 text-lg font-bold"
           >
             <ChevronDown className={`transform transition-transform ${expandedStats ? 'rotate-180' : ''}`} />
-            Player Statistics
+            Player Statistics - Map {matchData.currentMap}
           </button>
 
           {expandedStats && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-6">
               {/* Team 1 Players */}
-              <div>
-                <h4 className="text-blue-400 font-bold mb-2">
+              <div className="bg-blue-900/20 rounded-lg p-4">
+                <h4 className="text-blue-400 font-bold mb-4 flex items-center gap-2">
+                  <Users size={18} />
                   {match?.team1?.name || 'Team 1'} Players
                 </h4>
-                {matchData.team1Players.map((player, idx) => (
-                  <div key={player.id} className="bg-gray-700 rounded p-3 mb-2">
-                    <div className="flex items-center gap-2 mb-2">
-                      <input
-                        type="text"
-                        value={player.name}
-                        className="bg-gray-600 text-white px-2 py-1 rounded flex-1"
-                        readOnly
-                      />
-                      <select
-                        value={player.hero}
-                        onChange={(e) => updatePlayerHero(1, idx, e.target.value)}
-                        className="bg-gray-600 text-white px-2 py-1 rounded"
-                      >
-                        <option value="">Select Hero</option>
-                        {Object.keys(HEROES).map(hero => (
-                          <option key={hero} value={hero}>{hero}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="grid grid-cols-6 gap-2 text-xs">
-                      {['kills', 'deaths', 'assists', 'damage', 'healing', 'blocked'].map(stat => (
-                        <div key={stat}>
-                          <label className="text-gray-400">{stat[0].toUpperCase()}</label>
-                          <input
-                            type="number"
-                            value={player[stat]}
-                            onChange={(e) => updatePlayerStat(1, idx, stat, e.target.value)}
-                            className="w-full bg-gray-600 text-white px-1 py-0.5 rounded"
-                          />
+                <div className="space-y-3">
+                  {matchData.team1Players.map((player, idx) => (
+                    <div key={player.id} className="bg-gray-700/50 rounded-lg p-3 border border-gray-600">
+                      <div className="flex items-center gap-3 mb-3">
+                        {/* Hero Image */}
+                        <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-600 flex-shrink-0">
+                          {player.hero && (
+                            <img 
+                              src={getHeroImageSync(player.hero)}
+                              alt={player.hero}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                          )}
+                          <div className="w-full h-full bg-gray-600 flex items-center justify-center text-gray-400 text-xs" style={{display: player.hero ? 'none' : 'flex'}}>
+                            {player.hero ? player.hero.charAt(0) : '?'}
+                          </div>
                         </div>
-                      ))}
+                        
+                        {/* Player Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-white truncate">{player.name}</div>
+                          <div className="text-sm text-gray-400">{player.role || 'No Role'}</div>
+                        </div>
+                        
+                        {/* Hero Select */}
+                        <select
+                          value={player.hero}
+                          onChange={(e) => updatePlayerHero(1, idx, e.target.value)}
+                          className="bg-gray-600 text-white px-3 py-1 rounded text-sm"
+                        >
+                          <option value="">Select Hero</option>
+                          {Object.keys(HEROES).map(hero => (
+                            <option key={hero} value={hero}>{hero}</option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      {/* Stats Grid */}
+                      <div className="grid grid-cols-6 gap-2">
+                        {[
+                          { key: 'kills', label: 'K', color: 'text-green-400' },
+                          { key: 'deaths', label: 'D', color: 'text-red-400' },
+                          { key: 'assists', label: 'A', color: 'text-blue-400' },
+                          { key: 'damage', label: 'DMG', color: 'text-orange-400' },
+                          { key: 'healing', label: 'H', color: 'text-green-300' },
+                          { key: 'blocked', label: 'B', color: 'text-purple-400' }
+                        ].map(stat => (
+                          <div key={stat.key} className="text-center">
+                            <label className={`text-xs font-medium ${stat.color}`}>{stat.label}</label>
+                            <input
+                              type="number"
+                              value={player[stat.key]}
+                              onChange={(e) => updatePlayerStat(1, idx, stat.key, e.target.value)}
+                              className="w-full bg-gray-600 text-white px-1 py-1 rounded text-sm text-center"
+                              min="0"
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
               {/* Team 2 Players */}
-              <div>
-                <h4 className="text-red-400 font-bold mb-2">
+              <div className="bg-red-900/20 rounded-lg p-4">
+                <h4 className="text-red-400 font-bold mb-4 flex items-center gap-2">
+                  <Users size={18} />
                   {match?.team2?.name || 'Team 2'} Players
                 </h4>
-                {matchData.team2Players.map((player, idx) => (
-                  <div key={player.id} className="bg-gray-700 rounded p-3 mb-2">
-                    <div className="flex items-center gap-2 mb-2">
-                      <input
-                        type="text"
-                        value={player.name}
-                        className="bg-gray-600 text-white px-2 py-1 rounded flex-1"
-                        readOnly
-                      />
-                      <select
-                        value={player.hero}
-                        onChange={(e) => updatePlayerHero(2, idx, e.target.value)}
-                        className="bg-gray-600 text-white px-2 py-1 rounded"
-                      >
-                        <option value="">Select Hero</option>
-                        {Object.keys(HEROES).map(hero => (
-                          <option key={hero} value={hero}>{hero}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="grid grid-cols-6 gap-2 text-xs">
-                      {['kills', 'deaths', 'assists', 'damage', 'healing', 'blocked'].map(stat => (
-                        <div key={stat}>
-                          <label className="text-gray-400">{stat[0].toUpperCase()}</label>
-                          <input
-                            type="number"
-                            value={player[stat]}
-                            onChange={(e) => updatePlayerStat(2, idx, stat, e.target.value)}
-                            className="w-full bg-gray-600 text-white px-1 py-0.5 rounded"
-                          />
+                <div className="space-y-3">
+                  {matchData.team2Players.map((player, idx) => (
+                    <div key={player.id} className="bg-gray-700/50 rounded-lg p-3 border border-gray-600">
+                      <div className="flex items-center gap-3 mb-3">
+                        {/* Hero Image */}
+                        <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-600 flex-shrink-0">
+                          {player.hero && (
+                            <img 
+                              src={getHeroImageSync(player.hero)}
+                              alt={player.hero}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                          )}
+                          <div className="w-full h-full bg-gray-600 flex items-center justify-center text-gray-400 text-xs" style={{display: player.hero ? 'none' : 'flex'}}>
+                            {player.hero ? player.hero.charAt(0) : '?'}
+                          </div>
                         </div>
-                      ))}
+                        
+                        {/* Player Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-white truncate">{player.name}</div>
+                          <div className="text-sm text-gray-400">{player.role || 'No Role'}</div>
+                        </div>
+                        
+                        {/* Hero Select */}
+                        <select
+                          value={player.hero}
+                          onChange={(e) => updatePlayerHero(2, idx, e.target.value)}
+                          className="bg-gray-600 text-white px-3 py-1 rounded text-sm"
+                        >
+                          <option value="">Select Hero</option>
+                          {Object.keys(HEROES).map(hero => (
+                            <option key={hero} value={hero}>{hero}</option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      {/* Stats Grid */}
+                      <div className="grid grid-cols-6 gap-2">
+                        {[
+                          { key: 'kills', label: 'K', color: 'text-green-400' },
+                          { key: 'deaths', label: 'D', color: 'text-red-400' },
+                          { key: 'assists', label: 'A', color: 'text-blue-400' },
+                          { key: 'damage', label: 'DMG', color: 'text-orange-400' },
+                          { key: 'healing', label: 'H', color: 'text-green-300' },
+                          { key: 'blocked', label: 'B', color: 'text-purple-400' }
+                        ].map(stat => (
+                          <div key={stat.key} className="text-center">
+                            <label className={`text-xs font-medium ${stat.color}`}>{stat.label}</label>
+                            <input
+                              type="number"
+                              value={player[stat.key]}
+                              onChange={(e) => updatePlayerStat(2, idx, stat.key, e.target.value)}
+                              className="w-full bg-gray-600 text-white px-1 py-1 rounded text-sm text-center"
+                              min="0"
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           )}

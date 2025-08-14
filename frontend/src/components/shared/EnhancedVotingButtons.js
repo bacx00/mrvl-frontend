@@ -198,8 +198,14 @@ function EnhancedVotingButtons({
 
     const response = await api.post('/user/votes', payload);
     
-    if (!response.data?.success) {
-      throw new Error(response.data?.message || 'Vote submission failed');
+    // FIXED: Proper response validation that works with actual API response structure
+    const responseData = response.data || response;
+    const isSuccess = responseData?.success === true || response?.success === true ||
+                     (response.status >= 200 && response.status < 300 && 
+                      responseData?.success !== false && response?.success !== false);
+    
+    if (!isSuccess) {
+      throw new Error(responseData?.message || 'Vote submission failed');
     }
 
     return response.data;

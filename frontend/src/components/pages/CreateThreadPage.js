@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks';
+import { useActivityStatsContext } from '../../contexts/ActivityStatsContext';
 import ForumMentionAutocomplete from '../shared/ForumMentionAutocomplete';
 import { Mic, MicOff, Image, X, Camera, Upload, Smile, Eye, Save, ChevronDown } from 'lucide-react';
 
 function CreateThreadPage({ navigateTo }) {
   const { user, api } = useAuth();
+  const { triggerForumThread } = useActivityStatsContext();
 
   // Safe wrapper function for string operations
   const safeString = (value) => {
@@ -322,6 +324,9 @@ function CreateThreadPage({ navigateTo }) {
       const threadId = threadData.id;
 
       alert('✅ Thread created successfully!');
+      
+      // Trigger activity stats update for forum thread creation
+      triggerForumThread();
       
       // CRITICAL FIX: Emit events to refresh forum list and categories
       window.dispatchEvent(new CustomEvent('forum-thread-created'));
