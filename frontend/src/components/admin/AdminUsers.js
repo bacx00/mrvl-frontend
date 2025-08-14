@@ -1195,66 +1195,39 @@ function UserAvatar({ user, navigateToProfile }) {
   
   if (!user) {
     return (
-      <div className="h-10 w-10 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center text-gray-600 font-bold text-lg">
+      <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 font-bold text-lg">
         ?
       </div>
     );
   }
 
-  // Get initials from name or email
-  const getInitials = () => {
-    const nameToUse = user.name || user.email || '?';
-    const parts = nameToUse.split(' ');
-    if (parts.length > 1) {
-      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-    }
-    // For email, use first two characters
-    if (nameToUse.includes('@')) {
-      return nameToUse.substring(0, 2).toUpperCase();
-    }
-    return nameToUse.substring(0, 1).toUpperCase();
-  };
-  const fallbackInitials = getInitials();
-
-  // Check if user has a hero avatar selected
+  // Get avatar URL - prioritize hero_image field
   let avatarUrl = null;
   
-  // First check if user has selected a hero (hero_flair field from backend)
-  if (user.hero_flair && user.show_hero_flair !== false) {
+  // First check for hero_image field (this is the main hero avatar)
+  if (user.hero_image) {
+    avatarUrl = user.hero_image;
+  }
+  // Then check if user has selected a hero (hero_flair field from backend)
+  else if (user.hero_flair && user.show_hero_flair !== false) {
     const heroImageFilename = getHeroImageSync(user.hero_flair);
     if (heroImageFilename) {
       // getHeroImageSync returns filename, need to construct full URL
       avatarUrl = `/images/heroes/${heroImageFilename}`;
-      console.log('👤 Using hero avatar for user:', user.name, 'Hero:', user.hero_flair, 'URL:', avatarUrl);
     }
   }
-  
-  // If no hero image, check for regular avatar
-  if (!avatarUrl && user.avatar) {
-    // If it's a hero path, get the hero image
-    if (user.avatar.includes('/heroes/')) {
-      // Extract hero name from path
-      const heroMatch = user.avatar.match(/heroes\/([^/]+)/);
-      if (heroMatch) {
-        const heroName = heroMatch[1].replace(/-headbig\.webp$/, '').replace(/-/g, ' ');
-        const heroImage = getHeroImageSync(heroName);
-        if (heroImage) {
-          avatarUrl = heroImage;
-        }
-      }
-    } else {
-      // Regular avatar
-      avatarUrl = getUserAvatarUrl(user);
-    }
+  // Finally check for regular avatar
+  else if (user.avatar) {
+    avatarUrl = getUserAvatarUrl(user);
   }
   
-  // If still no avatar or there was an error, show question mark
-  if (imageError || !avatarUrl || avatarUrl.includes('placeholder') || avatarUrl.includes('data:image')) {
+  // If still no avatar, there was an error, or it's a placeholder, show question mark
+  if (imageError || !avatarUrl || avatarUrl === '?' || avatarUrl.includes('placeholder') || avatarUrl.includes('data:image')) {
     return (
       <div 
-        className="h-10 w-10 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center text-gray-600 font-bold text-lg cursor-pointer hover:border-blue-500 transition-colors"
+        className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-400 font-bold text-lg cursor-pointer hover:border-blue-500 hover:border-2 transition-all"
         onClick={navigateToProfile}
-        title={`Click to view ${user.name}'s profile (Admin functionality)`}
+        title={`Click to view ${user.name}'s profile`}
       >
         ?
       </div>
@@ -1263,20 +1236,19 @@ function UserAvatar({ user, navigateToProfile }) {
   
   return (
     <div 
-      className="h-10 w-10 rounded-full overflow-hidden cursor-pointer border-2 border-transparent hover:border-blue-500 transition-colors"
+      className="h-10 w-10 rounded-full overflow-hidden cursor-pointer border-2 border-transparent hover:border-blue-500 transition-colors bg-gray-200 dark:bg-gray-700"
       onClick={navigateToProfile}
-      title={`Click to view ${user.name}'s profile (Admin functionality)`}
+      title={`Click to view ${user.name}'s profile`}
     >
       <img
         src={avatarUrl}
-        alt={user.name}
+        alt={user.name || 'User'}
         className="w-full h-full object-cover"
         onError={(e) => {
-          console.log('👤 UserAvatar image failed to load for:', user.name);
-          setImageError(true);
-        }}
-        onLoad={() => {
-          console.log('👤 UserAvatar loaded successfully for:', user.name);
+          e.target.onerror = null;
+          e.target.style.display = 'none';
+          e.target.parentElement.innerHTML = '<span class="text-gray-600 dark:text-gray-400 font-bold text-lg">?</span>';
+          e.target.parentElement.classList.add('flex', 'items-center', 'justify-center');
         }}
       />
     </div>

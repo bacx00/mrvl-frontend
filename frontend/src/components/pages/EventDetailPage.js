@@ -140,8 +140,23 @@ function EventDetailPage({ params, navigateTo }) {
   const generateBracket = async () => {
     try {
       console.log('🏆 Generating bracket for event:', eventId);
-      const response = await api.post(`/admin/events/${eventId}/generate-bracket`);
-      console.log('✅ Bracket generated successfully');
+      
+      // Get the format from the event details
+      const format = event?.details?.format || event?.format || 'single_elimination';
+      
+      const response = await api.post(`/admin/events/${eventId}/generate-bracket`, {
+        format: format,
+        seeding_method: 'seed',
+        shuffle_seeds: false
+      });
+      
+      console.log('✅ Bracket generated successfully:', response.data);
+      
+      // Fetch the bracket data
+      const bracketResponse = await api.get(`/admin/events/${eventId}/bracket`);
+      if (bracketResponse.data?.data?.matches) {
+        setBracket(bracketResponse.data.data.matches);
+      }
       
       // Refresh event data to get the new bracket
       await fetchEventData();
@@ -477,7 +492,7 @@ function EventDetailPage({ params, navigateTo }) {
                   event={event}
                   eventId={eventId}
                   navigateTo={navigateTo}
-                  isAdmin={isAdmin() || isModerator()}
+                  isAdmin={isAdmin || isModerator}
                   onMatchUpdate={handleBracketMatchUpdate}
                 />
               ) : (
@@ -492,7 +507,7 @@ function EventDetailPage({ params, navigateTo }) {
                       : 'Click below to generate the tournament bracket'
                     }
                   </p>
-                  {(isAdmin() || isModerator()) && teams.length >= 2 && (
+                  {(isAdmin || isModerator) && teams.length >= 2 && (
                     <button 
                       onClick={generateBracket}
                       className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"

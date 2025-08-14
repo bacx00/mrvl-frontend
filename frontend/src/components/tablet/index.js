@@ -4,7 +4,7 @@
 export { default as TabletBracketVisualization } from './TabletBracketVisualization';
 export { default as TabletMatchCard } from './TabletMatchCard';
 export { default as TabletNavigation } from './TabletNavigation';
-export { default as TabletLiveScoring } from './TabletLiveScoring';
+// TabletLiveScoring removed - using UnifiedLiveScoring instead
 export { default as IPadOptimizations } from './iPadOptimizations';
 
 // Re-export commonly used tablet utilities
@@ -12,7 +12,7 @@ export const TabletComponents = {
   BracketVisualization: require('./TabletBracketVisualization').default,
   MatchCard: require('./TabletMatchCard').default,
   Navigation: require('./TabletNavigation').default,
-  LiveScoring: require('./TabletLiveScoring').default,
+  // LiveScoring removed - using UnifiedLiveScoring instead
   IPadOptimizations: require('./iPadOptimizations').default,
 };
 
@@ -235,7 +235,7 @@ export default {
   TabletBracketVisualization: TabletComponents.BracketVisualization,
   TabletMatchCard: TabletComponents.MatchCard,
   TabletNavigation: TabletComponents.Navigation,
-  TabletLiveScoring: TabletComponents.LiveScoring,
+  // TabletLiveScoring removed - using UnifiedLiveScoring instead
   IPadOptimizations: TabletComponents.IPadOptimizations,
   isTabletDevice,
   isLandscapeTablet,

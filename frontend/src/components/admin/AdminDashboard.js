@@ -9,7 +9,7 @@ import AdminUsers from './AdminUsers';
 import AdminNews from './AdminNews';
 import AdminForums from './AdminForums';
 import AdminBulkOperations from './AdminBulkOperations';
-import AdminStatistics from './AdminStatistics';
+import AdminProfile from './AdminProfile';
 import { ROLES, hasRole, hasMinimumRole } from '../../utils/roleUtils';
 
 function AdminDashboard({ navigateTo }) {
@@ -52,7 +52,7 @@ function AdminDashboardContent({ navigateTo }) {
     { id: 'news', name: 'News' },
     { id: 'forums', name: 'Forums' },
     { id: 'bulk-operations', name: 'Bulk Ops' },
-    { id: 'stats', name: 'Statistics' }
+    { id: 'profile', name: 'Profile' }
   ];
   
   // Moderator sections (subset)
@@ -109,13 +109,13 @@ function AdminDashboardContent({ navigateTo }) {
       case 'overview':
         return <AdminOverview />;
       case 'teams':
-        return hasMinimumRole(user, ROLES.MODERATOR) ? <AdminTeams /> : <AccessDenied />;
+        return hasMinimumRole(user, ROLES.MODERATOR) ? <AdminTeams navigateTo={navigateTo} /> : <AccessDenied />;
       case 'players':
-        return hasMinimumRole(user, ROLES.MODERATOR) ? <AdminPlayers /> : <AccessDenied />;
+        return hasMinimumRole(user, ROLES.MODERATOR) ? <AdminPlayers navigateTo={navigateTo} /> : <AccessDenied />;
       case 'matches':
-        return hasMinimumRole(user, ROLES.MODERATOR) ? <AdminMatches /> : <AccessDenied />;
+        return hasMinimumRole(user, ROLES.MODERATOR) ? <AdminMatches navigateTo={navigateTo} /> : <AccessDenied />;
       case 'events':
-        return hasMinimumRole(user, ROLES.MODERATOR) ? <AdminEvents /> : <AccessDenied />;
+        return hasMinimumRole(user, ROLES.MODERATOR) ? <AdminEvents navigateTo={navigateTo} /> : <AccessDenied />;
       case 'users':
         return hasRole(user, ROLES.ADMIN) ? <AdminUsers /> : <AccessDenied />;
       case 'news':
@@ -124,8 +124,8 @@ function AdminDashboardContent({ navigateTo }) {
         return hasMinimumRole(user, ROLES.MODERATOR) ? <AdminForums /> : <AccessDenied />;
       case 'bulk-operations':
         return hasRole(user, ROLES.ADMIN) ? <AdminBulkOperations /> : <AccessDenied />;
-      case 'statistics':
-        return hasRole(user, ROLES.ADMIN) ? <AdminStatistics /> : <AccessDenied />;
+      case 'profile':
+        return <AdminProfile />;
       default:
         return <AdminOverview />;
     }

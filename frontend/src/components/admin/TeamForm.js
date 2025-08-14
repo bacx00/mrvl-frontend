@@ -15,6 +15,23 @@ function TeamForm({ teamId, navigateTo }) {
     country: '',
     rating: 1000, // Team ELO rating with Marvel Rivals default
     earnings: 0, // Team total earnings in USD
+    // Missing team fields
+    elo_rating: '',
+    peak_elo: '',
+    wins: '',
+    losses: '',
+    matches_played: '',
+    win_rate: '',
+    current_streak_count: '',
+    current_streak_type: 'none',
+    founded: '',
+    founded_date: '',
+    description: '',
+    achievements: '',
+    manager: '',
+    owner: '',
+    captain: '',
+    status: 'Active',
     // COACH DATA INTEGRATION - CRITICAL FIX
     coach: {
       name: '',
@@ -61,8 +78,25 @@ function TeamForm({ teamId, navigateTo }) {
         logo: team.logo_url || team.logo || '',
         flag: team.flag_url || team.flag || '',
         country: team.country || '',
-        rating: team.rating || 1000, // Load ELO rating from backend
+        rating: team.rating || team.elo_rating || 1000, // Load ELO rating from backend
         earnings: team.earnings || 0, // Load team earnings from backend
+        // Load missing team fields
+        elo_rating: team.elo_rating || team.rating || '',
+        peak_elo: team.peak_elo || '',
+        wins: team.wins || '',
+        losses: team.losses || '',
+        matches_played: team.matches_played || '',
+        win_rate: team.win_rate || '',
+        current_streak_count: team.current_streak_count || '',
+        current_streak_type: team.current_streak_type || 'none',
+        founded: team.founded || '',
+        founded_date: team.founded_date || '',
+        description: team.description || '',
+        achievements: team.achievements || '',
+        manager: team.manager || '',
+        owner: team.owner || '',
+        captain: team.captain || '',
+        status: team.status || 'Active',
         // COACH DATA INTEGRATION - CRITICAL FIX
         coach: team.coach || team.coach_data || {
           name: '',
@@ -246,8 +280,25 @@ function TeamForm({ teamId, navigateTo }) {
         short_name: formData.shortName.trim(),
         region: formData.region,
         country: formData.country,
-        rating: parseInt(formData.rating) || 1000, // Include ELO rating
+        rating: parseInt(formData.elo_rating) || parseInt(formData.rating) || 1000, // Include ELO rating
         earnings: parseFloat(formData.earnings) || 0, // Include team earnings
+        // Include missing team fields
+        elo_rating: formData.elo_rating ? parseInt(formData.elo_rating) : (parseInt(formData.rating) || null),
+        peak_elo: formData.peak_elo ? parseInt(formData.peak_elo) : null,
+        wins: formData.wins ? parseInt(formData.wins) : null,
+        losses: formData.losses ? parseInt(formData.losses) : null,
+        matches_played: formData.matches_played ? parseInt(formData.matches_played) : null,
+        win_rate: formData.win_rate ? parseFloat(formData.win_rate) : null,
+        current_streak_count: formData.current_streak_count ? parseInt(formData.current_streak_count) : null,
+        current_streak_type: formData.current_streak_type || 'none',
+        founded: formData.founded || null,
+        founded_date: formData.founded_date || null,
+        description: formData.description || null,
+        achievements: formData.achievements || null,
+        manager: formData.manager || null,
+        owner: formData.owner || null,
+        captain: formData.captain || null,
+        status: formData.status || 'Active',
         // COACH DATA INTEGRATION - CRITICAL FIX
         coach_data: {
           name: formData.coach.name || '',
@@ -275,14 +326,14 @@ function TeamForm({ teamId, navigateTo }) {
       // If creating new team, save team first to get ID
       if (!isEdit) {
         console.log('Creating new team first to get ID...');
-        const response = await api.post('/admin/teams', submitData);
+        const response = await api.post('/teams', submitData);
         const savedTeam = response.data || response;
         teamIdForUpload = savedTeam.id;
         console.log('New team created with ID:', teamIdForUpload);
       } else {
         // Update existing team
         console.log('Updating existing team with ID:', teamId);
-        await api.put(`/admin/teams/${teamId}`, submitData);
+        await api.put(`/teams/${teamId}`, submitData);
         console.log('Team updated successfully');
       }
 
@@ -336,7 +387,7 @@ function TeamForm({ teamId, navigateTo }) {
           }
         };
 
-        await api.put(`/admin/teams/${teamIdForUpload}`, finalUpdateData);
+        await api.put(`/teams/${teamIdForUpload}`, finalUpdateData);
         console.log('TeamForm - Team updated with images');
       }
 
@@ -574,24 +625,24 @@ function TeamForm({ teamId, navigateTo }) {
               />
             </div>
 
-            {/* ELO Rating */}
+            {/* Current ELO Rating */}
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                ELO Rating
+                Current ELO Rating
               </label>
               <input
                 type="number"
-                name="rating"
-                value={formData.rating}
-                onChange={handleNumberInputChange}
+                name="elo_rating"
+                value={formData.elo_rating}
+                onChange={handleInputChange}
                 className="form-input"
-                placeholder="1000"
+                placeholder="2400"
                 min="0"
                 max="5000"
                 step="1"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Team ELO rating (0-5000). Default: 1000
+                Current team ELO rating (0-5000)
               </p>
             </div>
 
@@ -615,6 +666,229 @@ function TeamForm({ teamId, navigateTo }) {
               </p>
             </div>
 
+            {/* Peak ELO */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Peak ELO
+              </label>
+              <input
+                type="number"
+                name="peak_elo"
+                value={formData.peak_elo}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="2550"
+                min="0"
+                max="5000"
+                step="1"
+              />
+            </div>
+
+            {/* Status */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Team Status
+              </label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                className="form-input"
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Disbanded">Disbanded</option>
+                <option value="Suspended">Suspended</option>
+              </select>
+            </div>
+
+            {/* Founded Date */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Founded Date
+              </label>
+              <input
+                type="date"
+                name="founded_date"
+                value={formData.founded_date}
+                onChange={handleInputChange}
+                className="form-input"
+              />
+            </div>
+
+            {/* Manager */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Manager
+              </label>
+              <input
+                type="text"
+                name="manager"
+                value={formData.manager}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="e.g., John Smith"
+              />
+            </div>
+
+            {/* Owner */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Owner
+              </label>
+              <input
+                type="text"
+                name="owner"
+                value={formData.owner}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="e.g., Team Organization LLC"
+              />
+            </div>
+
+            {/* Team Description */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Team Description
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                className="form-input"
+                rows="3"
+                placeholder="Team background, history, and achievements..."
+              />
+            </div>
+
+            {/* Achievements */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Team Achievements
+              </label>
+              <textarea
+                name="achievements"
+                value={formData.achievements}
+                onChange={handleInputChange}
+                className="form-input"
+                rows="3"
+                placeholder="Major tournament wins, championships, notable accomplishments..."
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                List major achievements and tournament victories
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Team Statistics */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Team Statistics</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Wins */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Wins
+              </label>
+              <input
+                type="number"
+                name="wins"
+                value={formData.wins}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="100"
+                min="0"
+                step="1"
+              />
+            </div>
+
+            {/* Losses */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Losses
+              </label>
+              <input
+                type="number"
+                name="losses"
+                value={formData.losses}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="30"
+                min="0"
+                step="1"
+              />
+            </div>
+
+            {/* Matches Played */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Matches Played
+              </label>
+              <input
+                type="number"
+                name="matches_played"
+                value={formData.matches_played}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="130"
+                min="0"
+                step="1"
+              />
+            </div>
+
+            {/* Win Rate */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Win Rate (%)
+              </label>
+              <input
+                type="number"
+                name="win_rate"
+                value={formData.win_rate}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="76.9"
+                min="0"
+                max="100"
+                step="0.1"
+              />
+            </div>
+
+            {/* Current Streak Count */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Current Streak Count
+              </label>
+              <input
+                type="number"
+                name="current_streak_count"
+                value={formData.current_streak_count}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="0"
+                min="0"
+                step="1"
+              />
+            </div>
+
+            {/* Current Streak Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Current Streak Type
+              </label>
+              <select
+                name="current_streak_type"
+                value={formData.current_streak_type}
+                onChange={handleInputChange}
+                className="form-input"
+              >
+                <option value="none">None</option>
+                <option value="win">Win Streak</option>
+                <option value="loss">Loss Streak</option>
+              </select>
+            </div>
           </div>
         </div>
 

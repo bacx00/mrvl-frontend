@@ -15,7 +15,13 @@ function TeamDetailPage({ params, navigateTo }) {
   const [loading, setLoading] = useState(true);
   const [matchesLoading, setMatchesLoading] = useState(false);
   const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, per_page: 10, total: 0 });
-  const { api } = useAuth();
+  
+  // Edit functionality states
+  const [isEditing, setIsEditing] = useState(false);
+  const [editFormData, setEditFormData] = useState({});
+  const [editLoading, setEditLoading] = useState(false);
+  
+  const { api, isAdmin, isModerator } = useAuth();
 
   const teamId = params?.id;
 
@@ -39,31 +45,53 @@ function TeamDetailPage({ params, navigateTo }) {
       
       console.log('Real team data received:', teamData);
       
-      // Transform backend data to frontend format
+      // Transform backend data to frontend format - ALL FIELDS
       const transformedTeam = {
         id: teamData.id,
         name: teamData.name,
         shortName: teamData.short_name || teamData.shortName,
         logo: teamData.logo_url || teamData.logo,
+        flag: teamData.flag_url || teamData.flag,
         country: teamData.country,
         region: teamData.region,
         rating: teamData.rating || 1500,
         rank: teamData.rank,
-        winRate: teamData.stats?.win_rate || 0,
+        winRate: teamData.stats?.win_rate || teamData.win_rate || 0,
         points: teamData.points || 0,
         peak: teamData.peak_rating || teamData.rating,
         founded: teamData.founded,
+        foundedDate: teamData.founded_date,
         captain: teamData.captain,
         coach: teamData.coach,
+        coachName: teamData.coach_name,
+        coachNationality: teamData.coach_nationality,
+        manager: teamData.manager,
+        owner: teamData.owner,
         coach_data: teamData.coach_data || teamData.coaching_staff || {}, // COACH DATA INTEGRATION
         website: teamData.website,
         earnings: teamData.earnings || teamData.total_earnings || 0,
         social_media: teamData.social_media || teamData.social_links || {},
         achievements: teamData.achievements || [],
+        description: teamData.description,
         created_at: teamData.created_at,
         division: teamData.division,
         wins: teamData.wins || 0,
-        losses: teamData.losses || 0
+        losses: teamData.losses || 0,
+        matchesPlayed: teamData.matches_played || 0,
+        mapsWon: teamData.maps_won || 0,
+        mapsLost: teamData.maps_lost || 0,
+        // Missing ELO and streak fields
+        eloRating: teamData.elo_rating,
+        peakElo: teamData.peak_elo,
+        currentStreakCount: teamData.current_streak_count,
+        currentStreakType: teamData.current_streak_type,
+        longestWinStreak: teamData.longest_win_streak,
+        playerCount: teamData.player_count,
+        status: teamData.status || 'Active',
+        platform: teamData.platform,
+        game: teamData.game,
+        recentForm: teamData.recent_form,
+        record: teamData.record
       };
 
       // Extract players from team data
@@ -217,6 +245,102 @@ function TeamDetailPage({ params, navigateTo }) {
     }
   };
 
+  // Edit functionality functions
+  const handleEditTeam = () => {
+    if (!team) return;
+    
+    setEditFormData({
+      name: team.name || '',
+      shortName: team.shortName || '',
+      country: team.country || '',
+      region: team.region || '',
+      website: team.website || '',
+      earnings: team.earnings || 0,
+      description: team.description || '',
+      coach: team.coach || '',
+      manager: team.manager || '',
+      owner: team.owner || '',
+      founded: team.founded || '',
+      foundedDate: team.foundedDate || '',
+      division: team.division || '',
+      platform: team.platform || '',
+      game: team.game || '',
+      status: team.status || 'Active',
+      // Social media
+      twitter: team.social_media?.twitter || '',
+      instagram: team.social_media?.instagram || '',
+      youtube: team.social_media?.youtube || '',
+      facebook: team.social_media?.facebook || '',
+      website_url: team.social_media?.website || '',
+      discord: team.social_media?.discord || '',
+    });
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditFormData({});
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      setEditLoading(true);
+      
+      // Prepare the update data
+      const updateData = {
+        name: editFormData.name,
+        short_name: editFormData.shortName,
+        country: editFormData.country,
+        region: editFormData.region,
+        website: editFormData.website,
+        earnings: parseFloat(editFormData.earnings) || 0,
+        description: editFormData.description,
+        coach: editFormData.coach,
+        manager: editFormData.manager,
+        owner: editFormData.owner,
+        founded: editFormData.founded,
+        founded_date: editFormData.foundedDate,
+        division: editFormData.division,
+        platform: editFormData.platform,
+        game: editFormData.game,
+        status: editFormData.status,
+        social_media: {
+          twitter: editFormData.twitter,
+          instagram: editFormData.instagram,
+          youtube: editFormData.youtube,
+          facebook: editFormData.facebook,
+          website: editFormData.website_url,
+          discord: editFormData.discord,
+        }
+      };
+
+      // Update team via API
+      const response = await api.put(`/admin/teams/${teamId}`, updateData);
+      
+      if (response.data || response.success !== false) {
+        // Refetch team data to get updated information
+        await fetchTeamData();
+        setIsEditing(false);
+        setEditFormData({});
+        alert('Team updated successfully!');
+      } else {
+        throw new Error(response.message || 'Update failed');
+      }
+    } catch (error) {
+      console.error('Error updating team:', error);
+      alert(error.message || 'Failed to update team. Please try again.');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleInputChange = (field, value) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -318,6 +442,16 @@ function TeamDetailPage({ params, navigateTo }) {
               <div className="text-sm text-gray-600 dark:text-gray-300">Total Earnings</div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{Math.floor(matchStats.rating || team.rating || 1500)}</div>
               <div className="text-sm text-gray-600 dark:text-gray-300">Rating • #{matchStats.ranking || team.rank || 'N/A'}</div>
+              
+              {/* Edit Button for Admins/Moderators */}
+              {(isAdmin() || isModerator()) && !isEditing && (
+                <button
+                  onClick={handleEditTeam}
+                  className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  Edit Team
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -856,6 +990,292 @@ function TeamDetailPage({ params, navigateTo }) {
           )}
         </div>
       </div>
+
+      {/* Edit Team Modal */}
+      {isEditing && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Edit Team: {team.name}
+              </h3>
+              <button
+                onClick={handleCancelEdit}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                disabled={editLoading}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Basic Information */}
+                <div>
+                  <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Basic Information</h4>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Team Name
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.name || ''}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Short Name
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.shortName || ''}
+                        onChange={(e) => handleInputChange('shortName', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Country
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.country || ''}
+                        onChange={(e) => handleInputChange('country', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Region
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.region || ''}
+                        onChange={(e) => handleInputChange('region', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Total Earnings ($)
+                      </label>
+                      <input
+                        type="number"
+                        value={editFormData.earnings || ''}
+                        onChange={(e) => handleInputChange('earnings', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Status
+                      </label>
+                      <select
+                        value={editFormData.status || 'Active'}
+                        onChange={(e) => handleInputChange('status', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="Disbanded">Disbanded</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Team Management */}
+                <div>
+                  <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Team Management</h4>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Coach
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.coach || ''}
+                        onChange={(e) => handleInputChange('coach', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Manager
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.manager || ''}
+                        onChange={(e) => handleInputChange('manager', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Owner
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.owner || ''}
+                        onChange={(e) => handleInputChange('owner', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Founded Year
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.founded || ''}
+                        onChange={(e) => handleInputChange('founded', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Founded Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.foundedDate || ''}
+                        onChange={(e) => handleInputChange('foundedDate', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Website
+                      </label>
+                      <input
+                        type="url"
+                        value={editFormData.website || ''}
+                        onChange={(e) => handleInputChange('website', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                        placeholder="https://"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Social Media */}
+                <div className="md:col-span-2">
+                  <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Social Media</h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Twitter
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.twitter || ''}
+                        onChange={(e) => handleInputChange('twitter', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                        placeholder="@username"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Instagram
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.instagram || ''}
+                        onChange={(e) => handleInputChange('instagram', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                        placeholder="@username"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        YouTube
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.youtube || ''}
+                        onChange={(e) => handleInputChange('youtube', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                        placeholder="@channel"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="md:col-span-2">
+                  <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Description</h4>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Team Description
+                    </label>
+                    <textarea
+                      value={editFormData.description || ''}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                      disabled={editLoading}
+                      placeholder="Enter team description..."
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Form Actions */}
+              <div className="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={handleCancelEdit}
+                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  disabled={editLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                  disabled={editLoading}
+                >
+                  {editLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

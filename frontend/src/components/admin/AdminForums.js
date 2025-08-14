@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
+import CreateThreadPage from '../pages/CreateThreadPage';
 
 function AdminForums() {
   const { api } = useAuth();
@@ -845,12 +846,12 @@ function AdminForums() {
                       <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
                         <div className="flex items-center space-x-2">
                           <img 
-                            src={thread.user?.avatar || '/default-avatar.png'}
+                            src={thread.user?.hero_image || thread.user?.avatar || '?'}
                             alt={thread.user?.name || thread.author}
-                            className="w-6 h-6 rounded-full"
+                            className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 object-cover"
                             onError={(e) => {
                               e.target.onerror = null;
-                              e.target.src = '/default-avatar.png';
+                              e.target.src = '?';
                             }}
                           />
                           <span>By {thread.user?.name || thread.author || 'Unknown'}</span>
@@ -876,61 +877,35 @@ function AdminForums() {
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-col space-y-2">
-                  <div className="flex space-x-2">
-                    <button 
-                      onClick={() => handleEditThread(thread)}
-                      className="btn btn-outline-primary text-sm"
-                    >
-                      Edit
-                    </button>
-                    <button className="btn btn-outline-secondary text-sm">View Details</button>
-                    <button 
-                      onClick={() => handleTogglePinThread(thread.id, thread.is_pinned)}
-                      className="btn btn-outline-info text-sm"
-                    >
-                      {thread.is_pinned ? 'Unpin' : 'Pin'}
-                    </button>
-                  </div>
-                  <div className="flex space-x-2">
-                    <button 
-                      onClick={() => handleToggleThreadStatus(thread.id, thread.status || 'active')}
-                      className="btn btn-outline-warning text-sm"
-                    >
-                      {thread.status === 'active' ? 'Lock' : 'Unlock'}
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteThread(thread.id, thread.title)}
-                      className="btn btn-outline-danger text-sm"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                  {thread.user && (
-                    <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">User Actions:</div>
-                      <div className="flex space-x-1">
-                        <button 
-                          onClick={() => handleUserAction(thread.user, 'warn')}
-                          className="px-2 py-1 bg-yellow-500 hover:bg-yellow-600 text-white text-xs rounded"
-                        >
-                          Warn
-                        </button>
-                        <button 
-                          onClick={() => handleUserAction(thread.user, 'timeout')}
-                          className="px-2 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs rounded"
-                        >
-                          Timeout
-                        </button>
-                        <button 
-                          onClick={() => handleUserAction(thread.user, 'suspend')}
-                          className="px-2 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded"
-                        >
-                          Suspend
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                <div className="flex space-x-2">
+                  <button 
+                    onClick={() => handleEditThread(thread)}
+                    className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    title="Edit thread"
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteThread(thread.id, thread.title)}
+                    className="px-3 py-1 text-sm border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    title="Delete thread"
+                  >
+                    Delete
+                  </button>
+                  <button 
+                    onClick={() => handleToggleThreadStatus(thread.id, thread.status || 'active')}
+                    className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    title={thread.status === 'active' ? 'Lock thread' : 'Unlock thread'}
+                  >
+                    {thread.status === 'active' ? 'Lock' : 'Unlock'}
+                  </button>
+                  <button 
+                    onClick={() => handleTogglePinThread(thread.id, thread.is_pinned)}
+                    className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    title={thread.is_pinned ? 'Unpin thread' : 'Pin thread'}
+                  >
+                    {thread.is_pinned ? 'Unpin' : 'Pin'}
+                  </button>
                 </div>
               </div>
             </div>
@@ -1222,104 +1197,33 @@ function AdminForums() {
         </div>
       )}
 
-      {/* Thread Modal */}
+      {/* Thread Modal - Using CreateThreadPage Component */}
       {showThreadModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 {editingThread ? 'Edit Thread' : 'Create New Thread'}
               </h3>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-                  Thread Title *
-                </label>
-                <input
-                  type="text"
-                  value={threadForm.title}
-                  onChange={(e) => setThreadForm({...threadForm, title: e.target.value})}
-                  placeholder="Enter thread title"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-                  Category *
-                </label>
-                <select
-                  value={threadForm.category_id}
-                  onChange={(e) => setThreadForm({...threadForm, category_id: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-                >
-                  <option value="">Select a category</option>
-                  {categories.map(category => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-                  Content *
-                </label>
-                <textarea
-                  value={threadForm.content}
-                  onChange={(e) => setThreadForm({...threadForm, content: e.target.value})}
-                  placeholder="Write your thread content..."
-                  rows={8}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-                />
-              </div>
-              
-              <div className="flex items-center space-x-6">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={threadForm.is_pinned}
-                    onChange={(e) => setThreadForm({...threadForm, is_pinned: e.target.checked})}
-                    className="rounded border-gray-300 dark:border-gray-600"
-                  />
-                  <span className="text-sm text-gray-900 dark:text-gray-100">
-                    Pin this thread
-                  </span>
-                </label>
-                
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={threadForm.is_locked}
-                    onChange={(e) => setThreadForm({...threadForm, is_locked: e.target.checked})}
-                    className="rounded border-gray-300 dark:border-gray-600"
-                  />
-                  <span className="text-sm text-gray-900 dark:text-gray-100">
-                    Lock this thread
-                  </span>
-                </label>
-              </div>
-            </div>
-            
-            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex space-x-3">
               <button
                 onClick={() => {
                   setShowThreadModal(false);
                   setEditingThread(null);
                 }}
-                className="btn btn-secondary flex-1"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               >
-                Cancel
+                ✕
               </button>
-              <button
-                onClick={handleSaveThread}
-                className="btn btn-primary flex-1"
-              >
-                {editingThread ? 'Update Thread' : 'Create Thread'}
-              </button>
+            </div>
+            
+            <div className="p-6">
+              <CreateThreadPage 
+                navigateTo={(path) => {
+                  setShowThreadModal(false);
+                  setEditingThread(null);
+                  fetchThreads();
+                }}
+              />
             </div>
           </div>
         </div>

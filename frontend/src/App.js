@@ -16,6 +16,7 @@ import TeamsPage from './components/pages/TeamsPage';
 import TeamDetailPage from './components/pages/TeamDetailPage';
 import PlayersPage from './components/pages/PlayersPage';
 import PlayerDetailPage from './components/pages/PlayerDetailPage';
+import FreeAgentsPage from './components/pages/FreeAgentsPage';
 import RankingsPage from './components/pages/RankingsPage';
 import EventsPage from './components/pages/EventsPage';
 import EventDetailPage from './components/pages/EventDetailPage';
@@ -49,7 +50,7 @@ import AdminForums from './components/admin/AdminForums';
 import NewsFormSimple from './components/admin/NewsFormSimple';
 import EventForm from './components/admin/EventForm';
 import MatchForm from './components/admin/MatchForm';
-import SinglePageLiveScoring from './components/admin/SinglePageLiveScoring';
+import UnifiedLiveScoring from './components/admin/UnifiedLiveScoring';
 
 import './App.css';
 
@@ -63,6 +64,7 @@ const ROUTES = {
   'team-detail': TeamDetailPage,
   'players': PlayersPage,
   'player-detail': PlayerDetailPage,
+  'free-agents': FreeAgentsPage,
   'rankings': RankingsPage,
   'events': EventsPage,
   'event-detail': EventDetailPage,
@@ -94,7 +96,7 @@ const ROUTES = {
   'admin-event-edit': (props) => <EventForm {...props} eventId={props.params?.id} />,
   'admin-match-create': (props) => <MatchForm {...props} />,
   'admin-match-edit': (props) => <MatchForm {...props} matchId={props.params?.id} />,
-  'admin-live-scoring': (props) => <SinglePageLiveScoring {...props} />,
+  'admin-live-scoring': (props) => <UnifiedLiveScoring {...props} />,
   'admin-forums': AdminForums,
   'admin-forum-categories': AdminForums,
   'admin-news-categories': AdminNews,

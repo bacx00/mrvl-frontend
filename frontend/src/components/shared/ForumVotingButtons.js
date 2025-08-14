@@ -18,14 +18,17 @@ function ForumVotingButtons({
   const [loading, setLoading] = useState(false);
   const [initialStateLoaded, setInitialStateLoaded] = useState(false);
   
-  // Debug logging
-  if (itemType === 'post' && (initialUpvotes > 1 || initialDownvotes > 1)) {
+  // Debug logging with current state values
+  if (itemType === 'post' && (upvotes > 1 || downvotes > 1 || initialUpvotes > 1 || initialDownvotes > 1)) {
     console.log('ForumVotingButtons Debug:', {
       itemType,
       itemId,
       initialUpvotes,
       initialDownvotes,
-      userVote
+      currentUpvotes: upvotes,
+      currentDownvotes: downvotes,
+      userVote,
+      currentVote
     });
   }
 
@@ -79,6 +82,19 @@ function ForumVotingButtons({
     setCurrentVote(userVote);
     setInitialStateLoaded(false);
   }, [itemId, initialUpvotes, initialDownvotes, userVote]);
+
+  // Debug effect to track state changes
+  useEffect(() => {
+    if (itemType === 'post' && itemId) {
+      console.log('ForumVotingButtons state changed:', {
+        itemId,
+        upvotes,
+        downvotes,
+        currentVote,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }, [upvotes, downvotes, currentVote, itemType, itemId]);
 
   const handleVote = async (voteType) => {
     if (!isAuthenticated) {
@@ -140,10 +156,13 @@ function ForumVotingButtons({
         const serverUserVote = response.data?.user_vote;
         const action = response.data?.action || 'voted';
         
-        // Update state with server data
+        // Update state with server data immediately
         if (serverCounts) {
+          console.log('Updating UI state with server counts:', serverCounts);
+          console.log('Previous state:', { upvotes, downvotes, currentVote });
           setUpvotes(serverCounts.upvotes || 0);
           setDownvotes(serverCounts.downvotes || 0);
+          console.log('New state set to:', { upvotes: serverCounts.upvotes || 0, downvotes: serverCounts.downvotes || 0 });
         } else {
           // Fallback: calculate based on action if server doesn't provide counts
           if (action === 'removed') {
@@ -179,13 +198,14 @@ function ForumVotingButtons({
 
         // Notify parent component with server data
         if (onVoteChange) {
+          const finalCounts = serverCounts || {
+            upvotes: serverCounts?.upvotes || upvotes,
+            downvotes: serverCounts?.downvotes || downvotes,
+            score: (serverCounts?.upvotes || upvotes) - (serverCounts?.downvotes || downvotes)
+          };
           onVoteChange({
             action: action,
-            vote_counts: serverCounts || {
-              upvotes: upvotes,
-              downvotes: downvotes,
-              score: upvotes - downvotes
-            },
+            vote_counts: finalCounts,
             user_vote: serverUserVote !== undefined ? serverUserVote : currentVote
           });
         }
@@ -200,11 +220,28 @@ function ForumVotingButtons({
       
       // Handle 409 Conflict - vote already exists
       if (error.response?.status === 409) {
-        console.log('Vote conflict (409) - this vote may already exist');
+        console.log('Vote conflict (409) - vote already exists, syncing state');
         
-        // If same vote type, just ignore silently (user clicking same button twice)
+        // The vote already exists on the server, so update local state to match
+        setCurrentVote(voteType);
+        
+        // If clicking the same vote type that already exists, treat it as a toggle off
         if (currentVote === voteType) {
-          console.log('Same vote already exists - ignoring');
+          console.log('Same vote already exists - removing');
+          // Send request to remove the vote
+          try {
+            const removeResponse = await api.post(endpoint, { vote_type: voteType });
+            if (removeResponse?.data) {
+              const serverCounts = removeResponse.data?.updated_stats || removeResponse.data?.stats;
+              if (serverCounts) {
+                setUpvotes(serverCounts.upvotes || 0);
+                setDownvotes(serverCounts.downvotes || 0);
+              }
+              setCurrentVote(null);
+            }
+          } catch (removeErr) {
+            console.log('Could not remove vote:', removeErr.message);
+          }
           return;
         }
         

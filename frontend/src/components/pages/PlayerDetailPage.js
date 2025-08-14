@@ -19,7 +19,13 @@ function PlayerDetailPage({ params, navigateTo }) {
   const [dataLoading, setDataLoading] = useState(false);
   const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, per_page: 20, total: 0 });
   const [filters, setFilters] = useState({ date_from: '', date_to: '', event_id: '', hero: '', map: '' });
-  const { api } = useAuth();
+  
+  // Edit functionality states
+  const [isEditing, setIsEditing] = useState(false);
+  const [editFormData, setEditFormData] = useState({});
+  const [editLoading, setEditLoading] = useState(false);
+  
+  const { api, isAdmin, isModerator } = useAuth();
 
   const playerId = params?.id;
 
@@ -81,7 +87,7 @@ function PlayerDetailPage({ params, navigateTo }) {
       const response = await api.get(`/public/player-profile/${playerId}`);
       const playerData = response.data?.data || response.data || response;
       
-      // Transform data with comprehensive field mapping
+      // Transform data with comprehensive field mapping - ALL FIELDS
       const transformedPlayer = {
         id: playerData.id,
         username: playerData.username,
@@ -95,8 +101,37 @@ function PlayerDetailPage({ params, navigateTo }) {
         role: playerData.role,
         mainHero: playerData.main_hero,
         altHeroes: playerData.alt_heroes || [],
+        heroPool: playerData.hero_pool,
         currentTeam: playerData.current_team,
         teamHistory: playerData.team_history || playerData.past_teams || [],
+        
+        // ALL missing fields from database
+        eloRating: playerData.elo_rating,
+        peakElo: playerData.peak_elo,
+        skillRating: playerData.skill_rating,
+        wins: playerData.wins,
+        losses: playerData.losses,
+        kda: playerData.kda,
+        totalEarnings: playerData.total_earnings || playerData.earnings || playerData.earnings_amount || 0,
+        earnings: playerData.earnings,
+        earningsAmount: playerData.earnings_amount,
+        earningsCurrency: playerData.earnings_currency || 'USD',
+        jerseyNumber: playerData.jersey_number,
+        nationality: playerData.nationality,
+        birthDate: playerData.birth_date,
+        teamPosition: playerData.team_position,
+        positionOrder: playerData.position_order,
+        totalEliminations: playerData.total_eliminations,
+        totalDeaths: playerData.total_deaths,
+        totalAssists: playerData.total_assists,
+        averageDamagePerMatch: playerData.average_damage_per_match,
+        averageHealingPerMatch: playerData.average_healing_per_match,
+        averageDamageBlockedPerMatch: playerData.average_damage_blocked_per_match,
+        longestWinStreak: playerData.longest_win_streak,
+        currentWinStreak: playerData.current_win_streak,
+        mostPlayedHero: playerData.most_played_hero,
+        bestWinrateHero: playerData.best_winrate_hero,
+        tournamentsPlayed: playerData.tournaments_played,
         
         // Enhanced social media handling
         socialMedia: {
@@ -107,16 +142,13 @@ function PlayerDetailPage({ params, navigateTo }) {
           discord: playerData.social_media?.discord || playerData.discord,
           tiktok: playerData.social_media?.tiktok || playerData.tiktok,
           facebook: playerData.social_media?.facebook || playerData.facebook,
+          liquipediaUrl: playerData.liquipedia_url,
           ...playerData.social_media
         },
         
         streaming: playerData.streaming || {},
         region: playerData.region,
         lastActive: playerData.last_active,
-        
-        // Enhanced earnings handling
-        totalEarnings: playerData.total_earnings || playerData.earnings || playerData.earnings_amount || 0,
-        earningsCurrency: playerData.earnings_currency || 'USD',
         
         // Enhanced rating data
         rating: playerData.rating,
@@ -299,6 +331,106 @@ function PlayerDetailPage({ params, navigateTo }) {
     return dmg.toString();
   };
 
+  // Edit functionality functions
+  const handleEditPlayer = () => {
+    if (!player) return;
+    
+    setEditFormData({
+      username: player.username || '',
+      realName: player.realName || '',
+      age: player.age || '',
+      country: player.country || '',
+      nationality: player.nationality || '',
+      region: player.region || '',
+      role: player.role || '',
+      mainHero: player.mainHero || '',
+      heroPool: player.heroPool || '',
+      biography: player.biography || '',
+      jerseyNumber: player.jerseyNumber || '',
+      birthDate: player.birthDate || '',
+      totalEarnings: player.totalEarnings || 0,
+      earnings: player.earnings || 0,
+      earningsAmount: player.earningsAmount || 0,
+      earningsCurrency: player.earningsCurrency || 'USD',
+      status: player.status || 'Active',
+      // Social media
+      twitter: player.socialMedia?.twitter || '',
+      instagram: player.socialMedia?.instagram || '',
+      youtube: player.socialMedia?.youtube || '',
+      twitch: player.socialMedia?.twitch || '',
+      discord: player.socialMedia?.discord || '',
+      tiktok: player.socialMedia?.tiktok || '',
+      facebook: player.socialMedia?.facebook || '',
+    });
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditFormData({});
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      setEditLoading(true);
+      
+      // Prepare the update data
+      const updateData = {
+        username: editFormData.username,
+        real_name: editFormData.realName,
+        age: parseInt(editFormData.age) || null,
+        country: editFormData.country,
+        nationality: editFormData.nationality,
+        region: editFormData.region,
+        role: editFormData.role,
+        main_hero: editFormData.mainHero,
+        hero_pool: editFormData.heroPool,
+        biography: editFormData.biography,
+        jersey_number: editFormData.jerseyNumber,
+        birth_date: editFormData.birthDate,
+        total_earnings: parseFloat(editFormData.totalEarnings) || 0,
+        earnings: parseFloat(editFormData.earnings) || 0,
+        earnings_amount: parseFloat(editFormData.earningsAmount) || 0,
+        earnings_currency: editFormData.earningsCurrency,
+        status: editFormData.status,
+        social_media: {
+          twitter: editFormData.twitter,
+          instagram: editFormData.instagram,
+          youtube: editFormData.youtube,
+          twitch: editFormData.twitch,
+          discord: editFormData.discord,
+          tiktok: editFormData.tiktok,
+          facebook: editFormData.facebook,
+        }
+      };
+
+      // Update player via API
+      const response = await api.put(`/admin/players/${playerId}`, updateData);
+      
+      if (response.data || response.success !== false) {
+        // Refetch player data to get updated information
+        await fetchPlayerData();
+        setIsEditing(false);
+        setEditFormData({});
+        alert('Player updated successfully!');
+      } else {
+        throw new Error(response.message || 'Update failed');
+      }
+    } catch (error) {
+      console.error('Error updating player:', error);
+      alert(error.message || 'Failed to update player. Please try again.');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleInputChange = (field, value) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -450,6 +582,16 @@ function PlayerDetailPage({ params, navigateTo }) {
                   </div>
                 )}
               </div>
+              
+              {/* Edit Button for Admins/Moderators */}
+              {(isAdmin() || isModerator()) && !isEditing && (
+                <button
+                  onClick={handleEditPlayer}
+                  className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  Edit Player
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -460,7 +602,7 @@ function PlayerDetailPage({ params, navigateTo }) {
         {/* Main Content Area */}
         <div className="lg:col-span-2 space-y-8">
 
-          {/* Enhanced Player Information */}
+          {/* Enhanced Player Information - ALL FIELDS VISIBLE */}
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Player Information</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
@@ -486,6 +628,24 @@ function PlayerDetailPage({ params, navigateTo }) {
                 <div className="text-gray-500 dark:text-gray-500 text-sm">Region</div>
                 <div className="font-medium text-gray-900 dark:text-white mt-1">{player.region || 'N/A'}</div>
               </div>
+              {player.nationality && (
+                <div>
+                  <div className="text-gray-500 dark:text-gray-500 text-sm">Nationality</div>
+                  <div className="font-medium text-gray-900 dark:text-white mt-1">{player.nationality}</div>
+                </div>
+              )}
+              {player.jerseyNumber && (
+                <div>
+                  <div className="text-gray-500 dark:text-gray-500 text-sm">Jersey #</div>
+                  <div className="font-medium text-gray-900 dark:text-white mt-1">#{player.jerseyNumber}</div>
+                </div>
+              )}
+              {player.birthDate && (
+                <div>
+                  <div className="text-gray-500 dark:text-gray-500 text-sm">Birth Date</div>
+                  <div className="font-medium text-gray-900 dark:text-white mt-1">{new Date(player.birthDate).toLocaleDateString()}</div>
+                </div>
+              )}
               <div>
                 <div className="text-gray-500 dark:text-gray-500 text-sm">Rating</div>
                 <div className="font-medium text-yellow-600 dark:text-yellow-400 mt-1">{player.rating || 1500}</div>
@@ -496,10 +656,40 @@ function PlayerDetailPage({ params, navigateTo }) {
                   <div className="font-medium text-green-600 dark:text-green-400 mt-1">{player.peakRating}</div>
                 </div>
               )}
+              {player.eloRating && (
+                <div>
+                  <div className="text-gray-500 dark:text-gray-500 text-sm">ELO Rating</div>
+                  <div className="font-medium text-blue-600 dark:text-blue-400 mt-1">{player.eloRating}</div>
+                </div>
+              )}
+              {player.peakElo && (
+                <div>
+                  <div className="text-gray-500 dark:text-gray-500 text-sm">Peak ELO</div>
+                  <div className="font-medium text-green-600 dark:text-green-400 mt-1">{player.peakElo}</div>
+                </div>
+              )}
+              {player.skillRating && (
+                <div>
+                  <div className="text-gray-500 dark:text-gray-500 text-sm">Skill Rating</div>
+                  <div className="font-medium text-purple-600 dark:text-purple-400 mt-1">{player.skillRating}</div>
+                </div>
+              )}
               <div>
                 <div className="text-gray-500 dark:text-gray-500 text-sm">Total Matches</div>
                 <div className="font-medium text-gray-900 dark:text-white mt-1">{player.totalMatches}</div>
               </div>
+              {player.wins !== undefined && (
+                <div>
+                  <div className="text-gray-500 dark:text-gray-500 text-sm">Wins</div>
+                  <div className="font-medium text-green-600 dark:text-green-400 mt-1">{player.wins}</div>
+                </div>
+              )}
+              {player.losses !== undefined && (
+                <div>
+                  <div className="text-gray-500 dark:text-gray-500 text-sm">Losses</div>
+                  <div className="font-medium text-red-600 dark:text-red-400 mt-1">{player.losses}</div>
+                </div>
+              )}
               <div>
                 <div className="text-gray-500 dark:text-gray-500 text-sm">Win Rate</div>
                 <div className="font-medium text-blue-600 dark:text-blue-400 mt-1">{player.winRate}%</div>
@@ -508,17 +698,110 @@ function PlayerDetailPage({ params, navigateTo }) {
                 <div className="text-gray-500 dark:text-gray-500 text-sm">Overall K/D/A</div>
                 <div className="font-medium text-purple-600 dark:text-purple-400 mt-1">{player.overallKDA}</div>
               </div>
+              {player.kda && (
+                <div>
+                  <div className="text-gray-500 dark:text-gray-500 text-sm">KDA Ratio</div>
+                  <div className="font-medium text-purple-600 dark:text-purple-400 mt-1">{player.kda}</div>
+                </div>
+              )}
               <div>
                 <div className="text-gray-500 dark:text-gray-500 text-sm">Earnings</div>
                 <div className="font-medium text-green-600 dark:text-green-400 mt-1">
                   {formatCurrency(player.totalEarnings)}
                 </div>
               </div>
+              {player.earnings && player.earnings !== player.totalEarnings && (
+                <div>
+                  <div className="text-gray-500 dark:text-gray-500 text-sm">Prize Earnings</div>
+                  <div className="font-medium text-green-600 dark:text-green-400 mt-1">
+                    {formatCurrency(player.earnings)}
+                  </div>
+                </div>
+              )}
+              {player.tournamentsPlayed && (
+                <div>
+                  <div className="text-gray-500 dark:text-gray-500 text-sm">Tournaments</div>
+                  <div className="font-medium text-gray-900 dark:text-white mt-1">{player.tournamentsPlayed}</div>
+                </div>
+              )}
+              {player.longestWinStreak && (
+                <div>
+                  <div className="text-gray-500 dark:text-gray-500 text-sm">Longest Win Streak</div>
+                  <div className="font-medium text-green-600 dark:text-green-400 mt-1">{player.longestWinStreak}</div>
+                </div>
+              )}
+              {player.currentWinStreak && (
+                <div>
+                  <div className="text-gray-500 dark:text-gray-500 text-sm">Current Win Streak</div>
+                  <div className="font-medium text-green-600 dark:text-green-400 mt-1">{player.currentWinStreak}</div>
+                </div>
+              )}
+              {player.mainHero && (
+                <div>
+                  <div className="text-gray-500 dark:text-gray-500 text-sm">Main Hero</div>
+                  <div className="font-medium text-gray-900 dark:text-white mt-1">{player.mainHero}</div>
+                </div>
+              )}
+              {player.mostPlayedHero && (
+                <div>
+                  <div className="text-gray-500 dark:text-gray-500 text-sm">Most Played Hero</div>
+                  <div className="font-medium text-gray-900 dark:text-white mt-1">{player.mostPlayedHero}</div>
+                </div>
+              )}
+              {player.bestWinrateHero && (
+                <div>
+                  <div className="text-gray-500 dark:text-gray-500 text-sm">Best Winrate Hero</div>
+                  <div className="font-medium text-gray-900 dark:text-white mt-1">{player.bestWinrateHero}</div>
+                </div>
+              )}
+              {player.heroPool && (
+                <div className="md:col-span-2">
+                  <div className="text-gray-500 dark:text-gray-500 text-sm">Hero Pool</div>
+                  <div className="font-medium text-gray-900 dark:text-white mt-1">{player.heroPool}</div>
+                </div>
+              )}
               <div>
                 <div className="text-gray-500 dark:text-gray-500 text-sm">Status</div>
                 <div className="font-medium text-gray-900 dark:text-white mt-1 capitalize">{player.status || 'Active'}</div>
               </div>
             </div>
+            
+            {/* Biography Section */}
+            {player.biography && (
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-3">Biography</h4>
+                <div className="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                  {parseTextWithMentions(player.biography)}
+                </div>
+              </div>
+            )}
+            
+            {/* Performance Stats */}
+            {(player.averageDamagePerMatch || player.averageHealingPerMatch || player.averageDamageBlockedPerMatch) && (
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-3">Average Performance</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {player.averageDamagePerMatch && (
+                    <div>
+                      <div className="text-gray-500 dark:text-gray-500 text-sm">Avg Damage/Match</div>
+                      <div className="font-medium text-red-600 dark:text-red-400 mt-1">{formatDamage(player.averageDamagePerMatch)}</div>
+                    </div>
+                  )}
+                  {player.averageHealingPerMatch && (
+                    <div>
+                      <div className="text-gray-500 dark:text-gray-500 text-sm">Avg Healing/Match</div>
+                      <div className="font-medium text-green-600 dark:text-green-400 mt-1">{formatDamage(player.averageHealingPerMatch)}</div>
+                    </div>
+                  )}
+                  {player.averageDamageBlockedPerMatch && (
+                    <div>
+                      <div className="text-gray-500 dark:text-gray-500 text-sm">Avg Blocked/Match</div>
+                      <div className="font-medium text-blue-600 dark:text-blue-400 mt-1">{formatDamage(player.averageDamageBlockedPerMatch)}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Player History Section - Hero Performance Stats */}
@@ -913,6 +1196,368 @@ function PlayerDetailPage({ params, navigateTo }) {
           )}
         </div>
       </div>
+
+      {/* Edit Player Modal */}
+      {isEditing && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Edit Player: {player.username}
+              </h3>
+              <button
+                onClick={handleCancelEdit}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                disabled={editLoading}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Basic Information */}
+                <div>
+                  <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Basic Information</h4>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Username
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.username || ''}
+                        onChange={(e) => handleInputChange('username', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Real Name
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.realName || ''}
+                        onChange={(e) => handleInputChange('realName', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Age
+                      </label>
+                      <input
+                        type="number"
+                        value={editFormData.age || ''}
+                        onChange={(e) => handleInputChange('age', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                        min="16"
+                        max="50"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Birth Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editFormData.birthDate || ''}
+                        onChange={(e) => handleInputChange('birthDate', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Country
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.country || ''}
+                        onChange={(e) => handleInputChange('country', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Nationality
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.nationality || ''}
+                        onChange={(e) => handleInputChange('nationality', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Region
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.region || ''}
+                        onChange={(e) => handleInputChange('region', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Gaming Information */}
+                <div>
+                  <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Gaming Information</h4>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Role
+                      </label>
+                      <select
+                        value={editFormData.role || ''}
+                        onChange={(e) => handleInputChange('role', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      >
+                        <option value="">Select Role</option>
+                        <option value="Duelist">Duelist</option>
+                        <option value="Vanguard">Vanguard</option>
+                        <option value="Strategist">Strategist</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Main Hero
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.mainHero || ''}
+                        onChange={(e) => handleInputChange('mainHero', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Hero Pool
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.heroPool || ''}
+                        onChange={(e) => handleInputChange('heroPool', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                        placeholder="e.g., Spider-Man, Iron Man, Captain America"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Jersey Number
+                      </label>
+                      <input
+                        type="number"
+                        value={editFormData.jerseyNumber || ''}
+                        onChange={(e) => handleInputChange('jerseyNumber', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                        min="0"
+                        max="99"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Status
+                      </label>
+                      <select
+                        value={editFormData.status || 'Active'}
+                        onChange={(e) => handleInputChange('status', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="Retired">Retired</option>
+                        <option value="Benched">Benched</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Earnings Information */}
+                <div className="md:col-span-2">
+                  <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Earnings Information</h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Total Earnings ($)
+                      </label>
+                      <input
+                        type="number"
+                        value={editFormData.totalEarnings || ''}
+                        onChange={(e) => handleInputChange('totalEarnings', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Prize Earnings ($)
+                      </label>
+                      <input
+                        type="number"
+                        value={editFormData.earnings || ''}
+                        onChange={(e) => handleInputChange('earnings', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Currency
+                      </label>
+                      <select
+                        value={editFormData.earningsCurrency || 'USD'}
+                        onChange={(e) => handleInputChange('earningsCurrency', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                      >
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="GBP">GBP</option>
+                        <option value="JPY">JPY</option>
+                        <option value="KRW">KRW</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Social Media */}
+                <div className="md:col-span-2">
+                  <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Social Media</h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Twitter
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.twitter || ''}
+                        onChange={(e) => handleInputChange('twitter', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                        placeholder="@username"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Twitch
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.twitch || ''}
+                        onChange={(e) => handleInputChange('twitch', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                        placeholder="username"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Instagram
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.instagram || ''}
+                        onChange={(e) => handleInputChange('instagram', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                        placeholder="@username"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        YouTube
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.youtube || ''}
+                        onChange={(e) => handleInputChange('youtube', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        disabled={editLoading}
+                        placeholder="@channel"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Biography */}
+                <div className="md:col-span-2">
+                  <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Biography</h4>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Player Biography
+                    </label>
+                    <textarea
+                      value={editFormData.biography || ''}
+                      onChange={(e) => handleInputChange('biography', e.target.value)}
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                      disabled={editLoading}
+                      placeholder="Enter player biography..."
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Form Actions */}
+              <div className="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={handleCancelEdit}
+                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  disabled={editLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                  disabled={editLoading}
+                >
+                  {editLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

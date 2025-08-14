@@ -4,11 +4,10 @@ import { getCountryFlag, getTeamLogoUrl, getImageUrl } from '../../utils/imageUt
 import UserDisplay, { parseTextWithMentions } from '../shared/UserDisplay';
 import VotingButtons from '../shared/VotingButtons';
 import HeroImage from '../shared/HeroImage';
-import LiveScoringPanel from '../admin/LiveScoringPanel';
-import SimplifiedLiveScoring from '../admin/SimplifiedLiveScoring';
+import UnifiedLiveScoring from '../admin/UnifiedLiveScoring';
 import CommentSystemSimple from '../shared/CommentSystemSimple';
 import MatchComments from '../shared/MatchComments';
-import matchLiveSync from '../../utils/MatchLiveSync';
+import liveScoreSync from '../../utils/LiveScoreSync';
 
 // Error Boundary Component
 class MatchDetailErrorBoundary extends React.Component {
@@ -61,9 +60,8 @@ function MatchDetailPage({ matchId, navigateTo }) {
     }
   }, [currentMapIndex, match?.maps]);
   const [showLiveScoring, setShowLiveScoring] = useState(false);
-  const [liveUpdateConnection, setLiveUpdateConnection] = useState(null);
-  const [connectionStatus, setConnectionStatus] = useState(null);
-  const eventSourceRef = useRef(null);
+  const [connectionStatus, setConnectionStatus] = useState('disconnected');
+  const unsubscribeRef = useRef(null);
   
   const { user, isAuthenticated, api } = useAuth();
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://staging.mrvl.net';
@@ -114,6 +112,8 @@ function MatchDetailPage({ matchId, navigateTo }) {
     const scoreData = updateData.data || updateData;
     if (!scoreData) return;
 
+    console.log('🔄 Live update received:', { source, hasData: !!scoreData.data, hasMaps: !!scoreData.maps });
+
     // Use standard setState for live updates to avoid flushSync errors
     setMatch(prevMatch => {
       if (!prevMatch) return prevMatch;
@@ -133,23 +133,39 @@ function MatchDetailPage({ matchId, navigateTo }) {
           
           // ENHANCED: Update maps data with comprehensive player stats
           maps: (() => {
-            if (scoreData.maps) {
-              return JSON.parse(JSON.stringify(scoreData.maps));
+            // Priority 1: Direct maps data from server
+            if (scoreData.maps && Array.isArray(scoreData.maps)) {
+              console.log('🗺️ Updating maps from server:', scoreData.maps.length);
+              // Deep clone to ensure React detects changes
+              return scoreData.maps.map((map, idx) => ({
+                ...map,
+                // Ensure player compositions are included
+                team1_composition: map.team1_composition || map.team1_players || prevMatch.maps?.[idx]?.team1_composition || [],
+                team2_composition: map.team2_composition || map.team2_players || prevMatch.maps?.[idx]?.team2_composition || [],
+                team1_players: map.team1_players || map.team1_composition || prevMatch.maps?.[idx]?.team1_players || [],
+                team2_players: map.team2_players || map.team2_composition || prevMatch.maps?.[idx]?.team2_players || []
+              }));
             }
             
-            // ADDED: Update current map with live player data if provided
-            if ((scoreData.team1_players || scoreData.team2_players) && prevMatch.maps) {
+            // Priority 2: Update current map with live player data if provided
+            if ((scoreData.team1_players || scoreData.team2_players || 
+                 scoreData.team1_composition || scoreData.team2_composition) && prevMatch.maps) {
               const updatedMaps = [...prevMatch.maps];
-              const currentMapIdx = currentMapIndex;
+              const currentMapIdx = scoreData.current_map_number ? scoreData.current_map_number - 1 : currentMapIndex;
+              
+              console.log(`📊 Updating map ${currentMapIdx + 1} player compositions`);
               
               if (updatedMaps[currentMapIdx]) {
                 updatedMaps[currentMapIdx] = {
                   ...updatedMaps[currentMapIdx],
                   // Update team compositions with live player data
-                  team1_composition: scoreData.team1_players || updatedMaps[currentMapIdx].team1_composition,
-                  team2_composition: scoreData.team2_players || updatedMaps[currentMapIdx].team2_composition,
-                  team1_players: scoreData.team1_players || updatedMaps[currentMapIdx].team1_players,
-                  team2_players: scoreData.team2_players || updatedMaps[currentMapIdx].team2_players
+                  team1_composition: scoreData.team1_composition || scoreData.team1_players || updatedMaps[currentMapIdx].team1_composition,
+                  team2_composition: scoreData.team2_composition || scoreData.team2_players || updatedMaps[currentMapIdx].team2_composition,
+                  team1_players: scoreData.team1_players || scoreData.team1_composition || updatedMaps[currentMapIdx].team1_players,
+                  team2_players: scoreData.team2_players || scoreData.team2_composition || updatedMaps[currentMapIdx].team2_players,
+                  // Update scores if provided
+                  team1_score: scoreData.map_team1_score !== undefined ? scoreData.map_team1_score : updatedMaps[currentMapIdx].team1_score,
+                  team2_score: scoreData.map_team2_score !== undefined ? scoreData.map_team2_score : updatedMaps[currentMapIdx].team2_score
                 };
               }
               
@@ -163,18 +179,24 @@ function MatchDetailPage({ matchId, navigateTo }) {
           status: scoreData.status || prevMatch.status,
           
           // Update current map for immediate map switching
-          current_map: scoreData.current_map || scoreData.currentMap || prevMatch.current_map,
+          current_map: scoreData.current_map || scoreData.currentMap || scoreData.current_map_number || prevMatch.current_map,
+          current_map_number: scoreData.current_map_number || scoreData.current_map || prevMatch.current_map_number,
           
           // Ensure timestamps update to trigger re-renders
           updated_at: new Date().toISOString(),
           live_update_timestamp: Date.now()
         };
         
+        console.log('✅ Match updated with live data');
         return updatedMatch;
       });
 
     // Update current map index if specified in the update
-    if (scoreData.current_map && scoreData.current_map !== currentMapIndex + 1) {
+    if (scoreData.current_map_number && scoreData.current_map_number !== currentMapIndex + 1) {
+      console.log(`🗺️ Switching to map ${scoreData.current_map_number}`);
+      setCurrentMapIndex(scoreData.current_map_number - 1);
+    } else if (scoreData.current_map && scoreData.current_map !== currentMapIndex + 1) {
+      console.log(`🗺️ Switching to map ${scoreData.current_map}`);
       setCurrentMapIndex(scoreData.current_map - 1);
     }
   }, [currentMapIndex]);
@@ -189,29 +211,18 @@ function MatchDetailPage({ matchId, navigateTo }) {
     if (matchIdValue && match) {
       console.log(`🔔 MatchDetailPage subscribing to efficient live updates for match ${matchIdValue}`);
       
-      // FIXED: Subscribe to matchLiveSync for immediate local updates
-      const unsubscribeMatchLiveSync = matchLiveSync.subscribe(
-        `match-detail-${matchIdValue}`,
-        parseInt(matchIdValue),
-        handleLiveScoreUpdate,
-        {
-          type: 'match_update'
-        }
-      );
-
-      // Pure localStorage sync only
-
-      // Set connected status for localStorage sync
-      setConnectionStatus({
-        connected: true,
-        lastUpdate: Date.now()
-      });
+      // Subscribe to liveScoreSync for immediate local updates via localStorage
+      const unsubscribe = liveScoreSync.subscribe(matchIdValue, handleLiveScoreUpdate);
+      unsubscribeRef.current = unsubscribe;
+      setConnectionStatus('connected');
       
       return () => {
         console.log(`🔕 MatchDetailPage unsubscribing from live updates for match ${matchIdValue}`);
-        unsubscribeMatchLiveSync();
-        
-        // Clean localStorage only
+        if (unsubscribeRef.current) {
+          unsubscribeRef.current();
+          unsubscribeRef.current = null;
+        }
+        setConnectionStatus('disconnected');
       };
     }
   }, [match?.id, handleLiveScoreUpdate]);
@@ -222,8 +233,9 @@ function MatchDetailPage({ matchId, navigateTo }) {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
       }
     };
   }, []);
@@ -318,9 +330,8 @@ function MatchDetailPage({ matchId, navigateTo }) {
           console.log('MatchDetailPage: Transformed match data:', transformedMatch);
           setMatch(transformedMatch);
           
-          // Real-time updates will be automatically enabled via LiveScoreManager
-          console.log('Match loaded. Live updates enabled via LiveScoreManager for status:', transformedMatch.status);
-          setLiveUpdateConnection(transformedMatch.status === 'live' ? 'live-manager' : 'ready');
+          // Real-time updates will be automatically enabled via LiveScoreSync
+          console.log('Match loaded. Live updates enabled via LiveScoreSync for status:', transformedMatch.status);
         }
       } catch (error) {
         console.error('MatchDetailPage: Error loading match:', error);
@@ -1037,12 +1048,11 @@ function MatchDetailPage({ matchId, navigateTo }) {
         />
 
         {/* Enhanced Live Scoring Panel */}
-        <SimplifiedLiveScoring
+        <UnifiedLiveScoring
           isOpen={showLiveScoring}
           match={match}
           onClose={() => setShowLiveScoring(false)}
           onUpdate={handleMatchUpdate}
-          initialMatchData={match} // Pass full match data for seamless integration
         />
       </div>
       </div>

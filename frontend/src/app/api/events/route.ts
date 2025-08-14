@@ -385,8 +385,8 @@ const events = [
       { name: "Monster Energy", logo: "/sponsors/monster-logo.png", tier: "title" },
       { name: "SteelSeries", logo: "/sponsors/steelseries-logo.png", tier: "major" }
     ],
-    image: "/events/champions-tour-americas.jpg",
-    banner: "/events/champions-tour-americas-banner.jpg",
+    image: "/events/championship.jpg",
+    banner: "/events/championship-banner.jpg",
     description: "The Champions Tour 2025: Americas Stage 1 was part of the official Marvel Rivals esports circuit for the Americas region.",
     rules: "League format with double elimination playoffs. Top 4 teams qualified for Masters New York.",
     streamLinks: [

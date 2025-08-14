@@ -22,7 +22,7 @@ export const LazyAdminTeams = lazy(() => import('../components/admin/AdminTeams'
 export const LazyAdminUsers = lazy(() => import('../components/admin/AdminUsers'));
 export const LazyEventForm = lazy(() => import('../components/admin/EventForm'));
 export const LazyNewsFormSimple = lazy(() => import('../components/admin/NewsFormSimple'));
-export const LazySimplifiedLiveScoring = lazy(() => import('../components/admin/SimplifiedLiveScoring'));
+export const LazyUnifiedLiveScoring = lazy(() => import('../components/admin/UnifiedLiveScoring'));
 
 // Create wrapper component with loading fallback
 export const withLazyLoading = (Component, fallback = <LoadingSpinner />) => {

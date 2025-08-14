@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../../hooks';
 import { TeamLogo, getImageUrl } from '../../utils/imageUtils';
+import MatchForm from './MatchForm';
 
 function AdminMatches() {
   const { api } = useAuth();
@@ -86,7 +87,7 @@ function AdminMatches() {
   }, [filters]);
 
   // AdminMatches shows static match list - no live updates needed
-  // Live updates are only between MatchDetailPage ↔ SimplifiedLiveScoring
+  // Live updates are only between MatchDetailPage ↔ UnifiedLiveScoring
 
   const handleDeleteMatch = async (matchId, matchName) => {
     if (window.confirm(`Are you sure you want to delete match "${matchName}"? This action cannot be undone.`)) {
@@ -643,393 +644,65 @@ function AdminMatches() {
         </div>
       </div>
 
-      {/* Create Match Form Modal */}
+      {/* Create Match Form Modal - Using MatchForm Component */}
       {showCreateForm && (
-        <CreateMatchForm
-          isOpen={showCreateForm}
-          onClose={handleCloseCreateForm}
-          onSuccess={handleMatchUpdate}
-        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Create New Match
+              </h3>
+              <button
+                onClick={handleCloseCreateForm}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <MatchForm 
+                navigateTo={(path) => {
+                  handleCloseCreateForm();
+                  handleMatchUpdate();
+                }}
+              />
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* Edit Match Form Modal */}
+      {/* Edit Match Form Modal - Using MatchForm Component */}
       {showEditForm && selectedMatch && (
-        <EditMatchForm
-          isOpen={showEditForm}
-          match={selectedMatch}
-          onClose={handleCloseEditForm}
-          onSuccess={handleMatchUpdate}
-        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Edit Match
+              </h3>
+              <button
+                onClick={handleCloseEditForm}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <MatchForm 
+                matchId={selectedMatch?.id}
+                navigateTo={(path) => {
+                  handleCloseEditForm();
+                  handleMatchUpdate();
+                }}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
-// Create Match Form Component
-function CreateMatchForm({ isOpen, onClose, onSuccess }) {
-  const { api } = useAuth();
-  const [formData, setFormData] = useState({
-    team1_name: '',
-    team2_name: '',
-    event_name: '',
-    scheduled_at: '',
-    status: 'scheduled',
-    format: 'BO3'
-  });
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    try {
-      const response = await api.post('/api/admin/matches-moderation', formData);
-      if (response.data?.success !== false) {
-        onSuccess();
-        onClose();
-        alert('Match created successfully!');
-      } else {
-        throw new Error(response.data?.message || 'Match creation failed');
-      }
-    } catch (error) {
-      console.error('Error creating match:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Error creating match';
-      alert(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Create New Match</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Team 1 Name *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.team1_name}
-              onChange={(e) => setFormData({ ...formData, team1_name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-              placeholder="Enter team 1 name"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Team 2 Name *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.team2_name}
-              onChange={(e) => setFormData({ ...formData, team2_name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-              placeholder="Enter team 2 name"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Event Name
-            </label>
-            <input
-              type="text"
-              value={formData.event_name}
-              onChange={(e) => setFormData({ ...formData, event_name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-              placeholder="Enter event name (optional)"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Scheduled Date & Time
-            </label>
-            <input
-              type="datetime-local"
-              value={formData.scheduled_at}
-              onChange={(e) => setFormData({ ...formData, scheduled_at: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Format
-              </label>
-              <select
-                value={formData.format}
-                onChange={(e) => setFormData({ ...formData, format: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-              >
-                <option value="BO1">BO1</option>
-                <option value="BO3">BO3</option>
-                <option value="BO5">BO5</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Status
-              </label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-              >
-                <option value="scheduled">Scheduled</option>
-                <option value="live">Live</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-          </div>
-          
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loading ? 'Creating...' : 'Create Match'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-// Edit Match Form Component
-function EditMatchForm({ isOpen, match, onClose, onSuccess }) {
-  const { api } = useAuth();
-  const [formData, setFormData] = useState({
-    team1_name: '',
-    team2_name: '',
-    event_name: '',
-    scheduled_at: '',
-    status: 'scheduled',
-    format: 'BO3',
-    team1_score: 0,
-    team2_score: 0
-  });
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (match) {
-      setFormData({
-        team1_name: match.team1_name || '',
-        team2_name: match.team2_name || '',
-        event_name: match.event_name || '',
-        scheduled_at: match.scheduled_at ? match.scheduled_at.slice(0, 16) : '',
-        status: match.status || 'scheduled',
-        format: match.format || 'BO3',
-        team1_score: match.team1_score || 0,
-        team2_score: match.team2_score || 0
-      });
-    }
-  }, [match]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    try {
-      const response = await api.put(`/api/admin/matches-moderation/${match.id}`, formData);
-      if (response.data?.success !== false) {
-        onSuccess();
-        onClose();
-        alert('Match updated successfully!');
-      } else {
-        throw new Error(response.data?.message || 'Match update failed');
-      }
-    } catch (error) {
-      console.error('Error updating match:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Error updating match';
-      alert(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!isOpen || !match) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Edit Match</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Team 1 Name *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.team1_name}
-              onChange={(e) => setFormData({ ...formData, team1_name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-              placeholder="Enter team 1 name"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Team 2 Name *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.team2_name}
-              onChange={(e) => setFormData({ ...formData, team2_name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-              placeholder="Enter team 2 name"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Event Name
-            </label>
-            <input
-              type="text"
-              value={formData.event_name}
-              onChange={(e) => setFormData({ ...formData, event_name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-              placeholder="Enter event name (optional)"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Scheduled Date & Time
-            </label>
-            <input
-              type="datetime-local"
-              value={formData.scheduled_at}
-              onChange={(e) => setFormData({ ...formData, scheduled_at: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Format
-              </label>
-              <select
-                value={formData.format}
-                onChange={(e) => setFormData({ ...formData, format: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-              >
-                <option value="BO1">BO1</option>
-                <option value="BO3">BO3</option>
-                <option value="BO5">BO5</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Status
-              </label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-              >
-                <option value="scheduled">Scheduled</option>
-                <option value="live">Live</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-          </div>
-          
-          {/* Score Section - Only show for live or completed matches */}
-          {(formData.status === 'live' || formData.status === 'completed') && (
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Match Scores</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    {formData.team1_name || 'Team 1'} Score
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.team1_score}
-                    onChange={(e) => setFormData({ ...formData, team1_score: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    {formData.team2_name || 'Team 2'} Score
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.team2_score}
-                    onChange={(e) => setFormData({ ...formData, team2_score: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loading ? 'Updating...' : 'Update Match'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
 
 export default AdminMatches;

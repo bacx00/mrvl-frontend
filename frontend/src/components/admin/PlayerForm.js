@@ -16,6 +16,22 @@ function PlayerForm({ playerId, navigateTo }) {
     rating: '',
     earnings: '',
     avatar: '',
+    // Missing critical fields
+    elo_rating: '',
+    peak_elo: '',
+    skill_rating: '',
+    main_hero: '',
+    hero_pool: '',
+    wins: '',
+    losses: '',
+    total_matches: '',
+    kda: '',
+    status: 'active',
+    biography: '',
+    total_earnings: '',
+    jerseyNumber: '',
+    nationality: '',
+    birth_date: '',
     socialLinks: {
       twitter: '',
       twitch: '',
@@ -56,6 +72,22 @@ function PlayerForm({ playerId, navigateTo }) {
         rating: player.rating || '',
         earnings: player.earnings || '',
         avatar: player.avatar_url || player.avatar || '',
+        // Load missing critical fields
+        elo_rating: player.elo_rating || '',
+        peak_elo: player.peak_elo || '',
+        skill_rating: player.skill_rating || '',
+        main_hero: player.main_hero || '',
+        hero_pool: player.hero_pool || '',
+        wins: player.wins || '',
+        losses: player.losses || '',
+        total_matches: player.total_matches || '',
+        kda: player.kda || '',
+        status: player.status || 'active',
+        biography: player.biography || '',
+        total_earnings: player.total_earnings || '',
+        jerseyNumber: player.jersey_number || '',
+        nationality: player.nationality || '',
+        birth_date: player.birth_date || '',
         socialLinks: player.social_media || player.social_links || player.socialLinks || {
           twitter: '',
           twitch: '',
@@ -197,6 +229,22 @@ function PlayerForm({ playerId, navigateTo }) {
         age: formData.age ? parseInt(formData.age) : null,
         rating: formData.rating ? parseFloat(formData.rating) : null,
         earnings: formData.earnings ? parseFloat(formData.earnings) : null,
+        // Include all missing critical fields
+        elo_rating: formData.elo_rating ? parseInt(formData.elo_rating) : null,
+        peak_elo: formData.peak_elo ? parseInt(formData.peak_elo) : null,
+        skill_rating: formData.skill_rating ? parseInt(formData.skill_rating) : null,
+        main_hero: formData.main_hero || null,
+        hero_pool: formData.hero_pool || null,
+        wins: formData.wins ? parseInt(formData.wins) : null,
+        losses: formData.losses ? parseInt(formData.losses) : null,
+        total_matches: formData.total_matches ? parseInt(formData.total_matches) : null,
+        kda: formData.kda || null,
+        status: formData.status || 'active',
+        biography: formData.biography || null,
+        total_earnings: formData.total_earnings ? parseFloat(formData.total_earnings) : null,
+        jersey_number: formData.jerseyNumber ? parseInt(formData.jerseyNumber) : null,
+        nationality: formData.nationality || null,
+        birth_date: formData.birth_date || null,
         social_media: formData.socialLinks
       };
 
@@ -205,12 +253,12 @@ function PlayerForm({ playerId, navigateTo }) {
       if (playerId) {
         // EDITING existing player
         console.log(' Editing existing player with ID:', playerId);
-        await api.put(`/admin/players/${playerId}`, submitData);
+        await api.put(`/players/${playerId}`, submitData);
         console.log(' Player data updated successfully');
       } else {
         // CREATING new player
         console.log(' Creating new player...');
-        const playerResponse = await api.post('/admin/players', submitData);
+        const playerResponse = await api.post('/players', submitData);
         currentPlayerId = playerResponse.data?.id || playerResponse.id;
         console.log(' Player created with ID:', currentPlayerId);
       }
@@ -232,7 +280,7 @@ function PlayerForm({ playerId, navigateTo }) {
           // Update player with new avatar URL
           const updatedFormData = { ...submitData, avatar: avatarUrl };
           console.log(' Updating player with avatar URL:', updatedFormData.avatar);
-          await api.put(`/admin/players/${currentPlayerId}`, updatedFormData);
+          await api.put(`/players/${currentPlayerId}`, updatedFormData);
           console.log(' Player updated with avatar URL');
         } catch (avatarError) {
           console.error(' Avatar upload failed:', avatarError);
@@ -548,6 +596,107 @@ function PlayerForm({ playerId, navigateTo }) {
               </p>
             </div>
 
+            {/* Total Earnings */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Total Earnings (USD)
+              </label>
+              <input
+                type="number"
+                name="total_earnings"
+                value={formData.total_earnings}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="e.g., 125000.75"
+                min="0"
+                step="0.01"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Cumulative earnings across all tournaments
+              </p>
+            </div>
+
+            {/* ELO Rating */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                ELO Rating
+              </label>
+              <input
+                type="number"
+                name="elo_rating"
+                value={formData.elo_rating}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="e.g., 2500"
+                min="0"
+                max="5000"
+                step="1"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Current ELO rating (0-5000)
+              </p>
+            </div>
+
+            {/* Peak ELO */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Peak ELO
+              </label>
+              <input
+                type="number"
+                name="peak_elo"
+                value={formData.peak_elo}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="e.g., 2650"
+                min="0"
+                max="5000"
+                step="1"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Highest ELO rating achieved
+              </p>
+            </div>
+
+            {/* Skill Rating */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Skill Rating
+              </label>
+              <input
+                type="number"
+                name="skill_rating"
+                value={formData.skill_rating}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="e.g., 1500"
+                min="0"
+                max="3000"
+                step="1"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                In-game skill rating
+              </p>
+            </div>
+
+            {/* Status */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Status
+              </label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                className="form-input"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="retired">Retired</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
+
             {/* Team - CRITICAL FIX for Free Agent issue */}
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
@@ -632,6 +781,180 @@ function PlayerForm({ playerId, navigateTo }) {
                   </option>
                 ))}
               </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Performance & Statistics */}
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Performance & Statistics</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Wins */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Wins
+              </label>
+              <input
+                type="number"
+                name="wins"
+                value={formData.wins}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="e.g., 200"
+                min="0"
+                step="1"
+              />
+            </div>
+
+            {/* Losses */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Losses
+              </label>
+              <input
+                type="number"
+                name="losses"
+                value={formData.losses}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="e.g., 50"
+                min="0"
+                step="1"
+              />
+            </div>
+
+            {/* Total Matches */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Total Matches
+              </label>
+              <input
+                type="number"
+                name="total_matches"
+                value={formData.total_matches}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="e.g., 100"
+                min="0"
+                step="1"
+              />
+            </div>
+
+            {/* KDA */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                KDA Ratio
+              </label>
+              <input
+                type="text"
+                name="kda"
+                value={formData.kda}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="e.g., 3.50"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Kill/Death/Assist ratio
+              </p>
+            </div>
+
+            {/* Main Hero */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Main Hero
+              </label>
+              <input
+                type="text"
+                name="main_hero"
+                value={formData.main_hero}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="e.g., Spider-Man"
+              />
+            </div>
+
+            {/* Hero Pool */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Hero Pool
+              </label>
+              <input
+                type="text"
+                name="hero_pool"
+                value={formData.hero_pool}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="e.g., Spider-Man, Iron Man, Hulk"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Comma-separated list of heroes
+              </p>
+            </div>
+
+            {/* Jersey Number */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Jersey Number
+              </label>
+              <input
+                type="number"
+                name="jerseyNumber"
+                value={formData.jerseyNumber}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="e.g., 10"
+                min="1"
+                max="99"
+                step="1"
+              />
+            </div>
+
+            {/* Nationality */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Nationality
+              </label>
+              <input
+                type="text"
+                name="nationality"
+                value={formData.nationality}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="e.g., American"
+              />
+            </div>
+
+            {/* Birth Date */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Birth Date
+              </label>
+              <input
+                type="date"
+                name="birth_date"
+                value={formData.birth_date}
+                onChange={handleInputChange}
+                className="form-input"
+              />
+            </div>
+
+            {/* Biography */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Biography
+              </label>
+              <textarea
+                name="biography"
+                value={formData.biography}
+                onChange={handleInputChange}
+                className="form-input"
+                rows="4"
+                placeholder="Player biography and background information..."
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Background, career highlights, and personal information
+              </p>
             </div>
           </div>
         </div>

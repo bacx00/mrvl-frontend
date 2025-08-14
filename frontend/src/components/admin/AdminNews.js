@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../hooks';
+import NewsForm from './NewsForm';
 
 function AdminNews() {
   const { api } = useAuth();
@@ -807,9 +808,8 @@ function AdminNews() {
                         )}
                         <span>By {article.author?.name || 'Admin'}</span>
                       </div>
-                      <span>👁️ {articleAnalytics[article.id]?.views || 0} views</span>
-                      <span>💬 {articleAnalytics[article.id]?.comments || 0} comments</span>
-                      <span>📅 {article.created_at ? new Date(article.created_at).toLocaleDateString() : 'Unknown date'}</span>
+                      <span>💬 {article.comments_count || article.comments?.length || 0} comments</span>
+                      <span>📅 {article.published_at || article.meta?.published_at ? new Date(article.published_at || article.meta?.published_at).toLocaleDateString() : article.created_at ? new Date(article.created_at).toLocaleDateString() : 'Not published'}</span>
                       {article.reading_time && (
                         <span>🕒 {article.reading_time} min read</span>
                       )}
@@ -886,7 +886,7 @@ function AdminNews() {
                     onClick={() => handleCommentModeration(article)}
                     className="btn btn-outline-warning text-sm"
                   >
-                    Comments ({articleAnalytics[article.id]?.comments || 0})
+                    Comments ({article.comments_count || article.comments?.length || 0})
                   </button>
                   <button 
                     onClick={() => {
@@ -927,242 +927,31 @@ function AdminNews() {
         </div>
       )}
 
-      {/* News Modal */}
+      {/* News Modal - Using NewsForm Component */}
       {showNewsModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 {editingNews ? 'Edit Article' : 'Create New Article'}
               </h3>
               <button
                 onClick={handleCloseModals}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               >
                 ✕
               </button>
             </div>
             
-            <form onSubmit={handleSubmitNews} className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Title *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={newsFormData.title}
-                    onChange={(e) => setNewsFormData({...newsFormData, title: e.target.value})}
-                    className="form-input"
-                    placeholder="Enter article title"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Category
-                  </label>
-                  <select
-                    value={newsFormData.category_id || ''}
-                    onChange={(e) => setNewsFormData({...newsFormData, category_id: e.target.value || null})}
-                    className="form-input"
-                    required
-                  >
-                    <option value="">-- Select Category (Required) --</option>
-                    {categories.map(category => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Status
-                  </label>
-                  <select
-                    value={newsFormData.status}
-                    onChange={(e) => setNewsFormData({...newsFormData, status: e.target.value})}
-                    className="form-input"
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                  </select>
-                </div>
-                
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Excerpt
-                  </label>
-                  <textarea
-                    value={newsFormData.excerpt}
-                    onChange={(e) => setNewsFormData({...newsFormData, excerpt: e.target.value})}
-                    className="form-input"
-                    rows="3"
-                    placeholder="Brief summary of the article..."
-                  />
-                </div>
-                
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Content * <span className="text-sm text-gray-500">({newsFormData.content?.length || 0}/50 characters minimum)</span>
-                  </label>
-                  <textarea
-                    required
-                    value={newsFormData.content}
-                    onChange={(e) => setNewsFormData({...newsFormData, content: e.target.value})}
-                    className={`form-input ${(newsFormData.content?.length || 0) < 50 ? 'border-red-300 focus:border-red-500' : 'border-green-300 focus:border-green-500'}`}
-                    rows="10"
-                    placeholder="Article content... (minimum 50 characters required)"
-                  />
-                  <div className="mt-1 text-sm text-gray-500">
-                    {newsFormData.content?.length < 50 
-                      ? `Need ${50 - (newsFormData.content?.length || 0)} more characters` 
-                      : '✓ Minimum length met'}
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Tags
-                  </label>
-                  <input
-                    type="text"
-                    value={newsFormData.tags}
-                    onChange={(e) => setNewsFormData({...newsFormData, tags: e.target.value})}
-                    className="form-input"
-                    placeholder="tag1, tag2, tag3"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Author
-                  </label>
-                  <input
-                    type="text"
-                    value={newsFormData.author}
-                    onChange={(e) => setNewsFormData({...newsFormData, author: e.target.value})}
-                    className="form-input"
-                    placeholder="Author name"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Featured Image URL
-                  </label>
-                  <input
-                    type="url"
-                    value={newsFormData.featured_image}
-                    onChange={(e) => setNewsFormData({...newsFormData, featured_image: e.target.value})}
-                    className="form-input"
-                    placeholder="https://example.com/image.jpg"
-                  />
-                </div>
-                
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    SEO Title (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={newsFormData.seo_title}
-                    onChange={(e) => setNewsFormData({...newsFormData, seo_title: e.target.value})}
-                    className="form-input"
-                    placeholder="SEO optimized title (leave blank to use article title)"
-                  />
-                </div>
-                
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    SEO Description (Optional)
-                  </label>
-                  <textarea
-                    value={newsFormData.seo_description}
-                    onChange={(e) => setNewsFormData({...newsFormData, seo_description: e.target.value})}
-                    className="form-input"
-                    rows="2"
-                    placeholder="SEO meta description (leave blank to use excerpt)"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Reading Time (minutes)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="120"
-                    value={newsFormData.reading_time}
-                    onChange={(e) => setNewsFormData({...newsFormData, reading_time: parseInt(e.target.value) || 0})}
-                    className="form-input"
-                    placeholder="Estimated reading time"
-                  />
-                </div>
-                
-                {newsFormData.status === 'published' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Schedule for Later
-                    </label>
-                    <input
-                      type="datetime-local"
-                      value={newsFormData.scheduled_at}
-                      onChange={(e) => setNewsFormData({...newsFormData, scheduled_at: e.target.value, status: e.target.value ? 'scheduled' : 'published'})}
-                      className="form-input"
-                    />
-                  </div>
-                )}
-                
-                <div className="md:col-span-2">
-                  <div className="flex items-center space-x-6">
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={newsFormData.is_featured}
-                        onChange={(e) => setNewsFormData({...newsFormData, is_featured: e.target.checked})}
-                        className="rounded border-gray-300 dark:border-gray-600"
-                      />
-                      <span className="text-sm text-gray-900 dark:text-gray-100">
-                        Featured Article
-                      </span>
-                    </label>
-                    
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={newsFormData.allow_comments}
-                        onChange={(e) => setNewsFormData({...newsFormData, allow_comments: e.target.checked})}
-                        className="rounded border-gray-300 dark:border-gray-600"
-                      />
-                      <span className="text-sm text-gray-900 dark:text-gray-100">
-                        Allow Comments
-                      </span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <button
-                  type="button"
-                  onClick={handleCloseModals}
-                  className="btn btn-secondary"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                >
-                  {editingNews ? 'Update Article' : 'Create Article'}
-                </button>
-              </div>
-            </form>
+            <div className="p-6">
+              <NewsForm 
+                newsId={editingNews?.id} 
+                navigateTo={(path) => {
+                  setShowNewsModal(false);
+                  fetchNews();
+                }}
+              />
+            </div>
           </div>
         </div>
       )}

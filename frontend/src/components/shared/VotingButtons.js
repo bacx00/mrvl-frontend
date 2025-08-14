@@ -97,17 +97,13 @@ function VotingButtons({
       // Try different voting endpoints based on item type
       let response;
       if (itemType === 'news') {
-        try {
-          response = await api.post(`/news/${itemId}/vote`, { vote_type: voteType });
-        } catch (err) {
-          // Fallback to generic votes endpoint
-          response = await api.post('/user/votes/', payload);
-        }
+        response = await api.post(`/news/${itemId}/vote`, { vote_type: voteType });
       } else if (itemType === 'news_comment') {
         try {
           response = await api.post(`/news/comments/${itemId}/vote`, { vote_type: voteType });
         } catch (err) {
-          // Fallback to generic votes endpoint
+          // Only use fallback if the specific endpoint fails
+          console.log('News comment vote failed, using fallback:', err.message);
           response = await api.post('/user/votes/', payload);
         }
       } else {
@@ -115,13 +111,23 @@ function VotingButtons({
         response = await api.post('/user/votes/', payload);
       }
       
-      // ENHANCED: Better response validation
-      const isSuccess = response?.status === 200 || response?.status === 201 || response?.data?.success === true;
+      // ENHANCED: Better response validation - Accept any successful status code
+      // Fix: Don't require all conditions, just check that it's not explicitly failed
+      const isSuccess = response && (response.status >= 200 && response.status < 300) && 
+                       (response.data?.success !== false);
+      
+      console.log('Vote response validation:', {
+        status: response?.status,
+        success: response?.data?.success,
+        isSuccess
+      });
       
       if (isSuccess) {
         // Update state based on new vote counts from API
-        const voteCounts = response.data?.vote_counts || response.data?.data?.vote_counts;
-        const newUserVote = response.data?.user_vote || response.data?.data?.user_vote;
+        const voteCounts = response.data?.vote_counts || response.data?.data?.vote_counts || response.data?.updated_stats;
+        const newUserVote = response.data?.user_vote !== undefined ? response.data?.user_vote : 
+                           (response.data?.data?.user_vote !== undefined ? response.data?.data?.user_vote : 
+                           response.data?.vote_type);
         const action = response.data?.action || response.data?.data?.action;
         
         console.log('Vote response:', { voteCounts, newUserVote, action });
@@ -129,9 +135,31 @@ function VotingButtons({
         if (voteCounts) {
           setUpvotes(Math.max(0, voteCounts.upvotes || 0)); // Ensure non-negative
           setDownvotes(Math.max(0, voteCounts.downvotes || 0)); // Ensure non-negative
+        } else if (action) {
+          // Calculate based on action if no counts provided
+          if (action === 'removed') {
+            setCurrentVote(null);
+            if (oldVote === 'upvote') setUpvotes(Math.max(0, oldUpvotes - 1));
+            if (oldVote === 'downvote') setDownvotes(Math.max(0, oldDownvotes - 1));
+          } else if (action === 'created') {
+            setCurrentVote(voteType);
+            if (voteType === 'upvote') setUpvotes(oldUpvotes + 1);
+            if (voteType === 'downvote') setDownvotes(oldDownvotes + 1);
+          } else if (action === 'updated') {
+            setCurrentVote(voteType);
+            if (oldVote === 'upvote' && voteType === 'downvote') {
+              setUpvotes(Math.max(0, oldUpvotes - 1));
+              setDownvotes(oldDownvotes + 1);
+            } else if (oldVote === 'downvote' && voteType === 'upvote') {
+              setDownvotes(Math.max(0, oldDownvotes - 1));
+              setUpvotes(oldUpvotes + 1);
+            }
+          }
         }
         
-        setCurrentVote(newUserVote);
+        if (newUserVote !== undefined) {
+          setCurrentVote(newUserVote);
+        }
 
         // Show success feedback
         const message = action === 'removed' ? 'Vote removed' : 
@@ -142,15 +170,15 @@ function VotingButtons({
         if (onVoteChange) {
           onVoteChange({
             action: action || 'created',
-            vote_counts: voteCounts,
-            user_vote: newUserVote,
-            score: voteCounts ? (voteCounts.upvotes - voteCounts.downvotes) : 0
+            vote_counts: voteCounts || { upvotes, downvotes },
+            user_vote: currentVote,
+            score: upvotes - downvotes
           });
         }
       } else {
         // Handle API returning success=false
-        console.warn('Vote request returned success=false:', response.data);
-        throw new Error(response.data?.message || 'Vote request failed');
+        console.warn('Vote request returned success=false:', response?.data);
+        throw new Error(response?.data?.message || 'Vote request failed');
       }
     } catch (error) {
       console.error('Error voting:', error);

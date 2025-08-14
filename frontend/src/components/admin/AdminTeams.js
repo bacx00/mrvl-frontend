@@ -25,11 +25,32 @@ function AdminTeams({ navigateTo }) {
     region: 'NA',
     country: '',
     rating: 1500,
+    elo_rating: '',
+    peak_elo: '',
+    earnings: '',
+    wins: '',
+    losses: '',
+    matches_played: '',
+    win_rate: '',
+    current_streak_count: '',
+    current_streak_type: 'none',
+    founded_date: '',
     description: '',
+    achievements: '',
+    manager: '',
+    owner: '',
+    captain: '',
+    status: 'Active',
+    coach_name: '',
+    coach_nationality: '',
     website: '',
     social_media: {
       twitter: '',
-      discord: ''
+      instagram: '',
+      youtube: '',
+      discord: '',
+      tiktok: '',
+      website: ''
     }
   });
 
@@ -38,7 +59,7 @@ function AdminTeams({ navigateTo }) {
       setLoading(true);
       console.log(' AdminTeams: Fetching teams from real API...');
       
-      const response = await api.get('/admin/teams');
+      const response = await api.get('/teams');
       
       // FIXED: Handle Laravel API response structure properly
       let teamsData = response?.data?.data || response?.data || response || [];
@@ -186,11 +207,11 @@ function AdminTeams({ navigateTo }) {
 
       if (editingTeam) {
         // Update existing team
-        await api.put(`/admin/teams/${editingTeam.id}`, submitData);
+        await api.put(`/teams/${editingTeam.id}`, submitData);
         alert('Team updated successfully!');
       } else {
         // Create new team
-        await api.post('/admin/teams', submitData);
+        await api.post('/teams', submitData);
         alert('Team created successfully!');
       }
       
@@ -214,7 +235,7 @@ function AdminTeams({ navigateTo }) {
         }
 
         console.log(' AdminTeams: Deleting team with ID:', teamId);
-        await api.delete(`/admin/teams/${teamId}`);
+        await api.delete(`/teams/${teamId}`);
         await fetchTeams(); // Refresh the list
         alert('Team deleted successfully!');
       } catch (error) {

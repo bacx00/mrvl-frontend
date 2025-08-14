@@ -159,16 +159,29 @@ function HomePage({ navigateTo }) {
         }
       }
 
-      // Process news
+      // Process news - ONLY show featured articles on homepage
       let newsData = [];
       if (newsResponse.status === 'fulfilled') {
         const rawNews = newsResponse.value?.data?.data || newsResponse.value?.data || [];
         
         if (Array.isArray(rawNews) && rawNews.length > 0) {
-          // Check for featured in meta object
-          const featured = rawNews.filter(n => n.meta?.featured || n.featured).slice(0, 3);
-          newsData = featured.length > 0 ? featured : rawNews.slice(0, 3);
-          console.log('HomePage: Using REAL backend news:', newsData.length);
+          // Only show featured articles on the homepage
+          const featured = rawNews.filter(n => {
+            // Check multiple possible locations for featured flag
+            return n.featured === true || 
+                   n.meta?.featured === true || 
+                   n.is_featured === true ||
+                   n.featured === 1 ||
+                   n.meta?.featured === 1;
+          });
+          
+          // Only use featured articles, don't fallback to non-featured
+          newsData = featured.slice(0, 3);
+          console.log('HomePage: Showing featured news only:', newsData.length, 'articles');
+          
+          if (featured.length === 0) {
+            console.log('HomePage: No featured articles found. Homepage news section will be empty.');
+          }
         }
       }
 

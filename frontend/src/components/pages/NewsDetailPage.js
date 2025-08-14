@@ -176,8 +176,9 @@ function NewsDetailPage({ params, navigateTo }) {
       });
 
       // CRITICAL FIX: Better response validation for successful comment posting
-      const isSuccess = response?.status === 200 || response?.status === 201 || 
-                        response?.data?.success === true || response?.data?.success === 'true';
+      // Check for success !== false rather than success === true
+      const isSuccess = (response?.status === 200 || response?.status === 201) && 
+                        response?.data?.success !== false;
       
       console.log('Comment submission response:', {
         status: response?.status,

@@ -25,9 +25,30 @@ function AdminPlayers({ navigateTo }) {
   const [formData, setFormData] = useState({
     name: '',
     ign: '',
+    real_name: '',
+    username: '',
     country: '',
     role: 'DPS',
     rating: 1500,
+    elo_rating: '',
+    peak_elo: '',
+    skill_rating: '',
+    earnings: '',
+    total_earnings: '',
+    wins: '',
+    losses: '',
+    total_matches: '',
+    kda: '',
+    main_hero: '',
+    hero_pool: '',
+    status: 'active',
+    nationality: '',
+    jersey_number: '',
+    birth_date: '',
+    age: '',
+    region: '',
+    team_id: '',
+    biography: '',
     description: ''
   });
 
@@ -41,7 +62,7 @@ function AdminPlayers({ navigateTo }) {
       setError(null);
       console.log('🏃 AdminPlayers: Fetching players from real API...');
       
-      const response = await api.get('/admin/players?per_page=500');
+      const response = await api.get('/players?per_page=500');
       
       // Handle Laravel API response structure properly
       let playersData = response?.data?.data || response?.data || response || [];
@@ -182,11 +203,11 @@ function AdminPlayers({ navigateTo }) {
     try {
       if (editingPlayer) {
         // Update existing player
-        await api.put(`/admin/players/${editingPlayer.id}`, formData);
+        await api.put(`/players/${editingPlayer.id}`, formData);
         alert('Player updated successfully!');
       } else {
         // Create new player
-        await api.post('/admin/players', formData);
+        await api.post('/players', formData);
         alert('Player created successfully!');
       }
       
@@ -210,7 +231,7 @@ function AdminPlayers({ navigateTo }) {
         }
 
         console.log('🏃 AdminPlayers: Deleting player with ID:', playerId);
-        await api.delete(`/admin/players/${playerId}`);
+        await api.delete(`/players/${playerId}`);
         await fetchPlayers(); // Refresh the list
         alert('Player deleted successfully!');
       } catch (error) {
@@ -250,7 +271,7 @@ function AdminPlayers({ navigateTo }) {
     const confirmMessage = `Are you sure you want to delete ${selectedPlayers.size} players? This action cannot be undone.`;
     if (window.confirm(confirmMessage)) {
       try {
-        const response = await api.post('/admin/players/bulk-delete', {
+        const response = await api.post('/players/bulk-delete', {
           player_ids: Array.from(selectedPlayers)
         });
         
