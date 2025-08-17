@@ -444,7 +444,7 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
       console.log('Sending hero update to backend:', {
         player_id: playerId,
         hero: hero,
-        map_index: matchData.currentMap
+        map_index: matchData.currentMap - 1  // Convert to 0-based for display
       });
       try {
         const response = await fetch(`${BACKEND_URL}/api/matches/${match.id}/live-update`, {
@@ -456,7 +456,7 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
           body: JSON.stringify({
             type: 'hero-update',
             data: {
-              map_index: matchData.currentMap,
+              map_index: matchData.currentMap - 1,  // Convert to 0-based for backend array indexing
               team: team,
               player_id: playerId,
               hero: hero,
@@ -521,7 +521,7 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
         player_id: playerId,
         stat_type: stat,
         value: numericValue,
-        map_index: matchData.currentMap
+        map_index: matchData.currentMap - 1  // Convert to 0-based for display
       });
       try {
         const response = await fetch(`${BACKEND_URL}/api/matches/${match.id}/live-update`, {
@@ -533,7 +533,7 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
           body: JSON.stringify({
             type: 'stats-update',
             data: {
-              map_index: matchData.currentMap,
+              map_index: matchData.currentMap - 1,  // Convert to 0-based for backend array indexing
               team: team,
               player_id: playerId,
               stat_type: stat,
