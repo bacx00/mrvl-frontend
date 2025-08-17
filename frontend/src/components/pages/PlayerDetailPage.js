@@ -195,44 +195,47 @@ function PlayerDetailPage({ params, navigateTo }) {
         ...Object.fromEntries(Object.entries(currentFilters).filter(([_, value]) => value))
       });
       
-      // Fetch match history with /public/ prefix
-      const response = await api.get(`/public/players/${playerId}/matches?${params}`);
+      // Fetch match history (fallback to regular endpoint)
+      const response = await api.get(`/players/${playerId}/match-history?${params}`);
+      console.log('Match history response:', response);
       
-      // Handle different API response formats
+      // Handle the new detailed API response format
       let matchData = [];
+      let paginationData = null;
       
-      // Check if response has success/data structure
-      if (response.data?.success && response.data?.data) {
+      // The API returns data directly as an array
+      if (response.data && Array.isArray(response.data)) {
+        matchData = response.data;
+        paginationData = response.pagination;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
         matchData = response.data.data;
+        paginationData = response.data.pagination;
       } else if (response.data?.matches) {
         matchData = response.data.matches;
-      } else if (Array.isArray(response.data)) {
-        matchData = response.data;
+        paginationData = response.data.pagination;
       }
       
-      // Transform matches - handle the actual API response structure
+      // Transform matches - handle the new detailed format with map stats
       const transformedMatches = matchData.map(match => {
-        // Check if this is from the new API format
-        if (match.match_id && match.hero_name) {
-          // New format from the API logs
+        // Check if this is from the new detailed API format
+        if (match.map_stats) {
+          // New detailed format with map-specific hero stats
           return {
-            id: match.match_id,
-            event: {
-              name: match.event_name || 'Tournament',
-              logo: match.event_logo
-            },
-            date: match.date || match.played_at,
-            team1: match.player_team || {},
-            team2: { name: match.opponent_team_name },
-            team1_score: match.score ? parseInt(match.score.split('-')[0]) : 0,
-            team2_score: match.score ? parseInt(match.score.split('-')[1]) : 0,
-            format: match.format,
-            player_team: 'team1',
-            player_won: match.result === 'W',
-            total_eliminations: match.kills || 0,
-            total_deaths: match.deaths || 0,
-            total_assists: match.assists || 0,
-            total_damage: match.damage || 0,
+            id: match.match_id || match.id,
+            event: match.event || { name: 'Tournament', logo: null },
+            date: match.date || match.created_at,
+            format: match.format || 'BO3',
+            status: match.status,
+            player_team: match.player_team || match.team1,
+            opponent_team: match.opponent_team || match.team2,
+            result: match.result || 'W',
+            score: match.score || '2-1',
+            map_stats: match.map_stats, // This contains hero stats for each map
+            // Calculate totals from map stats
+            total_eliminations: match.map_stats.reduce((sum, m) => sum + (m.stats?.kills || 0), 0),
+            total_deaths: match.map_stats.reduce((sum, m) => sum + (m.stats?.deaths || 0), 0),
+            total_assists: match.map_stats.reduce((sum, m) => sum + (m.stats?.assists || 0), 0),
+            total_damage: match.map_stats.reduce((sum, m) => sum + (parseInt(m.stats?.damage) || 0), 0),
             total_healing: match.healing || 0,
             total_blocked: match.blocked || 0,
             hero_played: match.hero_name,
@@ -265,8 +268,10 @@ function PlayerDetailPage({ params, navigateTo }) {
       
       setMatchHistory(transformedMatches);
       
-      // Set pagination
-      if (response.data?.pagination) {
+      // Set pagination - prioritize paginationData from detailed endpoint
+      if (paginationData) {
+        setPagination(paginationData);
+      } else if (response.data?.pagination) {
         setPagination(response.data.pagination);
       } else {
         setPagination({
@@ -810,8 +815,8 @@ function PlayerDetailPage({ params, navigateTo }) {
                   <tbody>
                     {matchHistory.map((match) => {
                       // Show each map's hero performance
-                      if (match.player_maps && match.player_maps.length > 0) {
-                        return match.player_maps.map((mapData, idx) => (
+                      if (match.map_stats && match.map_stats.length > 0) {
+                        return match.map_stats.map((mapData, idx) => (
                           <tr key={`${match.id}-${idx}`} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                             <td className="py-3 px-3">
                               <div className="flex items-center space-x-2">
@@ -845,31 +850,31 @@ function PlayerDetailPage({ params, navigateTo }) {
                               </div>
                             </td>
                             <td className="text-center py-3 px-3 font-medium text-gray-900 dark:text-white">
-                              {mapData.eliminations}
+                              {mapData.stats?.kills || 0}
                             </td>
                             <td className="text-center py-3 px-3 font-medium text-gray-900 dark:text-white">
-                              {mapData.deaths}
+                              {mapData.stats?.deaths || 0}
                             </td>
                             <td className="text-center py-3 px-3 font-medium text-gray-900 dark:text-white">
-                              {mapData.assists}
+                              {mapData.stats?.assists || 0}
                             </td>
                             <td className="text-center py-3 px-3 font-bold">
                               <span className={`${
-                                formatKDA(mapData.eliminations, mapData.deaths, mapData.assists) >= 3 ? 'text-green-600 dark:text-green-400' :
-                                formatKDA(mapData.eliminations, mapData.deaths, mapData.assists) >= 2 ? 'text-gray-900 dark:text-white' :
+                                formatKDA(mapData.stats?.kills || 0, mapData.stats?.deaths || 0, mapData.stats?.assists || 0) >= 3 ? 'text-green-600 dark:text-green-400' :
+                                formatKDA(mapData.stats?.kills || 0, mapData.stats?.deaths || 0, mapData.stats?.assists || 0) >= 2 ? 'text-gray-900 dark:text-white' :
                                 'text-red-600 dark:text-red-400'
                               }`}>
-                                {formatKDA(mapData.eliminations, mapData.deaths, mapData.assists)}
+                                {formatKDA(mapData.stats?.kills || 0, mapData.stats?.deaths || 0, mapData.stats?.assists || 0)}
                               </span>
                             </td>
                             <td className="text-center py-3 px-3 text-gray-900 dark:text-white">
-                              {formatDamage(mapData.damage || 0)}
+                              {formatDamage(mapData.stats?.damage || 0)}
                             </td>
                             <td className="text-center py-3 px-3 text-gray-900 dark:text-white">
-                              {mapData.healing > 0 ? formatDamage(mapData.healing) : '-'}
+                              {mapData.stats?.healing > 0 ? formatDamage(mapData.stats?.healing) : '-'}
                             </td>
                             <td className="text-center py-3 px-3 text-gray-900 dark:text-white">
-                              {mapData.damage_blocked > 0 ? formatDamage(mapData.damage_blocked) : '-'}
+                              {mapData.stats?.blocked > 0 ? formatDamage(mapData.stats?.blocked) : '-'}
                             </td>
                           </tr>
                         ));
@@ -966,7 +971,7 @@ function PlayerDetailPage({ params, navigateTo }) {
               <div className="space-y-4">
                 {matchHistory.map((match) => (
                   <div key={match.id} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                    {/* Match Card */}
+                    {/* Match Header */}
                     <div className="p-4 bg-gray-50 dark:bg-gray-800/50">
                       <div className="flex items-center justify-between">
                         {/* Event Info */}
@@ -990,32 +995,113 @@ function PlayerDetailPage({ params, navigateTo }) {
                         {/* Teams and Score */}
                         <div className="flex items-center space-x-8">
                           <div className="flex items-center space-x-3">
-                            <TeamLogo team={match.team1} size="w-8 h-8" />
-                            <span className={`font-medium ${match.player_team === 'team1' ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'}`}>
-                              {match.team1?.name || 'Team 1'}
+                            <TeamLogo team={match.player_team} size="w-8 h-8" />
+                            <span className="font-medium text-gray-900 dark:text-white">
+                              {match.player_team?.name || 'Team'}
                             </span>
                           </div>
                           
                           <div className="text-xl font-bold">
-                            <span className={match.team1_score > match.team2_score ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}>
-                              {match.team1_score || 0}
+                            <span className={match.result === 'W' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                              {match.score || '0-0'}
                             </span>
-                            <span className="text-gray-500 dark:text-gray-500 mx-2">:</span>
-                            <span className={match.team2_score > match.team1_score ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}>
-                              {match.team2_score || 0}
+                            <span className={`ml-2 text-sm px-2 py-1 rounded ${
+                              match.result === 'W' 
+                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
+                                : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                            }`}>
+                              {match.result}
                             </span>
                           </div>
                           
                           <div className="flex items-center space-x-3">
-                            <span className={`font-medium ${match.player_team === 'team2' ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'}`}>
-                              {match.team2?.name || 'Team 2'}
+                            <span className="font-medium text-gray-600 dark:text-gray-400">
+                              {match.opponent_team?.name || 'Opponent'}
                             </span>
-                            <TeamLogo team={match.team2} size="w-8 h-8" />
+                            <TeamLogo team={match.opponent_team} size="w-8 h-8" />
                           </div>
                         </div>
-
                       </div>
                     </div>
+
+                    {/* Map Stats */}
+                    {match.map_stats && match.map_stats.length > 0 && (
+                      <div className="bg-white dark:bg-gray-900">
+                        <table className="w-full">
+                          <thead className="bg-gray-100 dark:bg-gray-800">
+                            <tr>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Map</th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Hero</th>
+                              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400">K</th>
+                              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400">D</th>
+                              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400">A</th>
+                              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400">KDA</th>
+                              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400">DMG</th>
+                              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Heal</th>
+                              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400">BLK</th>
+                              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Score</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {match.map_stats.map((mapData, idx) => (
+                              <tr key={idx} className="border-t border-gray-100 dark:border-gray-800">
+                                <td className="px-4 py-3">
+                                  <div>
+                                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                      Map {mapData.map_number}
+                                    </div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                                      {mapData.map_name}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center space-x-2">
+                                    <img 
+                                      src={getHeroImageSync(mapData.hero)}
+                                      alt={mapData.hero}
+                                      className="w-8 h-8 rounded"
+                                      onError={(e) => { e.target.src = '/images/hero-placeholder.svg'; }}
+                                    />
+                                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                      {mapData.hero}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-center text-sm text-gray-900 dark:text-white">
+                                  {mapData.stats?.kills || 0}
+                                </td>
+                                <td className="px-4 py-3 text-center text-sm text-gray-900 dark:text-white">
+                                  {mapData.stats?.deaths || 0}
+                                </td>
+                                <td className="px-4 py-3 text-center text-sm text-gray-900 dark:text-white">
+                                  {mapData.stats?.assists || 0}
+                                </td>
+                                <td className="px-4 py-3 text-center text-sm font-medium text-gray-900 dark:text-white">
+                                  {mapData.stats?.kda || '0.00'}
+                                </td>
+                                <td className="px-4 py-3 text-center text-sm text-gray-900 dark:text-white">
+                                  {mapData.stats?.damage || '-'}
+                                </td>
+                                <td className="px-4 py-3 text-center text-sm text-gray-900 dark:text-white">
+                                  {mapData.stats?.healing || '-'}
+                                </td>
+                                <td className="px-4 py-3 text-center text-sm text-gray-900 dark:text-white">
+                                  {mapData.stats?.blocked || '-'}
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                  <span className={`text-sm font-medium ${
+                                    mapData.won ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                                  }`}>
+                                    {mapData.team_score}-{mapData.opponent_score}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 ))}
 
