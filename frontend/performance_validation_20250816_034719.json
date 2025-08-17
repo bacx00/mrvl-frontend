@@ -1,0 +1,44 @@
+{
+  "test_start": "2025-08-16T03:46:13.300865",
+  "match_id": 6,
+  "base_url": "https://staging.mrvl.net",
+  "burst_performance": {
+    "total_requests": 20,
+    "successful_requests": 20,
+    "success_rate": 100.0,
+    "total_time": 2.7509186267852783,
+    "requests_per_second": 7.27029865778763,
+    "avg_response_time": 86.04042530059814,
+    "median_response_time": 76.79426670074463,
+    "min_response_time": 62.099456787109375,
+    "max_response_time": 174.4379997253418,
+    "std_dev_response_time": 26.963370014626424
+  },
+  "concurrent_performance": {
+    "concurrent_users": 10,
+    "total_requests": 50,
+    "successful_requests": 50,
+    "success_rate": 100.0,
+    "total_time": 1.8905510902404785,
+    "avg_response_time": 248.04776668548584,
+    "max_response_time": 751.6536712646484,
+    "performance_degradation": 208.77170687117146
+  },
+  "data_consistency": {
+    "total_snapshots": 12,
+    "unique_score_combinations": 1,
+    "unique_statuses": 1,
+    "score_changes": 0,
+    "status_changes": 0,
+    "duration_minutes": 1,
+    "consistency_score": 100
+  },
+  "error_handling": {
+    "total_error_tests": 3,
+    "correctly_handled": 2,
+    "error_handling_score": 66.66666666666666,
+    "recovery_successful": true
+  },
+  "overall_performance_score": 90,
+  "test_end": "2025-08-16T03:47:19.197677"
+}

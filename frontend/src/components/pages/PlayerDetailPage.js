@@ -335,34 +335,8 @@ function PlayerDetailPage({ params, navigateTo }) {
   const handleEditPlayer = () => {
     if (!player) return;
     
-    setEditFormData({
-      username: player.username || '',
-      realName: player.realName || '',
-      age: player.age || '',
-      country: player.country || '',
-      nationality: player.nationality || '',
-      region: player.region || '',
-      role: player.role || '',
-      mainHero: player.mainHero || '',
-      heroPool: player.heroPool || '',
-      biography: player.biography || '',
-      jerseyNumber: player.jerseyNumber || '',
-      birthDate: player.birthDate || '',
-      totalEarnings: player.totalEarnings || 0,
-      earnings: player.earnings || 0,
-      earningsAmount: player.earningsAmount || 0,
-      earningsCurrency: player.earningsCurrency || 'USD',
-      status: player.status || 'Active',
-      // Social media
-      twitter: player.socialMedia?.twitter || '',
-      instagram: player.socialMedia?.instagram || '',
-      youtube: player.socialMedia?.youtube || '',
-      twitch: player.socialMedia?.twitch || '',
-      discord: player.socialMedia?.discord || '',
-      tiktok: player.socialMedia?.tiktok || '',
-      facebook: player.socialMedia?.facebook || '',
-    });
-    setIsEditing(true);
+    // Navigate to dedicated admin player edit form instead of inline editing
+    window.location.hash = `admin-player-edit/${player.id}`;
   };
 
   const handleCancelEdit = () => {

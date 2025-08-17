@@ -214,11 +214,15 @@ const FreeAgentsPage = () => {
                     <div className="detail-row">
                       <span className="detail-label">Country:</span>
                       <span className="detail-value">
-                        <img 
-                          src={player.flag} 
-                          alt={player.country}
-                          className="country-flag"
-                        />
+                        {player.flag && player.flag.startsWith('http') ? (
+                          <img 
+                            src={player.flag} 
+                            alt={player.country}
+                            className="country-flag"
+                          />
+                        ) : (
+                          <span className="country-flag">{player.flag}</span>
+                        )}
                         {player.country}
                       </span>
                     </div>

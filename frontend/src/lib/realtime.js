@@ -150,7 +150,7 @@ class RealtimeManager {
   // Send immediate update to backend (for admin actions)
   async sendUpdate(matchId, updateType, data) {
     try {
-      const response = await fetch(`${this.baseUrl}/api/admin/matches/${matchId}/live-update`, {
+      const response = await fetch(`${this.baseUrl}/api/matches/${matchId}/live-update`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

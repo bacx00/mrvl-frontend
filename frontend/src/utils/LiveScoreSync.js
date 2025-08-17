@@ -6,26 +6,88 @@
  * - Polling fallback for server synchronization
  * - Immediate reflection of all changes (heroes, stats, scores)
  * - No Pusher/WebSocket dependencies
+ * - Debounced updates to prevent excessive re-renders
+ * - Proper cleanup to prevent memory leaks
  */
+
+import { debounce, UpdateBatcher } from './debounce';
+import cleanupManager from './cleanupManager';
 
 class LiveScoreSync {
   constructor() {
     this.listeners = new Map();
     this.pollingIntervals = new Map();
     this.STORAGE_KEY_PREFIX = 'mrvl_live_match_';
-    this.POLLING_INTERVAL = 200; // 200ms (0.2 seconds) for ultra-fast updates
+    this.POLLING_INTERVAL = 2000; // 2 seconds for balanced real-time updates
     this.API_BASE = process.env.REACT_APP_BACKEND_URL || 'https://staging.mrvl.net';
     this.lastPollTime = new Map(); // Track last poll time to prevent overwhelming
+    this.updateBatchers = new Map(); // Batch rapid updates per match
+    this.abortControllers = new Map(); // Track fetch requests for cleanup
+    this.isPaused = false; // Track if operations are paused
     
-    // Bind event handler
+    // Bind event handlers
     this.handleStorageChange = this.handleStorageChange.bind(this);
+    this.handlePause = this.handlePause.bind(this);
+    this.handleResume = this.handleResume.bind(this);
+    this.destroy = this.destroy.bind(this);
     
     // Start listening to storage events
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', this.handleStorageChange);
+      window.addEventListener('mrvl-pause-operations', this.handlePause);
+      window.addEventListener('mrvl-resume-operations', this.handleResume);
+      
+      // Register cleanup with global manager
+      cleanupManager.register(this.destroy);
     }
     
-    console.log('⚡ LiveScoreSync initialized - localStorage + 200ms ultra-fast polling ready');
+    console.log('⚡ LiveScoreSync initialized - localStorage + 2s polling ready');
+  }
+  
+  /**
+   * Handle pause operations (tab hidden)
+   */
+  handlePause() {
+    this.isPaused = true;
+    console.log('⏸️ LiveScoreSync paused - tab hidden');
+  }
+  
+  /**
+   * Handle resume operations (tab visible)
+   */
+  handleResume() {
+    this.isPaused = false;
+    console.log('▶️ LiveScoreSync resumed - tab visible');
+  }
+  
+  /**
+   * Cleanup all resources
+   */
+  destroy() {
+    // Remove event listeners
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('storage', this.handleStorageChange);
+      window.removeEventListener('mrvl-pause-operations', this.handlePause);
+      window.removeEventListener('mrvl-resume-operations', this.handleResume);
+    }
+    
+    // Clear all polling intervals
+    this.pollingIntervals.forEach(interval => clearInterval(interval));
+    this.pollingIntervals.clear();
+    
+    // Abort all pending requests
+    this.abortControllers.forEach(controller => controller.abort());
+    this.abortControllers.clear();
+    
+    // Clear all batchers
+    this.updateBatchers.forEach(batcher => batcher.clear());
+    this.updateBatchers.clear();
+    
+    // Clear all listeners
+    this.listeners.clear();
+    this.lastPollTime.clear();
+    
+    console.log('🧹 LiveScoreSync destroyed - all resources cleaned up');
   }
   
   /**
@@ -38,14 +100,27 @@ class LiveScoreSync {
       this.listeners.set(key, new Set());
     }
     
-    this.listeners.get(key).add(callback);
+    // Wrap callback in debounce to prevent rapid re-renders
+    const debouncedCallback = debounce(callback, 100);
+    debouncedCallback.original = callback; // Store original for unsubscribe
+    
+    this.listeners.get(key).add(debouncedCallback);
+    
+    // Initialize update batcher for this match
+    if (!this.updateBatchers.has(matchId)) {
+      this.updateBatchers.set(matchId, new UpdateBatcher((updates) => {
+        // Merge all updates and notify listeners once
+        const mergedUpdate = updates.reduce((acc, update) => ({ ...acc, ...update }), {});
+        this.notifyListeners(matchId, mergedUpdate);
+      }, 50)); // 50ms batch window
+    }
     
     // Start polling for this match
     this.startPolling(matchId);
     
     // Return unsubscribe function
     return () => {
-      this.unsubscribe(matchId, callback);
+      this.unsubscribe(matchId, debouncedCallback);
     };
   }
   
@@ -56,12 +131,25 @@ class LiveScoreSync {
     const key = `match_${matchId}`;
     
     if (this.listeners.has(key)) {
-      this.listeners.get(key).delete(callback);
+      // Find and remove the debounced callback
+      const listeners = this.listeners.get(key);
+      listeners.forEach(listener => {
+        if (listener === callback || listener.original === callback) {
+          if (listener.cancel) listener.cancel(); // Cancel any pending debounced calls
+          listeners.delete(listener);
+        }
+      });
       
       // Stop polling if no more listeners
       if (this.listeners.get(key).size === 0) {
         this.stopPolling(matchId);
         this.listeners.delete(key);
+        
+        // Clean up batcher
+        if (this.updateBatchers.has(matchId)) {
+          this.updateBatchers.get(matchId).clear();
+          this.updateBatchers.delete(matchId);
+        }
       }
     }
   }
@@ -112,7 +200,7 @@ class LiveScoreSync {
   }
   
   /**
-   * Start ultra-fast polling for match updates
+   * Start polling for match updates with proper cleanup
    */
   startPolling(matchId) {
     // Clear existing interval if any
@@ -121,21 +209,32 @@ class LiveScoreSync {
     // Initialize last poll time
     this.lastPollTime.set(matchId, 0);
     
+    // Create abort controller for this match
+    const abortController = new AbortController();
+    this.abortControllers.set(matchId, abortController);
+    
     // Poll for updates with rate limiting
     const pollInterval = setInterval(async () => {
-      // Rate limiting - ensure minimum 200ms between requests
+      // Skip if paused (tab hidden)
+      if (this.isPaused) {
+        return;
+      }
+      
+      // Rate limiting - ensure minimum 2000ms between requests
       const now = Date.now();
       const lastPoll = this.lastPollTime.get(matchId) || 0;
-      if (now - lastPoll < 200) {
+      if (now - lastPoll < 2000) {
         return; // Skip this poll if too soon
       }
       this.lastPollTime.set(matchId, now);
+      
       try {
         const response = await fetch(`${this.API_BASE}/api/matches/${matchId}`, {
           headers: {
             'Accept': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
-          }
+          },
+          signal: abortController.signal // Allow aborting of fetch
         });
         
         if (response.ok) {
@@ -154,29 +253,43 @@ class LiveScoreSync {
               source: 'polling'
             };
             
-            // Store and notify
-            localStorage.setItem(storageKey, JSON.stringify(updateData));
-            this.notifyListeners(matchId, updateData);
+            // Use batcher if available for this match
+            if (this.updateBatchers.has(matchId)) {
+              this.updateBatchers.get(matchId).add(updateData);
+            } else {
+              // Direct update if no batcher
+              localStorage.setItem(storageKey, JSON.stringify(updateData));
+              this.notifyListeners(matchId, updateData);
+            }
           }
         }
       } catch (error) {
-        console.error(`Polling error for match ${matchId}:`, error);
+        if (error.name !== 'AbortError') {
+          console.error(`Polling error for match ${matchId}:`, error);
+        }
       }
     }, this.POLLING_INTERVAL);
     
     this.pollingIntervals.set(matchId, pollInterval);
-    console.log(`⚡ Started ultra-fast polling for match ${matchId} (200ms intervals)`);
+    console.log(`⚡ Started polling for match ${matchId} (2s intervals with debouncing)`);
   }
   
   /**
    * Stop polling for match updates
    */
   stopPolling(matchId) {
+    // Clear polling interval
     if (this.pollingIntervals.has(matchId)) {
       clearInterval(this.pollingIntervals.get(matchId));
       this.pollingIntervals.delete(matchId);
       this.lastPollTime.delete(matchId);
-      console.log(`⏹️ Stopped ultra-fast polling for match ${matchId}`);
+      console.log(`⏹️ Stopped polling for match ${matchId}`);
+    }
+    
+    // Abort any pending fetch requests
+    if (this.abortControllers.has(matchId)) {
+      this.abortControllers.get(matchId).abort();
+      this.abortControllers.delete(matchId);
     }
   }
   
@@ -184,6 +297,10 @@ class LiveScoreSync {
    * Check if data has meaningful changes
    */
   hasChanges(newData, oldData) {
+    // Extract the actual data object if it exists
+    const newActualData = newData.data || newData;
+    const oldActualData = oldData.data || oldData;
+    
     // Check critical fields for changes
     const fieldsToCheck = [
       'team1_score', 'team2_score', 'status',
@@ -192,22 +309,25 @@ class LiveScoreSync {
     ];
     
     for (const field of fieldsToCheck) {
-      if (newData[field] !== oldData[field]) {
-        console.log(`⚡ Field changed: ${field} from ${oldData[field]} to ${newData[field]}`);
+      if (newActualData[field] !== oldActualData[field]) {
+        console.log(`⚡ Field changed: ${field} from ${oldActualData[field]} to ${newActualData[field]}`);
         return true;
       }
     }
     
     // Deep check maps for changes including player compositions
-    if (newData.maps && oldData.maps) {
-      const newMapsStr = JSON.stringify(newData.maps);
-      const oldMapsStr = JSON.stringify(oldData.maps);
+    const newMapsData = newActualData.maps || newData.maps;
+    const oldMapsData = oldActualData.maps || oldData.maps;
+    
+    if (newMapsData && oldMapsData) {
+      const newMapsStr = JSON.stringify(newMapsData);
+      const oldMapsStr = JSON.stringify(oldMapsData);
       
       if (newMapsStr !== oldMapsStr) {
         // Log specific changes for debugging
-        for (let i = 0; i < Math.max(newData.maps?.length || 0, oldData.maps?.length || 0); i++) {
-          const newMap = newData.maps?.[i];
-          const oldMap = oldData.maps?.[i];
+        for (let i = 0; i < Math.max(newMapsData?.length || 0, oldMapsData?.length || 0); i++) {
+          const newMap = newMapsData?.[i];
+          const oldMap = oldMapsData?.[i];
           
           if (JSON.stringify(newMap) !== JSON.stringify(oldMap)) {
             console.log(`⚡ Map ${i + 1} changed`);
@@ -228,7 +348,7 @@ class LiveScoreSync {
         }
         return true;
       }
-    } else if (newData.maps || oldData.maps) {
+    } else if (newMapsData || oldMapsData) {
       // One has maps, the other doesn't
       return true;
     }

@@ -6,8 +6,8 @@ import AdminPlayers from './AdminPlayers';
 import AdminMatches from './AdminMatches';
 import AdminEvents from './AdminEvents';
 import AdminUsers from './AdminUsers';
-import AdminNews from './AdminNews';
-import AdminForums from './AdminForums';
+import AdminNewsSimplified from './AdminNewsSimplified';
+import AdminForumsSimplified from './AdminForumsSimplified';
 import AdminBulkOperations from './AdminBulkOperations';
 import AdminProfile from './AdminProfile';
 import { ROLES, hasRole, hasMinimumRole } from '../../utils/roleUtils';
@@ -119,9 +119,9 @@ function AdminDashboardContent({ navigateTo }) {
       case 'users':
         return hasRole(user, ROLES.ADMIN) ? <AdminUsers /> : <AccessDenied />;
       case 'news':
-        return hasMinimumRole(user, ROLES.MODERATOR) ? <AdminNews /> : <AccessDenied />;
+        return hasMinimumRole(user, ROLES.MODERATOR) ? <AdminNewsSimplified navigateTo={navigateTo} /> : <AccessDenied />;
       case 'forums':
-        return hasMinimumRole(user, ROLES.MODERATOR) ? <AdminForums /> : <AccessDenied />;
+        return hasMinimumRole(user, ROLES.MODERATOR) ? <AdminForumsSimplified navigateTo={navigateTo} /> : <AccessDenied />;
       case 'bulk-operations':
         return hasRole(user, ROLES.ADMIN) ? <AdminBulkOperations /> : <AccessDenied />;
       case 'profile':

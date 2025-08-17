@@ -91,6 +91,7 @@ export const getImageUrl = (imagePath, type = 'general') => {
       // Correcting old domain URL
       return correctedUrl;
     }
+    // If it's already a complete URL, return as-is
     return imagePath;
   }
 

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TeamLogo } from '../utils/imageUtils';
+import { useAuth } from '../hooks';
 
 function LiquipediaBracket({ 
   bracket, 
@@ -10,6 +11,11 @@ function LiquipediaBracket({
   onMatchUpdate 
 }) {
   console.log('LiquipediaBracket props:', { bracket, event, eventId }); // For debugging
+  
+  const [editingMatch, setEditingMatch] = useState(null);
+  const [team1Score, setTeam1Score] = useState(0);
+  const [team2Score, setTeam2Score] = useState(0);
+  const { api } = useAuth();
 
   // If no bracket provided, show empty state
   if (!bracket) {
@@ -35,14 +41,63 @@ function LiquipediaBracket({
 
   // Parse bracket data for single elimination
   const parseMatches = (bracket) => {
-    if (!bracket.rounds || bracket.rounds.length === 0) {
-      return [];
+    // Handle different bracket formats
+    
+    // If rounds is an object with round names as keys
+    if (bracket.rounds && typeof bracket.rounds === 'object' && !Array.isArray(bracket.rounds)) {
+      const roundsArray = [];
+      const roundNames = Object.keys(bracket.rounds);
+      
+      // Sort rounds by round_number
+      roundNames.sort((a, b) => {
+        const roundA = bracket.rounds[a];
+        const roundB = bracket.rounds[b];
+        return (roundA.round_number || 0) - (roundB.round_number || 0);
+      });
+      
+      roundNames.forEach(roundName => {
+        const round = bracket.rounds[roundName];
+        roundsArray.push({
+          name: roundName,
+          matches: round.matches || []
+        });
+      });
+      
+      return roundsArray;
     }
-
-    return bracket.rounds.map((round, roundIndex) => ({
-      name: getRoundName(roundIndex, bracket.rounds.length),
-      matches: round.matches || []
-    }));
+    
+    // If rounds is already an array
+    if (bracket.rounds && Array.isArray(bracket.rounds)) {
+      return bracket.rounds.map((round, roundIndex) => ({
+        name: getRoundName(roundIndex, bracket.rounds.length),
+        matches: round.matches || []
+      }));
+    }
+    
+    // If bracket has matches array directly
+    if (bracket.matches && Array.isArray(bracket.matches)) {
+      // Group matches by round
+      const roundsMap = {};
+      bracket.matches.forEach(match => {
+        const roundName = match.round_name || `Round ${match.round_number || 1}`;
+        if (!roundsMap[roundName]) {
+          roundsMap[roundName] = {
+            name: roundName,
+            round_number: match.round_number || 1,
+            matches: []
+          };
+        }
+        roundsMap[roundName].matches.push(match);
+      });
+      
+      // Convert to array and sort by round number
+      const roundsArray = Object.values(roundsMap);
+      roundsArray.sort((a, b) => (a.round_number || 0) - (b.round_number || 0));
+      
+      return roundsArray;
+    }
+    
+    return [];
   };
 
   const getRoundName = (roundIndex, totalRounds) => {
@@ -61,6 +116,101 @@ function LiquipediaBracket({
   };
 
   const rounds = parseMatches(bracket);
+
+  // Score Edit Modal - needs to be inside the component return
+  const renderScoreEditModal = () => {
+    if (!editingMatch) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Update Match Score
+          </h3>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {editingMatch.team1?.name || 'Team 1'}
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="3"
+                  value={team1Score}
+                  onChange={(e) => setTeam1Score(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+              <div className="px-4 text-gray-500 dark:text-gray-400">vs</div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {editingMatch.team2?.name || 'Team 2'}
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="3"
+                  value={team2Score}
+                  onChange={(e) => setTeam2Score(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={handleCancelEdit}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveScore}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              >
+                Save Score
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const handleSaveScore = async () => {
+    if (!editingMatch) return;
+    
+    try {
+      const response = await api.put(`/admin/bracket-matches/${editingMatch.id}/score`, {
+        team1_score: parseInt(team1Score),
+        team2_score: parseInt(team2Score)
+      });
+      
+      if (response.data?.success) {
+        // Update was successful - update bracket immediately
+        setEditingMatch(null);
+        
+        // Call the parent component's update handler to refresh bracket data
+        if (onMatchUpdate) {
+          onMatchUpdate(editingMatch.id, {
+            team1_score: parseInt(team1Score),
+            team2_score: parseInt(team2Score)
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error updating match score:', error);
+      alert('Failed to update match score');
+    }
+  };
+  
+  const handleCancelEdit = () => {
+    setEditingMatch(null);
+    setTeam1Score(0);
+    setTeam2Score(0);
+  };
 
   return (
     <div className="liquipedia-bracket">
@@ -159,6 +309,15 @@ function LiquipediaBracket({
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           font-size: 12px;
           min-width: 200px;
+        }
+
+        .liquipedia-match.admin-editable {
+          border-color: #dc2626;
+          border-width: 2px;
+        }
+
+        .liquipedia-match.admin-editable:hover {
+          box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
         }
 
         .liquipedia-match:hover {
@@ -293,6 +452,17 @@ function LiquipediaBracket({
           text-overflow: ellipsis;
           transition: color 0.15s ease;
           max-width: 120px;
+        }
+
+        .team-name.team-clickable {
+          cursor: pointer;
+          color: var(--bracket-text);
+          transition: color 0.15s ease;
+        }
+
+        .team-name.team-clickable:hover {
+          color: #dc2626;
+          text-decoration: underline;
         }
 
         .team-placeholder {
@@ -598,15 +768,21 @@ function LiquipediaBracket({
               navigateTo={navigateTo}
               isAdmin={isAdmin}
               onMatchUpdate={onMatchUpdate}
+              setEditingMatch={setEditingMatch}
+              setTeam1Score={setTeam1Score}
+              setTeam2Score={setTeam2Score}
             />
           ))}
         </div>
       </div>
+      
+      {/* Render Score Edit Modal */}
+      {renderScoreEditModal()}
     </div>
   );
 }
 
-function BracketRound({ round, roundIndex, totalRounds, navigateTo, isAdmin, onMatchUpdate }) {
+function BracketRound({ round, roundIndex, totalRounds, navigateTo, isAdmin, onMatchUpdate, setEditingMatch, setTeam1Score, setTeam2Score }) {
   return (
     <div className="bracket-round">
       <div className="round-header">
@@ -629,6 +805,11 @@ function BracketRound({ round, roundIndex, totalRounds, navigateTo, isAdmin, onM
               navigateTo={navigateTo}
               isAdmin={isAdmin}
               onMatchUpdate={onMatchUpdate}
+              onEditMatch={(match) => {
+                setEditingMatch(match);
+                setTeam1Score(match.team1?.score || match.team1_score || 0);
+                setTeam2Score(match.team2?.score || match.team2_score || 0);
+              }}
               showConnector={roundIndex < totalRounds - 1}
             />
             
@@ -706,7 +887,7 @@ function BracketConnector({ matchIndex, totalMatches }) {
   return null;
 }
 
-function LiquipediaMatch({ match, navigateTo, isAdmin, onMatchUpdate, showConnector }) {
+function LiquipediaMatch({ match, navigateTo, isAdmin, onMatchUpdate, showConnector, onEditMatch }) {
   const isCompleted = match.status === 'completed' || match.finished;
   const isLive = match.status === 'live';
   const team1Won = isCompleted && (match.winner === 1 || (match.team1_score > match.team2_score));
@@ -732,8 +913,20 @@ function LiquipediaMatch({ match, navigateTo, isAdmin, onMatchUpdate, showConnec
   };
 
   const handleMatchClick = () => {
-    if (match.id && navigateTo) {
+    if (isAdmin && onEditMatch) {
+      // Admin/Moderator: Show edit modal
+      onEditMatch(match);
+    } else if (navigateTo) {
+      // Regular user: Navigate to match details page
       navigateTo('match-detail', { id: match.id });
+    }
+  };
+
+  const handleTeamClick = (team, e) => {
+    // Prevent match click when clicking team
+    e.stopPropagation();
+    if (team && team.id && navigateTo) {
+      navigateTo('team-detail', { id: team.id });
     }
   };
 
@@ -781,14 +974,27 @@ function LiquipediaMatch({ match, navigateTo, isAdmin, onMatchUpdate, showConnec
     return null;
   };
 
+  // Debug logging for admin controls
+  console.log('🔧 LiquipediaMatch render - isAdmin:', isAdmin, 'match.id:', match.id);
+
   return (
     <div 
-      className={`liquipedia-match ${isLive ? 'live' : ''} ${isCompleted ? 'completed' : ''}`}
+      className={`liquipedia-match ${isLive ? 'live' : ''} ${isCompleted ? 'completed' : ''} ${isAdmin ? 'admin-editable' : ''}`}
       onClick={handleMatchClick}
+      title={isAdmin ? 'Click to edit match score' : 'Click for match details'}
     >
       {/* Match Header */}
       <div className="match-header">
         <span className="match-format">{getMatchFormat()}</span>
+        {isAdmin && (
+          <span className="admin-indicator" style={{ 
+            fontSize: '9px', 
+            color: '#dc2626', 
+            fontWeight: 'bold' 
+          }}>
+            ✎ EDIT
+          </span>
+        )}
         {isLive && (
           <div className="live-indicator">
             <div className="live-dot"></div>
@@ -809,7 +1015,10 @@ function LiquipediaMatch({ match, navigateTo, isAdmin, onMatchUpdate, showConnec
                   </span>
                 )}
                 {renderTeamLogo(match.team1 || match.opponent1)}
-                <span className="team-name">
+                <span 
+                  className="team-name team-clickable"
+                  onClick={(e) => handleTeamClick(match.team1 || match.opponent1, e)}
+                >
                   {getTeamName(match.team1 || match.opponent1)}
                 </span>
               </>
@@ -832,7 +1041,10 @@ function LiquipediaMatch({ match, navigateTo, isAdmin, onMatchUpdate, showConnec
                   </span>
                 )}
                 {renderTeamLogo(match.team2 || match.opponent2)}
-                <span className="team-name">
+                <span 
+                  className="team-name team-clickable"
+                  onClick={(e) => handleTeamClick(match.team2 || match.opponent2, e)}
+                >
                   {getTeamName(match.team2 || match.opponent2)}
                 </span>
               </>

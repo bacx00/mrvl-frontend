@@ -75,8 +75,31 @@ const HeroImage = ({
     );
   }
 
-  // Show placeholder if no hero name
-  if (!heroName || !heroData) {
+  // Show Spider-Man as default hero if no hero name specified
+  if (!heroName) {
+    // Use the actual Spider-Man webp image path
+    const defaultHeroUrl = 'https://staging.mrvl.net/images/heroes/spider-man-headbig.webp';
+    return (
+      <div className={`${currentSizeClass} ${className} flex items-center justify-center`}>
+        <img
+          src={defaultHeroUrl}
+          alt="Spider-Man"
+          className="w-full h-full object-contain"
+          onError={(e) => {
+            // Fallback to text if Spider-Man image fails
+            e.target.style.display = 'none';
+            const span = document.createElement('span');
+            span.className = 'text-gray-500 text-xs font-medium';
+            span.textContent = 'SM';
+            e.target.parentElement.appendChild(span);
+          }}
+        />
+      </div>
+    );
+  }
+  
+  // Show placeholder if heroData loading failed
+  if (!heroData) {
     return (
       <div className={`${currentSizeClass} ${className} bg-gray-200 rounded-full flex items-center justify-center`}>
         <span className="text-gray-400">?</span>
@@ -104,7 +127,7 @@ const HeroImage = ({
         <img
           src={imageUrl}
           alt={heroData.hero_name}
-          className={`${className.includes('w-full') ? 'w-full h-full' : currentSizeClass} rounded-full object-cover`}
+          className={`${className.includes('w-full') ? 'w-full h-full' : currentSizeClass} object-contain`}
           onError={() => setImageError(true)}
         />
       ) : (

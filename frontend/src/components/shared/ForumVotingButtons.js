@@ -130,20 +130,9 @@ function ForumVotingButtons({
         throw new Error(`Unknown item type: ${itemType}`);
       }
 
-      // If user is trying to change their vote, handle it properly
-      if (currentVote && currentVote !== voteType) {
-        console.log(`Changing vote from ${currentVote} to ${voteType}`);
-        
-        // First, remove the existing vote by sending a DELETE request or the same vote again
-        try {
-          // Try sending the same vote (this should remove it in many APIs)
-          await api.post(endpoint, { vote_type: currentVote });
-          console.log('Existing vote removed');
-        } catch (removeError) {
-          console.log('Could not remove existing vote, proceeding with change');
-        }
-      }
-
+      // Determine if we're toggling (removing) or changing vote
+      const isToggling = currentVote === voteType;
+      
       const payload = {
         vote_type: voteType
       };
@@ -220,30 +209,10 @@ function ForumVotingButtons({
       
       // Handle 409 Conflict - vote already exists
       if (error.response?.status === 409) {
-        console.log('Vote conflict (409) - vote already exists, syncing state');
-        
-        // The vote already exists on the server, so update local state to match
-        setCurrentVote(voteType);
-        
-        // If clicking the same vote type that already exists, treat it as a toggle off
-        if (currentVote === voteType) {
-          console.log('Same vote already exists - removing');
-          // Send request to remove the vote
-          try {
-            const removeResponse = await api.post(endpoint, { vote_type: voteType });
-            if (removeResponse?.data) {
-              const serverCounts = removeResponse.data?.updated_stats || removeResponse.data?.stats;
-              if (serverCounts) {
-                setUpvotes(serverCounts.upvotes || 0);
-                setDownvotes(serverCounts.downvotes || 0);
-              }
-              setCurrentVote(null);
-            }
-          } catch (removeErr) {
-            console.log('Could not remove vote:', removeErr.message);
-          }
-          return;
-        }
+        console.log('Vote conflict (409) - user already voted, no action needed');
+        // Don't show error to user as this is expected behavior
+        // The vote is already recorded on the server
+        return;
         
         // For different vote types, this means the backend doesn't allow vote changes
         // Let's try one more time with a different approach

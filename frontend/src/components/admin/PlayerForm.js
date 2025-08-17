@@ -107,7 +107,7 @@ function PlayerForm({ playerId, navigateTo }) {
 
   const fetchTeams = async () => {
     try {
-      const response = await api.get('/teams');
+      const response = await api.get('/admin/teams');
       setTeams(response.data || response || []);
     } catch (error) {
       console.error('Error fetching teams:', error);
@@ -253,12 +253,12 @@ function PlayerForm({ playerId, navigateTo }) {
       if (playerId) {
         // EDITING existing player
         console.log(' Editing existing player with ID:', playerId);
-        await api.put(`/players/${playerId}`, submitData);
+        await api.put(`/admin/players/${playerId}`, submitData);
         console.log(' Player data updated successfully');
       } else {
         // CREATING new player
         console.log(' Creating new player...');
-        const playerResponse = await api.post('/players', submitData);
+        const playerResponse = await api.post('/admin/players', submitData);
         currentPlayerId = playerResponse.data?.id || playerResponse.id;
         console.log(' Player created with ID:', currentPlayerId);
       }
@@ -280,7 +280,7 @@ function PlayerForm({ playerId, navigateTo }) {
           // Update player with new avatar URL
           const updatedFormData = { ...submitData, avatar: avatarUrl };
           console.log(' Updating player with avatar URL:', updatedFormData.avatar);
-          await api.put(`/players/${currentPlayerId}`, updatedFormData);
+          await api.put(`/admin/players/${currentPlayerId}`, updatedFormData);
           console.log(' Player updated with avatar URL');
         } catch (avatarError) {
           console.error(' Avatar upload failed:', avatarError);

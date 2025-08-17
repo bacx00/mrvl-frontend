@@ -1,0 +1,6 @@
+Timestamp,Team1_Score,Team2_Score,Status
+03:43:26,2,1,upcoming
+03:43:28,2,1,upcoming
+03:43:31,2,1,upcoming
+03:43:33,2,1,upcoming
+03:43:35,2,1,upcoming

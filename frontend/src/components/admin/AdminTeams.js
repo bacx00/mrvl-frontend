@@ -13,53 +13,17 @@ function AdminTeams({ navigateTo }) {
     region: 'all',
     sortBy: 'rating'
   });
+  const [selectedTeams, setSelectedTeams] = useState(new Set());
   const { api } = useAuth();
   
-  // Modal states for create/edit
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingTeam, setEditingTeam] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    short_name: '',
-    region: 'NA',
-    country: '',
-    rating: 1500,
-    elo_rating: '',
-    peak_elo: '',
-    earnings: '',
-    wins: '',
-    losses: '',
-    matches_played: '',
-    win_rate: '',
-    current_streak_count: '',
-    current_streak_type: 'none',
-    founded_date: '',
-    description: '',
-    achievements: '',
-    manager: '',
-    owner: '',
-    captain: '',
-    status: 'Active',
-    coach_name: '',
-    coach_nationality: '',
-    website: '',
-    social_media: {
-      twitter: '',
-      instagram: '',
-      youtube: '',
-      discord: '',
-      tiktok: '',
-      website: ''
-    }
-  });
+  // Removed modal states - using dedicated forms instead
 
   const fetchTeams = useCallback(async () => {
     try {
       setLoading(true);
       console.log(' AdminTeams: Fetching teams from real API...');
       
-      const response = await api.get('/teams');
+      const response = await api.get('/admin/teams');
       
       // FIXED: Handle Laravel API response structure properly
       let teamsData = response?.data?.data || response?.data || response || [];
@@ -136,153 +100,64 @@ function AdminTeams({ navigateTo }) {
     setCurrentPage(1);
   };
 
-  // CRUD Operations
+  // CRUD Operations - Navigate to dedicated forms
   const handleCreateTeam = () => {
-    setFormData({
-      name: '',
-      short_name: '',
-      region: 'NA',
-      country: '',
-      rating: 1500,
-      elo_rating: '',
-      peak_elo: '',
-      earnings: '',
-      wins: '',
-      losses: '',
-      matches_played: '',
-      win_rate: '',
-      current_streak_count: '',
-      current_streak_type: 'none',
-      founded_date: '',
-      description: '',
-      achievements: '',
-      manager: '',
-      owner: '',
-      captain: '',
-      status: 'Active',
-      coach_name: '',
-      coach_nationality: '',
-      website: '',
-      social_media: {
-        twitter: '',
-        instagram: '',
-        youtube: '',
-        discord: '',
-        tiktok: '',
-        website: ''
-      }
-    });
-    setShowCreateModal(true);
+    console.log('🎯 AdminTeams: Navigating to team create form');
+    if (navigateTo) {
+      navigateTo('admin-team-create');
+    }
   };
 
   const handleEditTeam = (team) => {
-    setEditingTeam(team);
-    setFormData({
-      name: team.name || '',
-      short_name: team.short_name || '',
-      region: team.region || 'NA',
-      country: team.country || '',
-      rating: team.rating || 1500,
-      elo_rating: team.elo_rating || '',
-      peak_elo: team.peak_elo || '',
-      earnings: team.earnings || '',
-      wins: team.wins || '',
-      losses: team.losses || '',
-      matches_played: team.matches_played || '',
-      win_rate: team.win_rate || '',
-      current_streak_count: team.current_streak_count || '',
-      current_streak_type: team.current_streak_type || 'none',
-      founded_date: team.founded_date || '',
-      description: team.description || '',
-      achievements: team.achievements || '',
-      manager: team.manager || '',
-      owner: team.owner || '',
-      captain: team.captain || '',
-      status: team.status || 'Active',
-      coach_name: team.coach_name || '',
-      coach_nationality: team.coach_nationality || '',
-      website: team.website || '',
-      social_media: {
-        twitter: team.social_media?.twitter || '',
-        instagram: team.social_media?.instagram || '',
-        youtube: team.social_media?.youtube || '',
-        discord: team.social_media?.discord || '',
-        tiktok: team.social_media?.tiktok || '',
-        website: team.social_media?.website || ''
-      }
-    });
-    setShowEditModal(true);
-  };
-
-  const handleCloseModals = () => {
-    setShowCreateModal(false);
-    setShowEditModal(false);
-    setEditingTeam(null);
-    setFormData({
-      name: '',
-      short_name: '',
-      region: 'NA',
-      country: '',
-      rating: 1500,
-      elo_rating: '',
-      peak_elo: '',
-      earnings: '',
-      wins: '',
-      losses: '',
-      matches_played: '',
-      win_rate: '',
-      current_streak_count: '',
-      current_streak_type: 'none',
-      founded_date: '',
-      description: '',
-      achievements: '',
-      manager: '',
-      owner: '',
-      captain: '',
-      status: 'Active',
-      coach_name: '',
-      coach_nationality: '',
-      website: '',
-      social_media: {
-        twitter: '',
-        instagram: '',
-        youtube: '',
-        discord: '',
-        tiktok: '',
-        website: ''
-      }
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!formData.name.trim() || !formData.short_name.trim()) {
-      alert('Please fill in required fields (Name and Short Name)');
-      return;
+    console.log('🎯 AdminTeams: Navigating to team edit form with ID:', team.id);
+    if (navigateTo) {
+      navigateTo('admin-team-edit', { id: team.id });
     }
+  };
 
-    try {
-      const submitData = {
-        ...formData,
-        social_media: JSON.stringify(formData.social_media)
-      };
+  // Removed modal handlers - using dedicated forms instead
 
-      if (editingTeam) {
-        // Update existing team
-        await api.put(`/teams/${editingTeam.id}`, submitData);
-        alert('Team updated successfully!');
-      } else {
-        // Create new team
-        await api.post('/teams', submitData);
-        alert('Team created successfully!');
+  // Selection handlers
+  const handleSelectTeam = (teamId) => {
+    const newSelected = new Set(selectedTeams);
+    if (newSelected.has(teamId)) {
+      newSelected.delete(teamId);
+    } else {
+      newSelected.add(teamId);
+    }
+    setSelectedTeams(newSelected);
+  };
+
+  const handleSelectAllTeams = () => {
+    if (selectedTeams.size === paginatedTeams.length && paginatedTeams.length > 0) {
+      setSelectedTeams(new Set());
+    } else {
+      setSelectedTeams(new Set(paginatedTeams.map(t => t.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedTeams.size === 0) return;
+    
+    const confirmMessage = `Are you sure you want to delete ${selectedTeams.size} teams? This action cannot be undone.`;
+    if (window.confirm(confirmMessage)) {
+      try {
+        const response = await api.post('/admin/teams/bulk-delete', {
+          team_ids: Array.from(selectedTeams)
+        });
+        
+        if (response.data?.success !== false) {
+          await fetchTeams();
+          setSelectedTeams(new Set());
+          alert(`${selectedTeams.size} teams deleted successfully!`);
+        } else {
+          throw new Error(response.data?.message || 'Bulk delete failed');
+        }
+      } catch (error) {
+        console.error('Error in bulk delete:', error);
+        const errorMessage = error.response?.data?.message || error.message || 'Bulk delete failed';
+        alert(errorMessage);
       }
-      
-      await fetchTeams();
-      handleCloseModals();
-    } catch (error) {
-      console.error('Error submitting team:', error);
-      alert(`Error ${editingTeam ? 'updating' : 'creating'} team. Please try again.`);
     }
   };
 
@@ -298,7 +173,7 @@ function AdminTeams({ navigateTo }) {
         }
 
         console.log(' AdminTeams: Deleting team with ID:', teamId);
-        await api.delete(`/teams/${teamId}`);
+        await api.delete(`/admin/teams/${teamId}`);
         await fetchTeams(); // Refresh the list
         alert('Team deleted successfully!');
       } catch (error) {
@@ -397,12 +272,47 @@ function AdminTeams({ navigateTo }) {
         </div>
       </div>
 
+      {/* Bulk Actions Bar */}
+      {selectedTeams.size > 0 && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <span className="text-sm font-medium text-blue-900 dark:text-blue-200">
+                {selectedTeams.size} teams selected
+              </span>
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleBulkDelete}
+                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
+                >
+                  Delete Selected
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={() => setSelectedTeams(new Set())}
+              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
+            >
+              Clear Selection
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Teams Table */}
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-800">
               <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <input
+                    type="checkbox"
+                    checked={selectedTeams.size === paginatedTeams.length && paginatedTeams.length > 0}
+                    onChange={handleSelectAllTeams}
+                    className="rounded border-gray-300 dark:border-gray-600"
+                  />
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Team
                 </th>
@@ -423,6 +333,14 @@ function AdminTeams({ navigateTo }) {
             <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
               {paginatedTeams.map((team) => (
                 <tr key={team.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={selectedTeams.has(team.id)}
+                      onChange={() => handleSelectTeam(team.id)}
+                      className="rounded border-gray-300 dark:border-gray-600"
+                    />
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       {/* FIXED: Use proper TeamLogo component instead of raw emoji/text */}
@@ -561,476 +479,7 @@ function AdminTeams({ navigateTo }) {
         </div>
       </div>
 
-      {/* Create/Edit Team Modal */}
-      {(showCreateModal || showEditModal) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {editingTeam ? 'Edit Team' : 'Create New Team'}
-              </h3>
-              <button
-                onClick={handleCloseModals}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Team Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="form-input"
-                    placeholder="Enter team name"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Short Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.short_name}
-                    onChange={(e) => setFormData({...formData, short_name: e.target.value})}
-                    className="form-input"
-                    placeholder="e.g., SEN, FNC"
-                    maxLength="10"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Region
-                  </label>
-                  <select
-                    value={formData.region}
-                    onChange={(e) => setFormData({...formData, region: e.target.value})}
-                    className="form-input"
-                  >
-                    <option value="NA">North America</option>
-                    <option value="EU">Europe</option>
-                    <option value="APAC">Asia-Pacific</option>
-                    <option value="ASIA">Asia</option>
-                    <option value="LATAM">Latin America</option>
-                    <option value="BR">Brazil</option>
-                    <option value="CN">China</option>
-                    <option value="KR">Korea</option>
-                    <option value="JP">Japan</option>
-                    <option value="Americas">Americas</option>
-                    <option value="EMEA">EMEA</option>
-                    <option value="Oceania">Oceania</option>
-                    <option value="China">China (Alt)</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Country
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.country}
-                    onChange={(e) => setFormData({...formData, country: e.target.value})}
-                    className="form-input"
-                    placeholder="e.g., United States, France"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Rating
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.rating}
-                    onChange={(e) => setFormData({...formData, rating: parseInt(e.target.value) || 0})}
-                    className="form-input"
-                    min="0"
-                    max="5000"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Website
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.website}
-                    onChange={(e) => setFormData({...formData, website: e.target.value})}
-                    className="form-input"
-                    placeholder="https://team-website.com"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Twitter
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.social_media.twitter}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      social_media: {...formData.social_media, twitter: e.target.value}
-                    })}
-                    className="form-input"
-                    placeholder="@teamhandle"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Discord
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.social_media.discord}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      social_media: {...formData.social_media, discord: e.target.value}
-                    })}
-                    className="form-input"
-                    placeholder="Discord server invite"
-                  />
-                </div>
-                
-                {/* Additional Social Media Fields */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Instagram
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.social_media.instagram}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      social_media: {...formData.social_media, instagram: e.target.value}
-                    })}
-                    className="form-input"
-                    placeholder="@teamhandle"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    YouTube
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.social_media.youtube}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      social_media: {...formData.social_media, youtube: e.target.value}
-                    })}
-                    className="form-input"
-                    placeholder="YouTube channel"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    TikTok
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.social_media.tiktok}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      social_media: {...formData.social_media, tiktok: e.target.value}
-                    })}
-                    className="form-input"
-                    placeholder="TikTok handle"
-                  />
-                </div>
-              </div>
-              
-              {/* Team Statistics & Performance Section */}
-              <div className="border-t pt-6">
-                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Team Statistics & Performance</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      ELO Rating
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.elo_rating}
-                      onChange={(e) => setFormData({...formData, elo_rating: e.target.value})}
-                      className="form-input"
-                      placeholder="2400"
-                      min="0"
-                      max="5000"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Peak ELO
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.peak_elo}
-                      onChange={(e) => setFormData({...formData, peak_elo: e.target.value})}
-                      className="form-input"
-                      placeholder="2600"
-                      min="0"
-                      max="5000"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Total Earnings ($)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.earnings}
-                      onChange={(e) => setFormData({...formData, earnings: e.target.value})}
-                      className="form-input"
-                      placeholder="50000"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Wins
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.wins}
-                      onChange={(e) => setFormData({...formData, wins: e.target.value})}
-                      className="form-input"
-                      placeholder="100"
-                      min="0"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Losses
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.losses}
-                      onChange={(e) => setFormData({...formData, losses: e.target.value})}
-                      className="form-input"
-                      placeholder="30"
-                      min="0"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Matches Played
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.matches_played}
-                      onChange={(e) => setFormData({...formData, matches_played: e.target.value})}
-                      className="form-input"
-                      placeholder="130"
-                      min="0"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Win Rate (%)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.win_rate}
-                      onChange={(e) => setFormData({...formData, win_rate: e.target.value})}
-                      className="form-input"
-                      placeholder="76.9"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Current Streak Count
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.current_streak_count}
-                      onChange={(e) => setFormData({...formData, current_streak_count: e.target.value})}
-                      className="form-input"
-                      placeholder="5"
-                      min="0"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Current Streak Type
-                    </label>
-                    <select
-                      value={formData.current_streak_type}
-                      onChange={(e) => setFormData({...formData, current_streak_type: e.target.value})}
-                      className="form-input"
-                    >
-                      <option value="none">None</option>
-                      <option value="win">Win Streak</option>
-                      <option value="loss">Loss Streak</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Founded Date
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.founded_date}
-                      onChange={(e) => setFormData({...formData, founded_date: e.target.value})}
-                      className="form-input"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Manager
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.manager}
-                      onChange={(e) => setFormData({...formData, manager: e.target.value})}
-                      className="form-input"
-                      placeholder="John Smith"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Owner
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.owner}
-                      onChange={(e) => setFormData({...formData, owner: e.target.value})}
-                      className="form-input"
-                      placeholder="Team Organization LLC"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Team Captain
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.captain}
-                      onChange={(e) => setFormData({...formData, captain: e.target.value})}
-                      className="form-input"
-                      placeholder="Player IGN"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Team Status
-                    </label>
-                    <select
-                      value={formData.status}
-                      onChange={(e) => setFormData({...formData, status: e.target.value})}
-                      className="form-input"
-                    >
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
-                      <option value="Disbanded">Disbanded</option>
-                      <option value="Suspended">Suspended</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Coach Name
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.coach_name}
-                      onChange={(e) => setFormData({...formData, coach_name: e.target.value})}
-                      className="form-input"
-                      placeholder="Coach Name"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Coach Nationality
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.coach_nationality}
-                      onChange={(e) => setFormData({...formData, coach_nationality: e.target.value})}
-                      className="form-input"
-                      placeholder="United States"
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Team Achievements
-                </label>
-                <textarea
-                  value={formData.achievements}
-                  onChange={(e) => setFormData({...formData, achievements: e.target.value})}
-                  className="form-input"
-                  rows="3"
-                  placeholder="Major tournament wins, championships, notable accomplishments..."
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  className="form-input"
-                  rows="4"
-                  placeholder="Team description..."
-                />
-              </div>
-              
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <button
-                  type="button"
-                  onClick={handleCloseModals}
-                  className="btn btn-secondary"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                >
-                  {editingTeam ? 'Update Team' : 'Create Team'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Removed modal - using dedicated TeamForm component instead */}
     </div>
   );
 }

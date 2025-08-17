@@ -49,6 +49,7 @@ import AdminNews from './components/admin/AdminNews';
 import AdminEvents from './components/admin/AdminEvents';
 import AdminForums from './components/admin/AdminForums';
 import NewsFormSimple from './components/admin/NewsFormSimple';
+import ForumThreadForm from './components/admin/ForumThreadForm';
 import EventForm from './components/admin/EventForm';
 import MatchForm from './components/admin/MatchForm';
 import UnifiedLiveScoring from './components/admin/UnifiedLiveScoring';
@@ -99,6 +100,8 @@ const ROUTES = {
   'admin-match-edit': (props) => <MatchForm {...props} matchId={props.params?.id} />,
   'admin-live-scoring': (props) => <UnifiedLiveScoring {...props} />,
   'admin-forums': AdminForums,
+  'admin-forum-create': (props) => <ForumThreadForm {...props} />,
+  'admin-forum-edit': (props) => <ForumThreadForm {...props} params={props.params} />,
   'admin-forum-categories': AdminForums,
   'admin-news-categories': AdminNews,
   

@@ -12,6 +12,9 @@ function PasswordReset({ navigateTo, params }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, message: '' });
 
   useEffect(() => {
     // Update form data when params change (from router)
@@ -39,11 +42,49 @@ function PasswordReset({ navigateTo, params }) {
     }
   }, [params]);
 
+  const checkPasswordStrength = (password) => {
+    let score = 0;
+    let message = '';
+    
+    if (!password) {
+      return { score: 0, message: '' };
+    }
+    
+    // Check length
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    
+    // Check for character types
+    if (/[a-z]/.test(password)) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[@$!%*#?&^_\-+=]/.test(password)) score++;
+    
+    // Determine strength message
+    if (score <= 2) {
+      message = 'Weak';
+    } else if (score <= 4) {
+      message = 'Fair';
+    } else if (score <= 5) {
+      message = 'Good';
+    } else {
+      message = 'Strong';
+    }
+    
+    return { score, message };
+  };
+
   const handleInputChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+    
+    // Check password strength when password field changes
+    if (e.target.name === 'password') {
+      setPasswordStrength(checkPasswordStrength(e.target.value));
+    }
+    
     setError('');
     setSuccess('');
   };
@@ -66,6 +107,24 @@ function PasswordReset({ navigateTo, params }) {
     
     if (formData.password.length < 8) {
       setError('Password must be at least 8 characters');
+      return false;
+    }
+    
+    // Check password complexity
+    if (!/[A-Z]/.test(formData.password)) {
+      setError('Password must contain at least one uppercase letter');
+      return false;
+    }
+    if (!/[a-z]/.test(formData.password)) {
+      setError('Password must contain at least one lowercase letter');
+      return false;
+    }
+    if (!/[0-9]/.test(formData.password)) {
+      setError('Password must contain at least one number');
+      return false;
+    }
+    if (!/[@$!%*#?&^_\-+=]/.test(formData.password)) {
+      setError('Password must contain at least one special character (@$!%*#?&^-_+=)');
       return false;
     }
     
@@ -171,17 +230,63 @@ function PasswordReset({ navigateTo, params }) {
             <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
               New Password *
             </label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              required
-              disabled={loading}
-              autoComplete="new-password"
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              placeholder="Enter your new password (min 8 characters)"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                required
+                disabled={loading}
+                autoComplete="new-password"
+                className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                placeholder="Min 8 chars, uppercase, lowercase, number, special char"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            {/* Password Strength Indicator */}
+            {formData.password && (
+              <div className="mt-2">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-gray-600 dark:text-gray-400">Password Strength:</span>
+                  <span className={`text-xs font-semibold ${
+                    passwordStrength.score <= 2 ? 'text-red-500' :
+                    passwordStrength.score <= 4 ? 'text-yellow-500' :
+                    passwordStrength.score <= 5 ? 'text-blue-500' :
+                    'text-green-500'
+                  }`}>
+                    {passwordStrength.message}
+                  </span>
+                </div>
+                <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full transition-all duration-300 ${
+                      passwordStrength.score <= 2 ? 'bg-red-500' :
+                      passwordStrength.score <= 4 ? 'bg-yellow-500' :
+                      passwordStrength.score <= 5 ? 'bg-blue-500' :
+                      'bg-green-500'
+                    }`}
+                    style={{ width: `${(passwordStrength.score / 6) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Confirm Password Field */}
@@ -189,17 +294,36 @@ function PasswordReset({ navigateTo, params }) {
             <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
               Confirm New Password *
             </label>
-            <input
-              type="password"
-              name="password_confirmation"
-              value={formData.password_confirmation}
-              onChange={handleInputChange}
-              required
-              disabled={loading}
-              autoComplete="new-password"
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              placeholder="Confirm your new password"
-            />
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                name="password_confirmation"
+                value={formData.password_confirmation}
+                onChange={handleInputChange}
+                required
+                disabled={loading}
+                autoComplete="new-password"
+                className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                placeholder="Confirm your new password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                tabIndex={-1}
+              >
+                {showConfirmPassword ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Submit Button */}

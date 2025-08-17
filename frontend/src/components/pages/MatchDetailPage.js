@@ -7,7 +7,7 @@ import HeroImage from '../shared/HeroImage';
 import UnifiedLiveScoring from '../admin/UnifiedLiveScoring';
 import CommentSystemSimple from '../shared/CommentSystemSimple';
 import MatchComments from '../shared/MatchComments';
-import liveScoreSync from '../../utils/LiveScoreSync';
+import liveScoreSync from '../../utils/LiveScoreSyncSimple';
 
 // Error Boundary Component
 class MatchDetailErrorBoundary extends React.Component {
@@ -51,6 +51,12 @@ function MatchDetailPage({ matchId, navigateTo }) {
   const [loading, setLoading] = useState(true);
   const [currentMapIndex, setCurrentMapIndex] = useState(0);
   const [selectedMapId, setSelectedMapId] = useState(null);
+  const currentMapIndexRef = useRef(0);
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    currentMapIndexRef.current = currentMapIndex;
+  }, [currentMapIndex]);
   
   // CRITICAL: Force re-render when map changes
   useEffect(() => {
@@ -98,6 +104,9 @@ function MatchDetailPage({ matchId, navigateTo }) {
       return {
         ...prevMatch,
         ...updatedData,
+        // CRITICAL: Preserve team data unless explicitly updated
+        team1: updatedData.team1 || prevMatch.team1,
+        team2: updatedData.team2 || prevMatch.team2,
         maps: updatedData.maps || prevMatch.maps,
         team1_score: updatedData.team1_score !== undefined ? updatedData.team1_score : prevMatch.team1_score,
         team2_score: updatedData.team2_score !== undefined ? updatedData.team2_score : prevMatch.team2_score,
@@ -121,24 +130,39 @@ function MatchDetailPage({ matchId, navigateTo }) {
         // COMPREHENSIVE: Handle all update types - scores, player stats, hero selections
         const updatedMatch = {
           ...prevMatch,
-          // PRIORITY 1: Direct live scoring updates (series_score fields)
-          team1_score: scoreData.series_score_team1 !== undefined ? scoreData.series_score_team1 :
+          // CRITICAL: Deep merge team data to preserve players
+          team1: scoreData.team1 ? {
+            ...prevMatch.team1,
+            ...scoreData.team1,
+            // ALWAYS preserve players unless explicitly updated
+            players: scoreData.team1.players || prevMatch.team1.players
+          } : prevMatch.team1,
+          team2: scoreData.team2 ? {
+            ...prevMatch.team2,
+            ...scoreData.team2,
+            // ALWAYS preserve players unless explicitly updated
+            players: scoreData.team2.players || prevMatch.team2.players
+          } : prevMatch.team2,
+          // PRIORITY 1: Use the actual scores from the response
+          team1_score: scoreData.data?.team1_score !== undefined ? scoreData.data.team1_score :
                        scoreData.team1_score !== undefined ? scoreData.team1_score : 
-                       scoreData.team1Score !== undefined ? scoreData.team1Score : 
-                       prevMatch.team1_score || 0,
-          team2_score: scoreData.series_score_team2 !== undefined ? scoreData.series_score_team2 :
+                       prevMatch.team1_score,
+          team2_score: scoreData.data?.team2_score !== undefined ? scoreData.data.team2_score :
                        scoreData.team2_score !== undefined ? scoreData.team2_score :
-                       scoreData.team2Score !== undefined ? scoreData.team2Score :
-                       prevMatch.team2_score || 0,
+                       prevMatch.team2_score,
           
           // ENHANCED: Update maps data with comprehensive player stats
           maps: (() => {
-            // Priority 1: Direct maps data from server
-            if (scoreData.maps && Array.isArray(scoreData.maps)) {
-              console.log('🗺️ Updating maps from server:', scoreData.maps.length);
-              // Deep clone to ensure React detects changes
-              return scoreData.maps.map((map, idx) => ({
-                ...map,
+            // Priority 1: Direct maps data from server or data.maps
+            const newMaps = scoreData.data?.maps || scoreData.maps;
+            if (newMaps && Array.isArray(newMaps)) {
+              console.log('🗺️ Updating maps from server:', newMaps.length);
+              // Deep clone and merge to preserve all data
+              return newMaps.map((map, idx) => ({
+                ...prevMatch.maps?.[idx], // Preserve existing map data
+                ...map, // Overlay new data
+                // Ensure map names are preserved
+                map_name: map.map_name || prevMatch.maps?.[idx]?.map_name || `Map ${idx + 1}`,
                 // Ensure player compositions are included
                 team1_composition: map.team1_composition || map.team1_players || prevMatch.maps?.[idx]?.team1_composition || [],
                 team2_composition: map.team2_composition || map.team2_players || prevMatch.maps?.[idx]?.team2_composition || [],
@@ -151,7 +175,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
             if ((scoreData.team1_players || scoreData.team2_players || 
                  scoreData.team1_composition || scoreData.team2_composition) && prevMatch.maps) {
               const updatedMaps = [...prevMatch.maps];
-              const currentMapIdx = scoreData.current_map_number ? scoreData.current_map_number - 1 : currentMapIndex;
+              const currentMapIdx = scoreData.current_map_number ? scoreData.current_map_number - 1 : currentMapIndexRef.current;
               
               console.log(`📊 Updating map ${currentMapIdx + 1} player compositions`);
               
@@ -191,15 +215,25 @@ function MatchDetailPage({ matchId, navigateTo }) {
         return updatedMatch;
       });
 
-    // Update current map index if specified in the update
-    if (scoreData.current_map_number && scoreData.current_map_number !== currentMapIndex + 1) {
-      console.log(`🗺️ Switching to map ${scoreData.current_map_number}`);
-      setCurrentMapIndex(scoreData.current_map_number - 1);
-    } else if (scoreData.current_map && scoreData.current_map !== currentMapIndex + 1) {
-      console.log(`🗺️ Switching to map ${scoreData.current_map}`);
-      setCurrentMapIndex(scoreData.current_map - 1);
+    // Only update current map index if this is an intentional map switch (not from polling)
+    // Check if this update is from a map switch by looking for the explicit flag
+    console.log('Map switch check:', { 
+      isMapSwitch: scoreData.isMapSwitch, 
+      current_map: scoreData.current_map,
+      current_map_number: scoreData.current_map_number,
+      currentMapIndexRef: currentMapIndexRef.current 
+    });
+    
+    if (scoreData.isMapSwitch === true) {
+      if (scoreData.current_map_number && scoreData.current_map_number !== currentMapIndexRef.current + 1) {
+        console.log(`🗺️ Switching to map ${scoreData.current_map_number}`);
+        setCurrentMapIndex(scoreData.current_map_number - 1);
+      } else if (scoreData.current_map && scoreData.current_map !== currentMapIndexRef.current + 1) {
+        console.log(`🗺️ Switching to map ${scoreData.current_map}`);
+        setCurrentMapIndex(scoreData.current_map - 1);
+      }
     }
-  }, [currentMapIndex]);
+  }, []); // Remove currentMapIndex dependency to prevent re-subscription loops
 
   // REMOVED: Auto-calculation logic that was overriding live scores
   // The match scores should ONLY come from the API or live updates, never calculated
@@ -302,6 +336,9 @@ function MatchDetailPage({ matchId, navigateTo }) {
             // Store both formats for compatibility
             series_score_team1: matchData.series_score_team1 ?? matchData.team1_score ?? 0,
             series_score_team2: matchData.series_score_team2 ?? matchData.team2_score ?? 0,
+            // CRITICAL: Ensure team data is preserved from API response
+            team1: data.team1 || matchData.team1 || null,
+            team2: data.team2 || matchData.team2 || null,
             // Ensure maps data is properly structured
             maps: mapsData,
             // Handle URL structure: API returns broadcast object with arrays
@@ -361,15 +398,25 @@ function MatchDetailPage({ matchId, navigateTo }) {
   }
 
   // Get current map data with fallbacks - ENHANCED for API response structure
-  const currentMapData = {
-    team1Players: match.maps?.[currentMapIndex]?.team1_composition || 
+  const team1PlayersData = match.maps?.[currentMapIndex]?.team1_composition || 
                   match.maps?.[currentMapIndex]?.team1_players || 
                   match.team1?.players || 
-                  match.team1?.roster || [],
-    team2Players: match.maps?.[currentMapIndex]?.team2_composition || 
+                  match.team1?.roster || [];
+  const team2PlayersData = match.maps?.[currentMapIndex]?.team2_composition || 
                   match.maps?.[currentMapIndex]?.team2_players || 
                   match.team2?.players || 
-                  match.team2?.roster || [],
+                  match.team2?.roster || [];
+  
+  console.log('Player data check:', {
+    team1Players: team1PlayersData,
+    team2Players: team2PlayersData,
+    team1PlayersLength: team1PlayersData?.length,
+    team2PlayersLength: team2PlayersData?.length
+  });
+  
+  const currentMapData = {
+    team1Players: team1PlayersData,
+    team2Players: team2PlayersData,
     mapName: match.maps?.[currentMapIndex]?.map_name || 
              match.maps?.[currentMapIndex]?.mapName || 
              'TBD',
@@ -841,11 +888,14 @@ function MatchDetailPage({ matchId, navigateTo }) {
                   currentMapData.team1Players.map((player, index) => {
                     // Extract username from quoted text or use dedicated username field
                     const extractUsername = (playerObj) => {
+                      // Null safety check
+                      if (!playerObj) return 'Unknown Player';
+                      
                       // First priority: dedicated username field
                       if (playerObj.username) return playerObj.username;
                       
                       // Second priority: extract from quoted text in name - handle both single and double quotes
-                      if (playerObj.name) {
+                      if (playerObj.name && typeof playerObj.name === 'string') {
                         // Try double quotes first: Mikkel "Sypeh" Klein -> Sypeh
                         const doubleQuoteMatch = playerObj.name.match(/"([^"]+)"/); 
                         if (doubleQuoteMatch) return doubleQuoteMatch[1];
@@ -868,7 +918,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
                       id: player.id || player.player_id,
                       name: extractUsername(player),
                       country: player.country || player.nationality || 'US',
-                      hero: player.hero || player.current_hero || 'Captain America',
+                      hero: player.hero || player.current_hero || null,
                       eliminations: player.eliminations || player.kills || 0,
                       deaths: player.deaths || 0,
                       assists: player.assists || 0,
@@ -955,11 +1005,14 @@ function MatchDetailPage({ matchId, navigateTo }) {
                   currentMapData.team2Players.map((player, index) => {
                     // Extract username from quoted text or use dedicated username field
                     const extractUsername = (playerObj) => {
+                      // Null safety check
+                      if (!playerObj) return 'Unknown Player';
+                      
                       // First priority: dedicated username field
                       if (playerObj.username) return playerObj.username;
                       
                       // Second priority: extract from quoted text in name - handle both single and double quotes
-                      if (playerObj.name) {
+                      if (playerObj.name && typeof playerObj.name === 'string') {
                         // Try double quotes first: Mikkel "Sypeh" Klein -> Sypeh
                         const doubleQuoteMatch = playerObj.name.match(/"([^"]+)"/); 
                         if (doubleQuoteMatch) return doubleQuoteMatch[1];
@@ -982,7 +1035,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
                       id: player.id || player.player_id,
                       name: extractUsername(player),
                       country: player.country || player.nationality || 'US',
-                      hero: player.hero || player.current_hero || 'Captain America',
+                      hero: player.hero || player.current_hero || null,
                       eliminations: player.eliminations || player.kills || 0,
                       deaths: player.deaths || 0,
                       assists: player.assists || 0,

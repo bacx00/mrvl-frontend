@@ -18,39 +18,7 @@ function AdminPlayers({ navigateTo }) {
     sortBy: 'rating'
   });
 
-  // Modal states for create/edit
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingPlayer, setEditingPlayer] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    ign: '',
-    real_name: '',
-    username: '',
-    country: '',
-    role: 'DPS',
-    rating: 1500,
-    elo_rating: '',
-    peak_elo: '',
-    skill_rating: '',
-    earnings: '',
-    total_earnings: '',
-    wins: '',
-    losses: '',
-    total_matches: '',
-    kda: '',
-    main_hero: '',
-    hero_pool: '',
-    status: 'active',
-    nationality: '',
-    jersey_number: '',
-    birth_date: '',
-    age: '',
-    region: '',
-    team_id: '',
-    biography: '',
-    description: ''
-  });
+  // Removed modal states - using dedicated forms instead
 
   useEffect(() => {
     fetchPlayers();
@@ -75,8 +43,20 @@ function AdminPlayers({ navigateTo }) {
         playersData = [];
       }
       
+      // Transform data to include team_name at root level for easier access
+      const transformedData = playersData.map(player => ({
+        ...player,
+        // Normalize naming - backend uses 'name' or 'username', not 'ign'
+        ign: player.username || player.name || player.ign || 'Unknown',
+        name: player.name || player.real_name || player.username || 'Unknown',
+        // Extract team data from nested object or direct fields
+        team_name: player.team?.name || player.team_name || null,
+        team_short_name: player.team?.short_name || player.team_short || null,
+        team_logo: player.team?.logo || player.team_logo || null
+      }));
+      
       // Store ALL players without filtering
-      setAllPlayers(playersData);
+      setAllPlayers(transformedData);
       console.log('🏃 AdminPlayers: Players loaded successfully');
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.message || 'Failed to load players';
@@ -152,135 +132,22 @@ function AdminPlayers({ navigateTo }) {
     setCurrentPage(1);
   };
 
-  // CRUD Operations
+  // CRUD Operations - Navigate to dedicated forms
   const handleCreatePlayer = () => {
-    setFormData({
-      name: '',
-      ign: '',
-      real_name: '',
-      username: '',
-      country: '',
-      role: 'DPS',
-      rating: 1500,
-      elo_rating: '',
-      peak_elo: '',
-      skill_rating: '',
-      earnings: '',
-      total_earnings: '',
-      wins: '',
-      losses: '',
-      total_matches: '',
-      kda: '',
-      main_hero: '',
-      hero_pool: '',
-      status: 'active',
-      nationality: '',
-      jersey_number: '',
-      birth_date: '',
-      age: '',
-      region: '',
-      team_id: '',
-      biography: '',
-      description: ''
-    });
-    setShowCreateModal(true);
+    console.log('🏃 AdminPlayers: Navigating to player create form');
+    if (navigateTo) {
+      navigateTo('admin-player-create');
+    }
   };
 
   const handleEditPlayer = (player) => {
-    setEditingPlayer(player);
-    setFormData({
-      name: player.name || '',
-      ign: player.ign || '',
-      real_name: player.real_name || '',
-      username: player.username || '',
-      country: player.country || '',
-      role: player.role || 'DPS',
-      rating: player.rating || 1500,
-      elo_rating: player.elo_rating || '',
-      peak_elo: player.peak_elo || '',
-      skill_rating: player.skill_rating || '',
-      earnings: player.earnings || '',
-      total_earnings: player.total_earnings || '',
-      wins: player.wins || '',
-      losses: player.losses || '',
-      total_matches: player.total_matches || '',
-      kda: player.kda || '',
-      main_hero: player.main_hero || '',
-      hero_pool: player.hero_pool || '',
-      status: player.status || 'active',
-      nationality: player.nationality || '',
-      jersey_number: player.jersey_number || '',
-      birth_date: player.birth_date || '',
-      age: player.age || '',
-      region: player.region || '',
-      team_id: player.team_id || '',
-      biography: player.biography || '',
-      description: player.description || ''
-    });
-    setShowEditModal(true);
-  };
-
-  const handleCloseModals = () => {
-    setShowCreateModal(false);
-    setShowEditModal(false);
-    setEditingPlayer(null);
-    setFormData({
-      name: '',
-      ign: '',
-      real_name: '',
-      username: '',
-      country: '',
-      role: 'DPS',
-      rating: 1500,
-      elo_rating: '',
-      peak_elo: '',
-      skill_rating: '',
-      earnings: '',
-      total_earnings: '',
-      wins: '',
-      losses: '',
-      total_matches: '',
-      kda: '',
-      main_hero: '',
-      hero_pool: '',
-      status: 'active',
-      nationality: '',
-      jersey_number: '',
-      birth_date: '',
-      age: '',
-      region: '',
-      team_id: '',
-      biography: '',
-      description: ''
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!formData.name.trim() || !formData.ign.trim()) {
-      alert('Please fill in required fields (Name and IGN)');
-      return;
-    }
-
-    try {
-      if (editingPlayer) {
-        // Update existing player
-        await api.put(`/players/${editingPlayer.id}`, formData);
-        alert('Player updated successfully!');
-      } else {
-        // Create new player
-        await api.post('/players', formData);
-        alert('Player created successfully!');
-      }
-      
-      await fetchPlayers();
-      handleCloseModals();
-    } catch (error) {
-      console.error('Error submitting player:', error);
-      alert(`Error ${editingPlayer ? 'updating' : 'creating'} player. Please try again.`);
+    console.log('🏃 AdminPlayers: Navigating to player edit form with ID:', player.id);
+    if (navigateTo) {
+      navigateTo('admin-player-edit', { id: player.id });
     }
   };
+
+  // Removed modal handlers - using dedicated forms instead
 
   const handleDeletePlayer = async (playerId, playerName) => {
     if (window.confirm(`Are you sure you want to delete player "${playerName}"? This action cannot be undone.`)) {
@@ -614,7 +481,12 @@ function AdminPlayers({ navigateTo }) {
                         View
                       </button>
                       <button
-                        onClick={() => handleEditPlayer(player)}
+                        onClick={() => {
+                          console.log('🏃 AdminPlayers: Edit player with ID:', player.id);
+                          if (navigateTo) {
+                            navigateTo('admin-player-edit', { id: player.id });
+                          }
+                        }}
                         className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
                       >
                         Edit
@@ -702,435 +574,7 @@ function AdminPlayers({ navigateTo }) {
         </div>
       </div>
 
-      {/* Create/Edit Player Modal */}
-      {(showCreateModal || showEditModal) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {editingPlayer ? 'Edit Player' : 'Create New Player'}
-              </h3>
-              <button
-                onClick={handleCloseModals}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Player Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="form-input"
-                    placeholder="Enter player name"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    In-Game Name (IGN) *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.ign}
-                    onChange={(e) => setFormData({...formData, ign: e.target.value})}
-                    className="form-input"
-                    placeholder="e.g., TenZ, Shroud"
-                    maxLength="20"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Country
-                  </label>
-                  <select
-                    value={formData.country}
-                    onChange={(e) => setFormData({...formData, country: e.target.value})}
-                    className="form-input"
-                  >
-                    <option value="">Select Country</option>
-                    {countries.filter(c => c !== 'all').map(country => (
-                      <option key={country} value={country}>
-                        {getCountryFlag(country)} {getCountryName(country)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Role
-                  </label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({...formData, role: e.target.value})}
-                    className="form-input"
-                  >
-                    <option value="DPS">DPS</option>
-                    <option value="Tank">Tank</option>
-                    <option value="Support">Support</option>
-                    <option value="Flex">Flex</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Rating
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.rating}
-                    onChange={(e) => setFormData({...formData, rating: parseInt(e.target.value) || 0})}
-                    className="form-input"
-                    min="0"
-                    max="5000"
-                  />
-                </div>
-              </div>
-              
-              {/* Performance & Statistics Section */}
-              <div className="border-t pt-6">
-                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Performance & Statistics</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Real Name
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.real_name}
-                      onChange={(e) => setFormData({...formData, real_name: e.target.value})}
-                      className="form-input"
-                      placeholder="John Smith"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Username
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.username}
-                      onChange={(e) => setFormData({...formData, username: e.target.value})}
-                      className="form-input"
-                      placeholder="johndoe123"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      ELO Rating
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.elo_rating}
-                      onChange={(e) => setFormData({...formData, elo_rating: e.target.value})}
-                      className="form-input"
-                      placeholder="2400"
-                      min="0"
-                      max="5000"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Peak ELO
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.peak_elo}
-                      onChange={(e) => setFormData({...formData, peak_elo: e.target.value})}
-                      className="form-input"
-                      placeholder="2600"
-                      min="0"
-                      max="5000"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Skill Rating
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.skill_rating}
-                      onChange={(e) => setFormData({...formData, skill_rating: e.target.value})}
-                      className="form-input"
-                      placeholder="3200"
-                      min="0"
-                      max="5000"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Earnings ($)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.earnings}
-                      onChange={(e) => setFormData({...formData, earnings: e.target.value})}
-                      className="form-input"
-                      placeholder="25000"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Total Earnings ($)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.total_earnings}
-                      onChange={(e) => setFormData({...formData, total_earnings: e.target.value})}
-                      className="form-input"
-                      placeholder="75000"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Wins
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.wins}
-                      onChange={(e) => setFormData({...formData, wins: e.target.value})}
-                      className="form-input"
-                      placeholder="150"
-                      min="0"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Losses
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.losses}
-                      onChange={(e) => setFormData({...formData, losses: e.target.value})}
-                      className="form-input"
-                      placeholder="45"
-                      min="0"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Total Matches
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.total_matches}
-                      onChange={(e) => setFormData({...formData, total_matches: e.target.value})}
-                      className="form-input"
-                      placeholder="195"
-                      min="0"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      KDA Ratio
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.kda}
-                      onChange={(e) => setFormData({...formData, kda: e.target.value})}
-                      className="form-input"
-                      placeholder="1.45"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Main Hero
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.main_hero}
-                      onChange={(e) => setFormData({...formData, main_hero: e.target.value})}
-                      className="form-input"
-                      placeholder="Spider-Man"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Hero Pool
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.hero_pool}
-                      onChange={(e) => setFormData({...formData, hero_pool: e.target.value})}
-                      className="form-input"
-                      placeholder="Spider-Man, Iron Man, Star-Lord"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Player Status
-                    </label>
-                    <select
-                      value={formData.status}
-                      onChange={(e) => setFormData({...formData, status: e.target.value})}
-                      className="form-input"
-                    >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                      <option value="retired">Retired</option>
-                      <option value="suspended">Suspended</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Nationality
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.nationality}
-                      onChange={(e) => setFormData({...formData, nationality: e.target.value})}
-                      className="form-input"
-                      placeholder="American"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Jersey Number
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.jersey_number}
-                      onChange={(e) => setFormData({...formData, jersey_number: e.target.value})}
-                      className="form-input"
-                      placeholder="10"
-                      min="0"
-                      max="99"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Birth Date
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.birth_date}
-                      onChange={(e) => setFormData({...formData, birth_date: e.target.value})}
-                      className="form-input"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Age
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.age}
-                      onChange={(e) => setFormData({...formData, age: e.target.value})}
-                      className="form-input"
-                      placeholder="22"
-                      min="16"
-                      max="50"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Region
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.region}
-                      onChange={(e) => setFormData({...formData, region: e.target.value})}
-                      className="form-input"
-                      placeholder="NA"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Team ID
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.team_id}
-                      onChange={(e) => setFormData({...formData, team_id: e.target.value})}
-                      className="form-input"
-                      placeholder="1"
-                      min="0"
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Biography
-                </label>
-                <textarea
-                  value={formData.biography}
-                  onChange={(e) => setFormData({...formData, biography: e.target.value})}
-                  className="form-input"
-                  rows="3"
-                  placeholder="Player background, career highlights, achievements..."
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  className="form-input"
-                  rows="4"
-                  placeholder="Player description..."
-                />
-              </div>
-              
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <button
-                  type="button"
-                  onClick={handleCloseModals}
-                  className="btn btn-secondary"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                >
-                  {editingPlayer ? 'Update Player' : 'Create Player'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Removed modal - using dedicated PlayerForm component instead */}
     </div>
   );
 }

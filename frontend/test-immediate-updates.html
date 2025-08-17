@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Score Immediate Update Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .match-score {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 48px;
+            margin: 40px 0;
+            gap: 30px;
+        }
+        .team {
+            padding: 20px;
+            background: #2a2a2a;
+            border-radius: 10px;
+            min-width: 150px;
+            text-align: center;
+        }
+        .vs {
+            font-size: 24px;
+            color: #666;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #991b1b;
+        }
+        .status {
+            text-align: center;
+            padding: 10px;
+            background: #2a2a2a;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .log {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .update-time {
+            color: #10b981;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Live Score Immediate Update Test</h1>
+        
+        <div class="status" id="status">
+            Initializing...
+        </div>
+        
+        <div class="match-score">
+            <div class="team">
+                <div>Team 1</div>
+                <div id="team1Score">0</div>
+            </div>
+            <div class="vs">VS</div>
+            <div class="team">
+                <div>Team 2</div>
+                <div id="team2Score">0</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button onclick="updateScore(1, 1)">Team 1 +1</button>
+            <button onclick="updateScore(2, 1)">Team 2 +1</button>
+            <button onclick="updateScore(1, -1)">Team 1 -1</button>
+            <button onclick="updateScore(2, -1)">Team 2 -1</button>
+            <button onclick="resetScores()">Reset</button>
+        </div>
+        
+        <h3>Update Log (Should be immediate - no delay)</h3>
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        const MATCH_ID = 6;
+        const STORAGE_KEY = `mrvl_live_match_${MATCH_ID}`;
+        let team1Score = 0;
+        let team2Score = 0;
+        let updateCount = 0;
+        
+        // Initialize
+        function init() {
+            // Load initial state from localStorage if exists
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                const data = JSON.parse(stored);
+                const scoreData = data.data || data;
+                team1Score = scoreData.team1_score || 0;
+                team2Score = scoreData.team2_score || 0;
+                updateDisplay();
+            }
+            
+            // Listen for storage events (updates from other tabs/admin panel)
+            window.addEventListener('storage', handleStorageChange);
+            
+            document.getElementById('status').innerHTML = '✅ Connected - Updates are IMMEDIATE';
+            addLog('System initialized - listening for live updates');
+        }
+        
+        // Handle storage changes (live updates)
+        function handleStorageChange(event) {
+            if (event.key === STORAGE_KEY && event.newValue) {
+                const startTime = performance.now();
+                
+                try {
+                    const data = JSON.parse(event.newValue);
+                    const scoreData = data.data || data;
+                    
+                    // Update scores immediately
+                    team1Score = scoreData.team1_score || team1Score;
+                    team2Score = scoreData.team2_score || team2Score;
+                    
+                    updateDisplay();
+                    
+                    const endTime = performance.now();
+                    const updateTime = (endTime - startTime).toFixed(2);
+                    
+                    addLog(`<span class="update-time">IMMEDIATE UPDATE</span> - Team1: ${team1Score}, Team2: ${team2Score} (${updateTime}ms)`);
+                } catch (error) {
+                    addLog(`Error: ${error.message}`);
+                }
+            }
+        }
+        
+        // Update score (simulates admin panel update)
+        function updateScore(team, delta) {
+            if (team === 1) {
+                team1Score = Math.max(0, team1Score + delta);
+            } else {
+                team2Score = Math.max(0, team2Score + delta);
+            }
+            
+            // Broadcast update via localStorage (simulates admin panel)
+            const updateData = {
+                data: {
+                    team1_score: team1Score,
+                    team2_score: team2Score
+                },
+                timestamp: Date.now(),
+                source: 'test_panel'
+            };
+            
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(updateData));
+            
+            // Update display immediately for this tab
+            updateDisplay();
+            addLog(`Manual update - Team1: ${team1Score}, Team2: ${team2Score}`);
+        }
+        
+        // Reset scores
+        function resetScores() {
+            team1Score = 0;
+            team2Score = 0;
+            updateScore(1, 0); // Trigger update with current scores
+        }
+        
+        // Update display
+        function updateDisplay() {
+            document.getElementById('team1Score').textContent = team1Score;
+            document.getElementById('team2Score').textContent = team2Score;
+            updateCount++;
+        }
+        
+        // Add log entry
+        function addLog(message) {
+            const log = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.innerHTML = `[${time}] ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        // Initialize on load
+        init();
+        
+        // Test automatic updates
+        setTimeout(() => {
+            addLog('Starting automatic test in 2 seconds...');
+            setTimeout(() => {
+                // Simulate rapid updates to test immediacy
+                let testScore = 0;
+                const interval = setInterval(() => {
+                    testScore++;
+                    if (testScore <= 5) {
+                        updateScore(Math.random() > 0.5 ? 1 : 2, 1);
+                        addLog(`Auto-update ${testScore}/5`);
+                    } else {
+                        clearInterval(interval);
+                        addLog('Automatic test complete - all updates should have been immediate!');
+                    }
+                }, 1000);
+            }, 2000);
+        }, 3000);
+    </script>
+</body>
+</html>

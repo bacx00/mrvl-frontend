@@ -66,7 +66,7 @@ function TeamForm({ teamId, navigateTo }) {
     
     try {
       setLoading(true);
-      const response = await api.get(`/teams/${teamId}`);
+      const response = await api.get(`/admin/teams/${teamId}`);
       const team = response.data || response;
       
       console.log('TeamForm - Fetched team data:', team);
@@ -326,14 +326,14 @@ function TeamForm({ teamId, navigateTo }) {
       // If creating new team, save team first to get ID
       if (!isEdit) {
         console.log('Creating new team first to get ID...');
-        const response = await api.post('/teams', submitData);
+        const response = await api.post('/admin/teams', submitData);
         const savedTeam = response.data || response;
         teamIdForUpload = savedTeam.id;
         console.log('New team created with ID:', teamIdForUpload);
       } else {
         // Update existing team
         console.log('Updating existing team with ID:', teamId);
-        await api.put(`/teams/${teamId}`, submitData);
+        await api.put(`/admin/teams/${teamId}`, submitData);
         console.log('Team updated successfully');
       }
 
@@ -387,7 +387,7 @@ function TeamForm({ teamId, navigateTo }) {
           }
         };
 
-        await api.put(`/teams/${teamIdForUpload}`, finalUpdateData);
+        await api.put(`/admin/teams/${teamIdForUpload}`, finalUpdateData);
         console.log('TeamForm - Team updated with images');
       }
 
@@ -540,14 +540,19 @@ function TeamForm({ teamId, navigateTo }) {
               />
               {formData.flag && (
                 <div className="mt-2">
-                  <img 
-                    src={formData.flag} 
-                    alt="Current flag" 
-                    className="w-16 h-16 object-cover rounded"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
+                  {/* Check if flag is emoji or URL */}
+                  {formData.flag.startsWith('http') || formData.flag.startsWith('/') ? (
+                    <img 
+                      src={formData.flag} 
+                      alt="Current flag" 
+                      className="w-16 h-16 object-cover rounded"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div className="text-4xl">{formData.flag}</div>
+                  )}
                 </div>
               )}
             </div>

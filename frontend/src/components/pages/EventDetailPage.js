@@ -73,9 +73,39 @@ function EventDetailPage({ params, navigateTo }) {
       console.log('✅ Matches data found:', matchesData.length, 'matches');
       setMatches(matchesData);
       
-      // Set bracket if included
+      // Set bracket if included - check multiple possible formats
       if (eventData.bracket) {
         setBracket(eventData.bracket);
+      } else if (eventData.bracket_data) {
+        setBracket(eventData.bracket_data);
+      }
+      
+      // Also try to fetch bracket separately for events with brackets
+      if (eventData.status === 'ongoing' || eventData.status === 'completed') {
+        try {
+          // Use public endpoint for bracket data
+          const bracketResponse = await api.get(`/events/${eventId}/bracket`);
+          console.log('📊 Bracket response structure:', bracketResponse.data);
+          
+          if (bracketResponse.data?.data?.bracket) {
+            setBracket(bracketResponse.data.data.bracket);
+            console.log('✅ Bracket data loaded from public endpoint (data.bracket)');
+          } else if (bracketResponse.data?.data?.bracket_data) {
+            setBracket(bracketResponse.data.data.bracket_data);
+            console.log('✅ Bracket data loaded from public endpoint (data.bracket_data)');
+          } else if (bracketResponse.data?.bracket_data) {
+            setBracket(bracketResponse.data.bracket_data);
+            console.log('✅ Bracket data loaded from public endpoint (bracket_data)');
+          } else if (bracketResponse.data?.bracket) {
+            setBracket(bracketResponse.data.bracket);
+            console.log('✅ Bracket data loaded from public endpoint (bracket)');
+          } else if (bracketResponse.data?.matches) {
+            setBracket(bracketResponse.data);
+            console.log('✅ Bracket data loaded in simple format');
+          }
+        } catch (error) {
+          console.log('📝 No bracket data available yet');
+        }
       }
       
       // Note: Teams and matches are included in main event data
@@ -152,14 +182,43 @@ function EventDetailPage({ params, navigateTo }) {
       
       console.log('✅ Bracket generated successfully:', response.data);
       
-      // Fetch the bracket data
-      const bracketResponse = await api.get(`/admin/events/${eventId}/bracket`);
-      if (bracketResponse.data?.data?.matches) {
-        setBracket(bracketResponse.data.data.matches);
+      // Get the bracket data from the generation response
+      if (response.data?.data?.bracket_data) {
+        // Set the bracket directly from the generation response
+        const bracketData = response.data.data.bracket_data;
+        console.log('✅ Bracket data received:', bracketData);
+        setBracket(bracketData);
+        console.log('✅ Bracket data set from generation response');
+        
+        // Also update the event with the bracket data
+        setEvent(prev => ({
+          ...prev,
+          bracket: bracketData,
+          bracket_data: bracketData
+        }));
+      } else {
+        // Fallback: Fetch the bracket data separately
+        const bracketResponse = await api.get(`/admin/events/${eventId}/bracket`);
+        if (bracketResponse.data?.data?.bracket_data) {
+          const bracketData = bracketResponse.data.data.bracket_data;
+          console.log('✅ Bracket data received from separate fetch:', bracketData);
+          setBracket(bracketData);
+          console.log('✅ Bracket data set from separate fetch');
+          
+          // Update the event with the bracket data
+          setEvent(prev => ({
+            ...prev,
+            bracket: bracketData,
+            bracket_data: bracketData
+          }));
+        }
       }
       
-      // Refresh event data to get the new bracket
-      await fetchEventData();
+      // Force a re-render by updating activeTab
+      setActiveTab('bracket');
+      
+      // Don't refresh the entire page, just update the state
+      // await fetchEventData(); // This was causing the reload
     } catch (error) {
       console.error('❌ Error generating bracket:', error);
       alert('Failed to generate bracket: ' + (error.response?.data?.message || error.message));
@@ -168,14 +227,19 @@ function EventDetailPage({ params, navigateTo }) {
 
   const handleBracketMatchUpdate = async (matchId, updates) => {
     try {
-      await api.put(`/admin/events/${eventId}/matches/${matchId}/score`, updates);
-      console.log('✅ Match updated successfully');
+      console.log('🔄 Refreshing bracket data after score update...');
       
-      // Refresh event data
-      await fetchEventData();
+      // Refresh bracket data immediately
+      const bracketResponse = await api.get(`/events/${eventId}/bracket`);
+      if (bracketResponse.data?.data?.bracket || bracketResponse.data?.bracket) {
+        const newBracketData = bracketResponse.data.data?.bracket || bracketResponse.data.bracket;
+        setBracket(newBracketData);
+        console.log('✅ Bracket updated with new scores');
+      }
     } catch (error) {
-      console.error('❌ Error updating match:', error);
-      alert('Failed to update match: ' + (error.response?.data?.message || error.message));
+      console.error('❌ Error refreshing bracket:', error);
+      // Fallback: refresh entire event data
+      await fetchEventData();
     }
   };
 
@@ -486,13 +550,14 @@ function EventDetailPage({ params, navigateTo }) {
           {/* Bracket Tab */}
           {activeTab === 'bracket' && (
             <div>
-              {bracket && bracket.length > 0 ? (
+              {console.log('🔍 Bracket tab - Current bracket data:', bracket)}
+              {bracket && (bracket.matches?.length > 0 || bracket.upper_bracket || bracket.main_stage || bracket.rounds) ? (
                 <LiquipediaBracket 
                   bracket={bracket} 
                   event={event}
                   eventId={eventId}
                   navigateTo={navigateTo}
-                  isAdmin={isAdmin || isModerator}
+                  isAdmin={isAdmin() || isModerator()}
                   onMatchUpdate={handleBracketMatchUpdate}
                 />
               ) : (
@@ -507,7 +572,7 @@ function EventDetailPage({ params, navigateTo }) {
                       : 'Click below to generate the tournament bracket'
                     }
                   </p>
-                  {(isAdmin || isModerator) && teams.length >= 2 && (
+                  {(isAdmin() || isModerator()) && teams.length >= 2 && (
                     <button 
                       onClick={generateBracket}
                       className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"

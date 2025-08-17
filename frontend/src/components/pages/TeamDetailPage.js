@@ -262,32 +262,8 @@ function TeamDetailPage({ params, navigateTo }) {
   const handleEditTeam = () => {
     if (!team) return;
     
-    setEditFormData({
-      name: team.name || '',
-      shortName: team.shortName || '',
-      country: team.country || '',
-      region: team.region || '',
-      website: team.website || '',
-      earnings: team.earnings || 0,
-      description: team.description || '',
-      coach: team.coach || '',
-      manager: team.manager || '',
-      owner: team.owner || '',
-      founded: team.founded || '',
-      foundedDate: team.foundedDate || '',
-      division: team.division || '',
-      platform: team.platform || '',
-      game: team.game || '',
-      status: team.status || 'Active',
-      // Social media
-      twitter: team.social_media?.twitter || '',
-      instagram: team.social_media?.instagram || '',
-      youtube: team.social_media?.youtube || '',
-      facebook: team.social_media?.facebook || '',
-      website_url: team.social_media?.website || '',
-      discord: team.social_media?.discord || '',
-    });
-    setIsEditing(true);
+    // Navigate to dedicated admin team edit form instead of inline editing
+    window.location.hash = `admin-team-edit/${team.id}`;
   };
 
   const handleCancelEdit = () => {

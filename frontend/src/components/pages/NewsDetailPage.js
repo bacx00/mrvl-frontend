@@ -178,9 +178,9 @@ function NewsDetailPage({ params, navigateTo }) {
       });
 
       // CRITICAL FIX: Better response validation for successful comment posting
-      // Check for success !== false rather than success === true
+      // Accept both 200 and 201 status codes and check for data presence
       const isSuccess = (response?.status === 200 || response?.status === 201) && 
-                        response?.data?.success !== false;
+                        (response?.data?.success === true || response?.data?.data || response?.data?.comment);
       
       console.log('Comment submission response:', {
         status: response?.status,
@@ -200,7 +200,7 @@ function NewsDetailPage({ params, navigateTo }) {
         });
         
         // Replace temp comment with real comment data
-        const realComment = response.data.comment || response.data.data;
+        const realComment = response.data.data || response.data.comment;
         if (realComment && safeString(realComment.content)) {
           // Ensure all properties are safely converted - this prevents [object Object] issues
           const safeRealComment = {

@@ -853,9 +853,9 @@ function EventForm({ eventId, navigateTo }) {
             {/* Current Teams */}
             <div>
               <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
-                Current Teams ({eventTeams.length}/{formData.max_teams})
+                Current Teams ({(Array.isArray(eventTeams) ? eventTeams.length : 0)}/{formData.max_teams})
               </h4>
-              {eventTeams.length === 0 ? (
+              {!Array.isArray(eventTeams) || eventTeams.length === 0 ? (
                 <p className="text-gray-500 dark:text-gray-400">No teams registered yet</p>
               ) : (
                 <div className="space-y-2">

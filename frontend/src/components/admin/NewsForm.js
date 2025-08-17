@@ -97,7 +97,8 @@ function NewsForm({ newsId, navigateTo }) {
         category: news.category || 'updates',
         status: news.status || 'draft',
         featured: news.featured || false,
-        image: news.image || '',
+        // Use featured_image field, not image field
+        image: news.featured_image || news.image || '',
         publishedAt: news.published_at ? news.published_at.split('T')[0] : '',
         tags: news.tags || []
       });
@@ -232,7 +233,8 @@ function NewsForm({ newsId, navigateTo }) {
                      formData.category === 'events' ? 6 : 1,
         status: formData.status,
         featured: formData.featured,
-        featured_image: formData.image || null,
+        // Don't send featured_image in the initial submission if we have a new file to upload
+        featured_image: (imageFile ? null : formData.image) || null,
         published_at: formData.publishedAt || null,
         tags: formData.tags,
         videos: videos.map(video => ({
@@ -263,9 +265,12 @@ function NewsForm({ newsId, navigateTo }) {
           
           // Update the form data with the returned image path
           if (imageResponse?.data?.data?.featured_image) {
+            // Use the path, not the full URL
+            const imagePath = imageResponse.data.data.featured_image;
+            console.log('Image upload successful, path:', imagePath);
             setFormData(prev => ({
               ...prev,
-              image: imageResponse.data.data.featured_image
+              image: imagePath
             }));
           }
         } catch (imageError) {
