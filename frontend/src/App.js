@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AuthProvider, ThemeProvider, useAuth, useTheme } from './hooks';
 import { ActivityStatsProvider } from './contexts/ActivityStatsContext';
 import Navigation from './components/Navigation';
+import MobileNavigation from './components/mobile/MobileNavigation';
 import AuthModal from './components/AuthModal';
 import ErrorBoundary from './components/shared/ErrorBoundary';
 import Footer from './components/Footer';
@@ -116,8 +117,20 @@ function AppContent() {
   const [currentPage, setCurrentPage] = useState('home');
   const [pageParams, setPageParams] = useState({});
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const { user } = useAuth();
   const { theme } = useTheme();
+
+  // Detect mobile/tablet viewport
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // FIXED: Hash routing support + URL pathname routing for reset password
   useEffect(() => {
@@ -258,24 +271,36 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-all duration-300">
-      {/* Navigation */}
-      <Navigation 
-        currentPage={currentPage}
-        navigateTo={navigateTo}
-        onAuthClick={handleAuthClick}
-        user={user}
-        theme={theme}
-      />
+      {/* Navigation - Use mobile version for smaller screens */}
+      {isMobile ? (
+        <MobileNavigation 
+          currentPage={currentPage}
+          navigateTo={navigateTo}
+          onAuthClick={handleAuthClick}
+          user={user}
+          theme={theme}
+        />
+      ) : (
+        <Navigation 
+          currentPage={currentPage}
+          navigateTo={navigateTo}
+          onAuthClick={handleAuthClick}
+          user={user}
+          theme={theme}
+        />
+      )}
 
-      {/* Breadcrumbs */}
-      <Breadcrumbs 
-        currentPage={currentPage}
-        pageParams={pageParams}
-        navigateTo={navigateTo}
-      />
+      {/* Breadcrumbs - Hide on mobile */}
+      {!isMobile && (
+        <Breadcrumbs 
+          currentPage={currentPage}
+          pageParams={pageParams}
+          navigateTo={navigateTo}
+        />
+      )}
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-6">
+      {/* Main Content - Mobile optimized */}
+      <main className={`${isMobile ? 'mobile-content pt-16 pb-20' : 'container mx-auto px-4 py-6'}`}>
         {pageComponent}
       </main>
 

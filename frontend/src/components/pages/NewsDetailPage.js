@@ -199,13 +199,12 @@ function NewsDetailPage({ params, navigateTo }) {
       });
 
       // CRITICAL FIX: Better response validation for successful comment posting
-      // Accept both 200 and 201 status codes and check for data presence
-      const isSuccess = (response?.status === 200 || response?.status === 201) && 
-                        (response?.data?.success === true || response?.data?.data || response?.data?.comment);
+      // The response is already the data from the API (not axios response object)
+      const isSuccess = response?.success === true || response?.data || response?.comment;
       
       console.log('Comment submission response:', {
-        status: response?.status,
-        success: response?.data?.success,
+        response: response,
+        success: response?.success,
         hasData: !!response?.data,
         isSuccess
       });

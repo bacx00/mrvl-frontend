@@ -10,6 +10,7 @@ function UserProfile({ userId = null }) {
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [lastUpdated, setLastUpdated] = useState(new Date());
   
   // Use current user if no userId provided
   const targetUserId = userId || currentUser?.id;
@@ -17,16 +18,31 @@ function UserProfile({ userId = null }) {
 
   useEffect(() => {
     if (targetUserId) {
-      fetchUserProfile();
-      fetchUserStats();
-      fetchRecentActivity();
+      fetchAllData();
+      
+      // Set up real-time updates every 30 seconds
+      const interval = setInterval(() => {
+        fetchAllData();
+        setLastUpdated(new Date());
+      }, 30000); // 30 seconds
+      
+      return () => clearInterval(interval);
     }
   }, [targetUserId]);
 
+  const fetchAllData = async () => {
+    await Promise.all([
+      fetchUserProfile(),
+      fetchUserStats(),
+      fetchRecentActivity()
+    ]);
+  };
+
   const fetchUserProfile = async () => {
     try {
-      const response = await api.get(`/api/user/${targetUserId}/profile`);
-      setProfileData(response.data || response);
+      const response = await api.get(`/api/users/${targetUserId}`);
+      const data = response.data?.data || response.data || response;
+      setProfileData(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
       // Use current user data as fallback for own profile
@@ -38,27 +54,61 @@ function UserProfile({ userId = null }) {
 
   const fetchUserStats = async () => {
     try {
-      const response = await api.get(`/api/user/${targetUserId}/stats`);
-      setUserStats(response.data || response);
+      const response = await api.get(`/api/users/${targetUserId}/stats`);
+      const data = response.data?.data || response.data || response;
+      
+      // Ensure we have all required stats fields
+      setUserStats({
+        news_comments: data.news_comments || data.comments?.news || 0,
+        match_comments: data.match_comments || data.comments?.matches || 0,
+        forum_threads: data.forum_threads || data.forum?.threads || 0,
+        forum_posts: data.forum_posts || data.forum?.posts || 0,
+        total_comments: data.total_comments || data.comments?.total || 0,
+        total_forum: data.total_forum || data.forum?.total || 0,
+        upvotes_given: data.upvotes_given || data.votes?.upvotes_given || 0,
+        downvotes_given: data.downvotes_given || data.votes?.downvotes_given || 0,
+        upvotes_received: data.upvotes_received || data.votes?.upvotes_received || 0,
+        downvotes_received: data.downvotes_received || data.votes?.downvotes_received || 0,
+        reputation_score: data.reputation_score || data.votes?.reputation_score || 0,
+        mentions_given: data.mentions_given || data.mentions?.given || 0,
+        mentions_received: data.mentions_received || data.mentions?.received || 0,
+        activity_score: data.activity_score || data.activity?.activity_score || 0,
+        total_actions: data.total_actions || data.activity?.total_actions || 0,
+        days_active: data.days_active || data.account?.days_active || 0,
+        last_activity: data.last_activity || data.activity?.last_activity || null,
+        join_date: data.join_date || data.account?.join_date || profileData?.created_at || null
+      });
     } catch (error) {
       console.error('Error fetching stats:', error);
       // Set default stats
       setUserStats({
-        matches_viewed: 0,
-        comments_posted: 0,
+        news_comments: 0,
+        match_comments: 0,
         forum_threads: 0,
         forum_posts: 0,
-        news_read: 0,
-        teams_followed: 0,
-        predictions_made: 0
+        total_comments: 0,
+        total_forum: 0,
+        upvotes_given: 0,
+        downvotes_given: 0,
+        upvotes_received: 0,
+        downvotes_received: 0,
+        reputation_score: 0,
+        mentions_given: 0,
+        mentions_received: 0,
+        activity_score: 0,
+        total_actions: 0,
+        days_active: 0,
+        last_activity: null,
+        join_date: null
       });
     }
   };
 
   const fetchRecentActivity = async () => {
     try {
-      const response = await api.get(`/api/user/${targetUserId}/activity`);
-      setRecentActivity(response.data || response || []);
+      const response = await api.get(`/api/users/${targetUserId}/activities`);
+      const data = response.data?.data || response.data || [];
+      setRecentActivity(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching activity:', error);
       setRecentActivity([]);
@@ -117,6 +167,15 @@ function UserProfile({ userId = null }) {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Live Update Indicator */}
+      <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+          <span>Live updates every 30 seconds</span>
+        </div>
+        <span>Updated: {lastUpdated.toLocaleTimeString()}</span>
+      </div>
+
       {/* Profile Header - Similar to Admin Dashboard */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-start justify-between">
@@ -145,9 +204,11 @@ function UserProfile({ userId = null }) {
               </h1>
               <p className="text-gray-600 dark:text-gray-400">{profile?.email}</p>
               <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-gray-500">
-                <span>Joined: {new Date(profile?.created_at).toLocaleDateString()}</span>
+                <span>Joined: {userStats?.join_date ? new Date(userStats.join_date).toLocaleDateString() : 'N/A'}</span>
                 <span>•</span>
-                <span>Last active: {new Date(profile?.updated_at || profile?.created_at).toLocaleDateString()}</span>
+                <span>Active for {userStats?.days_active || 0} days</span>
+                <span>•</span>
+                <span>Last active: {userStats?.last_activity ? new Date(userStats.last_activity).toLocaleDateString() : 'Never'}</span>
               </div>
             </div>
           </div>
@@ -186,40 +247,79 @@ function UserProfile({ userId = null }) {
             <div className="space-y-6">
               {/* Statistics Grid - Matching Admin Stats Design */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {/* Matches Viewed */}
+                {/* Forum Threads */}
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
-                  <div className="text-3xl mb-2">🎮</div>
+                  <div className="text-3xl mb-2">📚</div>
                   <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                    {userStats?.matches_viewed || 0}
+                    {userStats?.forum_threads || 0}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Matches Viewed</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Forum Threads</div>
                 </div>
 
-                {/* Comments Posted */}
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
-                  <div className="text-3xl mb-2">💬</div>
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {userStats?.comments_posted || 0}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Comments</div>
-                </div>
-
-                {/* Forum Activity */}
+                {/* Forum Posts */}
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
                   <div className="text-3xl mb-2">📝</div>
-                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                    {(userStats?.forum_threads || 0) + (userStats?.forum_posts || 0)}
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {userStats?.forum_posts || 0}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Forum Posts</div>
                 </div>
 
-                {/* Teams Followed */}
+                {/* Comments */}
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
-                  <div className="text-3xl mb-2">🏆</div>
-                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                    {userStats?.teams_followed || 0}
+                  <div className="text-3xl mb-2">💬</div>
+                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                    {userStats?.total_comments || 0}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Teams Followed</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Comments</div>
+                </div>
+
+                {/* Days Active */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+                  <div className="text-3xl mb-2">📅</div>
+                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                    {userStats?.days_active || 0}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Days Active</div>
+                </div>
+              </div>
+
+              {/* Additional Stats Row */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
+                {/* Activity Score */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+                  <div className="text-3xl mb-2">⚡</div>
+                  <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                    {userStats?.activity_score || 0}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Activity Score</div>
+                </div>
+
+                {/* Reputation */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+                  <div className="text-3xl mb-2">⭐</div>
+                  <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                    {userStats?.reputation_score || 0}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Reputation</div>
+                </div>
+
+                {/* Mentions */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+                  <div className="text-3xl mb-2">@</div>
+                  <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">
+                    {userStats?.mentions_received || 0}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Mentions</div>
+                </div>
+
+                {/* Total Actions */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+                  <div className="text-3xl mb-2">🎯</div>
+                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                    {userStats?.total_actions || 0}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Total Actions</div>
                 </div>
               </div>
 

@@ -11,35 +11,22 @@ function TeamForm({ teamId, navigateTo }) {
     shortName: '',
     region: '',
     logo: '',
-    flag: '',
     country: '',
     rating: 1000, // Team ELO rating with Marvel Rivals default
     earnings: 0, // Team total earnings in USD
     // Missing team fields
     elo_rating: '',
-    peak_elo: '',
     wins: '',
     losses: '',
     matches_played: '',
-    win_rate: '',
-    current_streak_count: '',
-    current_streak_type: 'none',
-    founded: '',
-    founded_date: '',
-    description: '',
     achievements: '',
-    manager: '',
-    owner: '',
     captain: '',
     status: 'Active',
     // COACH DATA INTEGRATION - CRITICAL FIX
     coach: {
       name: '',
-      realName: '',
-      nationality: '',
-      experience: '',
-      achievements: '',
-      avatar: ''
+      avatar: '',
+      country: 'US'
     },
     socialLinks: {
       twitter: '',
@@ -86,25 +73,14 @@ function TeamForm({ teamId, navigateTo }) {
         wins: team.wins || '',
         losses: team.losses || '',
         matches_played: team.matches_played || '',
-        win_rate: team.win_rate || '',
-        current_streak_count: team.current_streak_count || '',
-        current_streak_type: team.current_streak_type || 'none',
-        founded: team.founded || '',
-        founded_date: team.founded_date || '',
-        description: team.description || '',
         achievements: team.achievements || '',
-        manager: team.manager || '',
-        owner: team.owner || '',
         captain: team.captain || '',
         status: team.status || 'Active',
         // COACH DATA INTEGRATION - CRITICAL FIX
-        coach: team.coach || team.coach_data || {
-          name: '',
-          realName: '',
-          nationality: '',
-          experience: '',
-          achievements: '',
-          avatar: ''
+        coach: {
+          name: team.coach_name || team.coach || '',
+          avatar: team.coach_image || '',
+          country: team.coach_country || 'US'
         },
         socialLinks: team.social_links || team.socialLinks || {
           twitter: '',
@@ -160,9 +136,11 @@ function TeamForm({ teamId, navigateTo }) {
 
   const handleNumberInputChange = (e) => {
     const { name, value } = e.target;
+    // Handle decimal values for earnings field
+    const numValue = name === 'earnings' ? parseFloat(value) : parseInt(value);
     setFormData(prev => ({
       ...prev,
-      [name]: parseInt(value) || 0
+      [name]: numValue || 0
     }));
   };
 
@@ -288,26 +266,13 @@ function TeamForm({ teamId, navigateTo }) {
         wins: formData.wins ? parseInt(formData.wins) : null,
         losses: formData.losses ? parseInt(formData.losses) : null,
         matches_played: formData.matches_played ? parseInt(formData.matches_played) : null,
-        win_rate: formData.win_rate ? parseFloat(formData.win_rate) : null,
-        current_streak_count: formData.current_streak_count ? parseInt(formData.current_streak_count) : null,
-        current_streak_type: formData.current_streak_type || 'none',
-        founded: formData.founded || null,
-        founded_date: formData.founded_date || null,
-        description: formData.description || null,
         achievements: formData.achievements || null,
-        manager: formData.manager || null,
-        owner: formData.owner || null,
         captain: formData.captain || null,
         status: formData.status || 'Active',
         // COACH DATA INTEGRATION - CRITICAL FIX
-        coach_data: {
-          name: formData.coach.name || '',
-          real_name: formData.coach.realName || '',
-          nationality: formData.coach.nationality || '',
-          experience: formData.coach.experience || '',
-          achievements: formData.coach.achievements || '',
-          avatar: formData.coach.avatar || ''
-        },
+        coach: formData.coach.name || '',
+        coach_name: formData.coach.name || '',
+        coach_country: formData.coach.country || 'US',
         // CRITICAL FIX: Ensure social_links is properly formatted
         social_links: {
           twitter: formData.socialLinks.twitter || '',
@@ -451,6 +416,46 @@ function TeamForm({ teamId, navigateTo }) {
     }
   };
 
+  // Countries list for coach selection
+  const countries = [
+    { value: 'US', label: '🇺🇸 United States' },
+    { value: 'CA', label: '🇨🇦 Canada' },
+    { value: 'MX', label: '🇲🇽 Mexico' },
+    { value: 'BR', label: '🇧🇷 Brazil' },
+    { value: 'AR', label: '🇦🇷 Argentina' },
+    { value: 'UK', label: '🇬🇧 United Kingdom' },
+    { value: 'DE', label: '🇩🇪 Germany' },
+    { value: 'FR', label: '🇫🇷 France' },
+    { value: 'ES', label: '🇪🇸 Spain' },
+    { value: 'IT', label: '🇮🇹 Italy' },
+    { value: 'NL', label: '🇳🇱 Netherlands' },
+    { value: 'SE', label: '🇸🇪 Sweden' },
+    { value: 'DK', label: '🇩🇰 Denmark' },
+    { value: 'FI', label: '🇫🇮 Finland' },
+    { value: 'NO', label: '🇳🇴 Norway' },
+    { value: 'PL', label: '🇵🇱 Poland' },
+    { value: 'RU', label: '🇷🇺 Russia' },
+    { value: 'UA', label: '🇺🇦 Ukraine' },
+    { value: 'KR', label: '🇰🇷 South Korea' },
+    { value: 'JP', label: '🇯🇵 Japan' },
+    { value: 'CN', label: '🇨🇳 China' },
+    { value: 'TW', label: '🇹🇼 Taiwan' },
+    { value: 'HK', label: '🇭🇰 Hong Kong' },
+    { value: 'SG', label: '🇸🇬 Singapore' },
+    { value: 'MY', label: '🇲🇾 Malaysia' },
+    { value: 'TH', label: '🇹🇭 Thailand' },
+    { value: 'VN', label: '🇻🇳 Vietnam' },
+    { value: 'PH', label: '🇵🇭 Philippines' },
+    { value: 'ID', label: '🇮🇩 Indonesia' },
+    { value: 'IN', label: '🇮🇳 India' },
+    { value: 'AU', label: '🇦🇺 Australia' },
+    { value: 'NZ', label: '🇳🇿 New Zealand' },
+    { value: 'ZA', label: '🇿🇦 South Africa' },
+    { value: 'AE', label: '🇦🇪 UAE' },
+    { value: 'SA', label: '🇸🇦 Saudi Arabia' },
+    { value: 'INTL', label: '🌍 International' }
+  ];
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -523,36 +528,6 @@ function TeamForm({ teamId, navigateTo }) {
                       e.target.style.display = 'none';
                     }}
                   />
-                </div>
-              )}
-            </div>
-
-            {/* Team Flag */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Team Flag/Banner
-              </label>
-              <ImageUpload
-                onImageSelect={handleFlagSelect}
-                currentImage={formData.flag}
-                placeholder="Upload Team Flag"
-                className="w-full max-w-md"
-              />
-              {formData.flag && (
-                <div className="mt-2">
-                  {/* Check if flag is emoji or URL */}
-                  {formData.flag.startsWith('http') || formData.flag.startsWith('/') ? (
-                    <img 
-                      src={formData.flag} 
-                      alt="Current flag" 
-                      className="w-16 h-16 object-cover rounded"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <div className="text-4xl">{formData.flag}</div>
-                  )}
                 </div>
               )}
             </div>
@@ -671,24 +646,6 @@ function TeamForm({ teamId, navigateTo }) {
               </p>
             </div>
 
-            {/* Peak ELO */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Peak ELO
-              </label>
-              <input
-                type="number"
-                name="peak_elo"
-                value={formData.peak_elo}
-                onChange={handleInputChange}
-                className="form-input"
-                placeholder="2550"
-                min="0"
-                max="5000"
-                step="1"
-              />
-            </div>
-
             {/* Status */}
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
@@ -707,69 +664,10 @@ function TeamForm({ teamId, navigateTo }) {
               </select>
             </div>
 
-            {/* Founded Date */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Founded Date
-              </label>
-              <input
-                type="date"
-                name="founded_date"
-                value={formData.founded_date}
-                onChange={handleInputChange}
-                className="form-input"
-              />
-            </div>
-
-            {/* Manager */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Manager
-              </label>
-              <input
-                type="text"
-                name="manager"
-                value={formData.manager}
-                onChange={handleInputChange}
-                className="form-input"
-                placeholder="e.g., John Smith"
-              />
-            </div>
-
-            {/* Owner */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Owner
-              </label>
-              <input
-                type="text"
-                name="owner"
-                value={formData.owner}
-                onChange={handleInputChange}
-                className="form-input"
-                placeholder="e.g., Team Organization LLC"
-              />
-            </div>
-
-            {/* Team Description */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Team Description
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                className="form-input"
-                rows="3"
-                placeholder="Team background, history, and achievements..."
-              />
-            </div>
-
             {/* Achievements */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Team Achievements
+                Achievements
               </label>
               <textarea
                 name="achievements"
@@ -779,9 +677,6 @@ function TeamForm({ teamId, navigateTo }) {
                 rows="3"
                 placeholder="Major tournament wins, championships, notable accomplishments..."
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                List major achievements and tournament victories
-              </p>
             </div>
 
           </div>
@@ -843,57 +738,6 @@ function TeamForm({ teamId, navigateTo }) {
               />
             </div>
 
-            {/* Win Rate */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Win Rate (%)
-              </label>
-              <input
-                type="number"
-                name="win_rate"
-                value={formData.win_rate}
-                onChange={handleInputChange}
-                className="form-input"
-                placeholder="76.9"
-                min="0"
-                max="100"
-                step="0.1"
-              />
-            </div>
-
-            {/* Current Streak Count */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Current Streak Count
-              </label>
-              <input
-                type="number"
-                name="current_streak_count"
-                value={formData.current_streak_count}
-                onChange={handleInputChange}
-                className="form-input"
-                placeholder="0"
-                min="0"
-                step="1"
-              />
-            </div>
-
-            {/* Current Streak Type */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Current Streak Type
-              </label>
-              <select
-                name="current_streak_type"
-                value={formData.current_streak_type}
-                onChange={handleInputChange}
-                className="form-input"
-              >
-                <option value="none">None</option>
-                <option value="win">Win Streak</option>
-                <option value="loss">Loss Streak</option>
-              </select>
-            </div>
           </div>
         </div>
 
@@ -942,68 +786,25 @@ function TeamForm({ teamId, navigateTo }) {
               />
             </div>
 
-            {/* Coach Real Name */}
+            {/* Coach Country */}
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Real Name
+                Coach Country
               </label>
-              <input
-                type="text"
-                name="coach_realName"
-                value={formData.coach.realName}
+              <select
+                name="coach_country"
+                value={formData.coach.country}
                 onChange={handleInputChange}
                 className="form-input"
-                placeholder="e.g., John Smith"
-              />
+              >
+                {countries.map(country => (
+                  <option key={country.value} value={country.value}>
+                    {country.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* Coach Nationality */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Nationality
-              </label>
-              <input
-                type="text"
-                name="coach_nationality"
-                value={formData.coach.nationality}
-                onChange={handleInputChange}
-                className="form-input"
-                placeholder="e.g., United States"
-              />
-            </div>
-
-            {/* Coach Experience */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Experience (Years)
-              </label>
-              <input
-                type="text"
-                name="coach_experience"
-                value={formData.coach.experience}
-                onChange={handleInputChange}
-                className="form-input"
-                placeholder="e.g., 5 years in Marvel Rivals"
-              />
-            </div>
-
-            {/* Coach Achievements */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Achievements
-              </label>
-              <textarea
-                name="coach_achievements"
-                value={formData.coach.achievements}
-                onChange={handleInputChange}
-                className="form-input"
-                rows="3"
-                placeholder="e.g., Marvel Rivals World Championship 2024, Regional Coach of the Year..."
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                List major achievements and accolades
-              </p>
-            </div>
           </div>
         </div>
 

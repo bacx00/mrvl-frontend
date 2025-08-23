@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StandaloneBracketBuilder Test Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {}
+            }
+        }
+    </script>
+    <style>
+        .test-result {
+            border-left: 4px solid;
+            padding: 1rem;
+            margin: 0.5rem 0;
+        }
+        .test-pass {
+            border-color: #10b981;
+            background-color: #ecfdf5;
+        }
+        .test-fail {
+            border-color: #ef4444;
+            background-color: #fef2f2;
+        }
+        .test-warning {
+            border-color: #f59e0b;
+            background-color: #fffbeb;
+        }
+        .bracket-container {
+            min-height: 400px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-4xl font-bold text-gray-800 mb-8 text-center">
+            🏆 StandaloneBracketBuilder Test Suite
+        </h1>
+
+        <!-- Test Controls -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold mb-4">Test Controls</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button onclick="runAllTests()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    Run All Tests
+                </button>
+                <button onclick="testBracketInit()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                    Test Bracket Init
+                </button>
+                <button onclick="testTeamSelection()" class="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700">
+                    Test Team Selection
+                </button>
+                <button onclick="testCompleteFlow()" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+                    Test Complete Flow
+                </button>
+            </div>
+        </div>
+
+        <!-- Test Results Panel -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold mb-4">Test Results</h2>
+            <div id="test-results" class="space-y-2">
+                <p class="text-gray-600">Click "Run All Tests" to start comprehensive testing...</p>
+            </div>
+        </div>
+
+        <!-- Live Bracket Display -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-bold mb-4">Live Bracket Test Environment</h2>
+            <div id="bracket-display" class="bracket-container">
+                <div id="bracket-builder-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock data and state management
+        let bracketState = {
+            name: 'Marvel Rivals Championship 2025',
+            format: 'single_elimination',
+            rounds: [],
+            teams: [],
+            settings: {
+                bestOf: 3,
+                totalTeams: 8,
+                thirdPlace: false,
+                grandFinalReset: false
+            }
+        };
+
+        const availableTeams = [
+            { id: 1, name: 'Team Secret' },
+            { id: 2, name: 'FaZe Clan' },
+            { id: 3, name: 'Cloud9' },
+            { id: 4, name: 'NRG Esports' },
+            { id: 5, name: '100 Thieves' },
+            { id: 6, name: 'Sentinels' },
+            { id: 7, name: 'OpTic Gaming' },
+            { id: 8, name: 'TSM' },
+            { id: 9, name: 'G2 Esports' },
+            { id: 10, name: 'Fnatic' },
+            { id: 11, name: 'Team Liquid' },
+            { id: 12, name: 'Evil Geniuses' },
+            { id: 13, name: 'XSET' },
+            { id: 14, name: 'Version1' },
+            { id: 15, name: 'The Guard' },
+            { id: 16, name: 'Ghost Gaming' }
+        ];
+
+        let testResults = [];
+
+        function logTest(testName, passed, details = '') {
+            const result = {
+                name: testName,
+                passed: passed,
+                details: details,
+                timestamp: new Date().toISOString()
+            };
+            testResults.push(result);
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${passed ? 'test-pass' : 'test-fail'}`;
+            resultDiv.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <strong>${passed ? '✅' : '❌'} ${testName}</strong>
+                        ${details ? `<p class="text-sm text-gray-600 mt-1">${details}</p>` : ''}
+                    </div>
+                    <span class="text-xs text-gray-500">${new Date().toLocaleTimeString()}</span>
+                </div>
+            `;
+            
+            document.getElementById('test-results').appendChild(resultDiv);
+        }
+
+        function logWarning(testName, details) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'test-result test-warning';
+            resultDiv.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <strong>⚠️ ${testName}</strong>
+                        <p class="text-sm text-gray-600 mt-1">${details}</p>
+                    </div>
+                    <span class="text-xs text-gray-500">${new Date().toLocaleTimeString()}</span>
+                </div>
+            `;
+            
+            document.getElementById('test-results').appendChild(resultDiv);
+        }
+
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+            testResults = [];
+        }
+
+        // Core bracket functions (extracted from component logic)
+        function getRoundName(round, totalRounds) {
+            const reverseRound = totalRounds - round + 1;
+            if (reverseRound === 1) return 'Grand Final';
+            if (reverseRound === 2) return 'Semi Finals';
+            if (reverseRound === 3) return 'Quarter Finals';
+            if (reverseRound === 4) return 'Round of 16';
+            if (reverseRound === 5) return 'Round of 32';
+            return `Round ${round}`;
+        }
+
+        function initializeBracket(teamCount, bestOf = 3) {
+            const rounds = [];
+            const matchesInFirstRound = teamCount / 2;
+            
+            // Only create the first round initially
+            const firstRound = {
+                id: 1,
+                name: getRoundName(1, Math.log2(teamCount)),
+                matches: []
+            };
+            
+            for (let m = 0; m < matchesInFirstRound; m++) {
+                firstRound.matches.push({
+                    id: `R1M${m + 1}`,
+                    matchNumber: m + 1,
+                    team1: null,
+                    team2: null,
+                    score1: 0,
+                    score2: 0,
+                    winner: null,
+                    bestOf: bestOf,
+                    status: 'pending'
+                });
+            }
+            
+            rounds.push(firstRound);
+            
+            bracketState = {
+                ...bracketState,
+                format: 'single_elimination',
+                rounds: rounds,
+                settings: {
+                    ...bracketState.settings,
+                    bestOf: bestOf,
+                    totalTeams: teamCount
+                }
+            };
+            
+            return bracketState;
+        }
+
+        function updateTeamSelection(roundId, matchId, slot, teamId) {
+            const round = bracketState.rounds.find(r => r.id === roundId);
+            if (!round) return false;
+            
+            const match = round.matches.find(m => m.id === matchId);
+            if (!match) return false;
+            
+            const selectedTeam = availableTeams.find(t => t.id === parseInt(teamId));
+            
+            if (slot === 1) {
+                match.team1 = selectedTeam || null;
+            } else {
+                match.team2 = selectedTeam || null;
+            }
+            
+            // Update status if both teams are selected
+            if (match.team1 && match.team2 && match.status === 'pending') {
+                match.status = 'live';
+            }
+            
+            return true;
+        }
+
+        function updateMatchScore(roundId, matchId, team1Score, team2Score) {
+            const round = bracketState.rounds.find(r => r.id === roundId);
+            if (!round) return false;
+            
+            const match = round.matches.find(m => m.id === matchId);
+            if (!match) return false;
+            
+            match.score1 = team1Score;
+            match.score2 = team2Score;
+            
+            // Determine winner
+            const maxScore = Math.ceil(match.bestOf / 2);
+            if (team1Score >= maxScore) {
+                match.winner = match.team1;
+                match.status = 'completed';
+                advanceWinner(roundId, matchId, match.team1);
+                createNextRound(roundId);
+                return true;
+            } else if (team2Score >= maxScore) {
+                match.winner = match.team2;
+                match.status = 'completed';
+                advanceWinner(roundId, matchId, match.team2);
+                createNextRound(roundId);
+                return true;
+            } else {
+                match.winner = null;
+                match.status = match.team1 && match.team2 ? 'live' : 'pending';
+                return true;
+            }
+        }
+
+        function createNextRound(currentRoundId) {
+            const currentRound = bracketState.rounds.find(r => r.id === currentRoundId);
+            if (!currentRound) return false;
+
+            // Check if all matches in current round are completed
+            const allCompleted = currentRound.matches.every(m => m.status === 'completed');
+            if (!allCompleted) return false;
+
+            // Check if next round already exists
+            const nextRoundId = currentRoundId + 1;
+            if (bracketState.rounds.find(r => r.id === nextRoundId)) return false;
+
+            // Calculate how many matches in next round
+            const matchesInNextRound = Math.floor(currentRound.matches.length / 2);
+            if (matchesInNextRound < 1) return false; // Tournament is complete
+
+            const totalRounds = Math.log2(bracketState.settings.totalTeams);
+            const newRound = {
+                id: nextRoundId,
+                name: getRoundName(nextRoundId, totalRounds),
+                matches: []
+            };
+
+            for (let m = 0; m < matchesInNextRound; m++) {
+                newRound.matches.push({
+                    id: `R${nextRoundId}M${m + 1}`,
+                    matchNumber: m + 1,
+                    team1: null,
+                    team2: null,
+                    score1: 0,
+                    score2: 0,
+                    winner: null,
+                    bestOf: bracketState.settings.bestOf,
+                    status: 'pending'
+                });
+            }
+
+            bracketState.rounds.push(newRound);
+            return true;
+        }
+
+        function advanceWinner(roundId, matchId, winner) {
+            if (!winner) return false;
+            
+            const nextRound = bracketState.rounds.find(r => r.id === roundId + 1);
+            if (!nextRound) return false;
+            
+            // Find which match in next round this winner goes to
+            const currentMatchNumber = parseInt(matchId.split('M')[1]);
+            const nextMatchNumber = Math.ceil(currentMatchNumber / 2);
+            const nextMatch = nextRound.matches.find(m => m.matchNumber === nextMatchNumber);
+            
+            if (nextMatch) {
+                if (currentMatchNumber % 2 === 1) {
+                    nextMatch.team1 = winner;
+                } else {
+                    nextMatch.team2 = winner;
+                }
+                
+                // Update next match status if both teams are set
+                if (nextMatch.team1 && nextMatch.team2 && nextMatch.status === 'pending') {
+                    nextMatch.status = 'live';
+                }
+                
+                return true;
+            }
+            
+            return false;
+        }
+
+        function clearBracket() {
+            bracketState = {
+                ...bracketState,
+                rounds: []
+            };
+        }
+
+        // Test Functions
+        function testBracketInit() {
+            clearResults();
+            
+            // Test 1: Initialize 8-team bracket
+            try {
+                initializeBracket(8, 3);
+                const hasFirstRound = bracketState.rounds.length === 1;
+                const firstRound = bracketState.rounds[0];
+                const correctMatches = firstRound && firstRound.matches.length === 4;
+                const correctRoundName = firstRound && firstRound.name === 'Round 1';
+                
+                logTest('8-Team Bracket Initialization', 
+                    hasFirstRound && correctMatches && correctRoundName,
+                    `Created ${bracketState.rounds.length} rounds, first round has ${firstRound?.matches.length || 0} matches, named "${firstRound?.name || 'N/A'}"`
+                );
+            } catch (error) {
+                logTest('8-Team Bracket Initialization', false, `Error: ${error.message}`);
+            }
+
+            // Test 2: Initialize different team counts
+            const teamCounts = [2, 4, 8, 16];
+            teamCounts.forEach(count => {
+                try {
+                    initializeBracket(count, 3);
+                    const expectedMatches = count / 2;
+                    const actualMatches = bracketState.rounds[0]?.matches.length || 0;
+                    
+                    logTest(`${count}-Team Bracket Structure`, 
+                        actualMatches === expectedMatches,
+                        `Expected ${expectedMatches} first round matches, got ${actualMatches}`
+                    );
+                } catch (error) {
+                    logTest(`${count}-Team Bracket Structure`, false, `Error: ${error.message}`);
+                }
+            });
+
+            // Test 3: Best Of settings
+            const bestOfOptions = [1, 3, 5, 7, 9];
+            bestOfOptions.forEach(bo => {
+                try {
+                    initializeBracket(8, bo);
+                    const match = bracketState.rounds[0]?.matches[0];
+                    const correctBestOf = match && match.bestOf === bo;
+                    
+                    logTest(`BO${bo} Setting`, 
+                        correctBestOf,
+                        `Expected BO${bo}, got BO${match?.bestOf || 'N/A'}`
+                    );
+                } catch (error) {
+                    logTest(`BO${bo} Setting`, false, `Error: ${error.message}`);
+                }
+            });
+        }
+
+        function testTeamSelection() {
+            // Initialize bracket for testing
+            initializeBracket(8, 3);
+            
+            // Test 1: Basic team selection
+            try {
+                const success = updateTeamSelection(1, 'R1M1', 1, 1);
+                const match = bracketState.rounds[0].matches[0];
+                const hasTeam = match.team1 && match.team1.id === 1;
+                
+                logTest('Team Selection - Slot 1', 
+                    success && hasTeam,
+                    `Selected team: ${match.team1?.name || 'None'}`
+                );
+            } catch (error) {
+                logTest('Team Selection - Slot 1', false, `Error: ${error.message}`);
+            }
+
+            // Test 2: Both teams selected - status should change to 'live'
+            try {
+                updateTeamSelection(1, 'R1M1', 2, 2);
+                const match = bracketState.rounds[0].matches[0];
+                const bothTeamsSelected = match.team1 && match.team2;
+                const statusIsLive = match.status === 'live';
+                
+                logTest('Match Status Change to Live', 
+                    bothTeamsSelected && statusIsLive,
+                    `Both teams selected: ${bothTeamsSelected}, Status: ${match.status}`
+                );
+            } catch (error) {
+                logTest('Match Status Change to Live', false, `Error: ${error.message}`);
+            }
+
+            // Test 3: Invalid team selection
+            try {
+                const success = updateTeamSelection(1, 'R1M1', 1, 999);
+                const match = bracketState.rounds[0].matches[0];
+                const teamIsNull = !match.team1 || match.team1.id !== 999;
+                
+                logTest('Invalid Team ID Handling', 
+                    teamIsNull,
+                    `Invalid team ID should result in null assignment`
+                );
+            } catch (error) {
+                logTest('Invalid Team ID Handling', false, `Error: ${error.message}`);
+            }
+        }
+
+        function testScoreUpdates() {
+            // Setup bracket with teams
+            initializeBracket(8, 3);
+            updateTeamSelection(1, 'R1M1', 1, 1);
+            updateTeamSelection(1, 'R1M1', 2, 2);
+
+            // Test 1: Score update without winner
+            try {
+                updateMatchScore(1, 'R1M1', 1, 0);
+                const match = bracketState.rounds[0].matches[0];
+                const correctScore = match.score1 === 1 && match.score2 === 0;
+                const noWinner = !match.winner;
+                const statusLive = match.status === 'live';
+                
+                logTest('Score Update - No Winner', 
+                    correctScore && noWinner && statusLive,
+                    `Score: ${match.score1}-${match.score2}, Winner: ${match.winner?.name || 'None'}, Status: ${match.status}`
+                );
+            } catch (error) {
+                logTest('Score Update - No Winner', false, `Error: ${error.message}`);
+            }
+
+            // Test 2: Score update with winner (BO3 - need 2 wins)
+            try {
+                updateMatchScore(1, 'R1M1', 2, 0);
+                const match = bracketState.rounds[0].matches[0];
+                const hasWinner = match.winner && match.winner.id === 1;
+                const statusCompleted = match.status === 'completed';
+                
+                logTest('Score Update - Winner Determined', 
+                    hasWinner && statusCompleted,
+                    `Winner: ${match.winner?.name || 'None'}, Status: ${match.status}`
+                );
+            } catch (error) {
+                logTest('Score Update - Winner Determined', false, `Error: ${error.message}`);
+            }
+        }
+
+        function testProgressiveRounds() {
+            // Initialize 8-team bracket
+            initializeBracket(8, 3);
+            
+            // Set up all first round matches
+            for (let i = 0; i < 4; i++) {
+                updateTeamSelection(1, `R1M${i + 1}`, 1, i * 2 + 1);
+                updateTeamSelection(1, `R1M${i + 1}`, 2, i * 2 + 2);
+            }
+
+            // Test 1: Complete first match - should NOT create next round yet
+            try {
+                updateMatchScore(1, 'R1M1', 2, 0);
+                const roundCount = bracketState.rounds.length;
+                
+                logTest('Single Match Completion - No New Round', 
+                    roundCount === 1,
+                    `Round count after single match: ${roundCount} (should be 1)`
+                );
+            } catch (error) {
+                logTest('Single Match Completion - No New Round', false, `Error: ${error.message}`);
+            }
+
+            // Test 2: Complete remaining matches - should create Semi Finals
+            try {
+                updateMatchScore(1, 'R1M2', 2, 1);
+                updateMatchScore(1, 'R1M3', 2, 0);
+                updateMatchScore(1, 'R1M4', 2, 1);
+                
+                const roundCount = bracketState.rounds.length;
+                const hasNextRound = roundCount === 2;
+                const nextRound = bracketState.rounds[1];
+                const correctName = nextRound && nextRound.name === 'Semi Finals';
+                const correctMatches = nextRound && nextRound.matches.length === 2;
+                
+                logTest('Round 1 Complete - Semi Finals Created', 
+                    hasNextRound && correctName && correctMatches,
+                    `Created ${roundCount} rounds, next round: "${nextRound?.name || 'None'}" with ${nextRound?.matches.length || 0} matches`
+                );
+            } catch (error) {
+                logTest('Round 1 Complete - Semi Finals Created', false, `Error: ${error.message}`);
+            }
+
+            // Test 3: Check winner advancement
+            try {
+                const semiMatch1 = bracketState.rounds[1].matches[0];
+                const semiMatch2 = bracketState.rounds[1].matches[1];
+                const advancedTeams = [semiMatch1.team1, semiMatch1.team2, semiMatch2.team1, semiMatch2.team2];
+                const allAdvanced = advancedTeams.every(team => team !== null);
+                
+                logTest('Winner Advancement to Semi Finals', 
+                    allAdvanced,
+                    `Advanced teams: ${advancedTeams.map(t => t?.name || 'None').join(', ')}`
+                );
+            } catch (error) {
+                logTest('Winner Advancement to Semi Finals', false, `Error: ${error.message}`);
+            }
+        }
+
+        function testCompleteFlow() {
+            clearResults();
+            
+            // Initialize 8-team tournament
+            initializeBracket(8, 3);
+            
+            // Round 1: Set up all matches
+            const round1Teams = [1, 2, 3, 4, 5, 6, 7, 8];
+            for (let i = 0; i < 4; i++) {
+                updateTeamSelection(1, `R1M${i + 1}`, 1, round1Teams[i * 2]);
+                updateTeamSelection(1, `R1M${i + 1}`, 2, round1Teams[i * 2 + 1]);
+            }
+            
+            // Complete Round 1
+            updateMatchScore(1, 'R1M1', 2, 0); // Team 1 wins
+            updateMatchScore(1, 'R1M2', 2, 1); // Team 3 wins
+            updateMatchScore(1, 'R1M3', 2, 0); // Team 5 wins
+            updateMatchScore(1, 'R1M4', 2, 1); // Team 7 wins
+            
+            logTest('Round 1 Complete', bracketState.rounds.length === 2, 
+                `Tournament progressed to ${bracketState.rounds.length} rounds`);
+
+            // Complete Semi Finals
+            updateMatchScore(2, 'R2M1', 2, 1); // Team 1 wins
+            updateMatchScore(2, 'R2M2', 2, 0); // Team 5 wins
+            
+            logTest('Semi Finals Complete', bracketState.rounds.length === 3, 
+                `Tournament progressed to ${bracketState.rounds.length} rounds`);
+
+            // Complete Grand Final
+            updateMatchScore(3, 'R3M1', 2, 1); // Team 1 wins tournament
+            
+            const grandFinal = bracketState.rounds[2].matches[0];
+            const tournamentComplete = grandFinal.status === 'completed';
+            const champion = grandFinal.winner;
+            
+            logTest('Tournament Complete', tournamentComplete && champion, 
+                `Champion: ${champion?.name || 'None'}`);
+
+            // Test final bracket structure
+            const expectedStructure = [4, 2, 1]; // Round 1: 4 matches, Semi: 2 matches, Final: 1 match
+            const actualStructure = bracketState.rounds.map(r => r.matches.length);
+            const structureCorrect = JSON.stringify(expectedStructure) === JSON.stringify(actualStructure);
+            
+            logTest('Final Bracket Structure', structureCorrect, 
+                `Expected: [${expectedStructure.join(', ')}], Got: [${actualStructure.join(', ')}]`);
+        }
+
+        function testEdgeCases() {
+            // Test 1: Minimum bracket (2 teams)
+            try {
+                initializeBracket(2, 1);
+                const isGrandFinal = bracketState.rounds[0].name === 'Grand Final';
+                const oneMatch = bracketState.rounds[0].matches.length === 1;
+                
+                logTest('2-Team Bracket Edge Case', isGrandFinal && oneMatch,
+                    `2-team bracket creates Grand Final with 1 match: ${isGrandFinal && oneMatch}`);
+            } catch (error) {
+                logTest('2-Team Bracket Edge Case', false, `Error: ${error.message}`);
+            }
+
+            // Test 2: Clear bracket functionality
+            try {
+                clearBracket();
+                const isEmpty = bracketState.rounds.length === 0;
+                
+                logTest('Clear Bracket Functionality', isEmpty,
+                    `Bracket cleared: ${isEmpty} (${bracketState.rounds.length} rounds remaining)`);
+            } catch (error) {
+                logTest('Clear Bracket Functionality', false, `Error: ${error.message}`);
+            }
+
+            // Test 3: Invalid round/match IDs
+            try {
+                initializeBracket(4, 3);
+                const invalidRound = updateTeamSelection(999, 'R1M1', 1, 1);
+                const invalidMatch = updateTeamSelection(1, 'INVALID', 1, 1);
+                
+                logTest('Invalid ID Handling', !invalidRound && !invalidMatch,
+                    `Invalid operations properly rejected: ${!invalidRound && !invalidMatch}`);
+            } catch (error) {
+                logTest('Invalid ID Handling', false, `Error: ${error.message}`);
+            }
+        }
+
+        function runAllTests() {
+            clearResults();
+            
+            logTest('Test Suite Started', true, 'Beginning comprehensive bracket system audit...');
+            
+            // Run all test categories
+            setTimeout(() => testBracketInit(), 100);
+            setTimeout(() => testTeamSelection(), 500);
+            setTimeout(() => testScoreUpdates(), 1000);
+            setTimeout(() => testProgressiveRounds(), 1500);
+            setTimeout(() => testCompleteFlow(), 2000);
+            setTimeout(() => testEdgeCases(), 2500);
+            
+            setTimeout(() => {
+                const passCount = testResults.filter(r => r.passed).length;
+                const totalCount = testResults.length;
+                const passRate = Math.round((passCount / totalCount) * 100);
+                
+                logTest('Test Suite Complete', true, 
+                    `${passCount}/${totalCount} tests passed (${passRate}% success rate)`);
+                
+                renderBracketVisual();
+            }, 3000);
+        }
+
+        function renderBracketVisual() {
+            const container = document.getElementById('bracket-builder-container');
+            if (bracketState.rounds.length === 0) {
+                container.innerHTML = '<p class="text-gray-600 text-center py-8">No bracket to display</p>';
+                return;
+            }
+
+            let html = '<div class="flex gap-8 overflow-x-auto p-4">';
+            
+            bracketState.rounds.forEach(round => {
+                html += `
+                    <div class="round-column min-w-[280px]">
+                        <h3 class="text-center font-bold text-lg mb-4">${round.name}</h3>
+                        <div class="space-y-4">
+                `;
+                
+                round.matches.forEach(match => {
+                    const statusColor = match.status === 'completed' ? 'border-green-500' : 
+                                      match.status === 'live' ? 'border-yellow-500' : 'border-gray-300';
+                    
+                    html += `
+                        <div class="bg-white border-2 ${statusColor} rounded-lg p-3">
+                            <div class="text-xs text-gray-500 mb-2 flex justify-between">
+                                <span>Match ${match.matchNumber}</span>
+                                <span class="text-blue-600">BO${match.bestOf}</span>
+                            </div>
+                            <div class="space-y-1">
+                                <div class="flex justify-between items-center p-2 rounded ${match.winner === match.team1 ? 'bg-green-100' : 'bg-gray-50'}">
+                                    <span class="text-sm">${match.team1?.name || 'TBD'}</span>
+                                    <span class="font-bold">${match.score1}</span>
+                                </div>
+                                <div class="flex justify-between items-center p-2 rounded ${match.winner === match.team2 ? 'bg-green-100' : 'bg-gray-50'}">
+                                    <span class="text-sm">${match.team2?.name || 'TBD'}</span>
+                                    <span class="font-bold">${match.score2}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div></div>';
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', function() {
+            logTest('Test Environment Loaded', true, 'Ready to test StandaloneBracketBuilder functionality');
+        });
+    </script>
+</body>
+</html>

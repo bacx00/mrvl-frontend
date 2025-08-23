@@ -1,0 +1,519 @@
+/**
+ * VLR.gg-inspired Mobile & Tablet Optimizations
+ * Complete responsive design system
+ */
+
+/* ===========================
+   Base Mobile Variables
+   =========================== */
+:root {
+  --mobile-header-height: 56px;
+  --mobile-bottom-nav-height: 64px;
+  --tablet-sidebar-width: 280px;
+  --mobile-card-padding: 12px;
+  --tablet-card-padding: 16px;
+  --touch-target-min: 44px;
+  --safe-area-top: env(safe-area-inset-top);
+  --safe-area-bottom: env(safe-area-inset-bottom);
+  --safe-area-left: env(safe-area-inset-left);
+  --safe-area-right: env(safe-area-inset-right);
+}
+
+/* ===========================
+   Mobile First Base Styles
+   =========================== */
+@media (max-width: 767px) {
+  /* Prevent horizontal scroll */
+  html, body {
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Optimize font sizes for mobile */
+  body {
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Mobile typography scale */
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+  h4 { font-size: 1.125rem; }
+  h5 { font-size: 1rem; }
+  h6 { font-size: 0.875rem; }
+
+  /* Mobile container padding */
+  .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* Adjust main content for fixed headers/footers */
+  .main-content {
+    padding-top: var(--mobile-header-height);
+    padding-bottom: var(--mobile-bottom-nav-height);
+    min-height: calc(100vh - var(--mobile-header-height) - var(--mobile-bottom-nav-height));
+  }
+}
+
+/* ===========================
+   VLR.gg Style Match Cards
+   =========================== */
+.mobile-match-card {
+  display: block;
+  width: 100%;
+  padding: var(--mobile-card-padding);
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-match-card:active {
+  transform: scale(0.98);
+  background: #f9fafb;
+}
+
+.mobile-match-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.mobile-match-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.mobile-match-status.live {
+  background: #fee2e2;
+  color: #dc2626;
+  animation: pulse 2s infinite;
+}
+
+.mobile-match-status.upcoming {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.mobile-match-status.completed {
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+.mobile-team-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  min-height: var(--touch-target-min);
+}
+
+.mobile-team-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-team-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  margin-right: 12px;
+  object-fit: contain;
+  background: #f9fafb;
+  padding: 4px;
+}
+
+.mobile-team-name {
+  font-weight: 500;
+  font-size: 15px;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-team-score {
+  font-size: 18px;
+  font-weight: 700;
+  min-width: 30px;
+  text-align: center;
+}
+
+.mobile-team-score.winner {
+  color: #059669;
+}
+
+.mobile-team-score.loser {
+  color: #6b7280;
+}
+
+/* ===========================
+   VLR.gg Style Tournament Brackets
+   =========================== */
+@media (max-width: 767px) {
+  .tournament-bracket {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 16px;
+  }
+
+  .bracket-round {
+    min-width: 280px;
+    margin-right: 16px;
+  }
+
+  .bracket-match {
+    padding: 12px;
+    margin-bottom: 12px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+  }
+
+  .bracket-connector {
+    display: none; /* Hide complex connectors on mobile */
+  }
+}
+
+/* ===========================
+   Mobile Navigation Enhancements
+   =========================== */
+.mobile-drawer {
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.bottom-nav-item {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  position: relative;
+}
+
+.bottom-nav-item:active::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0.1;
+  border-radius: 8px;
+}
+
+/* Safe area handling for iPhone X+ */
+.safe-area-bottom {
+  padding-bottom: var(--safe-area-bottom);
+}
+
+.safe-area-top {
+  padding-top: var(--safe-area-top);
+}
+
+/* ===========================
+   Mobile Tables (VLR.gg style)
+   =========================== */
+@media (max-width: 767px) {
+  .mobile-table {
+    display: block;
+    width: 100%;
+  }
+
+  .mobile-table thead {
+    display: none;
+  }
+
+  .mobile-table tbody {
+    display: block;
+  }
+
+  .mobile-table tr {
+    display: block;
+    margin-bottom: 12px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  .mobile-table td {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border: none;
+  }
+
+  .mobile-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 12px;
+    text-transform: uppercase;
+  }
+}
+
+/* ===========================
+   Touch-Optimized Forms
+   =========================== */
+@media (max-width: 767px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  select,
+  textarea {
+    min-height: var(--touch-target-min);
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px;
+    border-radius: 8px;
+  }
+
+  button,
+  .btn {
+    min-height: var(--touch-target-min);
+    padding: 12px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 8px;
+  }
+}
+
+/* ===========================
+   Mobile Cards Grid
+   =========================== */
+@media (max-width: 640px) {
+  .mobile-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .mobile-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.2s ease;
+  }
+
+  .mobile-card:active {
+    transform: scale(0.98);
+  }
+}
+
+/* ===========================
+   Tablet Optimizations (iPad)
+   =========================== */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .tablet-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .tablet-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  .tablet-sidebar-layout {
+    display: grid;
+    grid-template-columns: var(--tablet-sidebar-width) 1fr;
+    gap: 24px;
+  }
+
+  .tablet-card {
+    padding: var(--tablet-card-padding);
+    border-radius: 12px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+  }
+
+  .tablet-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* ===========================
+   Landscape Mode Adjustments
+   =========================== */
+@media (max-height: 500px) and (orientation: landscape) {
+  .mobile-header {
+    height: 48px;
+  }
+
+  .bottom-navigation {
+    height: 48px;
+  }
+
+  .mobile-drawer {
+    padding-top: 48px;
+  }
+}
+
+/* ===========================
+   Forum Thread Mobile View
+   =========================== */
+@media (max-width: 767px) {
+  .forum-thread-mobile {
+    background: white;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    border: 1px solid #e5e7eb;
+  }
+
+  .forum-thread-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .forum-thread-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+
+  .forum-thread-meta {
+    flex: 1;
+  }
+
+  .forum-thread-author {
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .forum-thread-time {
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .forum-thread-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+
+  .forum-thread-preview {
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .forum-thread-stats {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #6b7280;
+  }
+}
+
+/* ===========================
+   Performance Optimizations
+   =========================== */
+@media (max-width: 767px) {
+  /* Reduce animations on mobile */
+  .reduce-motion * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Optimize images */
+  img {
+    content-visibility: auto;
+    contain-intrinsic-size: 400px;
+  }
+
+  /* Hardware acceleration for scrolling */
+  .scroll-container {
+    transform: translateZ(0);
+    will-change: transform;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ===========================
+   Swipe Gestures Support
+   =========================== */
+.swipeable {
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.swipe-to-refresh {
+  position: relative;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ===========================
+   Loading States
+   =========================== */
+.mobile-skeleton {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* ===========================
+   Dark Mode Support
+   =========================== */
+@media (max-width: 767px) {
+  .dark .mobile-match-card {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .dark .mobile-match-card:active {
+    background: #111827;
+  }
+
+  .dark .mobile-team-name {
+    color: #f3f4f6;
+  }
+
+  .dark .mobile-card {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .dark .forum-thread-mobile {
+    background: #1f2937;
+    border-color: #374151;
+  }
+}

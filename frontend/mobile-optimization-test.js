@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Marvel Rivals Mobile Optimization Test Suite
- * Comprehensive testing for mobile responsiveness, performance, and UX
+ * MRVL Mobile & Tablet Optimization Test Suite
+ * Comprehensive testing script to validate all mobile features
  */
 
 const fs = require('fs');

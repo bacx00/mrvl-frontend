@@ -112,6 +112,7 @@ function PlayerDetailPage({ params, navigateTo }) {
         
         // ALL missing fields from database
         eloRating: playerData.elo_rating,
+        rank: playerData.rank,
         peakElo: playerData.peak_elo,
         skillRating: playerData.skill_rating,
         wins: playerData.wins,
@@ -503,7 +504,7 @@ function PlayerDetailPage({ params, navigateTo }) {
                     <span className="text-gray-600 dark:text-gray-300">• Age: {player.age}</span>
                   )}
                   {player.region && (
-                    <span className="text-gray-600 dark:text-gray-300">• {player.region}</span>
+                    <span className="text-gray-600 dark:text-gray-300">• {player.region === 'Americas' ? 'America' : player.region}</span>
                   )}
                 </div>
                 {/* Social Links - VLR.gg Style */}
@@ -511,32 +512,41 @@ function PlayerDetailPage({ params, navigateTo }) {
                   <div className="flex items-center space-x-4">
                     {player.socialMedia.twitter && (
                       <a 
-                        href={`https://twitter.com/${player.socialMedia.twitter}`} 
+                        href={player.socialMedia.twitter.startsWith('http') ? player.socialMedia.twitter : `https://twitter.com/${player.socialMedia.twitter}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
+                        title="Twitter"
                       >
-                        Twitter
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                        </svg>
                       </a>
                     )}
                     {player.socialMedia.twitch && (
                       <a 
-                        href={`https://twitch.tv/${player.socialMedia.twitch}`} 
+                        href={player.socialMedia.twitch.startsWith('http') ? player.socialMedia.twitch : `https://twitch.tv/${player.socialMedia.twitch}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
+                        title="Twitch"
                       >
-                        Twitch
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/>
+                        </svg>
                       </a>
                     )}
                     {player.socialMedia.instagram && (
                       <a 
-                        href={`https://instagram.com/${player.socialMedia.instagram}`} 
+                        href={player.socialMedia.instagram.startsWith('http') ? player.socialMedia.instagram : `https://instagram.com/${player.socialMedia.instagram}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
+                        title="Instagram"
                       >
-                        Instagram
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12a6.162 6.162 0 1112.324 0 6.162 6.162 0 01-12.324 0zM12 16a4 4 0 110-8 4 4 0 010 8zm4.965-10.405a1.44 1.44 0 112.881.001 1.44 1.44 0 01-2.881-.001z"/>
+                        </svg>
                       </a>
                     )}
                   </div>
@@ -553,19 +563,18 @@ function PlayerDetailPage({ params, navigateTo }) {
                 </div>
               </div>
               
-              {/* Current Team */}
-              {player.currentTeam && (
-                <div className="mb-4">
-                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Team</div>
-                  <div 
-                    className="flex items-center justify-end space-x-2 cursor-pointer hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                    onClick={() => navigateTo('team-detail', { id: player.currentTeam.id })}
-                  >
-                    <TeamLogo team={player.currentTeam} size="w-6 h-6" />
-                    <span className="font-medium text-gray-900 dark:text-white">{player.currentTeam.short_name || player.currentTeam.name}</span>
-                  </div>
+              {/* ELO Rating */}
+              <div className="mb-4">
+                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">ELO Rating</div>
+                <div className="flex items-center justify-end space-x-2">
+                  <span className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                    {player.eloRating || player.elo_rating || 1000}
+                  </span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    • #{player.rank || 'Unranked'}
+                  </span>
                 </div>
-              )}
+              </div>
               
               {/* Edit Button for Admins/Moderators */}
               {(isAdmin() || isModerator()) && !isEditing && (
@@ -604,16 +613,6 @@ function PlayerDetailPage({ params, navigateTo }) {
                 <div className="text-gray-500 dark:text-gray-500 text-sm">Role</div>
                 <div className="font-medium text-gray-900 dark:text-white mt-1">{player.role}</div>
               </div>
-              <div>
-                <div className="text-gray-500 dark:text-gray-500 text-sm">Region</div>
-                <div className="font-medium text-gray-900 dark:text-white mt-1">{player.region || 'N/A'}</div>
-              </div>
-              {player.nationality && (
-                <div>
-                  <div className="text-gray-500 dark:text-gray-500 text-sm">Nationality</div>
-                  <div className="font-medium text-gray-900 dark:text-white mt-1">{player.nationality}</div>
-                </div>
-              )}
               {player.jerseyNumber && (
                 <div>
                   <div className="text-gray-500 dark:text-gray-500 text-sm">Jersey #</div>
@@ -626,20 +625,10 @@ function PlayerDetailPage({ params, navigateTo }) {
                   <div className="font-medium text-gray-900 dark:text-white mt-1">{new Date(player.birthDate).toLocaleDateString()}</div>
                 </div>
               )}
-              <div>
-                <div className="text-gray-500 dark:text-gray-500 text-sm">Rating</div>
-                <div className="font-medium text-yellow-600 dark:text-yellow-400 mt-1">{player.rating || 1500}</div>
-              </div>
               {player.peakRating && (
                 <div>
                   <div className="text-gray-500 dark:text-gray-500 text-sm">Peak Rating</div>
                   <div className="font-medium text-green-600 dark:text-green-400 mt-1">{player.peakRating}</div>
-                </div>
-              )}
-              {player.eloRating && (
-                <div>
-                  <div className="text-gray-500 dark:text-gray-500 text-sm">ELO Rating</div>
-                  <div className="font-medium text-blue-600 dark:text-blue-400 mt-1">{player.eloRating}</div>
                 </div>
               )}
               {player.peakElo && (
@@ -652,18 +641,6 @@ function PlayerDetailPage({ params, navigateTo }) {
                 <div>
                   <div className="text-gray-500 dark:text-gray-500 text-sm">Skill Rating</div>
                   <div className="font-medium text-purple-600 dark:text-purple-400 mt-1">{player.skillRating}</div>
-                </div>
-              )}
-              {player.wins !== undefined && (
-                <div>
-                  <div className="text-gray-500 dark:text-gray-500 text-sm">Wins</div>
-                  <div className="font-medium text-green-600 dark:text-green-400 mt-1">{player.wins}</div>
-                </div>
-              )}
-              {player.losses !== undefined && (
-                <div>
-                  <div className="text-gray-500 dark:text-gray-500 text-sm">Losses</div>
-                  <div className="font-medium text-red-600 dark:text-red-400 mt-1">{player.losses}</div>
                 </div>
               )}
               {player.tournamentsPlayed && (
@@ -1248,19 +1225,17 @@ function PlayerDetailPage({ params, navigateTo }) {
               {(player.currentTeam || player.current_team || player.teamId || player.team_id) ? (
                 <div className="flex items-center justify-between py-3 px-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                   <div className="flex items-center space-x-4">
-                    {/* Team Logo - Always show question mark for now */}
-                    <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-lg flex items-center justify-center shadow-sm">
-                      <span className="text-xl text-gray-500">?</span>
-                    </div>
+                    {/* Team Logo */}
+                    <TeamLogo team={player.currentTeam || player.current_team} size="w-12 h-12" />
                     <div>
                       <button
-                        onClick={() => navigateTo('team-detail', { id: player.currentTeam?.id || player.current_team?.id || player.teamId || player.team_id || 4 })}
+                        onClick={() => navigateTo('team-detail', { id: player.currentTeam?.id || player.current_team?.id || player.teamId || player.team_id })}
                         className="text-lg font-semibold text-gray-900 dark:text-white hover:text-red-600 dark:hover:text-red-400"
                       >
-                        {player.currentTeam?.name || player.current_team?.name || '100 Thieves'}
+                        {player.currentTeam?.name || player.current_team?.name}
                       </button>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
-                        {player.currentTeam?.region || player.current_team?.region || 'Americas'}
+                        {player.currentTeam?.region || player.current_team?.region || player.region}
                       </div>
                     </div>
                   </div>
@@ -1281,27 +1256,8 @@ function PlayerDetailPage({ params, navigateTo }) {
             <div>
               <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">Past Teams</h4>
               {(() => {
-                // Sample past teams data for demonstration
-                const sampleTeamHistory = [
-                  {
-                    id: 15,
-                    name: 'Cloud9',
-                    logo: null,
-                    region: 'Americas',
-                    join_date: '2024-01-15',
-                    leave_date: '2024-12-01'
-                  },
-                  {
-                    id: 23,
-                    name: 'TSM',
-                    logo: null,
-                    region: 'Americas',
-                    join_date: '2023-06-01',
-                    leave_date: '2023-12-31'
-                  }
-                ];
-                
-                const teamHistory = player.teamHistory && player.teamHistory.length > 0 ? player.teamHistory : sampleTeamHistory;
+                // Only use actual team history data from the player
+                const teamHistory = player.teamHistory || player.past_teams || [];
                 
                 if (teamHistory.length === 0) {
                   return (

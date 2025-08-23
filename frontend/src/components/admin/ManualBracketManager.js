@@ -14,7 +14,7 @@ import {
   Gamepad2
 } from 'lucide-react';
 
-const ManualBracketManager = ({ tournamentId }) => {
+const ManualBracketManager = ({ tournamentId, eventId }) => {
   const [teams, setTeams] = useState([]);
   const [selectedTeams, setSelectedTeams] = useState([]);
   const [formats, setFormats] = useState({});
@@ -29,8 +29,27 @@ const ManualBracketManager = ({ tournamentId }) => {
   const [activeMatch, setActiveMatch] = useState(null);
   const [scoreModal, setScoreModal] = useState(false);
 
-  // Marvel Rivals game modes
-  const gameModes = ['Domination', 'Convoy', 'Convergence'];
+  // Marvel Rivals game modes with details
+  const gameModes = [
+    { 
+      name: 'Domination', 
+      type: 'control',
+      description: 'Control point - Best of 3 rounds',
+      maps: ['Shin-Shibuya', 'Spider Islands', 'Hydra Base']
+    },
+    { 
+      name: 'Convoy', 
+      type: 'payload',
+      description: 'Escort/Stop the convoy',
+      maps: ['Tokyo 2099: Shinjuku', 'Klyntar', 'Midtown Manhattan']
+    },
+    { 
+      name: 'Convergence', 
+      type: 'hybrid',
+      description: 'Capture point then escort',
+      maps: ['Yggsgard: Yggdrasil Path', 'Wakanda: Birnin T\'Challa', 'Hell\'s Heaven']
+    }
+  ];
 
   useEffect(() => {
     fetchTeams();
@@ -39,8 +58,8 @@ const ManualBracketManager = ({ tournamentId }) => {
 
   const fetchTeams = async () => {
     try {
-      const response = await axios.get('/api/public/teams');
-      setTeams(response.data.data || []);
+      const response = await axios.get(`/api/admin/events/${tournamentId || eventId}`);
+      setTeams(response.data.data.teams || []);
     } catch (err) {
       setError('Failed to fetch teams');
     }
@@ -91,14 +110,16 @@ const ManualBracketManager = ({ tournamentId }) => {
     try {
       const token = localStorage.getItem('adminToken');
       const response = await axios.post(
-        `/api/admin/tournaments/${tournamentId}/manual-bracket`,
+        `/api/admin/events/${eventId || tournamentId}/bracket/manual/stage`,
         {
-          format_key: selectedFormat,
-          team_ids: selectedTeams,
-          best_of: bestOf,
-          bracket_type: bracketType,
           name: bracketName,
-          start_date: new Date().toISOString()
+          stage_type: bracketType,
+          round_count: Math.ceil(Math.log2(selectedTeams.length)),
+          team_count: selectedTeams.length,
+          settings: {
+            format_key: selectedFormat,
+            best_of: bestOf
+          }
         },
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -121,7 +142,7 @@ const ManualBracketManager = ({ tournamentId }) => {
     try {
       const token = localStorage.getItem('adminToken');
       const response = await axios.get(
-        `/api/admin/manual-bracket/${bracketId}`,
+        `/api/admin/events/${eventId || tournamentId}/bracket/manual/matches`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -145,7 +166,7 @@ const ManualBracketManager = ({ tournamentId }) => {
     try {
       const token = localStorage.getItem('adminToken');
       const response = await axios.put(
-        `/api/admin/manual-bracket/matches/${matchId}/score`,
+        `/api/admin/events/${eventId || tournamentId}/bracket/manual/match/${matchId}/scores`,
         scores,
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -174,7 +195,7 @@ const ManualBracketManager = ({ tournamentId }) => {
     try {
       const token = localStorage.getItem('adminToken');
       const response = await axios.post(
-        `/api/admin/manual-bracket/${currentBracket.stage.id}/reset`,
+        `/api/admin/events/${eventId || tournamentId}/bracket/manual/reset`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -296,6 +317,7 @@ const ManualBracketManager = ({ tournamentId }) => {
                 <option value="3">Best of 3</option>
                 <option value="5">Best of 5</option>
                 <option value="7">Best of 7</option>
+                <option value="9">Best of 9</option>
               </select>
             </div>
 
@@ -305,11 +327,14 @@ const ManualBracketManager = ({ tournamentId }) => {
                 <Gamepad2 size={16} />
                 Marvel Rivals Game Modes
               </h4>
-              <div className="text-xs text-gray-400 space-y-1">
+              <div className="text-xs text-gray-400 space-y-2">
                 {gameModes.map(mode => (
-                  <div key={mode} className="flex items-center gap-2">
-                    <ChevronRight size={12} />
-                    <span>{mode}</span>
+                  <div key={mode.name} className="border-l-2 border-gray-600 pl-2">
+                    <div className="font-medium text-gray-300">{mode.name}</div>
+                    <div className="text-gray-500">{mode.description}</div>
+                    <div className="text-gray-600 mt-1">
+                      Maps: {mode.maps.join(', ')}
+                    </div>
                   </div>
                 ))}
               </div>

@@ -5,6 +5,9 @@
 /* Import Engagement System Styles */
 @import './styles/engagement.css';
 
+/* Import Mobile Optimized Styles */
+@import './styles/mobile-optimized.css';
+
 /* Global Styles */
 body {
   margin: 0;

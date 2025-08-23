@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks';
 import { TeamLogo, getCountryFlag, getCountryName, getEventLogoUrl } from '../../utils/imageUtils';
 import MatchCard from '../MatchCard';
 import LiquipediaBracket from '../LiquipediaBracket';
+import StandaloneBracketBuilder from '../admin/StandaloneBracketBuilder';
 // Pusher removed - not using real-time updates
 
 function EventDetailPage({ params, navigateTo }) {
@@ -572,6 +573,16 @@ function EventDetailPage({ params, navigateTo }) {
           {activeTab === 'bracket' && (
             <div>
               {console.log('🔍 Bracket tab - Current bracket data:', bracket)}
+              
+              {/* Standalone Manual Bracket Builder - Admin Only */}
+              {(isAdmin() || isModerator()) && (
+                <div className="mb-6">
+                  <StandaloneBracketBuilder 
+                    eventId={eventId}
+                  />
+                </div>
+              )}
+              
               {bracket && (bracket.matches?.length > 0 || bracket.upper_bracket || bracket.main_stage || bracket.rounds) ? (
                 <>
                   {(isAdmin() || isModerator()) && (

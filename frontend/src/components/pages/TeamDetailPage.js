@@ -396,40 +396,62 @@ function TeamDetailPage({ params, navigateTo }) {
                 <div className="flex items-center space-x-4 mb-3">
                   <div className="flex items-center space-x-2">
                     <span className="text-lg">{getCountryFlag(team.country)}</span>
-                    <span className="text-gray-600 dark:text-gray-300">{team.region}</span>
+                    <span className="text-gray-600 dark:text-gray-300">{team.country || 'Unknown'}</span>
                   </div>
                 </div>
                 {/* Social Links - VLR.gg Style */}
-                {team.social_media && Object.keys(team.social_media).length > 0 && (
+                {team.social_media && Object.keys(team.social_media).filter(k => team.social_media[k]).length > 0 && (
                   <div className="flex items-center space-x-4">
                     {team.social_media.twitter && (
                       <a 
-                        href={`https://twitter.com/${team.social_media.twitter}`} 
+                        href={team.social_media.twitter.startsWith('http') ? team.social_media.twitter : `https://twitter.com/${team.social_media.twitter}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
+                        title="Twitter"
                       >
-                        Twitter
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                        </svg>
                       </a>
                     )}
                     {team.social_media.instagram && (
                       <a 
-                        href={`https://instagram.com/${team.social_media.instagram}`} 
+                        href={team.social_media.instagram.startsWith('http') ? team.social_media.instagram : `https://instagram.com/${team.social_media.instagram}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
+                        title="Instagram"
                       >
-                        Instagram
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12a6.162 6.162 0 1112.324 0 6.162 6.162 0 01-12.324 0zM12 16a4 4 0 110-8 4 4 0 010 8zm4.965-10.405a1.44 1.44 0 112.881.001 1.44 1.44 0 01-2.881-.001z"/>
+                        </svg>
                       </a>
                     )}
                     {team.social_media.youtube && (
                       <a 
-                        href={`https://youtube.com/@${team.social_media.youtube}`} 
+                        href={team.social_media.youtube.startsWith('http') ? team.social_media.youtube : `https://youtube.com/@${team.social_media.youtube}`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
+                        title="YouTube"
                       >
-                        YouTube
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                        </svg>
+                      </a>
+                    )}
+                    {team.social_media.discord && (
+                      <a 
+                        href={team.social_media.discord.startsWith('http') ? team.social_media.discord : `https://${team.social_media.discord}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
+                        title="Discord"
+                      >
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/>
+                        </svg>
                       </a>
                     )}
                     {team.social_media.website && (
@@ -438,8 +460,11 @@ function TeamDetailPage({ params, navigateTo }) {
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white transition-colors"
+                        title="Website"
                       >
-                        Website
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                        </svg>
                       </a>
                     )}
                   </div>
@@ -450,7 +475,7 @@ function TeamDetailPage({ params, navigateTo }) {
               <div className="text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(matchStats.totalEarnings || team.earnings || 0)}</div>
               <div className="text-sm text-gray-600 dark:text-gray-300">Total Earnings</div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{Math.floor(matchStats.rating || team.rating || 1500)}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-300">Rating • #{matchStats.ranking || team.rank || 'N/A'}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-300">ELO Rating • #{matchStats.ranking || team.rank || 'N/A'}</div>
               
               {/* Edit Button for Admins/Moderators */}
               {(isAdmin() || isModerator()) && !isEditing && (
@@ -557,22 +582,25 @@ function TeamDetailPage({ params, navigateTo }) {
             {/* COACH DATA INTEGRATION - Enhanced coach display */}
             {(team.coach || team.coach_data) && (
               <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-                  <span className="text-lg mr-2">🧑‍🏫</span>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
                   Coaching Staff
                 </h4>
                 
                 <div className="flex items-center space-x-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   {/* Coach Avatar */}
-                  {team.coach_data?.avatar && (
+                  {team.coach_data?.avatar ? (
                     <img 
                       src={team.coach_data.avatar} 
                       alt="Coach avatar" 
                       className="w-12 h-12 rounded-full object-cover border-2 border-gray-300 dark:border-gray-600"
                       onError={(e) => {
-                        e.target.style.display = 'none';
+                        e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjQiIGN5PSIyNCIgcj0iMjQiIGZpbGw9IiNFNUU3RUIiLz4KPHRleHQgeD0iNTAlIiB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzZCNzI4MCI+PzwvdGV4dD4KPC9zdmc+';
                       }}
                     />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-2 border-gray-300 dark:border-gray-600">
+                      <span className="text-gray-500 dark:text-gray-400 text-xl">?</span>
+                    </div>
                   )}
                   
                   <div className="flex-1">
@@ -582,7 +610,7 @@ function TeamDetailPage({ params, navigateTo }) {
                       </span>
                       {team.coach_data?.nationality && (
                         <span className="text-sm">
-                          {getCountryFlag(team.coach_data.nationality)} {team.coach_data.nationality}
+                          {getCountryFlag(team.coach_data.nationality)}
                         </span>
                       )}
                     </div>
@@ -831,85 +859,143 @@ function TeamDetailPage({ params, navigateTo }) {
                     </div>
                   )}
 
-                  {/* Recent Results */}
+                  {/* Recent Results - Match History Style */}
                   {activeMatchTab === 'recent' && (
                     <div>
-                      <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
-                        Recent Results ({recentMatches.length})
+                      <h3 className="text-xl font-bold text-red-600 dark:text-red-400 mb-4">
+                        Match History
                       </h3>
                       {recentMatches.length > 0 ? (
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                           {recentMatches.map((match, index) => {
-                            const isTeam1 = match.team1_id === team.id;
-                            const teamScore = isTeam1 ? match.team1_score : match.team2_score;
-                            const opponentScore = isTeam1 ? match.team2_score : match.team1_score;
-                            const opponent = isTeam1 ? match.team2 : match.team1;
-                            const won = teamScore > opponentScore;
+                            // Handle new API response format
+                            const teamScore = match.score?.team || match.team1_score || 0;
+                            const opponentScore = match.score?.opponent || match.team2_score || 0;
+                            const opponent = match.opponent || match.team2 || match.team1;
+                            const won = match.result === 'W' || teamScore > opponentScore;
                             
                             return (
                               <div 
                                 key={match.id || index}
+                                className="border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-lg transition-shadow cursor-pointer"
                                 onClick={() => navigateTo('match-detail', { id: match.id })}
-                                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
                               >
-                                <div className="flex items-center space-x-4">
-                                  {/* Event Logo - VLR.gg Style */}
-                                  {match.event_logo && (
-                                    <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
-                                      <img 
-                                        src={match.event_logo} 
-                                        alt={match.event_name} 
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => { e.target.src = getImageUrl(null, 'event-banner'); }}
-                                      />
-                                    </div>
-                                  )}
-                                  
-                                  {/* Result Badge */}
-                                  <div className={`px-2 py-1 rounded text-xs font-bold ${
-                                    won ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' 
-                                        : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
-                                  }`}>
-                                    {won ? 'W' : 'L'}
-                                  </div>
-                                  
-                                  {/* Teams Display - VLR.gg Style with Both Logos */}
-                                  <div className="flex items-center space-x-3">
-                                    {/* Current Team Logo */}
-                                    <TeamLogo team={team} size="w-8 h-8" />
-                                    
-                                    {/* Score */}
-                                    <div className="text-center min-w-[60px]">
-                                      <div className="font-bold text-gray-900 dark:text-white">
-                                        <span className={won ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}>
-                                          {teamScore}
-                                        </span>
-                                        <span className="mx-1 text-gray-400">-</span>
-                                        <span className={!won ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}>
-                                          {opponentScore}
-                                        </span>
+                                {/* Event Header - VLR.gg style */}
+                                <div className="bg-gray-50 dark:bg-gray-800/50 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                      {/* Event Logo */}
+                                      <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
+                                        {match.event?.logo || match.event_logo ? (
+                                          <img 
+                                            src={match.event?.logo || match.event_logo} 
+                                            alt={match.event?.name || match.event_name}
+                                            className="w-10 h-10 object-contain"
+                                            onError={(e) => { 
+                                              e.target.style.display = 'none';
+                                              e.target.parentElement.innerHTML = '<span class="text-xs font-bold text-gray-500">MR</span>';
+                                            }}
+                                          />
+                                        ) : (
+                                          <span className="text-xs font-bold text-gray-500">MR</span>
+                                        )}
+                                      </div>
+                                      <div>
+                                        <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                                          {match.event?.name || match.event_name || 'Marvel Rivals Championship 2025'}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          {new Date(match.date || match.scheduled_at || match.played_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                        </div>
                                       </div>
                                     </div>
-                                    
-                                    {/* Opponent Logo */}
-                                    <TeamLogo team={opponent} size="w-8 h-8" />
-                                    
-                                    {/* Match Info */}
-                                    <div>
-                                      <div className="font-medium text-gray-900 dark:text-white">
-                                        {opponent?.name || 'TBD'}
-                                      </div>
-                                      <div className="text-xs text-gray-500 dark:text-gray-500">
-                                        {match.event_name || 'Scrim'} • {match.format || 'BO3'}
-                                      </div>
-                                    </div>
+                                    <span className={`text-xs font-bold px-2 py-1 rounded ${
+                                      won ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 
+                                      'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                                    }`}>
+                                      {won ? 'WIN' : 'LOSS'}
+                                    </span>
                                   </div>
                                 </div>
                                 
-                                {/* Date */}
-                                <div className="text-right">
-                                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                                    {formatDate(match.scheduled_at)}
+                                {/* Match Content */}
+                                <div className="p-4">
+                                  <div className="flex items-center justify-between">
+                                    {/* Team 1 (Current Team) with Logo */}
+                                    <div 
+                                      onClick={(e) => { e.stopPropagation(); }}
+                                      className="flex-1 flex items-center space-x-3"
+                                    >
+                                      <div className="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                                        {team.logo ? (
+                                          <img 
+                                            src={team.logo} 
+                                            alt={team.name}
+                                            className="w-12 h-12 object-contain"
+                                            onError={(e) => { 
+                                              e.target.style.display = 'none';
+                                              e.target.parentElement.innerHTML = '<span class="text-2xl text-gray-500">?</span>';
+                                            }}
+                                          />
+                                        ) : (
+                                          <span className="text-2xl text-gray-500">?</span>
+                                        )}
+                                      </div>
+                                      <div>
+                                        <div className="text-base font-bold text-gray-900 dark:text-white">
+                                          {team.short_name || team.name}
+                                        </div>
+                                        <div className="text-xs text-gray-500">{team.region === 'NA' ? 'America' : team.region}</div>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Score */}
+                                    <div className="px-6">
+                                      <div className="flex items-center space-x-3">
+                                        <span className={`text-2xl font-bold ${
+                                          teamScore > opponentScore ? 'text-green-600 dark:text-green-400' : 
+                                          teamScore < opponentScore ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'
+                                        }`}>
+                                          {teamScore || 0}
+                                        </span>
+                                        <span className="text-gray-400 text-lg">:</span>
+                                        <span className={`text-2xl font-bold ${
+                                          opponentScore > teamScore ? 'text-green-600 dark:text-green-400' : 
+                                          opponentScore < teamScore ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'
+                                        }`}>
+                                          {opponentScore || 0}
+                                        </span>
+                                      </div>
+                                      <div className="text-center text-xs text-gray-500 mt-1">{match.format || 'BO3'}</div>
+                                    </div>
+                                    
+                                    {/* Team 2 (Opponent) with Logo */}
+                                    <div 
+                                      onClick={(e) => { e.stopPropagation(); navigateTo(`/teams/${opponent?.id}`); }}
+                                      className="flex-1 flex items-center justify-end space-x-3 hover:opacity-80 cursor-pointer"
+                                    >
+                                      <div className="text-right">
+                                        <div className="text-base font-bold text-gray-900 dark:text-white">
+                                          {opponent?.short_name || opponent?.name || 'TBD'}
+                                        </div>
+                                        <div className="text-xs text-gray-500">{opponent?.region === 'NA' ? 'America' : opponent?.region || 'Unknown'}</div>
+                                      </div>
+                                      <div className="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                                        {opponent?.logo ? (
+                                          <img 
+                                            src={opponent.logo} 
+                                            alt={opponent.name}
+                                            className="w-12 h-12 object-contain"
+                                            onError={(e) => { 
+                                              e.target.style.display = 'none';
+                                              e.target.parentElement.innerHTML = '<span class="text-2xl text-gray-500">?</span>';
+                                            }}
+                                          />
+                                        ) : (
+                                          <span className="text-2xl text-gray-500">?</span>
+                                        )}
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -967,41 +1053,16 @@ function TeamDetailPage({ params, navigateTo }) {
           {/* Achievements */}
           {team.achievements && team.achievements.length > 0 && (
             <div className="card p-6">
-              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Major Achievements</h3>
-              <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Achievements</h3>
+              <div className="space-y-2">
                 {team.achievements.map((achievement, index) => (
                   <div key={index} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="flex items-center space-x-3 mb-2">
-                      {achievement.event_logo && (
-                        <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0">
-                          <img 
-                            src={achievement.event_logo} 
-                            alt={achievement.event_name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => { e.target.src = getImageUrl(null, 'event-banner'); }}
-                          />
-                        </div>
-                      )}
-                      <div className={`text-lg font-bold ${
-                        achievement.placement === 1 ? 'text-yellow-500' :
-                        achievement.placement === 2 ? 'text-gray-400' :
-                        achievement.placement === 3 ? 'text-orange-600' :
-                        'text-gray-600 dark:text-gray-400'
-                      }`}>
-                        #{achievement.placement}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-red-600 dark:text-red-400">•</span>
+                      <div className="font-medium text-gray-900 dark:text-white">
+                        {typeof achievement === 'string' ? achievement : achievement.event_name || achievement}
                       </div>
                     </div>
-                    <div className="font-semibold text-gray-900 dark:text-white text-sm">
-                      {achievement.event_name}
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                      {formatDate(achievement.date)}
-                    </div>
-                    {achievement.prize && (
-                      <div className="text-green-600 dark:text-green-400 font-semibold text-sm mt-1">
-                        {formatCurrency(achievement.prize)}
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>

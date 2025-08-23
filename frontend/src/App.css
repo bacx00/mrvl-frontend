@@ -3,6 +3,7 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 @import './styles/broadcast.css';
+@import './styles/mobile-optimized.css';
 
 /* Root CSS Variables for VLR.gg style theming */
 :root {

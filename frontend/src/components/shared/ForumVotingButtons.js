@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../../hooks';
 
 function ForumVotingButtons({ 
@@ -12,25 +12,16 @@ function ForumVotingButtons({
   direction = 'horizontal' // 'horizontal' or 'vertical'
 }) {
   const { api, user, isAuthenticated } = useAuth();
+  // Use internal state that won't be overridden by props after voting
   const [upvotes, setUpvotes] = useState(initialUpvotes);
   const [downvotes, setDownvotes] = useState(initialDownvotes);
   const [currentVote, setCurrentVote] = useState(userVote);
   const [loading, setLoading] = useState(false);
   const [initialStateLoaded, setInitialStateLoaded] = useState(false);
+  // Track if we've voted to prevent prop updates from overriding server state
+  const hasVoted = useRef(false);
   
-  // Debug logging with current state values
-  if (itemType === 'post' && (upvotes > 1 || downvotes > 1 || initialUpvotes > 1 || initialDownvotes > 1)) {
-    console.log('ForumVotingButtons Debug:', {
-      itemType,
-      itemId,
-      initialUpvotes,
-      initialDownvotes,
-      currentUpvotes: upvotes,
-      currentDownvotes: downvotes,
-      userVote,
-      currentVote
-    });
-  }
+  // Debug logging with current state values - removed excessive logging
 
   const sizeClasses = {
     xs: 'p-1 text-xs min-h-[36px] min-w-[36px]',
@@ -42,6 +33,7 @@ function ForumVotingButtons({
   // Fetch current vote state when component mounts or when itemId changes
   const fetchVoteState = useCallback(async () => {
     // For posts and match comments, we don't fetch - just use parent-provided state
+    // The parent (ThreadDetailPage) already gets user_vote from the server
     if (itemType === 'post' || itemType === 'match-comment') {
       setInitialStateLoaded(true);
       return;
@@ -75,26 +67,36 @@ function ForumVotingButtons({
     fetchVoteState();
   }, [fetchVoteState]);
 
-  // Reset state when item changes
+  // Track previous itemId to detect real changes
+  const prevItemId = useRef(itemId);
+  const [hasInitialized, setHasInitialized] = useState(false);
+  
+  // Initialize state when component mounts or itemId changes
   useEffect(() => {
-    setUpvotes(initialUpvotes);
-    setDownvotes(initialDownvotes);
-    setCurrentVote(userVote);
-    setInitialStateLoaded(false);
-  }, [itemId, initialUpvotes, initialDownvotes, userVote]);
-
-  // Debug effect to track state changes
-  useEffect(() => {
-    if (itemType === 'post' && itemId) {
-      console.log('ForumVotingButtons state changed:', {
-        itemId,
-        upvotes,
-        downvotes,
-        currentVote,
-        timestamp: new Date().toISOString()
-      });
+    if (prevItemId.current !== itemId) {
+      // We're switching to a different item - reset everything
+      setUpvotes(initialUpvotes);
+      setDownvotes(initialDownvotes);
+      setCurrentVote(userVote);
+      setInitialStateLoaded(false);
+      hasVoted.current = false; // Reset voted flag when switching items
+      prevItemId.current = itemId;
+      setHasInitialized(true);
+    } else if (!hasInitialized) {
+      // First initialization with same itemId
+      setUpvotes(initialUpvotes);
+      setDownvotes(initialDownvotes);
+      setCurrentVote(userVote);
+      setHasInitialized(true);
     }
-  }, [upvotes, downvotes, currentVote, itemType, itemId]);
+    // Don't update if it's the same item and we've already initialized
+    // This prevents resetting hasVoted flag on re-renders
+  }, [itemId, initialUpvotes, initialDownvotes, userVote, hasInitialized]);
+
+  // Debug: Log when state changes
+  useEffect(() => {
+    console.log(`ForumVotingButtons state: itemId=${itemId}, upvotes=${upvotes}, downvotes=${downvotes}, currentVote=${currentVote}, hasVoted=${hasVoted.current}`);
+  }, [upvotes, downvotes, currentVote, itemId]);
 
   const handleVote = async (voteType) => {
     if (!isAuthenticated) {
@@ -139,43 +141,66 @@ function ForumVotingButtons({
 
       const response = await api.post(endpoint, payload);
       
+      console.log('Forum vote raw response:', response.data);
+      
       // Handle successful response
       if (response?.data?.success !== false) {
         const serverCounts = response.data?.vote_counts || response.data?.updated_stats || response.data?.stats;
         const serverUserVote = response.data?.user_vote;
         const action = response.data?.action || 'voted';
         
-        // Update state with server data immediately
-        if (serverCounts) {
-          console.log('Updating UI state with server counts:', serverCounts);
-          console.log('Previous state:', { upvotes, downvotes, currentVote });
-          setUpvotes(serverCounts.upvotes || 0);
-          setDownvotes(serverCounts.downvotes || 0);
-          console.log('New state set to:', { upvotes: serverCounts.upvotes || 0, downvotes: serverCounts.downvotes || 0 });
+        console.log('Extracted from response:', { serverCounts, serverUserVote, action });
+        
+        // Mark that we've voted to prevent prop updates from overriding
+        hasVoted.current = true;
+        
+        // ALWAYS trust server counts - never calculate locally
+        if (serverCounts && typeof serverCounts === 'object') {
+          // Use server counts directly, don't add to existing
+          const newUpvotes = parseInt(serverCounts.upvotes) || 0;
+          const newDownvotes = parseInt(serverCounts.downvotes) || 0;
+          console.log(`Vote response - Setting counts: upvotes=${newUpvotes}, downvotes=${newDownvotes}`);
+          setUpvotes(newUpvotes);
+          setDownvotes(newDownvotes);
         } else {
-          // Fallback: calculate based on action if server doesn't provide counts
+          console.warn('No valid server counts in response, response was:', response.data);
+          // Fallback: Use optimistic update based on action
           if (action === 'removed') {
-            setCurrentVote(null);
+            // Vote was removed
             if (originalVote === 'upvote') {
               setUpvotes(Math.max(0, originalUpvotes - 1));
             } else if (originalVote === 'downvote') {
               setDownvotes(Math.max(0, originalDownvotes - 1));
             }
-          } else if (action === 'changed') {
-            setCurrentVote(voteType);
-            if (voteType === 'upvote' && originalVote === 'downvote') {
-              setUpvotes(originalUpvotes + 1);
-              setDownvotes(Math.max(0, originalDownvotes - 1));
-            } else if (voteType === 'downvote' && originalVote === 'upvote') {
-              setDownvotes(originalDownvotes + 1);
-              setUpvotes(Math.max(0, originalUpvotes - 1));
-            }
-          } else { // new vote
-            setCurrentVote(voteType);
-            if (voteType === 'upvote') {
-              setUpvotes(originalUpvotes + 1);
+            setCurrentVote(null);
+          } else if (action === 'updated' || action === 'voted') {
+            // Vote was added or changed
+            if (isToggling) {
+              // Removing vote
+              if (voteType === 'upvote') {
+                setUpvotes(Math.max(0, originalUpvotes - 1));
+              } else {
+                setDownvotes(Math.max(0, originalDownvotes - 1));
+              }
+              setCurrentVote(null);
+            } else if (originalVote) {
+              // Changing vote
+              if (voteType === 'upvote') {
+                setUpvotes(originalUpvotes + 1);
+                setDownvotes(Math.max(0, originalDownvotes - 1));
+              } else {
+                setDownvotes(originalDownvotes + 1);
+                setUpvotes(Math.max(0, originalUpvotes - 1));
+              }
+              setCurrentVote(voteType);
             } else {
-              setDownvotes(originalDownvotes + 1);
+              // New vote
+              if (voteType === 'upvote') {
+                setUpvotes(originalUpvotes + 1);
+              } else {
+                setDownvotes(originalDownvotes + 1);
+              }
+              setCurrentVote(voteType);
             }
           }
         }
@@ -183,6 +208,10 @@ function ForumVotingButtons({
         // Set the actual vote state from server
         if (serverUserVote !== undefined) {
           setCurrentVote(serverUserVote);
+        } else if (action === 'removed') {
+          setCurrentVote(null);
+        } else {
+          setCurrentVote(voteType);
         }
 
         // Notify parent component with server data
@@ -209,36 +238,9 @@ function ForumVotingButtons({
       
       // Handle 409 Conflict - vote already exists
       if (error.response?.status === 409) {
-        console.log('Vote conflict (409) - user already voted, no action needed');
-        // Don't show error to user as this is expected behavior
+        // Vote conflict is expected behavior - don't show error
         // The vote is already recorded on the server
         return;
-        
-        // For different vote types, this means the backend doesn't allow vote changes
-        // Let's try one more time with a different approach
-        try {
-          console.log('Attempting vote change with full refresh...');
-          
-          // Refresh vote state from server first
-          if (itemType === 'thread') {
-            const refreshResponse = await api.get(`/forums/threads/${itemId}`);
-            const data = refreshResponse.data?.data || refreshResponse.data;
-            if (data) {
-              setUpvotes(data.stats?.upvotes || 0);
-              setDownvotes(data.stats?.downvotes || 0);
-              setCurrentVote(data.user_vote || null);
-              console.log('Vote state refreshed - user current vote:', data.user_vote);
-            }
-          }
-          
-          // If still getting 409, inform user they can only have one vote
-          console.log('Vote change not supported by backend - showing user message');
-          alert('You can only have one vote per item. Your previous vote is still active.');
-          
-        } catch (refreshError) {
-          console.error('Could not refresh vote state:', refreshError);
-          alert('Unable to process vote. Please refresh the page and try again.');
-        }
       } else {
         // Handle other error types
         let errorMessage = 'Failed to record vote';

@@ -6,7 +6,6 @@
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
     "@testing-library/user-event": "^13.5.0",
-    "axios": "^1.11.0",
     "date-fns": "^4.1.0",
     "dompurify": "^3.2.6",
     "lucide-react": "^0.525.0",
@@ -21,7 +20,12 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "test:profile-realtime": "node run-profile-realtime-tests.js",
+    "test:profile-manual": "node manual-profile-test.js",
+    "test:profile-websocket": "node websocket-profile-test.js",
+    "test:profile-indicators": "node profile-live-indicator-test.js",
+    "test:profile-full": "node realtime-profile-update-test.js"
   },
   "eslintConfig": {
     "extends": [
@@ -43,9 +47,11 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.21",
+    "axios": "^1.11.0",
     "postcss": "^8.5.6",
-    "puppeteer": "^24.16.0",
+    "puppeteer": "^24.17.0",
     "tailwindcss": "^4.1.10",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "ws": "^8.18.3"
   }
 }
