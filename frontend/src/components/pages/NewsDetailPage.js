@@ -44,6 +44,10 @@ function NewsDetailPage({ params, navigateTo }) {
     const safeValue = safeString(value);
     setEditCommentText(safeValue);
   };
+  
+  // Mentions data for processing content
+  const [mentionsData, setMentionsData] = useState([]);
+  
   const { api, user, isAuthenticated } = useAuth();
 
   const articleId = params?.id;
@@ -100,6 +104,9 @@ function NewsDetailPage({ params, navigateTo }) {
       setArticle(articleData);
       setComments(articleData.comments || []);
       
+      // Load mentions data for content processing
+      await fetchMentionsData();
+      
       // Increment view count
       try {
         await api.post(`/news/${articleId}/view`);
@@ -112,6 +119,20 @@ function NewsDetailPage({ params, navigateTo }) {
       setArticle(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMentionsData = async () => {
+    try {
+      // Fetch mentions autocomplete data for parsing content
+      const response = await api.get('/mentions/search?limit=50');
+      if (response.data?.success && response.data?.data) {
+        setMentionsData(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching mentions data:', error);
+      // Don't break the page if mentions fail
+      setMentionsData([]);
     }
   };
 
@@ -668,12 +689,15 @@ function NewsDetailPage({ params, navigateTo }) {
       contentHasVideos: allVideos.length > 0 
     });
     
+    // Process content with mentions for clickable links
+    const contentWithMentions = processContentWithMentions(processedContent, mentionsData, navigateTo);
+    
     // If no videos, just return content with mentions
     if (!allVideos || allVideos.length === 0) {
       return (
         <div className="prose prose-lg dark:prose-invert max-w-none">
           <div className="whitespace-pre-wrap leading-relaxed">
-            {renderContentWithMentions(safeString(processedContent), article?.mentions)}
+            {renderContentWithMentions(safeString(processedContent), mentionsData)}
           </div>
         </div>
       );
@@ -716,7 +740,7 @@ function NewsDetailPage({ params, navigateTo }) {
           if (paragraph.trim() && !paragraph.includes('<!-- VIDEO_EMBEDDED -->')) {
             elements.push(
               <div key={`p-${index}`} className="whitespace-pre-wrap leading-relaxed mb-6 text-gray-900 dark:text-gray-100">
-                {renderContentWithMentions(safeString(paragraph), article?.mentions)}
+                {renderContentWithMentions(safeString(paragraph), mentionsData)}
               </div>
             );
           }
@@ -893,7 +917,7 @@ function NewsDetailPage({ params, navigateTo }) {
               </div>
             ) : (
               <div className="text-gray-900 dark:text-white mb-2">
-                {renderContentWithMentions(safeContent(comment.content), comment.mentions || [])}
+                {renderContentWithMentions(safeContent(comment.content), mentionsData)}
               </div>
             )}
 
@@ -1093,7 +1117,7 @@ function NewsDetailPage({ params, navigateTo }) {
 
           {/* Title */}
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            {renderContentWithMentions(safeString(article.title), article.mentions || [])}
+            {renderContentWithMentions(safeString(article.title), mentionsData)}
           </h1>
 
           {/* Author and meta */}
@@ -1145,7 +1169,7 @@ function NewsDetailPage({ params, navigateTo }) {
         <div className="p-6">
           {article.excerpt && (
             <div className="text-lg text-gray-700 dark:text-gray-300 mb-6 font-medium">
-              {renderContentWithMentions(safeString(article.excerpt), article.mentions || [])}
+              {renderContentWithMentions(safeString(article.excerpt), mentionsData)}
             </div>
           )}
           

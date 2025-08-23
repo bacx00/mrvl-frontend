@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks';
 import { useActivityStatsContext } from '../../contexts/ActivityStatsContext';
 import ForumMentionAutocomplete from '../shared/ForumMentionAutocomplete';
+import MentionTextarea from '../shared/MentionTextarea';
 import { Mic, MicOff, Image, X, Camera, Upload, Smile, Eye, Save, ChevronDown } from 'lucide-react';
 
 function CreateThreadPage({ navigateTo }) {

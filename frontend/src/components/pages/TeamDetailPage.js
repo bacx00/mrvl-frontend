@@ -20,6 +20,7 @@ function TeamDetailPage({ params, navigateTo }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState({});
   const [editLoading, setEditLoading] = useState(false);
+  const [mentionsData, setMentionsData] = useState([]);
   
   const { api, isAdmin, isModerator } = useAuth();
 
@@ -126,6 +127,9 @@ function TeamDetailPage({ params, navigateTo }) {
 
       // Fetch all match categories using new API endpoints
       await fetchTeamMatches();
+      
+      // Load mentions data for description parsing
+      await fetchMentionsData();
 
       // Calculate team stats from backend data
       const teamStats = {
@@ -162,6 +166,22 @@ function TeamDetailPage({ params, navigateTo }) {
       setMatchStats({});
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMentionsData = async () => {
+    if (!teamId) return;
+    
+    try {
+      // Fetch mentions autocomplete data for parsing description text
+      const response = await api.get('/mentions/search?limit=50');
+      if (response.data?.success && response.data?.data) {
+        setMentionsData(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching mentions data:', error);
+      // Don't break the page if mentions fail
+      setMentionsData([]);
     }
   };
 
@@ -475,6 +495,16 @@ function TeamDetailPage({ params, navigateTo }) {
               </div>
             </div>
           </div>
+
+          {/* Team Description */}
+          {team.description && (
+            <div className="card p-6">
+              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">About {team.name}</h3>
+              <div className="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                {parseTextWithMentions(team.description, navigateTo, mentionsData)}
+              </div>
+            </div>
+          )}
 
           {/* Recent Form */}
           {matchStats.recentForm && matchStats.recentForm.length > 0 && (

@@ -103,35 +103,117 @@ function UserDisplay({
 }
 
 // Utility function to parse text with clickable @mentions
-export const parseTextWithMentions = (text, navigateTo) => {
+export const parseTextWithMentions = (text, navigateTo, mentions = []) => {
   if (!text) return null;
   
-  // Regex to match @mentions
-  const mentionRegex = /@([a-zA-Z0-9_]+)/g;
+  // Create a map of mention texts to mention objects for quick lookup
+  const mentionMap = {};
+  mentions.forEach(mention => {
+    const mentionText = mention.mention_text || `@${mention.name}`;
+    mentionMap[mentionText] = mention;
+  });
   
-  // Split text by mentions while keeping the delimiters
-  const parts = text.split(/(@[a-zA-Z0-9_]+)/g);
+  // Enhanced regex to match different mention patterns
+  const mentionPatterns = [
+    { regex: /@player:([a-zA-Z0-9_]+)/g, type: 'player', prefix: '@player:' },
+    { regex: /@team:([a-zA-Z0-9_]+)/g, type: 'team', prefix: '@team:' },
+    { regex: /@([a-zA-Z0-9_]+)(?!:)/g, type: 'user', prefix: '@' }
+  ];
   
-  return parts.map((part, index) => {
-    if (part.startsWith('@')) {
-      const username = part.substring(1);
-      return (
+  let processedText = text;
+  let offset = 0;
+  const replacements = [];
+  
+  // Find all mentions and prepare replacements
+  mentionPatterns.forEach(({ regex, type, prefix }) => {
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      const fullMatch = match[0];
+      const identifier = match[1];
+      const startPos = match.index;
+      const endPos = match.index + fullMatch.length;
+      
+      // Check if we have data for this mention
+      const mentionData = mentionMap[fullMatch];
+      
+      replacements.push({
+        start: startPos,
+        end: endPos,
+        original: fullMatch,
+        type,
+        identifier,
+        data: mentionData
+      });
+    }
+  });
+  
+  // Sort replacements by position (descending to avoid position shifts)
+  replacements.sort((a, b) => b.start - a.start);
+  
+  // If no replacements, just return text
+  if (replacements.length === 0) {
+    return text;
+  }
+  
+  // Split text and create elements
+  const parts = [];
+  let lastIndex = text.length;
+  
+  replacements.forEach(replacement => {
+    // Add text after this mention
+    if (lastIndex > replacement.end) {
+      parts.unshift(text.slice(replacement.end, lastIndex));
+    }
+    
+    // Add the mention
+    if (replacement.data) {
+      parts.unshift(
         <span
-          key={index}
-          className="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+          key={`mention-${replacement.start}`}
+          className={`mention-link font-medium px-1 rounded cursor-pointer transition-colors ${
+            replacement.type === 'player' 
+              ? 'text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+              : replacement.type === 'team'
+              ? 'text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20'
+              : 'text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20'
+          }`}
           onClick={(e) => {
             e.stopPropagation();
-            if (navigateTo) {
-              navigateTo('user-profile', { username });
+            if (navigateTo && replacement.data) {
+              switch (replacement.type) {
+                case 'player':
+                  navigateTo('player-detail', { id: replacement.data.id });
+                  break;
+                case 'team':
+                  navigateTo('team-detail', { id: replacement.data.id });
+                  break;
+                case 'user':
+                  navigateTo('user-profile', { id: replacement.data.id });
+                  break;
+                default:
+                  console.warn('Unknown mention type:', replacement.type);
+              }
             }
           }}
+          title={`View ${replacement.type}: ${replacement.data.display_name || replacement.data.name}`}
         >
-          {part}
+          {replacement.original}
         </span>
       );
+    } else {
+      // No data found, render as plain text
+      parts.unshift(replacement.original);
     }
-    return <span key={index}>{part}</span>;
+    
+    // Add text before this mention
+    if (replacement.start > 0) {
+      parts.unshift(text.slice(0, replacement.start));
+    }
+    
+    lastIndex = replacement.start;
   });
+  
+  return parts.length > 0 ? parts : text;
 };
 
 export default UserDisplay;

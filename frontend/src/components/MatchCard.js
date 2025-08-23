@@ -2,6 +2,14 @@ import React from 'react';
 import { TeamLogo, getCountryFlag, getImageUrl } from '../utils/imageUtils';
 
 function MatchCard({ match, navigateTo, isCompact = false }) {
+  // Ensure match data is properly structured
+  if (!match) return null;
+  
+  // Normalize maps_data to always be an array
+  if (match.maps_data && !Array.isArray(match.maps_data)) {
+    match.maps_data = [];
+  }
+  
   // Determine match winner
   const isTeam1Winner = match.status === 'completed' && match.team1_score > match.team2_score;
   const isTeam2Winner = match.status === 'completed' && match.team2_score > match.team1_score;
@@ -274,7 +282,7 @@ function MatchCard({ match, navigateTo, isCompact = false }) {
         )}
 
         {/* Map score for completed matches */}
-        {match.status === 'completed' && match.maps_data && (
+        {match.status === 'completed' && match.maps_data && Array.isArray(match.maps_data) && match.maps_data.length > 0 && (
           <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-center space-x-2 text-xs">
               {match.maps_data.map((map, index) => (

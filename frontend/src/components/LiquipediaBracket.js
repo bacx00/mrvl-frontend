@@ -189,14 +189,66 @@ function LiquipediaBracket({
       });
       
       if (response.data?.success) {
-        // Update was successful - update bracket immediately
-        setEditingMatch(null);
+        console.log('✅ Score updated successfully');
         
-        // Call the parent component's update handler to refresh bracket data
+        const updatedMatch = response.data.data;
+        
+        // Update local bracket state immediately for instant UI feedback
+        setLocalBracket(prevBracket => {
+          if (!prevBracket) return prevBracket;
+          
+          const newBracket = JSON.parse(JSON.stringify(prevBracket));
+          
+          // Update match in rounds
+          if (newBracket.rounds) {
+            Object.keys(newBracket.rounds).forEach(roundName => {
+              const round = newBracket.rounds[roundName];
+              if (round.matches) {
+                const matchIndex = round.matches.findIndex(m => m.id === editingMatch.id);
+                if (matchIndex !== -1) {
+                  round.matches[matchIndex] = {
+                    ...round.matches[matchIndex],
+                    team1_score: parseInt(team1Score),
+                    team2_score: parseInt(team2Score),
+                    status: updatedMatch?.status || round.matches[matchIndex].status,
+                    winner_id: updatedMatch?.winner_id || null,
+                    loser_id: updatedMatch?.loser_id || null
+                  };
+                }
+              }
+            });
+          }
+          
+          // Update match in flat matches array
+          if (newBracket.matches) {
+            const matchIndex = newBracket.matches.findIndex(m => m.id === editingMatch.id);
+            if (matchIndex !== -1) {
+              newBracket.matches[matchIndex] = {
+                ...newBracket.matches[matchIndex],
+                team1_score: parseInt(team1Score),
+                team2_score: parseInt(team2Score),
+                status: updatedMatch?.status || newBracket.matches[matchIndex].status,
+                winner_id: updatedMatch?.winner_id || null,
+                loser_id: updatedMatch?.loser_id || null
+              };
+            }
+          }
+          
+          return newBracket;
+        });
+        
+        // Clear editing state
+        setEditingMatch(null);
+        setTeam1Score(0);
+        setTeam2Score(0);
+        
+        // Call parent update handler to fetch fresh data from server
         if (onMatchUpdate) {
           onMatchUpdate(editingMatch.id, {
             team1_score: parseInt(team1Score),
-            team2_score: parseInt(team2Score)
+            team2_score: parseInt(team2Score),
+            status: updatedMatch?.status,
+            winner_id: updatedMatch?.winner_id
           });
         }
       }

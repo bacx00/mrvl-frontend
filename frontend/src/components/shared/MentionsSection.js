@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
+import { useMentionUpdates } from '../../hooks/useMentionUpdates';
 import { formatMentionForDisplay } from '../../utils/mentionUtils';
 import { getImageUrl } from '../../utils/imageUtils';
 
@@ -17,9 +18,38 @@ const MentionsSection = ({
   const [error, setError] = useState(null);
   const { api } = useAuth();
 
+  // Use mention updates hook for count
+  const {
+    mentionCount,
+    refreshData
+  } = useMentionUpdates(entityType, entityId, {
+    maxRecentMentions: 10
+  });
+
   useEffect(() => {
     fetchMentions();
   }, [entityType, entityId, currentPage, contentTypeFilter]);
+
+  // Poll for new mentions every 30 seconds
+  useEffect(() => {
+    if (!entityType || !entityId) return;
+
+    const refreshMentions = () => {
+      // Only refresh if we're on the first page to avoid disrupting pagination
+      if (currentPage === 1) {
+        fetchMentions();
+        refreshData(); // Also refresh count
+      }
+    };
+
+    // Set up auto-refresh every 30 seconds
+    const refreshInterval = setInterval(refreshMentions, 30000);
+
+    // Cleanup interval on unmount
+    return () => {
+      clearInterval(refreshInterval);
+    };
+  }, [entityType, entityId, currentPage, refreshData]);
 
   const fetchMentions = async () => {
     try {
@@ -28,20 +58,43 @@ const MentionsSection = ({
       
       const params = new URLSearchParams({
         page: currentPage,
-        per_page: 10
+        limit: 10
       });
       
       if (contentTypeFilter !== 'all') {
         params.append('content_type', contentTypeFilter);
       }
 
-      const endpoint = `/${entityType}s/${entityId}/mentions?${params.toString()}`;
+      // Use the correct API endpoint based on entity type
+      let endpoint;
+      switch (entityType) {
+        case 'player':
+          endpoint = `/players/${entityId}/mentions?${params.toString()}`;
+          break;
+        case 'team':
+          endpoint = `/teams/${entityId}/mentions?${params.toString()}`;
+          break;
+        case 'user':
+          endpoint = `/users/${entityId}/mentions?${params.toString()}`;
+          break;
+        default:
+          endpoint = `/${entityType}s/${entityId}/mentions?${params.toString()}`;
+      }
+
       const response = await api.get(endpoint);
       
-      if (response.data.success) {
-        setMentions(response.data.data || []);
-        if (response.data.pagination) {
-          setTotalPages(response.data.pagination.last_page);
+      if (response.data.success !== false) {
+        const mentionsData = response.data.data || response.data || [];
+        setMentions(mentionsData);
+        
+        // Handle pagination metadata
+        if (response.data.meta) {
+          const totalPages = Math.ceil(response.data.meta.total / (response.data.meta.limit || 10));
+          setTotalPages(totalPages);
+        } else if (response.data.pagination) {
+          setTotalPages(response.data.pagination.last_page || 1);
+        } else {
+          setTotalPages(1);
         }
       } else {
         // Only set error for actual API failures, not empty results
@@ -59,6 +112,7 @@ const MentionsSection = ({
       } else if (error.response?.status === 404) {
         // 404 means no mentions exist, not an error
         setMentions([]);
+        setTotalPages(1);
       } else {
         setError('Failed to load mentions');
       }
@@ -157,6 +211,11 @@ const MentionsSection = ({
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
           {title || 'Mentions'}
+          {mentionCount > 0 && (
+            <span className="ml-2 px-2 py-0.5 text-xs bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-full">
+              {mentionCount}
+            </span>
+          )}
         </h3>
         <span className="text-sm text-gray-500 dark:text-gray-400">
           {mentions.length > 0 && `${mentions.length} mention${mentions.length !== 1 ? 's' : ''}`}
@@ -272,8 +331,15 @@ const MentionsSection = ({
                   <a
                     href={mention.content.url}
                     className="text-blue-600 dark:text-blue-400 hover:underline"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      // Use hash navigation for internal links
+                      if (mention.content.url.startsWith('/')) {
+                        window.location.hash = mention.content.url.substring(1);
+                      } else {
+                        window.open(mention.content.url, '_blank', 'noopener,noreferrer');
+                      }
+                    }}
                   >
                     {mention.content.title}
                   </a>

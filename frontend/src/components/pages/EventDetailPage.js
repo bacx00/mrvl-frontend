@@ -177,7 +177,8 @@ function EventDetailPage({ params, navigateTo }) {
       const response = await api.post(`/admin/events/${eventId}/generate-bracket`, {
         format: format,
         seeding_method: 'rating',
-        shuffle_seeds: false
+        shuffle_seeds: false,
+        force: true  // Always force regenerate for manual bracket management
       });
       
       console.log('✅ Bracket generated successfully:', response.data);
@@ -229,17 +230,37 @@ function EventDetailPage({ params, navigateTo }) {
     try {
       console.log('🔄 Refreshing bracket data after score update...');
       
-      // Refresh bracket data immediately
-      const bracketResponse = await api.get(`/events/${eventId}/bracket`);
-      if (bracketResponse.data?.data?.bracket || bracketResponse.data?.bracket) {
-        const newBracketData = bracketResponse.data.data?.bracket || bracketResponse.data.bracket;
-        setBracket(newBracketData);
-        console.log('✅ Bracket updated with new scores');
-      }
+      // Immediately refresh the entire event and bracket data
+      await fetchEventData();
+      console.log('✅ Event and bracket data refreshed');
     } catch (error) {
       console.error('❌ Error refreshing bracket:', error);
-      // Fallback: refresh entire event data
+    }
+  };
+  
+  const clearBracket = async () => {
+    if (!window.confirm('Are you sure you want to clear the bracket? This will remove all matches and scores.')) {
+      return;
+    }
+    
+    try {
+      console.log('🗑️ Clearing bracket for event:', eventId);
+      
+      // Always force clear for manual bracket management
+      await api.post(`/admin/events/${eventId}/bracket/clear`, { force: true });
+      console.log('✅ Bracket cleared successfully');
+      
+      // Clear the bracket state
+      setBracket(null);
+      
+      // Refresh event data
       await fetchEventData();
+      
+      alert('Bracket cleared successfully');
+    } catch (error) {
+      console.error('❌ Error clearing bracket:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to clear bracket';
+      alert(errorMessage);
     }
   };
 
@@ -552,14 +573,33 @@ function EventDetailPage({ params, navigateTo }) {
             <div>
               {console.log('🔍 Bracket tab - Current bracket data:', bracket)}
               {bracket && (bracket.matches?.length > 0 || bracket.upper_bracket || bracket.main_stage || bracket.rounds) ? (
-                <LiquipediaBracket 
-                  bracket={bracket} 
-                  event={event}
-                  eventId={eventId}
-                  navigateTo={navigateTo}
-                  isAdmin={isAdmin() || isModerator()}
-                  onMatchUpdate={handleBracketMatchUpdate}
-                />
+                <>
+                  {(isAdmin() || isModerator()) && (
+                    <div className="flex justify-end mb-4 space-x-2">
+                      <button 
+                        onClick={clearBracket}
+                        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                      >
+                        Clear Bracket
+                      </button>
+                      <button 
+                        onClick={() => generateBracket()}
+                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                      >
+                        Regenerate Bracket
+                      </button>
+                    </div>
+                  )}
+                  <LiquipediaBracket 
+                    key={`bracket-${eventId}-${Date.now()}`}
+                    bracket={bracket} 
+                    event={event}
+                    eventId={eventId}
+                    navigateTo={navigateTo}
+                    isAdmin={isAdmin() || isModerator()}
+                    onMatchUpdate={handleBracketMatchUpdate}
+                  />
+                </>
               ) : (
                 <div className="text-center py-12">
                   <div className="text-4xl mb-4">🏆</div>
