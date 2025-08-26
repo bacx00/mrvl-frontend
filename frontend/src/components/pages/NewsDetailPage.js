@@ -916,7 +916,7 @@ function NewsDetailPage({ params, navigateTo }) {
               </div>
             ) : (
               <div className="text-gray-900 dark:text-white mb-2">
-                {renderContentWithMentions(safeContent(comment.content), mentionsData)}
+                {renderContentWithMentions(safeContent(comment.content), comment.mentions || [])}
               </div>
             )}
 
@@ -991,7 +991,7 @@ function NewsDetailPage({ params, navigateTo }) {
                       <ForumMentionAutocomplete
                         value={commentText}
                         onChange={safeSetCommentText}
-                        placeholder={`Reply to ${comment.author?.name}... (Use @ to mention users, @team: for teams, @player: for players)`}
+                        placeholder={`Reply to ${comment.author?.name}... (Type @ to mention teams and players)`}
                         rows={3}
                         className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:ring-2 focus:ring-red-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                         autoFocus
@@ -1247,7 +1247,7 @@ function NewsDetailPage({ params, navigateTo }) {
                   <ForumMentionAutocomplete
                     value={commentText}
                     onChange={safeSetCommentText}
-                    placeholder="Add a comment... Use @ to mention users, @team: for teams, @player: for players"
+                    placeholder="Add a comment... Type @ to mention teams and players"
                     rows={4}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:ring-2 focus:ring-red-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   />

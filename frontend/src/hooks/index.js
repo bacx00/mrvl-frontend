@@ -572,6 +572,10 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('userData');
       setUser(null);
       setIsAuthenticated(false);
+      // Navigate to homepage after logout
+      if (window.navigateTo) {
+        window.navigateTo('home');
+      }
     }
   };
 

@@ -39,7 +39,7 @@ function ForumVotingButtons({
       return;
     }
     
-    if (!isAuthenticated || initialStateLoaded) return;
+    if (!isAuthenticated) return;
     
     // Only fetch for threads
     if (itemType === 'thread') {
@@ -61,10 +61,27 @@ function ForumVotingButtons({
         setInitialStateLoaded(true);
       }
     }
-  }, [api, itemType, itemId, isAuthenticated, initialStateLoaded, initialUpvotes, initialDownvotes]);
+  }, [api, itemType, itemId, isAuthenticated, initialUpvotes, initialDownvotes]);
 
   useEffect(() => {
     fetchVoteState();
+  }, [fetchVoteState]);
+
+  // Handle online/offline events to refresh vote state
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('Connection restored - refreshing vote state');
+      // Reset the loaded flag to force a refresh
+      setInitialStateLoaded(false);
+      hasVoted.current = false;
+      fetchVoteState();
+    };
+
+    window.addEventListener('online', handleOnline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+    };
   }, [fetchVoteState]);
 
   // Track previous itemId to detect real changes
@@ -141,13 +158,13 @@ function ForumVotingButtons({
 
       const response = await api.post(endpoint, payload);
       
-      console.log('Forum vote raw response:', response.data);
+      console.log('Forum vote raw response:', response);
       
-      // Handle successful response
-      if (response?.data?.success !== false) {
-        const serverCounts = response.data?.vote_counts || response.data?.updated_stats || response.data?.stats;
-        const serverUserVote = response.data?.user_vote;
-        const action = response.data?.action || 'voted';
+      // Handle successful response - response IS the data, not response.data
+      if (response?.success !== false) {
+        const serverCounts = response?.vote_counts || response?.updated_stats || response?.stats;
+        const serverUserVote = response?.user_vote;
+        const action = response?.action || 'voted';
         
         console.log('Extracted from response:', { serverCounts, serverUserVote, action });
         
@@ -163,7 +180,7 @@ function ForumVotingButtons({
           setUpvotes(newUpvotes);
           setDownvotes(newDownvotes);
         } else {
-          console.warn('No valid server counts in response, response was:', response.data);
+          console.warn('No valid server counts in response, response was:', response);
           // Fallback: Use optimistic update based on action
           if (action === 'removed') {
             // Vote was removed

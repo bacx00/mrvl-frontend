@@ -114,9 +114,15 @@ function TournamentDetailPage({ params, navigateTo }) {
       console.log('✅ Matches data found:', matchesData.length, 'matches');
       setMatches(matchesData);
       
-      // Set bracket if included
+      // Set bracket if included - check multiple possible locations
       if (tournamentData.bracket) {
+        console.log('✅ Bracket found in response:', tournamentData.bracket);
         setBracket(tournamentData.bracket);
+      } else if (tournamentData.bracket_data) {
+        console.log('✅ Bracket found in bracket_data:', tournamentData.bracket_data);
+        setBracket(tournamentData.bracket_data);
+      } else {
+        console.log('⚠️ No bracket data found in response');
       }
       
       console.log('✅ Tournament data loaded with embedded teams and matches');

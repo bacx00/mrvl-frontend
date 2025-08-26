@@ -46,24 +46,62 @@ function ForumMentionAutocomplete({
     const abortController = new AbortController();
     
     try {
-      let endpoint = '';
+      // Search ALL types (users, teams, players) when using @
+      // Only search specific type when using @team: or @player:
+      let promises = [];
+      
       if (type === 'user') {
-        endpoint = `/public/search/users?q=${encodeURIComponent(query)}&limit=10`;
+        // When just @ is typed, search only teams and players (no users)
+        promises = [
+          api.get(`/public/search/teams?q=${encodeURIComponent(query)}&limit=8`, {
+            signal: abortController.signal
+          }).catch(() => ({ data: [] })),
+          api.get(`/public/search/players?q=${encodeURIComponent(query)}&limit=8`, {
+            signal: abortController.signal
+          }).catch(() => ({ data: [] }))
+        ];
       } else if (type === 'team') {
-        endpoint = `/public/search/teams?q=${encodeURIComponent(query)}&limit=10`;  
+        // When @team: is typed, only search teams
+        promises = [
+          api.get(`/public/search/teams?q=${encodeURIComponent(query)}&limit=10`, {
+            signal: abortController.signal
+          })
+        ];
       } else if (type === 'player') {
-        endpoint = `/public/search/players?q=${encodeURIComponent(query)}&limit=10`;
+        // When @player: is typed, only search players
+        promises = [
+          api.get(`/public/search/players?q=${encodeURIComponent(query)}&limit=10`, {
+            signal: abortController.signal
+          })
+        ];
       }
 
-      const response = await api.get(endpoint, {
-        signal: abortController.signal
-      });
+      const responses = await Promise.all(promises);
       
       // Only update state if the request wasn't cancelled
       if (!abortController.signal.aborted) {
-        const results = response.data?.data || [];
-        setMentionResults(results);
-        setShowDropdown(results.length > 0);
+        // Combine results from all searches
+        let allResults = [];
+        
+        responses.forEach(response => {
+          // API wrapper returns data directly, not response.data
+          const data = response?.data || response || [];
+          if (Array.isArray(data)) {
+            allResults = allResults.concat(data);
+          }
+        });
+        
+        // Sort results by relevance/type (teams first, then players)
+        allResults.sort((a, b) => {
+          const typeOrder = { team: 0, player: 1 };
+          return (typeOrder[a.type] || 2) - (typeOrder[b.type] || 2);
+        });
+        
+        // Limit total results to 15
+        allResults = allResults.slice(0, 15);
+        
+        setMentionResults(allResults);
+        setShowDropdown(allResults.length > 0);
         setSelectedIndex(0);
       }
     } catch (error) {
@@ -154,17 +192,10 @@ function ForumMentionAutocomplete({
     if (typeof mention.mention_text === 'string' && mention.mention_text) {
       mentionText = mention.mention_text;
     } else {
-      // Fallback mention text generation
+      // Fallback mention text generation - all types use @ format
       const displayName = getMentionDisplayName(mention);
-      if (mention.type === 'user') {
-        mentionText = `@${displayName}`;
-      } else if (mention.type === 'team') {
-        mentionText = `@team:${displayName}`;
-      } else if (mention.type === 'player') {
-        mentionText = `@player:${displayName}`;
-      } else {
-        mentionText = `@${displayName}`;
-      }
+      // All mentions use @ format, type is handled in backend
+      mentionText = `@${displayName}`;
     }
     
     const newValue = textBeforeMention + mentionText + ' ' + textAfterCursor;
@@ -425,9 +456,9 @@ function ForumMentionAutocomplete({
                     )}
                   </div>
                   
-                  {/* Mention preview */}
+                  {/* Mention preview - clean name without @ */}
                   <div className="flex-shrink-0 text-xs text-gray-400 dark:text-gray-500">
-                    {mention.mention_text || `@${getMentionDisplayName(mention)}`}
+                    {getMentionDisplayName(mention)}
                   </div>
                 </button>
               ))}
@@ -440,7 +471,7 @@ function ForumMentionAutocomplete({
           
           {/* Mention help */}
           <div className="px-3 py-2 text-xs text-gray-400 dark:text-gray-500 border-t border-gray-200 dark:border-gray-600">
-            <div>@ for users, @team: for teams, @player: for players</div>
+            <div>Type @ to mention teams and players</div>
           </div>
         </div>
       )}

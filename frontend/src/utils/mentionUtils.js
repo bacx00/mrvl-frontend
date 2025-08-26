@@ -10,13 +10,41 @@ export const processContentWithMentions = (content, mentions = [], navigateTo = 
   // Create a map of mention texts to mention objects for quick lookup
   const mentionMap = {};
   mentions.forEach(mention => {
-    const mentionText = mention.mention_text || `@${mention.name}`;
-    mentionMap[mentionText] = mention;
+    // Add multiple possible keys for each mention to ensure matching
+    const mentionText = mention.mention_text;
+    const name = mention.name;
+    const displayName = mention.display_name;
+    
+    if (mentionText) {
+      mentionMap[mentionText] = mention;
+    }
+    
+    // Also add alternative formats to ensure matching
+    if (mention.type === 'team') {
+      mentionMap[`@team:${name}`] = mention;
+      mentionMap[`@team:${mention.id}`] = mention;
+      if (displayName) {
+        mentionMap[`@team:${displayName}`] = mention;
+      }
+    } else if (mention.type === 'player') {
+      mentionMap[`@player:${name}`] = mention;
+      mentionMap[`@player:${mention.id}`] = mention;
+      if (displayName) {
+        mentionMap[`@player:${displayName}`] = mention;
+      }
+    }
+    
+    // Fallback simple format
+    mentionMap[`@${name}`] = mention;
+    if (displayName && displayName !== name) {
+      mentionMap[`@${displayName}`] = mention;
+    }
   });
 
   // Find all mention patterns in the content
   const mentionPatterns = [
-    /@([a-zA-Z0-9_]+)/g,           // @username
+    // Process @ mentions but only if they're teams or players (not users)
+    /@([a-zA-Z0-9_]+)/g,           // @teamname or @playername (will filter by type)
     /@team:([a-zA-Z0-9_]+)/g,      // @team:teamname
     /@player:([a-zA-Z0-9_]+)/g     // @player:playername
   ];
@@ -54,7 +82,8 @@ export const processContentWithMentions = (content, mentions = [], navigateTo = 
 
         // Check if this mention exists in our mentions array
         const mentionData = mentionMap[fullMatch];
-        if (mentionData) {
+        // Only process teams and players, skip user mentions
+        if (mentionData && mentionData.type !== 'user') {
           // Add mention component
           newSegments.push({
             type: 'mention',

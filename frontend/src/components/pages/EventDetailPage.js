@@ -574,64 +574,38 @@ function EventDetailPage({ params, navigateTo }) {
             <div>
               {console.log('🔍 Bracket tab - Current bracket data:', bracket)}
               
-              {/* Standalone Manual Bracket Builder - Admin Only */}
-              {(isAdmin() || isModerator()) && (
-                <div className="mb-6">
+              {/* For Admins/Moderators - Show Manual Bracket Builder */}
+              {(isAdmin() || isModerator()) ? (
+                <div>
                   <StandaloneBracketBuilder 
                     eventId={eventId}
                   />
                 </div>
-              )}
-              
-              {bracket && (bracket.matches?.length > 0 || bracket.upper_bracket || bracket.main_stage || bracket.rounds) ? (
-                <>
-                  {(isAdmin() || isModerator()) && (
-                    <div className="flex justify-end mb-4 space-x-2">
-                      <button 
-                        onClick={clearBracket}
-                        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                      >
-                        Clear Bracket
-                      </button>
-                      <button 
-                        onClick={() => generateBracket()}
-                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                      >
-                        Regenerate Bracket
-                      </button>
-                    </div>
-                  )}
+              ) : (
+                /* For regular users - Show the bracket if it exists and is public */
+                bracket && (bracket.public !== false) && (bracket.matches?.length > 0 || bracket.upper_bracket || bracket.main_stage || bracket.rounds?.length > 0) ? (
                   <LiquipediaBracket 
                     key={`bracket-${eventId}-${Date.now()}`}
                     bracket={bracket} 
                     event={event}
                     eventId={eventId}
                     navigateTo={navigateTo}
-                    isAdmin={isAdmin() || isModerator()}
+                    isAdmin={false}
                     onMatchUpdate={handleBracketMatchUpdate}
                   />
-                </>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="text-4xl mb-4">🏆</div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    Bracket not generated yet
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-6">
-                    {teams.length < 2 
-                      ? `Need at least 2 teams to generate bracket (currently ${teams.length})`
-                      : 'Click below to generate the tournament bracket'
-                    }
-                  </p>
-                  {(isAdmin() || isModerator()) && teams.length >= 2 && (
-                    <button 
-                      onClick={generateBracket}
-                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                    >
-                      Generate Bracket
-                    </button>
-                  )}
-                </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="text-4xl mb-4">🏆</div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      {bracket && bracket.public === false ? 'Bracket is Private' : 'Bracket not available yet'}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {bracket && bracket.public === false 
+                        ? 'The tournament organizers have not made the bracket public yet.'
+                        : 'The tournament bracket will be displayed here once the tournament starts.'}
+                    </p>
+                  </div>
+                )
               )}
             </div>
           )}

@@ -40,6 +40,9 @@ import PrivacyPage from './components/pages/footer/PrivacyPage';
 import TermsPage from './components/pages/footer/TermsPage';
 import CareersPage from './components/pages/footer/CareersPage';
 
+// Status Page
+import StatusPage from './pages/status/StatusPage';
+
 // Admin Components
 import RoleBasedDashboard from './components/RoleBasedDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -137,6 +140,17 @@ function AppContent() {
     const handleRouting = () => {
       const hash = window.location.hash.slice(1); // Remove #
       const pathname = window.location.pathname;
+      const hostname = window.location.hostname;
+      
+      // Check if we're on status subdomain - don't override with home page
+      if (hostname === 'status.mrvl.net' || hostname === 'status.localhost') {
+        // Don't change the page if already set to status
+        if (currentPage !== 'status') {
+          setCurrentPage('status');
+          setPageParams({});
+        }
+        return;
+      }
       
       // Handle direct URL routes like /reset-password
       if (pathname === '/reset-password' && window.location.search) {
@@ -234,6 +248,12 @@ function AppContent() {
 
   // Memoize the current page component to prevent re-creation
   const pageComponent = useMemo(() => {
+    // Check if we're on status subdomain first
+    const hostname = window.location.hostname;
+    if (hostname === 'status.mrvl.net' || hostname === 'status.localhost') {
+      return <StatusPage />;
+    }
+    
     const CurrentPageComponent = ROUTES[currentPage] || HomePage;
     
     // Check if this is an admin page
@@ -269,10 +289,13 @@ function AppContent() {
     return <CurrentPageComponent navigateTo={navigateTo} params={pageParams} onAuthClick={handleAuthClick} />;
   }, [currentPage, pageParams, user]); // Remove navigateTo and handleAuthClick from dependencies
 
+  // Check if we're on status subdomain to hide navigation
+  const isStatusSubdomain = window.location.hostname === 'status.mrvl.net' || window.location.hostname === 'status.localhost';
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-all duration-300">
-      {/* Navigation - Use mobile version for smaller screens */}
-      {isMobile ? (
+      {/* Navigation - Use mobile version for smaller screens (hide on status subdomain) */}
+      {!isStatusSubdomain && isMobile ? (
         <MobileNavigation 
           currentPage={currentPage}
           navigateTo={navigateTo}
@@ -280,7 +303,7 @@ function AppContent() {
           user={user}
           theme={theme}
         />
-      ) : (
+      ) : !isStatusSubdomain ? (
         <Navigation 
           currentPage={currentPage}
           navigateTo={navigateTo}
@@ -288,10 +311,10 @@ function AppContent() {
           user={user}
           theme={theme}
         />
-      )}
+      ) : null}
 
-      {/* Breadcrumbs - Hide on mobile */}
-      {!isMobile && (
+      {/* Breadcrumbs - Hide on mobile and status subdomain */}
+      {!isMobile && !isStatusSubdomain && (
         <Breadcrumbs 
           currentPage={currentPage}
           pageParams={pageParams}
@@ -304,8 +327,8 @@ function AppContent() {
         {pageComponent}
       </main>
 
-      {/* Footer */}
-      <Footer navigateTo={navigateTo} />
+      {/* Footer - Hide on status subdomain */}
+      {!isStatusSubdomain && <Footer navigateTo={navigateTo} />}
 
       {/* FIXED: Authentication Modal with proper state management */}
       {showAuthModal && (

@@ -301,6 +301,24 @@ function MatchDetailPage({ matchId, navigateTo }) {
         
         console.log('MatchDetailPage: Loaded match data:', data);
         
+        // Check for map parameter in URL
+        const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+        const mapParam = urlParams.get('map');
+        if (mapParam) {
+          const mapIndex = parseInt(mapParam) - 1; // Convert to 0-based index
+          if (mapIndex >= 0) {
+            console.log('MatchDetailPage: Setting initial map from URL parameter:', mapParam);
+            setCurrentMapIndex(mapIndex);
+            // Scroll to map section after a short delay to ensure content is rendered
+            setTimeout(() => {
+              const mapSection = document.querySelector('.match-statistics-section');
+              if (mapSection) {
+                mapSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }, 500);
+          }
+        }
+        
         // CRITICAL: Handle the actual API response structure
         let matchData;
         if (data.data) {
@@ -838,7 +856,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
         )}
 
         {/* Match Statistics - Complete Marvel Rivals Stats */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4 match-statistics-section">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">

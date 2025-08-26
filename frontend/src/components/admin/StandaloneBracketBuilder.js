@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
 import { 
     Trophy, Settings, Users, RefreshCw, Trash2,
-    Eye, EyeOff, Edit2, Check, Plus
+    Eye, EyeOff, Edit2, Check, Plus, Save, Globe, Lock
 } from 'lucide-react';
 
 const StandaloneBracketBuilder = ({ eventId }) => {
@@ -28,6 +28,9 @@ const StandaloneBracketBuilder = ({ eventId }) => {
     const [editMode, setEditMode] = useState(false);
     const [availableTeams, setAvailableTeams] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [isPublic, setIsPublic] = useState(true);
+    const [saveSuccess, setSaveSuccess] = useState(false);
 
     // Check if user can edit (admin/moderator only)
     const canEdit = isAdmin() || isModerator();
@@ -57,10 +60,13 @@ const StandaloneBracketBuilder = ({ eventId }) => {
 
     const teamOptions = [2, 4, 8, 16, 32, 64];
 
-    // Fetch teams from database
+    // Fetch teams from database and load existing bracket if any
     useEffect(() => {
         fetchTeams();
-    }, []);
+        if (eventId) {
+            loadExistingBracket();
+        }
+    }, [eventId]);
 
     const fetchTeams = async () => {
         try {
@@ -91,6 +97,64 @@ const StandaloneBracketBuilder = ({ eventId }) => {
             ]);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Load existing bracket from database
+    const loadExistingBracket = async () => {
+        try {
+            const response = await api.get(`/events/${eventId}`);
+            const eventData = response.data?.data || response.data;
+            
+            if (eventData.bracket_data && eventData.bracket_data.rounds?.length > 0) {
+                setBracketData(eventData.bracket_data);
+                setSelectedFormat(eventData.bracket_data.format || 'single_elimination');
+                console.log('✅ Loaded existing bracket from database');
+            }
+        } catch (error) {
+            console.error('Error loading bracket:', error);
+        }
+    };
+
+    // Save bracket to database
+    const saveBracket = async () => {
+        if (!eventId || bracketData.rounds.length === 0) {
+            alert('Please create a bracket first');
+            return;
+        }
+
+        setSaving(true);
+        setSaveSuccess(false);
+
+        try {
+            const bracketDataToSave = {
+                ...bracketData,
+                type: selectedFormat,
+                public: isPublic,
+                last_updated: new Date().toISOString()
+            };
+
+            console.log('🔄 Saving bracket data:', bracketDataToSave);
+            console.log('🔄 Saving to URL:', `/admin/events/${eventId}`);
+
+            // Save the bracket data to the event
+            const response = await api.put(`/admin/events/${eventId}`, {
+                bracket_data: bracketDataToSave
+            });
+
+            console.log('✅ Save response:', response.data);
+
+            if (response.data.success) {
+                setSaveSuccess(true);
+                setTimeout(() => setSaveSuccess(false), 3000);
+                console.log('✅ Bracket saved successfully to database');
+            }
+        } catch (error) {
+            console.error('❌ Error saving bracket:', error);
+            console.error('❌ Error response:', error.response?.data);
+            alert('Failed to save bracket: ' + (error.response?.data?.message || error.message));
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -321,15 +385,62 @@ const StandaloneBracketBuilder = ({ eventId }) => {
                 </h2>
                 <div className="flex gap-2">
                     {canEdit && (
-                        <button
-                            onClick={() => setEditMode(!editMode)}
-                            className={`px-4 py-2 rounded flex items-center gap-2 ${
-                                editMode ? 'bg-green-600 text-white' : 'bg-gray-600 text-white'
-                            }`}
-                        >
-                            {editMode ? <EyeOff size={18} /> : <Edit2 size={18} />}
-                            {editMode ? 'View Mode' : 'Edit Mode'}
-                        </button>
+                        <>
+                            {/* Public/Private Toggle */}
+                            <button
+                                onClick={() => setIsPublic(!isPublic)}
+                                className={`px-3 py-2 rounded flex items-center gap-2 ${
+                                    isPublic
+                                        ? 'bg-green-600 text-white hover:bg-green-700'
+                                        : 'bg-gray-600 text-white hover:bg-gray-500'
+                                }`}
+                                title={isPublic ? 'Bracket is PUBLIC' : 'Bracket is PRIVATE'}
+                            >
+                                {isPublic ? <Globe size={18} /> : <Lock size={18} />}
+                                {isPublic ? 'Public' : 'Private'}
+                            </button>
+
+                            {/* Save Button */}
+                            {bracketData.rounds.length > 0 && (
+                                <button
+                                    onClick={saveBracket}
+                                    disabled={saving}
+                                    className={`px-4 py-2 rounded flex items-center gap-2 ${
+                                        saveSuccess
+                                            ? 'bg-green-600 text-white'
+                                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                                    } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                    {saving ? (
+                                        <>
+                                            <RefreshCw size={18} className="animate-spin" />
+                                            Saving...
+                                        </>
+                                    ) : saveSuccess ? (
+                                        <>
+                                            <Check size={18} />
+                                            Saved!
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Save size={18} />
+                                            Save to Database
+                                        </>
+                                    )}
+                                </button>
+                            )}
+
+                            {/* Edit Mode Toggle */}
+                            <button
+                                onClick={() => setEditMode(!editMode)}
+                                className={`px-4 py-2 rounded flex items-center gap-2 ${
+                                    editMode ? 'bg-green-600 text-white' : 'bg-gray-600 text-white'
+                                }`}
+                            >
+                                {editMode ? <EyeOff size={18} /> : <Edit2 size={18} />}
+                                {editMode ? 'View Mode' : 'Edit Mode'}
+                            </button>
+                        </>
                     )}
                     {!canEdit && (
                         <div className="px-4 py-2 bg-blue-600 text-white rounded flex items-center gap-2">

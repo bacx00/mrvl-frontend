@@ -54,7 +54,7 @@ function UserProfile({ userId = null }) {
 
   const fetchUserStats = async () => {
     try {
-      const response = await api.get(`/api/users/${targetUserId}/stats`);
+      const response = await api.get(`/users/${targetUserId}/stats`);
       const data = response.data?.data || response.data || response;
       
       // Ensure we have all required stats fields

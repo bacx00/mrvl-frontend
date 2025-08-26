@@ -733,7 +733,7 @@ function ThreadDetailPage({ params, navigateTo }) {
                     // ForumMentionAutocomplete already handles the string conversion internally
                     setReplyContent(value);
                   }}
-                  placeholder="Write your reply... (Use @ to mention users, @team: for teams, @player: for players)"
+                  placeholder="Write your reply... (Type @ to mention teams and players)"
                   rows={3}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent"
                 />
@@ -1020,7 +1020,7 @@ function ThreadDetailPage({ params, navigateTo }) {
             <ForumMentionAutocomplete
               value={replyContent}
               onChange={setReplyContent}
-              placeholder="Write your reply... (Use @ to mention users, @team: for teams, @player: for players)"
+              placeholder="Write your reply... (Type @ to mention teams and players)"
               rows={4}
               className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent"
             />

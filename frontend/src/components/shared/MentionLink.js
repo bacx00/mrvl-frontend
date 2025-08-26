@@ -23,15 +23,14 @@ const MentionLink = ({
   const name = safeString(mention?.name);
   const display_name = safeString(mention?.display_name);
 
-  // Determine the page navigation based on mention type
+  // Determine the page navigation based on mention type (no user mentions)
   const getNavigation = () => {
     switch (type) {
       case 'player':
         return { page: 'player-detail', params: { id } };
       case 'team':
         return { page: 'team-detail', params: { id } };
-      case 'user':
-        return { page: 'user-profile', params: { id } };
+      // Removed user case - no user mentions allowed
       default:
         return null;
     }
@@ -65,17 +64,17 @@ const MentionLink = ({
     }
   };
 
-  // Get colors based on mention type with enhanced highlighting
+  // Get colors based on mention type with enhanced highlighting - styled as boxes
   const getColors = () => {
     switch (type) {
       case 'player':
-        return 'text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20';
+        return 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800';
       case 'team':
-        return 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20';
+        return 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 border border-red-200 dark:border-red-800';
       case 'user':
-        return 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20';
+        return 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50 border border-green-200 dark:border-green-800';
       default:
-        return 'text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/20';
+        return 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800/30 dark:text-gray-400 dark:hover:bg-gray-800/50 border border-gray-200 dark:border-gray-700';
     }
   };
 
@@ -143,16 +142,16 @@ const MentionLink = ({
   };
 
   const navigation = getNavigation();
+  // Show clean display name without any @ symbols or prefixes
   const displayText = display_name || name || `Unknown ${type || 'mention'}`;
 
   if (!navigation) {
     return (
       <span 
-        className={`inline-flex items-center font-medium px-2 py-1 rounded-md transition-all duration-200 ${getColors()} ${className}`}
+        className={`inline-flex items-center font-medium px-2 py-0.5 rounded transition-all duration-200 ${getColors()} ${className}`}
         onClick={handleClick}
       >
-        {getIcon()}
-        @{displayText}
+        {displayText}
       </span>
     );
   }
@@ -160,11 +159,10 @@ const MentionLink = ({
   return (
     <button
       onClick={handleClick}
-      className={`inline-flex items-center font-medium px-2 py-1 rounded-md hover:underline transition-all duration-200 cursor-pointer transform hover:scale-105 active:scale-95 ${getColors()} ${className}`}
+      className={`inline-flex items-center font-medium px-2 py-0.5 rounded transition-all duration-200 cursor-pointer transform hover:scale-105 active:scale-95 ${getColors()} ${className}`}
       title={`View ${type}: ${displayText}`}
     >
-      {getIcon()}
-      @{displayText}
+      {displayText}
     </button>
   );
 };

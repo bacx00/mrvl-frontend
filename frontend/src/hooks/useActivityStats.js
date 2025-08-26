@@ -40,32 +40,33 @@ export const useActivityStats = (targetUserId = null, options = {}) => {
       
       // Use the correct public endpoint for user stats
       const endpoint = targetUserId 
-        ? `/api/users/${targetUserId}/stats`
-        : '/api/profile';
+        ? `/users/${targetUserId}/stats`
+        : '/profile';
         
       const response = await api.get(endpoint);
       const data = response.data?.data || response.data || {};
       
-      // Handle the actual response structure from backend
+      // Handle both flat and nested response structures from backend
       const normalizedStats = {
-        total_comments: data.comments?.total || 0,
-        total_forum_posts: data.forum?.posts || 0,
-        total_forum_threads: data.forum?.threads || 0,
-        total_votes: (data.votes?.upvotes_given || 0) + (data.votes?.downvotes_given || 0),
-        days_active: data.account?.days_active || 0,
+        // Use flat structure first, fall back to nested
+        total_comments: data.total_comments ?? data.comments?.total ?? 0,
+        total_forum_posts: data.forum_posts ?? data.forum?.posts ?? 0,
+        total_forum_threads: data.forum_threads ?? data.forum?.threads ?? 0,
+        total_votes: data.total_votes ?? ((data.votes?.upvotes_given || 0) + (data.votes?.downvotes_given || 0)) ?? 0,
+        days_active: data.days_active ?? data.account?.days_active ?? 0,
         // Additional stats
-        news_comments: data.comments?.news || 0,
-        match_comments: data.comments?.matches || 0,
-        upvotes_given: data.votes?.upvotes_given || 0,
-        downvotes_given: data.votes?.downvotes_given || 0,
-        upvotes_received: data.votes?.upvotes_received || 0,
-        downvotes_received: data.votes?.downvotes_received || 0,
-        reputation_score: data.votes?.reputation_score || 0,
-        mentions_given: data.mentions?.given || 0,
-        mentions_received: data.mentions?.received || 0,
-        activity_score: data.activity?.activity_score || 0,
-        total_actions: data.activity?.total_actions || 0,
-        last_activity: data.activity?.last_activity || null
+        news_comments: data.news_comments ?? data.comments?.news ?? 0,
+        match_comments: data.match_comments ?? data.comments?.matches ?? 0,
+        upvotes_given: data.upvotes_given ?? data.votes?.upvotes_given ?? 0,
+        downvotes_given: data.downvotes_given ?? data.votes?.downvotes_given ?? 0,
+        upvotes_received: data.upvotes_received ?? data.votes?.upvotes_received ?? 0,
+        downvotes_received: data.downvotes_received ?? data.votes?.downvotes_received ?? 0,
+        reputation_score: data.reputation_score ?? data.votes?.reputation_score ?? 0,
+        mentions_given: data.mentions_given ?? data.mentions?.given ?? 0,
+        mentions_received: data.mentions_received ?? data.mentions?.received ?? 0,
+        activity_score: data.activity_score ?? data.activity?.activity_score ?? 0,
+        total_actions: data.total_actions ?? data.activity?.total_actions ?? 0,
+        last_activity: data.last_activity ?? data.activity?.last_activity ?? null
       };
       
       setStats(normalizedStats);
