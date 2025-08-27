@@ -126,11 +126,16 @@ function SearchPage({ searchParams = {}, navigateTo }) {
       // Process forums results
       const forums = forumsRes.status === 'fulfilled' ?
         (forumsRes.value?.data?.data || forumsRes.value?.data || forumsRes.value || [])
-          .filter(thread =>
-            thread.title?.toLowerCase().includes(searchTerm) ||
-            thread.content?.toLowerCase().includes(searchTerm) ||
-            thread.category?.toLowerCase().includes(searchTerm)
-          )
+          .filter(thread => {
+            // Handle category as either string or object
+            const categoryName = typeof thread.category === 'string' ? 
+              thread.category : 
+              (thread.category?.name || thread.category?.title || '');
+            
+            return thread.title?.toLowerCase().includes(searchTerm) ||
+                   thread.content?.toLowerCase().includes(searchTerm) ||
+                   categoryName.toLowerCase().includes(searchTerm);
+          })
           .map(thread => ({
             id: thread.id,
             title: thread.title,
@@ -139,17 +144,22 @@ function SearchPage({ searchParams = {}, navigateTo }) {
               name: thread.user_name || thread.author?.name || 'Anonymous'
             },
             posts_count: thread.replies || thread.replies_count || 0,
-            category: thread.category
+            category: typeof thread.category === 'string' ? thread.category : (thread.category?.name || thread.category?.title || 'General')
           })) : [];
       
       // Process news results
       const news = newsRes.status === 'fulfilled' ?
         (newsRes.value?.data?.data || newsRes.value?.data || newsRes.value || [])
-          .filter(article =>
-            article.title?.toLowerCase().includes(searchTerm) ||
-            article.content?.toLowerCase().includes(searchTerm) ||
-            article.category?.toLowerCase().includes(searchTerm)
-          )
+          .filter(article => {
+            // Handle category as either string or object
+            const categoryName = typeof article.category === 'string' ? 
+              article.category : 
+              (article.category?.name || article.category?.title || '');
+            
+            return article.title?.toLowerCase().includes(searchTerm) ||
+                   article.content?.toLowerCase().includes(searchTerm) ||
+                   categoryName.toLowerCase().includes(searchTerm);
+          })
           .slice(0, 5)
           .map(article => ({
             id: article.id,

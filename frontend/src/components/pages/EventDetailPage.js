@@ -583,7 +583,13 @@ function EventDetailPage({ params, navigateTo }) {
                 </div>
               ) : (
                 /* For regular users - Show the bracket if it exists and is public */
-                bracket && (bracket.public !== false) && (bracket.matches?.length > 0 || bracket.upper_bracket || bracket.main_stage || bracket.rounds?.length > 0) ? (
+                bracket && (bracket.public !== false) && (
+                  bracket.matches?.length > 0 || 
+                  bracket.upper_bracket || 
+                  bracket.main_stage || 
+                  bracket.rounds?.length > 0 ||
+                  (Array.isArray(bracket.rounds) && bracket.rounds.some(r => r.matches?.length > 0))
+                ) ? (
                   <LiquipediaBracket 
                     key={`bracket-${eventId}-${Date.now()}`}
                     bracket={bracket} 

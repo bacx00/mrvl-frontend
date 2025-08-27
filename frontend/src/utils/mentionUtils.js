@@ -44,9 +44,9 @@ export const processContentWithMentions = (content, mentions = [], navigateTo = 
   // Find all mention patterns in the content
   const mentionPatterns = [
     // Process @ mentions but only if they're teams or players (not users)
-    /@([a-zA-Z0-9_]+)/g,           // @teamname or @playername (will filter by type)
-    /@team:([a-zA-Z0-9_]+)/g,      // @team:teamname
-    /@player:([a-zA-Z0-9_]+)/g     // @player:playername
+    /@team:([a-zA-Z0-9_\-\s]+)/g,      // @team:teamname or @team:id
+    /@player:([a-zA-Z0-9_\-\s]+)/g,    // @player:playername or @player:id
+    /@([a-zA-Z0-9_]+)/g                  // @teamname or @playername (will filter by type)
   ];
 
   let processedContent = content;
@@ -81,7 +81,25 @@ export const processContentWithMentions = (content, mentions = [], navigateTo = 
         }
 
         // Check if this mention exists in our mentions array
-        const mentionData = mentionMap[fullMatch];
+        let mentionData = mentionMap[fullMatch];
+        
+        // If not found directly, try alternative lookups
+        if (!mentionData) {
+          // Try to find by the captured group (without prefix)
+          const capturedName = match[1];
+          
+          // Look for mentions that match this name or ID
+          Object.keys(mentionMap).forEach(key => {
+            const mention = mentionMap[key];
+            if (mention && (mention.name === capturedName || 
+                mention.display_name === capturedName ||
+                mention.id === capturedName ||
+                mention.id === parseInt(capturedName))) {
+              mentionData = mention;
+            }
+          });
+        }
+        
         // Only process teams and players, skip user mentions
         if (mentionData && mentionData.type !== 'user') {
           // Add mention component

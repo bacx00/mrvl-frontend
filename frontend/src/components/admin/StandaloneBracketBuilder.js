@@ -38,27 +38,48 @@ const StandaloneBracketBuilder = ({ eventId }) => {
     const formats = {
         single_elimination: {
             name: 'Single Elimination',
-            description: 'Standard knockout bracket'
+            description: 'Standard knockout bracket - Teams are eliminated after one loss'
         },
         double_elimination: {
             name: 'Double Elimination',
-            description: 'Upper and lower bracket'
+            description: 'Upper and lower bracket - Teams get a second chance after first loss'
         },
         round_robin: {
             name: 'Round Robin',
-            description: 'Everyone plays everyone'
+            description: 'Everyone plays everyone - All teams play each other once'
         },
         swiss: {
             name: 'Swiss System',
-            description: 'Paired by record'
+            description: 'Paired by record - Teams with similar records face each other'
         },
         gsl: {
             name: 'GSL Groups',
-            description: '4-team double elim groups'
+            description: '4-team double elim groups - Two advance from each group'
+        },
+        group_stage: {
+            name: 'Group Stage + Playoffs',
+            description: 'Groups phase followed by elimination playoffs'
+        },
+        league: {
+            name: 'League Format',
+            description: 'Season-long round robin with standings'
+        },
+        gauntlet: {
+            name: 'Gauntlet',
+            description: 'Lower seeds must win multiple matches to reach finals'
         }
     };
 
-    const teamOptions = [2, 4, 8, 16, 32, 64];
+    const teamOptions = [2, 4, 6, 8, 12, 16, 20, 24, 32, 48, 64, 128, 256];
+    
+    const matchFormats = {
+        bo1: { name: 'Best of 1', value: 1, description: 'Single game' },
+        bo3: { name: 'Best of 3', value: 3, description: 'First to 2 wins' },
+        bo5: { name: 'Best of 5', value: 5, description: 'First to 3 wins' },
+        bo7: { name: 'Best of 7', value: 7, description: 'First to 4 wins (Grand Finals)' },
+        ft3: { name: 'First to 3', value: 3, description: 'First to win 3 maps' },
+        ft4: { name: 'First to 4', value: 4, description: 'First to win 4 maps (Finals)' }
+    };
 
     // Fetch teams from database and load existing bracket if any
     useEffect(() => {
@@ -103,13 +124,64 @@ const StandaloneBracketBuilder = ({ eventId }) => {
     // Load existing bracket from database
     const loadExistingBracket = async () => {
         try {
-            const response = await api.get(`/events/${eventId}`);
-            const eventData = response.data?.data || response.data;
+            // Try both endpoints to get bracket data
+            let bracketInfo = null;
             
-            if (eventData.bracket_data && eventData.bracket_data.rounds?.length > 0) {
-                setBracketData(eventData.bracket_data);
-                setSelectedFormat(eventData.bracket_data.format || 'single_elimination');
-                console.log('✅ Loaded existing bracket from database');
+            // First try the bracket endpoint
+            try {
+                const bracketResponse = await api.get(`/events/${eventId}/bracket`);
+                if (bracketResponse.data?.data?.bracket) {
+                    bracketInfo = bracketResponse.data.data.bracket;
+                    console.log('✅ Loaded bracket from /bracket endpoint');
+                }
+            } catch (e) {
+                console.log('📝 Bracket endpoint not available, trying event endpoint');
+            }
+            
+            // If no bracket from bracket endpoint, try event endpoint
+            let eventData = null;
+            if (!bracketInfo) {
+                const response = await api.get(`/events/${eventId}`);
+                eventData = response.data?.data || response.data;
+                
+                if (eventData.bracket_data) {
+                    bracketInfo = eventData.bracket_data;
+                    console.log('✅ Loaded bracket from event.bracket_data');
+                } else if (eventData.bracket) {
+                    bracketInfo = eventData.bracket;
+                    console.log('✅ Loaded bracket from event.bracket');
+                }
+            }
+            
+            // If we found bracket data, load it
+            if (bracketInfo && (bracketInfo.rounds?.length > 0 || bracketInfo.matches?.length > 0)) {
+                // Restore all bracket properties
+                setBracketData({
+                    name: bracketInfo.name || eventData?.name || 'Tournament',
+                    format: bracketInfo.format || bracketInfo.type || 'single_elimination',
+                    rounds: bracketInfo.rounds || [],
+                    teams: bracketInfo.teams || [],
+                    settings: bracketInfo.settings || {
+                        bestOf: 3,
+                        totalTeams: 8,
+                        thirdPlace: false,
+                        grandFinalReset: false
+                    },
+                    public: bracketInfo.public !== undefined ? bracketInfo.public : true
+                });
+                
+                // Update UI state
+                setSelectedFormat(bracketInfo.format || bracketInfo.type || 'single_elimination');
+                setSelectedBestOf(bracketInfo.settings?.bestOf || 3);
+                setSelectedTeams(bracketInfo.settings?.totalTeams || 8);
+                setIsPublic(bracketInfo.public !== undefined ? bracketInfo.public : true);
+                
+                console.log('✅ Fully loaded existing bracket with all settings');
+                
+                // Set edit mode to true so user can modify existing bracket
+                setEditMode(true);
+            } else {
+                console.log('📝 No existing bracket found, starting fresh');
             }
         } catch (error) {
             console.error('Error loading bracket:', error);
@@ -158,12 +230,56 @@ const StandaloneBracketBuilder = ({ eventId }) => {
         }
     };
 
-    // Initialize bracket structure - only create first round
+    // Initialize bracket structure based on format
     const initializeBracket = () => {
+        let bracketStructure = null;
+        
+        switch (selectedFormat) {
+            case 'single_elimination':
+                bracketStructure = createSingleEliminationBracket();
+                break;
+            case 'double_elimination':
+                bracketStructure = createDoubleEliminationBracket();
+                break;
+            case 'round_robin':
+                bracketStructure = createRoundRobinBracket();
+                break;
+            case 'swiss':
+                bracketStructure = createSwissBracket();
+                break;
+            case 'gsl':
+                bracketStructure = createGSLGroupsBracket();
+                break;
+            case 'group_stage':
+                bracketStructure = createGroupStageBracket();
+                break;
+            case 'league':
+                bracketStructure = createLeagueBracket();
+                break;
+            case 'gauntlet':
+                bracketStructure = createGauntletBracket();
+                break;
+            default:
+                bracketStructure = createSingleEliminationBracket();
+        }
+        
+        setBracketData({
+            ...bracketData,
+            format: selectedFormat,
+            ...bracketStructure,
+            settings: {
+                ...bracketData.settings,
+                bestOf: selectedBestOf,
+                totalTeams: selectedTeams
+            }
+        });
+    };
+    
+    // Single Elimination bracket
+    const createSingleEliminationBracket = () => {
         const rounds = [];
         const matchesInFirstRound = selectedTeams / 2;
         
-        // Only create the first round initially
         const firstRound = {
             id: 1,
             name: getRoundName(1, Math.log2(selectedTeams)),
@@ -185,17 +301,244 @@ const StandaloneBracketBuilder = ({ eventId }) => {
         }
         
         rounds.push(firstRound);
+        return { rounds, type: 'single_elimination' };
+    };
+    
+    // Double Elimination bracket
+    const createDoubleEliminationBracket = () => {
+        const upperBracket = [];
+        const lowerBracket = [];
+        const matchesInFirstRound = selectedTeams / 2;
         
-        setBracketData({
-            ...bracketData,
-            format: selectedFormat,
-            rounds: rounds,
-            settings: {
-                ...bracketData.settings,
+        // Upper bracket first round
+        const upperRound1 = {
+            id: 1,
+            name: 'Upper Bracket Round 1',
+            bracket: 'upper',
+            matches: []
+        };
+        
+        for (let m = 0; m < matchesInFirstRound; m++) {
+            upperRound1.matches.push({
+                id: `UBR1M${m + 1}`,
+                matchNumber: m + 1,
+                team1: null,
+                team2: null,
+                score1: 0,
+                score2: 0,
+                winner: null,
+                loser: null,
                 bestOf: selectedBestOf,
-                totalTeams: selectedTeams
+                status: 'pending',
+                bracket: 'upper'
+            });
+        }
+        
+        upperBracket.push(upperRound1);
+        
+        // Lower bracket will be populated as teams lose
+        return { 
+            rounds: [upperRound1], 
+            upperBracket,
+            lowerBracket,
+            type: 'double_elimination'
+        };
+    };
+    
+    // Round Robin bracket
+    const createRoundRobinBracket = () => {
+        const rounds = [];
+        let matchId = 1;
+        
+        // Generate all matches where each team plays every other team once
+        for (let i = 0; i < selectedTeams; i++) {
+            for (let j = i + 1; j < selectedTeams; j++) {
+                const roundNum = Math.floor(matchId / (selectedTeams / 2)) + 1;
+                
+                if (!rounds[roundNum - 1]) {
+                    rounds[roundNum - 1] = {
+                        id: roundNum,
+                        name: `Round ${roundNum}`,
+                        matches: []
+                    };
+                }
+                
+                rounds[roundNum - 1].matches.push({
+                    id: `RRM${matchId}`,
+                    matchNumber: matchId,
+                    team1: null,
+                    team2: null,
+                    score1: 0,
+                    score2: 0,
+                    winner: null,
+                    bestOf: selectedBestOf,
+                    status: 'pending'
+                });
+                matchId++;
             }
+        }
+        
+        return { rounds, type: 'round_robin', standings: [] };
+    };
+    
+    // Swiss System bracket
+    const createSwissBracket = () => {
+        const totalRounds = Math.ceil(Math.log2(selectedTeams));
+        const rounds = [];
+        
+        // Create first round with random pairings
+        const firstRound = {
+            id: 1,
+            name: 'Swiss Round 1',
+            matches: []
+        };
+        
+        const matchesInRound = Math.floor(selectedTeams / 2);
+        for (let m = 0; m < matchesInRound; m++) {
+            firstRound.matches.push({
+                id: `SR1M${m + 1}`,
+                matchNumber: m + 1,
+                team1: null,
+                team2: null,
+                score1: 0,
+                score2: 0,
+                winner: null,
+                bestOf: selectedBestOf,
+                status: 'pending'
+            });
+        }
+        
+        rounds.push(firstRound);
+        return { rounds, type: 'swiss', totalSwissRounds: totalRounds };
+    };
+    
+    // GSL Groups format
+    const createGSLGroupsBracket = () => {
+        const numGroups = Math.floor(selectedTeams / 4);
+        const groups = [];
+        
+        for (let g = 0; g < numGroups; g++) {
+            const group = {
+                id: g + 1,
+                name: `Group ${String.fromCharCode(65 + g)}`, // A, B, C, etc.
+                teams: [],
+                matches: []
+            };
+            
+            // Each group has 6 matches in GSL format
+            const matchTypes = [
+                { name: 'Opening Match 1', id: `G${g+1}M1` },
+                { name: 'Opening Match 2', id: `G${g+1}M2` },
+                { name: 'Winners Match', id: `G${g+1}M3` },
+                { name: 'Losers Match', id: `G${g+1}M4` },
+                { name: 'Decider Match', id: `G${g+1}M5` }
+            ];
+            
+            matchTypes.forEach(mt => {
+                group.matches.push({
+                    id: mt.id,
+                    name: mt.name,
+                    team1: null,
+                    team2: null,
+                    score1: 0,
+                    score2: 0,
+                    winner: null,
+                    bestOf: selectedBestOf,
+                    status: 'pending'
+                });
+            });
+            
+            groups.push(group);
+        }
+        
+        return { groups, rounds: [], type: 'gsl' };
+    };
+    
+    // Group Stage + Playoffs
+    const createGroupStageBracket = () => {
+        const numGroups = Math.min(4, Math.floor(selectedTeams / 4));
+        const groups = [];
+        
+        for (let g = 0; g < numGroups; g++) {
+            groups.push({
+                id: g + 1,
+                name: `Group ${String.fromCharCode(65 + g)}`,
+                teams: [],
+                matches: [],
+                standings: []
+            });
+        }
+        
+        return { 
+            groups, 
+            rounds: [], // Playoffs will be added after group stage
+            type: 'group_stage',
+            stage: 'groups' 
+        };
+    };
+    
+    // League format (season-long round robin)
+    const createLeagueBracket = () => {
+        return {
+            ...createRoundRobinBracket(),
+            type: 'league',
+            standings: [],
+            weeks: Math.ceil((selectedTeams * (selectedTeams - 1) / 2) / 4) // Estimate weeks
+        };
+    };
+    
+    // Gauntlet format
+    const createGauntletBracket = () => {
+        const rounds = [];
+        let remainingTeams = selectedTeams;
+        let roundNum = 1;
+        
+        // Lower seeds must win multiple matches to reach finals
+        while (remainingTeams > 2) {
+            const round = {
+                id: roundNum,
+                name: `Gauntlet Round ${roundNum}`,
+                matches: []
+            };
+            
+            // Bottom two teams play
+            round.matches.push({
+                id: `GR${roundNum}M1`,
+                matchNumber: 1,
+                team1: null,
+                team2: null,
+                score1: 0,
+                score2: 0,
+                winner: null,
+                bestOf: selectedBestOf,
+                status: 'pending',
+                description: `Seed ${remainingTeams} vs Seed ${remainingTeams - 1}`
+            });
+            
+            rounds.push(round);
+            remainingTeams--;
+            roundNum++;
+        }
+        
+        // Final match
+        rounds.push({
+            id: roundNum,
+            name: 'Gauntlet Final',
+            matches: [{
+                id: `GR${roundNum}M1`,
+                matchNumber: 1,
+                team1: null,
+                team2: null,
+                score1: 0,
+                score2: 0,
+                winner: null,
+                bestOf: selectedBestOf === 7 ? 7 : 5, // Grand finals are typically Bo5 or Bo7
+                status: 'pending',
+                description: 'Top Seed vs Gauntlet Winner'
+            }]
         });
+        
+        return { rounds, type: 'gauntlet' };
     };
 
     const getRoundName = (round, totalRounds) => {
@@ -488,19 +831,19 @@ const StandaloneBracketBuilder = ({ eventId }) => {
                             </select>
                         </div>
 
-                        {/* Best Of */}
+                        {/* Match Format */}
                         <div>
-                            <label className="block text-sm text-gray-300 mb-2">Best Of</label>
+                            <label className="block text-sm text-gray-300 mb-2">Match Format</label>
                             <select
                                 value={selectedBestOf}
                                 onChange={(e) => setSelectedBestOf(parseInt(e.target.value))}
                                 className="w-full px-3 py-2 bg-gray-700 text-white rounded"
                             >
-                                <option value={1}>BO1</option>
-                                <option value={3}>BO3</option>
-                                <option value={5}>BO5</option>
-                                <option value={7}>BO7</option>
-                                <option value={9}>BO9</option>
+                                {Object.entries(matchFormats).map(([key, format]) => (
+                                    <option key={key} value={format.value} title={format.description}>
+                                        {format.name}
+                                    </option>
+                                ))}
                             </select>
                         </div>
 

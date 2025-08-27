@@ -92,33 +92,13 @@ const MentionLink = ({
     }, 150);
     
     if (navigation && navigateTo) {
-      // Use React Router style navigation with proper routing
-      switch (navigation.page) {
-        case 'player-detail':
-          if (typeof window !== 'undefined') {
-            window.location.href = `/players/${navigation.params.id}`;
-          }
-          break;
-        case 'team-detail':
-          if (typeof window !== 'undefined') {
-            window.location.href = `/teams/${navigation.params.id}`;
-          }
-          break;
-        case 'user-profile':
-          if (typeof window !== 'undefined') {
-            window.location.href = `/users/${navigation.params.id}`;
-          }
-          break;
-        default:
-          console.warn('Unknown navigation page:', navigation.page);
-      }
+      // Use the navigateTo function provided by the parent component
+      navigateTo(navigation.page, navigation.params);
     } else if (navigation) {
-      // Fallback to window location if navigateTo not provided
-      const url = getUrlFromNavigation(navigation);
-      if (url && url !== '#') {
-        if (typeof window !== 'undefined') {
-          window.location.href = url;
-        }
+      // Fallback to hash-based navigation if navigateTo not provided
+      const hashUrl = getHashUrl(navigation);
+      if (hashUrl && typeof window !== 'undefined') {
+        window.location.hash = hashUrl;
       }
     }
     
@@ -127,17 +107,17 @@ const MentionLink = ({
     }
   };
 
-  // Helper function to get URL from navigation
-  const getUrlFromNavigation = (navigation) => {
+  // Helper function to get hash URL from navigation
+  const getHashUrl = (navigation) => {
     switch (navigation.page) {
       case 'player-detail':
-        return `/players/${navigation.params.id}`;
+        return `player-detail/${navigation.params.id}`;
       case 'team-detail':
-        return `/teams/${navigation.params.id}`;
+        return `team-detail/${navigation.params.id}`;
       case 'user-profile':
-        return `/users/${navigation.params.id}`;
+        return `user-profile/${navigation.params.id}`;
       default:
-        return '#';
+        return '';
     }
   };
 

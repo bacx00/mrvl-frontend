@@ -598,81 +598,46 @@ function NewsDetailPage({ params, navigateTo }) {
     const safeContentValue = safeString(content);
     if (!safeContentValue || typeof safeContentValue !== 'string') return null;
     
-    // Create a map of mention texts to their data with comprehensive safe string extraction
-    const mentionMap = {};
-    if (Array.isArray(mentions)) {
-      mentions.forEach(mention => {
-        // Handle case where mention might be an object or primitive
-        if (typeof mention === 'object' && mention !== null) {
-          const mentionText = safeString(mention.mention_text);
-          if (mentionText) {
-            mentionMap[mentionText] = {
-              ...mention,
-              // Ensure all mention properties are safely extracted to prevent [object Object]
-              type: safeString(mention.type) || 'user',
-              id: mention.id || '',
-              name: safeString(mention.name) || '',
-              display_name: safeString(mention.display_name) || safeString(mention.name) || '',
-              username: safeString(mention.username) || '',
-              team_name: safeString(mention.team_name) || '',
-              player_name: safeString(mention.player_name) || ''
-            };
-          }
-        } else {
-          // Handle primitive mentions safely
-          const mentionText = safeString(mention);
-          if (mentionText) {
-            mentionMap[mentionText] = {
-              mention_text: mentionText,
-              type: 'user',
-              id: '',
-              name: mentionText,
-              display_name: mentionText
-            };
-          }
-        }
-      });
-    }
+    // Process content to replace mentions with clickable components
+    if (!mentions || mentions.length === 0) return safeContentValue;
     
-    // Split content by mentions pattern
-    const mentionPattern = /(@\w+|@team:\w+|@player:\w+)/g;
-    const parts = safeContentValue.split(mentionPattern);
+    // Sort mentions by position to process them in order
+    const sortedMentions = [...mentions].sort((a, b) => 
+      (a.position_start || 0) - (b.position_start || 0)
+    );
     
-    return parts.map((part, index) => {
-      const mentionData = mentionMap[part];
+    const elements = [];
+    let lastIndex = 0;
+    
+    sortedMentions.forEach((mention) => {
+      const mentionText = mention.mention_text;
+      const startPos = safeContentValue.indexOf(mentionText, lastIndex);
       
-      if (mentionData) {
-        return (
+      if (startPos !== -1) {
+        // Add text before mention
+        if (startPos > lastIndex) {
+          elements.push(safeContentValue.slice(lastIndex, startPos));
+        }
+        
+        // Add the mention as a clickable component  
+        elements.push(
           <MentionLink
-            key={index}
-            mention={mentionData}
+            key={`mention-${startPos}-${mention.id}`}
+            mention={mention}
             navigateTo={navigateTo}
-            onClick={(mention) => {
-              const nav = {
-                player: () => navigateTo('player-detail', { id: mention.id }),
-                team: () => navigateTo('team-detail', { id: mention.id }),
-                user: () => navigateTo('user-profile', { id: mention.id })
-              };
-              
-              if (nav[mention.type]) {
-                nav[mention.type]();
-              }
-            }}
           />
         );
+        
+        lastIndex = startPos + mentionText.length;
       }
-      
-      // For unlinked mentions, still style them
-      if (part.match(mentionPattern)) {
-        return (
-          <span key={index} className="text-red-600 dark:text-red-400 font-medium">
-            {part}
-          </span>
-        );
-      }
-      
-      return part;
     });
+    
+    // Add remaining text
+    if (lastIndex < safeContentValue.length) {
+      elements.push(safeContentValue.slice(lastIndex));
+    }
+    
+    return elements.length > 0 ? elements : safeContentValue;
   };
 
   // ENHANCED: Render content with video embeds and improved layout

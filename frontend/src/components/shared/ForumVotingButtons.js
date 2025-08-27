@@ -49,10 +49,12 @@ function ForumVotingButtons({
         const data = response.data?.data || response.data;
         
         if (data) {
-          // Update vote counts and user vote from server
-          setUpvotes(data.stats?.upvotes || data.upvotes || initialUpvotes);
-          setDownvotes(data.stats?.downvotes || data.downvotes || initialDownvotes);
-          setCurrentVote(data.user_vote || null);
+          // Update vote counts and user vote from server only if we haven't voted
+          if (!hasVoted.current) {
+            setUpvotes(data.stats?.upvotes || data.upvotes || initialUpvotes);
+            setDownvotes(data.stats?.downvotes || data.downvotes || initialDownvotes);
+            setCurrentVote(data.user_vote || null);
+          }
           setInitialStateLoaded(true);
         }
       } catch (error) {
@@ -105,6 +107,10 @@ function ForumVotingButtons({
       setDownvotes(initialDownvotes);
       setCurrentVote(userVote);
       setHasInitialized(true);
+    } else if (!hasVoted.current && (upvotes !== initialUpvotes || downvotes !== initialDownvotes)) {
+      // Only update from props if we haven't voted and the counts actually changed
+      // This prevents duplicate updates while allowing parent updates when needed
+      return; // Don't update if we haven't voted but counts are different (prevents duplication)
     }
     // Don't update if it's the same item and we've already initialized
     // This prevents resetting hasVoted flag on re-renders

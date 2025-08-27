@@ -158,45 +158,46 @@ function ThreadDetailPage({ params, navigateTo }) {
       });
     }
     
-    // Split content by mentions pattern - fixed regex to properly match all mention formats
-    const mentionPattern = /(@[a-zA-Z0-9_]+|@team:[a-zA-Z0-9_]+|@player:[a-zA-Z0-9_]+)/g;
-    const parts = safeContent.split(mentionPattern);
+    // Process content to replace mentions with clickable components
+    if (!mentions || mentions.length === 0) return safeContent;
     
-    return parts.map((part, index) => {
-      const mentionData = mentionMap[part];
+    // Sort mentions by position to process them in order
+    const sortedMentions = [...mentions].sort((a, b) => 
+      (a.position_start || 0) - (b.position_start || 0)
+    );
+    
+    const elements = [];
+    let lastIndex = 0;
+    
+    sortedMentions.forEach((mention) => {
+      const mentionText = mention.mention_text;
+      const startPos = safeContent.indexOf(mentionText, lastIndex);
       
-      if (mentionData && mentionData.id) {
-        return (
+      if (startPos !== -1) {
+        // Add text before mention
+        if (startPos > lastIndex) {
+          elements.push(safeContent.slice(lastIndex, startPos));
+        }
+        
+        // Add the mention as a clickable component
+        elements.push(
           <MentionLink
-            key={index}
-            mention={mentionData}
+            key={`mention-${startPos}-${mention.id}`}
+            mention={mention}
             navigateTo={navigateTo}
-            onClick={(mention) => {
-              const nav = {
-                player: () => navigateTo('player-detail', { id: mention.id }),
-                team: () => navigateTo('team-detail', { id: mention.id }),
-                user: () => navigateTo('user-profile', { id: mention.id })
-              };
-              
-              if (nav[mention.type]) {
-                nav[mention.type]();
-              }
-            }}
           />
         );
+        
+        lastIndex = startPos + mentionText.length;
       }
-      
-      // For mentions that match pattern but don't have data, still style them as clickable
-      if (part.match(mentionPattern)) {
-        return (
-          <span key={index} className="inline-flex items-center font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 cursor-pointer" title="Mention">
-            {part}
-          </span>
-        );
-      }
-      
-      return part;
     });
+    
+    // Add remaining text
+    if (lastIndex < safeContent.length) {
+      elements.push(safeContent.slice(lastIndex));
+    }
+    
+    return elements.length > 0 ? elements : safeContent;
   };
 
   const handleSubmitReply = async (e) => {

@@ -109,7 +109,7 @@ function Navigation({ currentPage, navigateTo, onAuthClick, user: propUser }) {
             type: 'team',
             title: team.name,
             subtitle: team.short_name,
-            icon: '👥',
+            icon: '',
             data: team
           });
         });
@@ -127,7 +127,7 @@ function Navigation({ currentPage, navigateTo, onAuthClick, user: propUser }) {
             type: 'player',
             title: player.name || player.username,
             subtitle: player.team_name || 'Free Agent',
-            icon: '🎮',
+            icon: '',
             data: player
           });
         });
@@ -145,7 +145,7 @@ function Navigation({ currentPage, navigateTo, onAuthClick, user: propUser }) {
             type: 'match',
             title: `${match.team1?.name} vs ${match.team2?.name}`,
             subtitle: match.event?.name || 'Match',
-            icon: '⚔️',
+            icon: '',
             data: match
           });
         });
@@ -162,7 +162,7 @@ function Navigation({ currentPage, navigateTo, onAuthClick, user: propUser }) {
             type: 'event',
             title: event.name,
             subtitle: event.location || 'Tournament',
-            icon: '🏆',
+            icon: '',
             data: event
           });
         });
@@ -178,9 +178,26 @@ function Navigation({ currentPage, navigateTo, onAuthClick, user: propUser }) {
             id: thread.id,
             type: 'forum',
             title: thread.title,
-            subtitle: `by ${thread.user_name || 'Anonymous'}`,
-            icon: '💬',
+            subtitle: `by ${thread.user_name || thread.user?.name || 'Anonymous'}`,
+            icon: '',
             data: thread
+          });
+        });
+      }
+      
+      // Process news articles
+      if (newsRes.status === 'fulfilled') {
+        const articles = newsRes.value?.data?.data || newsRes.value?.data || [];
+        articles.filter(article =>
+          article.title?.toLowerCase().includes(searchTerm)
+        ).slice(0, 2).forEach(article => {
+          results.push({
+            id: article.id,
+            type: 'news',
+            title: article.title,
+            subtitle: article.author?.name || 'MRVL Team',
+            icon: '',
+            data: article
           });
         });
       }
@@ -411,7 +428,6 @@ function Navigation({ currentPage, navigateTo, onAuthClick, user: propUser }) {
                         onClick={() => handleResultClick(result)}
                         className="w-full flex items-center space-x-3 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
                       >
-                        <span className="text-base">{result.icon}</span>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
                             {result.title}
@@ -448,7 +464,15 @@ function Navigation({ currentPage, navigateTo, onAuthClick, user: propUser }) {
               className="p-1.5 rounded text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors h-8 w-8 flex items-center justify-center"
               aria-label="Toggle theme"
             >
-              {theme === 'dark' ? '☀️' : '🌙'}
+              {theme === 'dark' ? (
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                </svg>
+              )}
             </button>
 
             {/* User Section */}

@@ -47,11 +47,35 @@ function PlayerDetailPage({ params, navigateTo }) {
 
   useEffect(() => {
     if (playerId) {
+      // Reset all state when player ID changes
+      setPlayer(null);
+      setStats({});
+      setMatchHistory([]);
+      setHeroStats([]);
+      setPerformanceStats(null);
+      setMapStats([]);
+      setEventStats([]);
+      setExpandedMatch(null);
+      setSelectedMatch('');
+      setSelectedMap('');
+      setIsEditing(false);
+      setEditFormData({});
+      setPlayerHistoryPage(1);
+      setMentionsData([]);
+      setPagination({ current_page: 1, last_page: 1, per_page: 20, total: 0 });
+      setFilters({ date_from: '', date_to: '', event_id: '', hero: '', map: '' });
+      
+      // Now fetch new player data
       fetchPlayerData();
       // Also load match history immediately
       fetchPlayerStats();
     }
   }, [playerId]);
+  
+  // Debug selectedMap changes
+  useEffect(() => {
+    console.log('selectedMap state changed to:', selectedMap);
+  }, [selectedMap]);
 
   // Real-time updates for player data
   useEffect(() => {
@@ -261,10 +285,10 @@ function PlayerDetailPage({ params, navigateTo }) {
             score: match.score || '2-1',
             map_stats: match.map_stats, // This contains hero stats for each map
             // Calculate totals from map stats
-            total_eliminations: match.map_stats.reduce((sum, m) => sum + (m.stats?.kills || 0), 0),
-            total_deaths: match.map_stats.reduce((sum, m) => sum + (m.stats?.deaths || 0), 0),
-            total_assists: match.map_stats.reduce((sum, m) => sum + (m.stats?.assists || 0), 0),
-            total_damage: match.map_stats.reduce((sum, m) => sum + (parseInt(m.stats?.damage) || 0), 0),
+            total_eliminations: match.map_stats.reduce((sum, m) => sum + (m.eliminations || 0), 0),
+            total_deaths: match.map_stats.reduce((sum, m) => sum + (m.deaths || 0), 0),
+            total_assists: match.map_stats.reduce((sum, m) => sum + (m.assists || 0), 0),
+            total_damage: match.map_stats.reduce((sum, m) => sum + (parseInt(m.damage_dealt || m.damage) || 0), 0),
             total_healing: match.healing || 0,
             total_blocked: match.blocked || 0,
             hero_played: match.hero_name,
@@ -754,7 +778,7 @@ function PlayerDetailPage({ params, navigateTo }) {
                   >
                     <option value="">All Matches</option>
                     {matchHistory.map((match) => (
-                      <option key={match.match_id} value={match.match_id}>
+                      <option key={match.match_id || match.id} value={match.match_id || match.id}>
                         {match.team?.name || '100 Thieves'} vs {match.opponent?.name || 'BOOM Esports'} - {match.format || 'BO3'} ({new Date(match.date || match.created_at).toLocaleDateString()})
                       </option>
                     ))}
@@ -768,24 +792,61 @@ function PlayerDetailPage({ params, navigateTo }) {
                       Filter by Map
                     </label>
                     <select
-                      value={selectedMap}
+                      value={selectedMap || ''}
                       onChange={(e) => {
-                        setSelectedMap(e.target.value);
+                        const mapValue = e.target.value;
+                        console.log('Map filter changed to:', mapValue, 'Type:', typeof mapValue);
+                        setSelectedMap(mapValue);
                         setPlayerHistoryPage(1); // Reset to first page
+                        console.log('State will be set to:', mapValue);
                       }}
                       className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
                     >
                       <option value="">All Maps</option>
                       {(() => {
-                        const selectedMatchData = matchHistory.find(m => m.match_id === selectedMatch);
-                        if (selectedMatchData && selectedMatchData.map_stats) {
-                          // Get unique maps from the selected match
-                          const uniqueMaps = [...new Set(selectedMatchData.map_stats.map(stat => stat.map_number))];
-                          return uniqueMaps.map(mapNum => (
-                            <option key={mapNum} value={mapNum}>
-                              Map {mapNum}: {selectedMatchData.map_stats.find(s => s.map_number === mapNum)?.map_name || 'Unknown'}
-                            </option>
-                          ));
+                        console.log('Rendering map options. Selected match:', selectedMatch, 'Match history:', matchHistory.length);
+                        if (selectedMatch) {
+                          // If match is selected, show maps from that specific match
+                          const selectedMatchData = matchHistory.find(m => (m.match_id || m.id) == selectedMatch);
+                          console.log('Selected match data:', selectedMatchData);
+                          if (selectedMatchData && selectedMatchData.map_stats) {
+                            const uniqueMaps = [...new Set(selectedMatchData.map_stats.map(stat => stat.map_number))];
+                            console.log('Unique maps found:', uniqueMaps);
+                            return uniqueMaps.map(mapNum => {
+                              const mapName = selectedMatchData.map_stats.find(s => s.map_number === mapNum)?.map_name || 'Unknown';
+                              console.log(`Creating option for map ${mapNum}: ${mapName}`);
+                              return (
+                                <option key={`map-${mapNum}`} value={String(mapNum)}>
+                                  Map {mapNum}: {mapName}
+                                </option>
+                              );
+                            });
+                          }
+                          console.log('No map stats found for selected match');
+                        } else {
+                          // If no match selected, show all available maps from all matches
+                          const allMaps = new Map();
+                          matchHistory.forEach(match => {
+                            if (match.map_stats) {
+                              match.map_stats.forEach(mapData => {
+                                const mapNum = mapData.map_number || 1;
+                                const mapName = mapData.map_name || 'Unknown';
+                                allMaps.set(mapNum, mapName);
+                              });
+                            }
+                          });
+                          
+                          console.log('All maps from all matches:', Array.from(allMaps.entries()));
+                          return Array.from(allMaps.entries())
+                            .sort((a, b) => a[0] - b[0]) // Sort by map number
+                            .map(([mapNum, mapName]) => {
+                              console.log(`Creating option for map ${mapNum}: ${mapName}`);
+                              return (
+                                <option key={`map-${mapNum}`} value={String(mapNum)}>
+                                  Map {mapNum}: {mapName}
+                                </option>
+                              );
+                            });
                         }
                         return [];
                       })()}
@@ -837,7 +898,7 @@ function PlayerDetailPage({ params, navigateTo }) {
                       
                       // Filter by selected match
                       if (selectedMatch) {
-                        filteredMatches = filteredMatches.filter(match => match.match_id == selectedMatch);
+                        filteredMatches = filteredMatches.filter(match => (match.match_id || match.id) == selectedMatch);
                       }
                       
                       // Group heroes by match and maps
@@ -850,8 +911,11 @@ function PlayerDetailPage({ params, navigateTo }) {
                             
                             // Apply map filter if selected
                             if (selectedMap && mapNum !== parseInt(selectedMap)) {
+                              console.log(`Filtering out map ${mapNum} (selected: ${selectedMap})`);
                               return; // Skip this map if it doesn't match the filter
                             }
+                            console.log(`Including map ${mapNum} (selected: ${selectedMap})`);
+                            
                             
                             if (!statsByMap[mapNum]) {
                               statsByMap[mapNum] = [];

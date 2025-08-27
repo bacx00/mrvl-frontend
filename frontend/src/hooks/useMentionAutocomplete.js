@@ -65,13 +65,12 @@ export const useMentionAutocomplete = (onMentionSelect) => {
 
     const textarea = textareaRef.current;
     const rect = textarea.getBoundingClientRect();
-    const { selectionStart } = textarea;
     
-    // Simple positioning - below the textarea for now
-    // Can be enhanced to position near cursor later
+    // Position below the input/textarea with proper offset
+    // Account for fixed positioning
     return {
-      top: rect.bottom + window.scrollY + 5,
-      left: rect.left + window.scrollX
+      top: rect.bottom + 5, // Use direct positioning since dropdown is fixed
+      left: rect.left
     };
   };
 
@@ -94,12 +93,16 @@ export const useMentionAutocomplete = (onMentionSelect) => {
       const query = mentionMatch[1];
       const start = cursorPosition - mentionMatch[0].length;
       
+      console.log('Mention detected:', { query, start }); // Debug log
+      
       setMentionStart(start);
       setMentionQuery(query);
       setShowDropdown(true);
       
       setTimeout(() => {
-        setDropdownPosition(calculateDropdownPosition());
+        const pos = calculateDropdownPosition();
+        console.log('Dropdown position:', pos); // Debug log
+        setDropdownPosition(pos);
       }, 0);
       
       if (query.length === 0) {

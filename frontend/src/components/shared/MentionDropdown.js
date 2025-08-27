@@ -42,10 +42,11 @@ const MentionDropdown = ({
   return (
     <div
       ref={dropdownRef}
-      className="fixed z-50 bg-[#1a2332] border border-[#2b3d4d] rounded-lg shadow-xl max-h-64 overflow-y-auto min-w-[280px]"
+      className="fixed bg-[#1a2332] border border-[#2b3d4d] rounded-lg shadow-xl max-h-64 overflow-y-auto min-w-[280px]"
       style={{
         top: position.top,
-        left: position.left
+        left: position.left,
+        zIndex: 9999 // Ensure it's above all other elements
       }}
     >
       {loading ? (
