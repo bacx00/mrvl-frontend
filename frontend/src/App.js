@@ -60,6 +60,10 @@ import UnifiedLiveScoring from './components/admin/UnifiedLiveScoring';
 
 import './App.css';
 
+// Import mobile optimizations and service worker
+import { register as registerSW, swManager } from './utils/serviceWorker';
+import VLRMobileFeatures from './utils/vlrMobileFeatures';
+
 // FIXED: Complete routing with CreateThreadPage implemented
 const ROUTES = {
   'home': HomePage,
@@ -342,6 +346,27 @@ function AppContent() {
 }
 
 function App() {
+  // Initialize mobile features and service worker
+  useEffect(() => {
+    // Register service worker for offline support
+    registerSW({
+      onSuccess: registration => {
+        console.log('🚀 Service Worker registered successfully');
+      },
+      onUpdate: registration => {
+        console.log('🔄 New version available, please reload');
+      }
+    });
+
+    // Initialize service worker manager
+    swManager.init();
+
+    // Initialize VLR mobile features on mobile devices
+    if (window.innerWidth < 768) {
+      new VLRMobileFeatures();
+    }
+  }, []);
+
   return (
     <ErrorBoundary component="App">
       <ThemeProvider>

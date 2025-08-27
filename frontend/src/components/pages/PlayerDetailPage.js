@@ -942,14 +942,14 @@ function PlayerDetailPage({ params, navigateTo }) {
                                     <div className="text-sm font-semibold text-gray-900 dark:text-white">
                                       <span 
                                         className="hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
-                                        onClick={() => { navigateTo(`/teams/${match.team?.id || 4}`); }}
+                                        onClick={() => { navigateTo('team-detail', { id: match.team?.id || 4 }); }}
                                       >
                                         {match.team?.name || '100 Thieves'}
                                       </span>
                                       <span className="text-gray-500 mx-2">vs</span>
                                       <span 
                                         className="hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
-                                        onClick={() => { navigateTo(`/teams/${match.opponent?.id || 32}`); }}
+                                        onClick={() => { navigateTo('team-detail', { id: match.opponent?.id || 32 }); }}
                                       >
                                         {match.opponent?.name || 'BOOM Esports'}
                                       </span>
@@ -990,14 +990,14 @@ function PlayerDetailPage({ params, navigateTo }) {
                                     <div className="flex items-center space-x-2">
                                       <span 
                                         className="font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
-                                        onClick={(e) => { e.stopPropagation(); navigateTo(`/teams/${match.team?.id || 4}`); }}
+                                        onClick={(e) => { e.stopPropagation(); navigateTo('team-detail', { id: match.team?.id || 4 }); }}
                                       >
                                         {match.team?.name || '100 Thieves'}
                                       </span>
                                       <span className="text-gray-500">vs</span>
                                       <span 
                                         className="font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
-                                        onClick={(e) => { e.stopPropagation(); navigateTo(`/teams/${match.opponent?.id || 32}`); }}
+                                        onClick={(e) => { e.stopPropagation(); navigateTo('team-detail', { id: match.opponent?.id || 32 }); }}
                                       >
                                         {match.opponent?.name || 'BOOM Esports'}
                                       </span>
@@ -1080,14 +1080,14 @@ function PlayerDetailPage({ params, navigateTo }) {
                                   <div className="flex items-center space-x-2">
                                     <span 
                                       className="font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
-                                      onClick={(e) => { e.stopPropagation(); navigateTo(`/teams/${match.team?.id || 4}`); }}
+                                      onClick={(e) => { e.stopPropagation(); navigateTo('team-detail', { id: match.team?.id || 4 }); }}
                                     >
                                       {match.team?.name || '100 Thieves'}
                                     </span>
                                     <span className="text-gray-500">vs</span>
                                     <span 
                                       className="font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
-                                      onClick={(e) => { e.stopPropagation(); navigateTo(`/teams/${match.opponent?.id || 32}`); }}
+                                      onClick={(e) => { e.stopPropagation(); navigateTo('team-detail', { id: match.opponent?.id || 32 }); }}
                                     >
                                       {match.opponent?.name || 'BOOM Esports'}
                                     </span>
@@ -1251,8 +1251,8 @@ function PlayerDetailPage({ params, navigateTo }) {
                   return (
                     <div 
                       key={match.match_id || match.id} 
-                      className="border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-lg transition-shadow cursor-pointer"
-                      onClick={() => navigateTo(`/matches/${match.match_id || match.id}`)}
+                      className="border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-blue-300 dark:hover:border-blue-600"
+                      onClick={() => navigateTo('match-detail', { id: match.match_id || match.id })}
                     >
                       {/* Event Header - VLR.gg style */}
                       <div className="bg-gray-50 dark:bg-gray-800/50 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
@@ -1275,7 +1275,15 @@ function PlayerDetailPage({ params, navigateTo }) {
                               )}
                             </div>
                             <div>
-                              <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                              <div 
+                                className="text-sm font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Use the actual event ID from the match data
+                                  const eventId = match.event?.id || match.event_id || 2; // Default to event 2 which exists
+                                  navigateTo('event-detail', { id: eventId });
+                                }}
+                              >
                                 {match.event?.name || 'Marvel Rivals Championship'}
                               </div>
                               <div className="text-xs text-gray-500">
@@ -1316,7 +1324,13 @@ function PlayerDetailPage({ params, navigateTo }) {
                               )}
                             </div>
                             <div>
-                              <div className="text-base font-bold text-gray-900 dark:text-white">
+                              <div 
+                                className="text-base font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigateTo('team-detail', { id: playerTeam.id || 4 });
+                                }}
+                              >
                                 {playerTeam.name || '100 Thieves'}
                               </div>
                               <div className="text-xs text-gray-500">Americas</div>
@@ -1344,12 +1358,15 @@ function PlayerDetailPage({ params, navigateTo }) {
                           </div>
                           
                           {/* Team 2 with Logo */}
-                          <div 
-                            onClick={(e) => { e.stopPropagation(); navigateTo(`/teams/${opponentTeam.id || 32}`); }}
-                            className="flex-1 flex items-center justify-end space-x-3 hover:opacity-80"
-                          >
+                          <div className="flex-1 flex items-center justify-end space-x-3">
                             <div className="text-right">
-                              <div className="text-base font-bold text-gray-900 dark:text-white">
+                              <div 
+                                className="text-base font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigateTo('team-detail', { id: opponentTeam.id || 32 });
+                                }}
+                              >
                                 {opponentTeam.name || 'BOOM Esports'}
                               </div>
                               <div className="text-xs text-gray-500">Asia</div>

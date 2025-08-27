@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mention Functionality Test - MRVL News Creation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #0f1419;
+            color: #ffffff;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #1a2332;
+            padding: 30px;
+            border-radius: 12px;
+        }
+        
+        .header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #2b3d4d;
+        }
+        
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #0f1419;
+            border-radius: 8px;
+            border: 1px solid #2b3d4d;
+        }
+        
+        .test-controls {
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            background: #fa4454;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background: #e73c4c;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: #3b82f6;
+        }
+        
+        .btn-secondary:hover {
+            background: #2563eb;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border-left: 4px solid;
+        }
+        
+        .status.success {
+            background: rgba(74, 222, 128, 0.1);
+            border-left-color: #4ade80;
+            color: #4ade80;
+        }
+        
+        .status.error {
+            background: rgba(248, 113, 113, 0.1);
+            border-left-color: #f87171;
+            color: #f87171;
+        }
+        
+        .status.warning {
+            background: rgba(251, 191, 36, 0.1);
+            border-left-color: #fbbf24;
+            color: #fbbf24;
+        }
+        
+        .status.info {
+            background: rgba(59, 130, 246, 0.1);
+            border-left-color: #3b82f6;
+            color: #3b82f6;
+        }
+        
+        .log {
+            background: #000;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin: 10px 0;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #2b3d4d;
+            border-radius: 8px;
+            background: white;
+        }
+        
+        .test-results {
+            background: #0d1117;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .api-test {
+            margin: 15px 0;
+            padding: 15px;
+            background: #1a2332;
+            border-radius: 6px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .step-indicator {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .step-indicator.completed {
+            background: #4ade80;
+        }
+        
+        .step-indicator.error {
+            background: #f87171;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 MRVL News Creation Mention Functionality Test</h1>
+            <p>Comprehensive testing suite for mention dropdown functionality in title, excerpt, and content fields.</p>
+            <div class="status info">
+                <strong>Test Environment:</strong> Frontend on localhost:3000, Backend on localhost:8000
+            </div>
+        </div>
+
+        <!-- API Endpoint Tests -->
+        <div class="test-section">
+            <h2>📡 API Endpoint Verification</h2>
+            <div class="test-controls">
+                <button class="btn" onclick="testPopularMentions()">Test Popular Mentions API</button>
+                <button class="btn btn-secondary" onclick="testSearchMentions()">Test Search Mentions API</button>
+            </div>
+            <div id="api-results"></div>
+        </div>
+
+        <!-- News Form Access Test -->
+        <div class="test-section">
+            <h2>🔑 News Creation Form Access</h2>
+            <div class="test-controls">
+                <button class="btn" onclick="openNewsForm()">Open News Creation Form</button>
+                <button class="btn btn-secondary" onclick="checkFormAccess()">Check Form Access</button>
+            </div>
+            <div id="form-access-results"></div>
+        </div>
+
+        <!-- Manual Testing Checklist -->
+        <div class="test-section">
+            <h2>✅ Manual Testing Checklist</h2>
+            <p>Use the news form above to test the following functionality:</p>
+            
+            <div class="checkbox-group">
+                <div class="checkbox-item">
+                    <input type="checkbox" id="test1">
+                    <label for="test1"><span class="step-indicator">1</span>Type "@" in title field - dropdown appears</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="test2">
+                    <label for="test2"><span class="step-indicator">2</span>Type "@" in excerpt field - dropdown appears</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="test3">
+                    <label for="test3"><span class="step-indicator">3</span>Type "@" in content field - dropdown appears</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="test4">
+                    <label for="test4">Popular mentions shown when @ first typed</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="test5">
+                    <label for="test5">Search results appear when typing after @</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="test6">
+                    <label for="test6">Mentions can be selected with mouse clicks</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="test7">
+                    <label for="test7">Mentions can be selected with Enter/Tab keys</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="test8">
+                    <label for="test8">Arrow keys navigate dropdown</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="test9">
+                    <label for="test9">Console shows debug logs</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="test10">
+                    <label for="test10">@team: and @player: prefixes work</label>
+                </div>
+            </div>
+            
+            <div class="test-controls">
+                <button class="btn" onclick="checkTestStatus()">Check Test Status</button>
+                <button class="btn btn-secondary" onclick="resetTests()">Reset Tests</button>
+            </div>
+            
+            <div id="test-status-results"></div>
+        </div>
+
+        <!-- Browser Console Monitoring -->
+        <div class="test-section">
+            <h2>🖥️ Console Debug Monitoring</h2>
+            <p>This section monitors console logs for mention functionality debug information.</p>
+            <div class="test-controls">
+                <button class="btn" onclick="startConsoleMonitoring()">Start Console Monitoring</button>
+                <button class="btn btn-secondary" onclick="clearConsoleLog()">Clear Log</button>
+            </div>
+            <div class="log" id="console-monitor">Console monitoring not started...</div>
+        </div>
+
+        <!-- Embedded News Form -->
+        <div class="test-section">
+            <h2>📝 News Creation Form (Embedded)</h2>
+            <p>Test the mention functionality directly in this embedded form:</p>
+            <iframe id="news-form-iframe" src="about:blank"></iframe>
+        </div>
+
+        <!-- Test Results Summary -->
+        <div class="test-results" id="final-results" style="display:none;">
+            <h2>📊 Test Results Summary</h2>
+            <div id="results-content"></div>
+        </div>
+    </div>
+
+    <script>
+        let consoleMonitoring = false;
+        let originalConsole = {};
+        let consoleLog = [];
+
+        // API Testing Functions
+        async function testPopularMentions() {
+            const resultsDiv = document.getElementById('api-results');
+            resultsDiv.innerHTML = '<div class="status info">Testing popular mentions API...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/public/mentions/popular?limit=6');
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    resultsDiv.innerHTML = `
+                        <div class="status success">✅ Popular Mentions API Working</div>
+                        <div class="api-test">
+                            <strong>Endpoint:</strong> /api/public/mentions/popular<br>
+                            <strong>Status:</strong> ${response.status}<br>
+                            <strong>Results Count:</strong> ${data.data?.length || 0}<br>
+                            <strong>Sample Data:</strong> ${JSON.stringify(data.data?.slice(0, 2) || [], null, 2)}
+                        </div>
+                    `;
+                } else {
+                    throw new Error(`API returned error: ${data.message || 'Unknown error'}`);
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="status error">❌ Popular Mentions API Failed</div>
+                    <div class="api-test">
+                        <strong>Error:</strong> ${error.message}<br>
+                        <strong>Check:</strong> Backend server running on localhost:8000
+                    </div>
+                `;
+            }
+        }
+
+        async function testSearchMentions() {
+            const resultsDiv = document.getElementById('api-results');
+            const existingContent = resultsDiv.innerHTML;
+            resultsDiv.innerHTML = existingContent + '<div class="status info">Testing search mentions API...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/public/mentions/search?q=test&type=all&limit=8');
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    resultsDiv.innerHTML = existingContent + `
+                        <div class="status success">✅ Search Mentions API Working</div>
+                        <div class="api-test">
+                            <strong>Endpoint:</strong> /api/public/mentions/search<br>
+                            <strong>Query:</strong> "test"<br>
+                            <strong>Status:</strong> ${response.status}<br>
+                            <strong>Results Count:</strong> ${data.data?.length || 0}<br>
+                            <strong>Sample Data:</strong> ${JSON.stringify(data.data?.slice(0, 2) || [], null, 2)}
+                        </div>
+                    `;
+                } else {
+                    throw new Error(`API returned error: ${data.message || 'Unknown error'}`);
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = existingContent + `
+                    <div class="status error">❌ Search Mentions API Failed</div>
+                    <div class="api-test">
+                        <strong>Error:</strong> ${error.message}<br>
+                        <strong>Check:</strong> Backend server running on localhost:8000
+                    </div>
+                `;
+            }
+        }
+
+        // News Form Access
+        function openNewsForm() {
+            const iframe = document.getElementById('news-form-iframe');
+            iframe.src = 'http://localhost:3000';
+            
+            // Navigate to news creation form after iframe loads
+            iframe.onload = function() {
+                setTimeout(() => {
+                    try {
+                        // Try to navigate to admin news creation
+                        iframe.contentWindow.postMessage({
+                            type: 'navigate',
+                            path: '/admin/news/create'
+                        }, 'http://localhost:3000');
+                    } catch (e) {
+                        console.log('Cross-origin navigation attempt - this is expected');
+                    }
+                }, 1000);
+            };
+            
+            document.getElementById('form-access-results').innerHTML = `
+                <div class="status success">✅ News form loaded in iframe above</div>
+                <div class="status info">Navigate manually to Admin → News → Create New Article to test mentions</div>
+            `;
+        }
+
+        async function checkFormAccess() {
+            const resultsDiv = document.getElementById('form-access-results');
+            resultsDiv.innerHTML = '<div class="status info">Checking frontend accessibility...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:3000');
+                if (response.ok) {
+                    resultsDiv.innerHTML = `
+                        <div class="status success">✅ Frontend accessible at http://localhost:3000</div>
+                        <div class="status info">📝 To access news creation form:</div>
+                        <div class="api-test">
+                            1. Open http://localhost:3000 in new tab<br>
+                            2. Navigate to Admin Panel (may require login)<br>
+                            3. Go to News → Create New Article<br>
+                            4. Test mention functionality by typing @ in fields
+                        </div>
+                    `;
+                } else {
+                    throw new Error(`Frontend returned status: ${response.status}`);
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="status error">❌ Frontend not accessible</div>
+                    <div class="api-test">
+                        <strong>Error:</strong> ${error.message}<br>
+                        <strong>Check:</strong> Frontend server running on localhost:3000
+                    </div>
+                `;
+            }
+        }
+
+        // Console Monitoring
+        function startConsoleMonitoring() {
+            const monitorDiv = document.getElementById('console-monitor');
+            
+            if (!consoleMonitoring) {
+                consoleMonitoring = true;
+                consoleLog = [];
+                
+                // Override console methods
+                ['log', 'error', 'warn', 'info'].forEach(method => {
+                    originalConsole[method] = console[method];
+                    console[method] = function(...args) {
+                        const message = args.map(arg => 
+                            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+                        ).join(' ');
+                        
+                        const timestamp = new Date().toLocaleTimeString();
+                        const logEntry = `[${timestamp}] [${method.toUpperCase()}] ${message}`;
+                        
+                        consoleLog.push(logEntry);
+                        monitorDiv.textContent = consoleLog.slice(-50).join('\n');
+                        monitorDiv.scrollTop = monitorDiv.scrollHeight;
+                        
+                        // Call original method
+                        originalConsole[method].apply(console, args);
+                    };
+                });
+                
+                monitorDiv.textContent = 'Console monitoring started. Logs will appear here...\n';
+            }
+        }
+
+        function clearConsoleLog() {
+            consoleLog = [];
+            document.getElementById('console-monitor').textContent = 'Console log cleared.\n';
+        }
+
+        // Test Status Management
+        function checkTestStatus() {
+            const checkboxes = document.querySelectorAll('.checkbox-item input[type="checkbox"]');
+            const completed = Array.from(checkboxes).filter(cb => cb.checked);
+            const total = checkboxes.length;
+            
+            const resultsDiv = document.getElementById('test-status-results');
+            const percentage = Math.round((completed.length / total) * 100);
+            
+            let statusClass = 'info';
+            let statusIcon = '⏳';
+            
+            if (percentage === 100) {
+                statusClass = 'success';
+                statusIcon = '✅';
+            } else if (percentage >= 50) {
+                statusClass = 'warning';
+                statusIcon = '⚠️';
+            } else {
+                statusClass = 'error';
+                statusIcon = '❌';
+            }
+            
+            resultsDiv.innerHTML = `
+                <div class="status ${statusClass}">
+                    ${statusIcon} Test Progress: ${completed.length}/${total} (${percentage}%) completed
+                </div>
+                <div class="api-test">
+                    <strong>Completed Tests:</strong><br>
+                    ${completed.map(cb => cb.nextElementSibling.textContent).join('<br>') || 'None'}
+                </div>
+            `;
+            
+            // Update step indicators
+            checkboxes.forEach((cb, index) => {
+                const indicator = cb.nextElementSibling.querySelector('.step-indicator');
+                if (cb.checked) {
+                    indicator.classList.add('completed');
+                    indicator.classList.remove('error');
+                } else {
+                    indicator.classList.remove('completed');
+                }
+            });
+        }
+
+        function resetTests() {
+            const checkboxes = document.querySelectorAll('.checkbox-item input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                cb.checked = false;
+                const indicator = cb.nextElementSibling.querySelector('.step-indicator');
+                indicator.classList.remove('completed', 'error');
+            });
+            
+            document.getElementById('test-status-results').innerHTML = '<div class="status info">Tests reset. Start testing functionality above.</div>';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            testPopularMentions();
+            checkFormAccess();
+        });
+
+        // Auto-update test status when checkboxes change
+        document.addEventListener('change', function(e) {
+            if (e.target.type === 'checkbox') {
+                setTimeout(checkTestStatus, 100);
+            }
+        });
+    </script>
+</body>
+</html>

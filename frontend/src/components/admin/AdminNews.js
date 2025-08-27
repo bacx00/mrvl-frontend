@@ -93,7 +93,7 @@ function AdminNews() {
       // Use the main news endpoint and filter for featured articles
       const response = await api.get('/admin/news-moderation');
       const allNews = response?.data?.data || response?.data || [];
-      const featuredData = Array.isArray(allNews) ? allNews.filter(article => article.featured || article.is_featured) : [];
+      const featuredData = Array.isArray(allNews) ? allNews.filter(article => article.featured) : [];
       setFeaturedArticles(featuredData);
     } catch (err) {
       console.warn('Could not load featured articles:', err);
@@ -221,7 +221,7 @@ function AdminNews() {
       author: article.author || '',
       published_at: article.published_at || '',
       scheduled_at: article.scheduled_at || '',
-      is_featured: article.is_featured || false,
+      is_featured: article.featured || false,
       allow_comments: article.allow_comments !== false,
       seo_title: article.seo_title || '',
       seo_description: article.seo_description || '',
@@ -234,7 +234,7 @@ function AdminNews() {
   const handleToggleFeatured = async (articleId, isFeatured) => {
     try {
       const response = await api.put(`/admin/news-moderation/${articleId}`, {
-        is_featured: !isFeatured
+        featured: !isFeatured
       });
       
       if (response.data?.success !== false) {
@@ -816,7 +816,7 @@ function AdminNews() {
                     </div>
                     
                     <div className="flex items-center space-x-2">
-                      {article.is_featured && (
+                      {article.featured && (
                         <span className="px-2 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400 text-xs rounded-full font-medium">
                           ⭐ Featured
                         </span>
@@ -872,10 +872,10 @@ function AdminNews() {
                     Edit
                   </button>
                   <button 
-                    onClick={() => handleToggleFeatured(article.id, article.is_featured)}
+                    onClick={() => handleToggleFeatured(article.id, article.featured)}
                     className="btn btn-outline-info text-sm"
                   >
-                    {article.is_featured ? 'Unfeature' : 'Feature'}
+                    {article.featured ? 'Unfeature' : 'Feature'}
                   </button>
                   <button className="btn btn-outline-secondary text-sm">
                     View Analytics
@@ -1345,7 +1345,7 @@ function AdminNews() {
                     Available to Feature
                   </h4>
                   <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {news.filter(article => !article.is_featured && article.status === 'published').map((article) => (
+                    {news.filter(article => !article.featured && article.status === 'published').map((article) => (
                       <div key={article.id} className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
                         <h5 className="font-medium text-gray-900 dark:text-white mb-2">
                           {article.title}

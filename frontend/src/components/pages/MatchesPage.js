@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
 import MatchCard from '../MatchCard';
 import { TeamLogo } from '../../utils/imageUtils';
+import VirtualScrollList from '../mobile/VirtualScrollList';
 
 function MatchesPage({ navigateTo }) {
   const { isAdmin, isModerator, api } = useAuth();
@@ -239,18 +240,39 @@ function MatchesPage({ navigateTo }) {
         <div className="">
           {filteredMatches.length > 0 ? (
             <div>
-              {Object.entries(groupedMatches).map(([date, dateMatches]) => (
-                <div key={date}>
-                  {/* Date Header */}
-                  <div className="px-6 py-3 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
-                    <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                      {date}
-                    </h3>
-                  </div>
-                  
-                  {/* Matches for this date */}
-                  <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {dateMatches.map(match => (
+              {/* Use virtual scrolling on mobile for better performance */}
+              {window.innerWidth < 768 && filteredMatches.length > 20 ? (
+                <VirtualScrollList
+                  items={filteredMatches}
+                  itemHeight={80}
+                  containerHeight={Math.min(500, window.innerHeight - 200)}
+                  renderItem={(match, index) => (
+                    <div 
+                      className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors cursor-pointer border-b border-gray-200 dark:border-gray-700"
+                      onClick={() => navigateTo && navigateTo('match-detail', match.id)}
+                    >
+                      <MatchCard match={match} navigateTo={navigateTo} compact={true} />
+                    </div>
+                  )}
+                  onScrollEnd={() => {
+                    // Load more matches if needed
+                    console.log('Loading more matches...');
+                  }}
+                />
+              ) : (
+                // Regular rendering for desktop and small lists
+                Object.entries(groupedMatches).map(([date, dateMatches]) => (
+                  <div key={date}>
+                    {/* Date Header */}
+                    <div className="px-6 py-3 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                      <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                        {date}
+                      </h3>
+                    </div>
+                    
+                    {/* Matches for this date */}
+                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {dateMatches.map(match => (
                       <div 
                         key={match.id}
                         className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors cursor-pointer"
@@ -395,7 +417,8 @@ function MatchesPage({ navigateTo }) {
                     ))}
                   </div>
                 </div>
-              ))}
+              ))
+              )}
             </div>
           ) : (
             <div className="py-16 text-center">

@@ -453,24 +453,55 @@ export const AuthProvider = ({ children }) => {
       
       console.log('✅ Login response:', response);
       
-      if (response.token && response.user) {
+      // Handle successful login with token
+      if (response.success && response.token && response.user) {
         const token = response.token;
         const userData = response.user;
         
         localStorage.setItem('authToken', token);
-        // Also persist user data for role recovery
         localStorage.setItem('userData', JSON.stringify(userData));
         setUser(userData);
         setIsAuthenticated(true);
         
         console.log('✅ Login successful, user:', userData);
         return { success: true, user: userData, token };
-      } else {
-        console.error('❌ Invalid response format:', response);
-        throw new Error(response.message || 'Login failed - invalid response format');
       }
+      
+      // Handle 2FA setup required
+      if (response.requires_2fa_setup) {
+        console.log('🔐 2FA setup required');
+        return { 
+          success: false, 
+          requires_2fa_setup: true, 
+          temp_token: response.temp_token,
+          user: response.user,
+          message: response.message 
+        };
+      }
+      
+      // Handle 2FA verification required
+      if (response.requires_2fa_verification) {
+        console.log('🔐 2FA verification required');
+        return { 
+          success: false, 
+          requires_2fa_verification: true, 
+          temp_token: response.temp_token,
+          user: response.user,
+          message: response.message 
+        };
+      }
+      
+      // Invalid response format
+      console.error('❌ Invalid response format:', response);
+      throw new Error(response.message || 'Login failed - invalid response format');
+      
     } catch (error) {
       console.error('❌ Login error:', error);
+      
+      // If it's already a structured error from our API, rethrow as is
+      if (error.data && (error.data.requires_2fa_setup || error.data.requires_2fa_verification)) {
+        return error.data;
+      }
       
       // Extract meaningful error message
       let errorMessage = 'Login failed. Please try again.';
@@ -559,6 +590,85 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 2FA Functions
+  const setup2FA = async (tempToken) => {
+    try {
+      console.log('🔐 Setting up 2FA with temp token:', tempToken);
+      
+      const response = await api.post('/auth/2fa/setup-login', {
+        temp_token: tempToken
+      });
+      
+      console.log('✅ 2FA Setup response:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ 2FA Setup error:', error);
+      throw error;
+    }
+  };
+
+  const enable2FA = async (tempToken, code) => {
+    try {
+      console.log('🔐 Enabling 2FA with temp token and code');
+      
+      const response = await api.post('/auth/2fa/enable-login', {
+        temp_token: tempToken,
+        code: code
+      });
+      
+      console.log('✅ 2FA Enable response:', response);
+      
+      if (response.success && response.token && response.user) {
+        const token = response.token;
+        const userData = response.user;
+        
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('userData', JSON.stringify(userData));
+        setUser(userData);
+        setIsAuthenticated(true);
+        
+        console.log('✅ Login completed after 2FA setup, user:', userData);
+        return { success: true, user: userData, token, recovery_codes: response.recovery_codes };
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('❌ 2FA Enable error:', error);
+      throw error;
+    }
+  };
+
+  const verify2FA = async (tempToken, code) => {
+    try {
+      console.log('🔐 Verifying 2FA with temp token and code');
+      
+      const response = await api.post('/auth/2fa/verify-login', {
+        temp_token: tempToken,
+        code: code
+      });
+      
+      console.log('✅ 2FA Verify response:', response);
+      
+      if (response.success && response.token && response.user) {
+        const token = response.token;
+        const userData = response.user;
+        
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('userData', JSON.stringify(userData));
+        setUser(userData);
+        setIsAuthenticated(true);
+        
+        console.log('✅ Login completed after 2FA verification, user:', userData);
+        return { success: true, user: userData, token };
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('❌ 2FA Verify error:', error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       const token = localStorage.getItem('authToken');
@@ -625,8 +735,11 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateUser,
+    setup2FA,
+    enable2FA,
+    verify2FA,
     api,
-  }), [user, loading, isAuthenticated, isAdmin, isModerator, isUser, hasRole, hasAnyRole, getRoleDisplayName, login, register, logout, updateUser]);
+  }), [user, loading, isAuthenticated, isAdmin, isModerator, isUser, hasRole, hasAnyRole, getRoleDisplayName, login, register, logout, updateUser, setup2FA, enable2FA, verify2FA]);
 
   return (
     <AuthContext.Provider value={contextValue}>

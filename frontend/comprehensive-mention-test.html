@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Mention Functionality Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #0f1419;
+            color: #ffffff;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .panel {
+            background: #1a2332;
+            border: 1px solid #2b3d4d;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        
+        h1, h2, h3 { margin-top: 0; color: #fa4454; }
+        
+        .btn {
+            background: #fa4454;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .btn:hover { background: #e73c4c; }
+        .btn.secondary { background: #3b82f6; }
+        .btn.success { background: #10b981; }
+        
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 8px 0;
+            border-left: 4px solid;
+        }
+        
+        .status.success { background: rgba(74, 222, 128, 0.1); border-left-color: #4ade80; color: #4ade80; }
+        .status.error { background: rgba(248, 113, 113, 0.1); border-left-color: #f87171; color: #f87171; }
+        .status.warning { background: rgba(251, 191, 36, 0.1); border-left-color: #fbbf24; color: #fbbf24; }
+        .status.info { background: rgba(59, 130, 246, 0.1); border-left-color: #3b82f6; color: #3b82f6; }
+        
+        .log-output {
+            background: #000;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            padding: 15px;
+            border-radius: 6px;
+            height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin: 10px 0;
+        }
+        
+        .test-form {
+            background: #0d1117;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #2b3d4d;
+        }
+        
+        .form-group {
+            margin: 15px 0;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #2b3d4d;
+            border-radius: 6px;
+            background: #1a2332;
+            color: #ffffff;
+            font-size: 14px;
+        }
+        
+        textarea.form-control {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .mention-dropdown-test {
+            position: relative;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .metric-card {
+            background: #0d1117;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #2b3d4d;
+        }
+        
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .metric-value.success { color: #4ade80; }
+        .metric-value.error { color: #f87171; }
+        .metric-value.warning { color: #fbbf24; }
+        
+        iframe {
+            width: 100%;
+            height: 500px;
+            border: 2px solid #2b3d4d;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 MRVL Mention Functionality - Comprehensive Test Suite</h1>
+            <div class="status info">
+                <strong>Test Environment:</strong> Frontend (localhost:3000) + Backend (localhost:8000)
+            </div>
+        </header>
+
+        <div class="test-grid">
+            <!-- API Tests -->
+            <div class="panel">
+                <h2>📡 API Endpoint Tests</h2>
+                <button class="btn" onclick="runAPITests()">🚀 Run API Tests</button>
+                <button class="btn secondary" onclick="clearResults('api-results')">Clear</button>
+                <div id="api-results"></div>
+            </div>
+
+            <!-- Console Monitor -->
+            <div class="panel">
+                <h2>🖥️ Console Debug Monitor</h2>
+                <button class="btn" onclick="startConsoleMonitoring()">▶️ Start Monitoring</button>
+                <button class="btn secondary" onclick="stopConsoleMonitoring()">⏹️ Stop</button>
+                <button class="btn secondary" onclick="clearConsoleLog()">🗑️ Clear</button>
+                <div class="log-output" id="console-output">Console monitoring ready...</div>
+            </div>
+
+            <!-- Direct Form Test -->
+            <div class="panel full-width">
+                <h2>📝 Direct Mention Test Form</h2>
+                <p>Test mention functionality directly in these form fields:</p>
+                
+                <div class="test-form">
+                    <div class="form-group">
+                        <label>Title Field (Type @ to test mentions):</label>
+                        <input type="text" id="test-title" class="form-control" placeholder="Type @ to trigger mentions...">
+                        <div class="mention-dropdown-test" id="title-dropdown-area"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Excerpt Field (Type @ to test mentions):</label>
+                        <textarea id="test-excerpt" class="form-control" placeholder="Type @ to trigger mentions..."></textarea>
+                        <div class="mention-dropdown-test" id="excerpt-dropdown-area"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Content Field (Type @ to test mentions):</label>
+                        <textarea id="test-content" class="form-control" rows="6" placeholder="Type @ to trigger mentions..."></textarea>
+                        <div class="mention-dropdown-test" id="content-dropdown-area"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button class="btn" onclick="runFormFieldTests()">🧪 Test All Fields</button>
+                        <button class="btn secondary" onclick="simulateMentionFlow()">⚡ Simulate Mention Flow</button>
+                        <button class="btn success" onclick="generateReport()">📊 Generate Report</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Summary -->
+            <div class="panel full-width">
+                <h2>📊 Test Results Summary</h2>
+                <div class="results-grid" id="results-summary">
+                    <div class="metric-card">
+                        <div class="metric-value success" id="api-success-count">0</div>
+                        <div>API Tests Passed</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value warning" id="field-tests-count">0</div>
+                        <div>Field Tests Completed</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value info" id="console-logs-count">0</div>
+                        <div>Console Debug Logs</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value success" id="dropdown-appearances">0</div>
+                        <div>Dropdown Appearances</div>
+                    </div>
+                </div>
+                <div id="detailed-results"></div>
+            </div>
+        </div>
+
+        <!-- News Form Frame -->
+        <div class="panel full-width">
+            <h2>🌐 Live News Form Integration</h2>
+            <button class="btn" onclick="loadNewsForm()">📝 Load News Creation Form</button>
+            <button class="btn secondary" onclick="testInNewsForm()">🎯 Test in Live Form</button>
+            <iframe id="news-form-iframe" src="about:blank"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // Global test state
+        let testResults = {
+            apiTests: {},
+            fieldTests: {},
+            consoleTests: [],
+            dropdownTests: {},
+            startTime: Date.now()
+        };
+        
+        let consoleMonitoringActive = false;
+        let originalConsole = {};
+        
+        // Console monitoring
+        function startConsoleMonitoring() {
+            if (consoleMonitoringActive) return;
+            
+            consoleMonitoringActive = true;
+            const output = document.getElementById('console-output');
+            
+            ['log', 'error', 'warn', 'info'].forEach(method => {
+                originalConsole[method] = console[method];
+                console[method] = function(...args) {
+                    const message = args.map(arg => 
+                        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+                    ).join(' ');
+                    
+                    const timestamp = new Date().toLocaleTimeString();
+                    const logEntry = `[${timestamp}] [${method.toUpperCase()}] ${message}\\n`;
+                    
+                    // Check for mention-related logs
+                    if (message.includes('[Mention]') || message.toLowerCase().includes('mention') || 
+                        message.toLowerCase().includes('dropdown') || message.toLowerCase().includes('autocomplete')) {
+                        testResults.consoleTests.push({
+                            timestamp,
+                            level: method,
+                            message: message
+                        });
+                        updateMetric('console-logs-count', testResults.consoleTests.length);
+                    }
+                    
+                    output.textContent += logEntry;
+                    output.scrollTop = output.scrollHeight;
+                    
+                    originalConsole[method].apply(console, args);
+                };
+            });
+            
+            output.textContent = 'Console monitoring active...\\n';
+            logMessage('Console monitoring started');
+        }
+        
+        function stopConsoleMonitoring() {
+            if (!consoleMonitoringActive) return;
+            
+            consoleMonitoringActive = false;
+            Object.keys(originalConsole).forEach(method => {
+                console[method] = originalConsole[method];
+            });
+            
+            logMessage('Console monitoring stopped');
+        }
+        
+        function clearConsoleLog() {
+            document.getElementById('console-output').textContent = 'Console log cleared...\\n';
+            testResults.consoleTests = [];
+            updateMetric('console-logs-count', 0);
+        }
+        
+        // API Tests
+        async function runAPITests() {
+            logMessage('🚀 Starting API endpoint tests...');
+            const resultsDiv = document.getElementById('api-results');
+            resultsDiv.innerHTML = '<div class="status info">Running API tests...</div>';
+            
+            let passedTests = 0;
+            
+            try {
+                // Test popular mentions
+                logMessage('Testing popular mentions endpoint...');
+                const popularResponse = await fetch('http://localhost:8000/api/public/mentions/popular?limit=6');
+                const popularData = await popularResponse.json();
+                
+                testResults.apiTests.popular = {
+                    success: popularResponse.ok,
+                    status: popularResponse.status,
+                    dataCount: popularData.data?.length || 0,
+                    data: popularData
+                };
+                
+                if (popularResponse.ok) passedTests++;
+                
+                // Test search mentions
+                logMessage('Testing search mentions endpoint...');
+                const searchResponse = await fetch('http://localhost:8000/api/public/mentions/search?q=test&type=all&limit=8');
+                const searchData = await searchResponse.json();
+                
+                testResults.apiTests.search = {
+                    success: searchResponse.ok,
+                    status: searchResponse.status,
+                    dataCount: searchData.data?.length || 0,
+                    data: searchData
+                };
+                
+                if (searchResponse.ok) passedTests++;
+                
+                // Display results
+                resultsDiv.innerHTML = `
+                    <div class="status ${passedTests === 2 ? 'success' : 'warning'}">
+                        ${passedTests}/2 API tests passed
+                    </div>
+                    <div class="status info">Popular API: ${popularResponse.ok ? '✅' : '❌'} (${popularData.data?.length || 0} results)</div>
+                    <div class="status info">Search API: ${searchResponse.ok ? '✅' : '❌'} (${searchData.data?.length || 0} results)</div>
+                `;
+                
+                updateMetric('api-success-count', passedTests);
+                logMessage(`API tests completed: ${passedTests}/2 passed`);
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="status error">API tests failed: ${error.message}</div>`;
+                logMessage(`API test error: ${error.message}`);
+            }
+        }
+        
+        // Form field tests
+        async function runFormFieldTests() {
+            logMessage('🧪 Starting form field tests...');
+            
+            const fields = [
+                { name: 'Title', id: 'test-title', type: 'input' },
+                { name: 'Excerpt', id: 'test-excerpt', type: 'textarea' },
+                { name: 'Content', id: 'test-content', type: 'textarea' }
+            ];
+            
+            for (const field of fields) {
+                await testFieldMentions(field.name, field.id, field.type);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
+            updateMetric('field-tests-count', fields.length);
+        }
+        
+        async function testFieldMentions(fieldName, fieldId, fieldType) {
+            logMessage(`Testing ${fieldName} field for mention functionality...`);
+            
+            const field = document.getElementById(fieldId);
+            if (!field) {
+                logMessage(`ERROR: ${fieldName} field not found`);
+                return;
+            }
+            
+            // Clear field and focus
+            field.value = '';
+            field.focus();
+            
+            // Simulate typing @
+            field.value = '@';
+            const inputEvent = new Event('input', { bubbles: true });
+            field.dispatchEvent(inputEvent);
+            
+            // Wait for potential dropdown
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // Check for dropdown elements
+            const dropdownSelectors = [
+                '.mention-dropdown',
+                '[class*="mention"]',
+                '[class*="dropdown"]',
+                '[style*="position: absolute"]',
+                '[style*="position: fixed"]'
+            ];
+            
+            let dropdownFound = false;
+            for (const selector of dropdownSelectors) {
+                const element = document.querySelector(selector);
+                if (element && element.offsetParent !== null) {
+                    dropdownFound = true;
+                    testResults.dropdownTests[fieldName] = {
+                        found: true,
+                        selector: selector,
+                        visible: true
+                    };
+                    break;
+                }
+            }
+            
+            if (dropdownFound) {
+                logMessage(`✅ ${fieldName}: Mention dropdown appeared`);
+                updateMetric('dropdown-appearances', Object.keys(testResults.dropdownTests).length);
+                
+                // Test search functionality
+                field.value = '@test';
+                field.dispatchEvent(new Event('input', { bubbles: true }));
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+            } else {
+                logMessage(`❌ ${fieldName}: Mention dropdown did NOT appear`);
+                testResults.dropdownTests[fieldName] = { found: false };
+            }
+            
+            testResults.fieldTests[fieldName] = {
+                tested: true,
+                dropdownAppeared: dropdownFound,
+                timestamp: Date.now()
+            };
+        }
+        
+        // Simulate mention flow
+        async function simulateMentionFlow() {
+            logMessage('⚡ Simulating complete mention flow...');
+            
+            // First ensure we have API data
+            await runAPITests();
+            
+            // Then test form functionality
+            await runFormFieldTests();
+            
+            // Simulate user interactions
+            logMessage('Simulating user typing patterns...');
+            
+            const titleField = document.getElementById('test-title');
+            if (titleField) {
+                // Simulate realistic typing
+                titleField.value = '';
+                titleField.focus();
+                
+                const message = 'Check out @';
+                for (let i = 0; i < message.length; i++) {
+                    titleField.value = message.substring(0, i + 1);
+                    titleField.dispatchEvent(new Event('input', { bubbles: true }));
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Continue typing
+                const continuation = 'team:liquid for the win!';
+                for (let i = 0; i < continuation.length; i++) {
+                    titleField.value = message + continuation.substring(0, i + 1);
+                    titleField.dispatchEvent(new Event('input', { bubbles: true }));
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+            }
+            
+            logMessage('Mention flow simulation completed');
+        }
+        
+        // News form integration
+        function loadNewsForm() {
+            const iframe = document.getElementById('news-form-iframe');
+            iframe.src = 'http://localhost:3000';
+            
+            iframe.onload = function() {
+                logMessage('News form loaded in iframe');
+                
+                // Try to inject our test script into the iframe
+                setTimeout(() => {
+                    try {
+                        const script = iframe.contentDocument.createElement('script');
+                        script.textContent = `
+                            // Auto-detect mention functionality
+                            console.log('[Test] News form loaded, checking for mention functionality...');
+                            
+                            // Look for mention-related elements
+                            const mentionElements = document.querySelectorAll('[class*="mention"]');
+                            console.log('[Test] Found mention elements:', mentionElements.length);
+                            
+                            // Set up input monitoring
+                            document.addEventListener('input', (e) => {
+                                if (e.target.value && e.target.value.includes('@')) {
+                                    console.log('[Test] @ detected in field:', e.target.name || e.target.id);
+                                }
+                            });
+                        `;
+                        iframe.contentDocument.head.appendChild(script);
+                        
+                        logMessage('Injected test script into news form');
+                    } catch (e) {
+                        logMessage('Cross-origin restriction - cannot inject script into iframe');
+                    }
+                }, 1000);
+            };
+        }
+        
+        function testInNewsForm() {
+            const iframe = document.getElementById('news-form-iframe');
+            
+            try {
+                const iframeDoc = iframe.contentDocument;
+                if (!iframeDoc) {
+                    logMessage('Cannot access iframe content due to cross-origin restrictions');
+                    return;
+                }
+                
+                // Look for form fields
+                const titleField = iframeDoc.querySelector('input[name="title"]');
+                const excerptField = iframeDoc.querySelector('textarea[name="excerpt"]');
+                const contentField = iframeDoc.querySelector('textarea[name="content"]');
+                
+                logMessage(`Found fields - Title: ${!!titleField}, Excerpt: ${!!excerptField}, Content: ${!!contentField}`);
+                
+            } catch (error) {
+                logMessage(`Iframe access error: ${error.message}`);
+            }
+        }
+        
+        // Report generation
+        function generateReport() {
+            const duration = Date.now() - testResults.startTime;
+            const report = {
+                timestamp: new Date().toISOString(),
+                testDuration: Math.round(duration / 1000) + 's',
+                summary: {
+                    apiTestsPassed: Object.values(testResults.apiTests).filter(t => t.success).length,
+                    apiTestsTotal: Object.keys(testResults.apiTests).length,
+                    fieldTestsCompleted: Object.keys(testResults.fieldTests).length,
+                    dropdownAppearances: Object.values(testResults.dropdownTests).filter(t => t.found).length,
+                    consoleDebugLogs: testResults.consoleTests.length
+                },
+                detailedResults: testResults
+            };
+            
+            const resultsDiv = document.getElementById('detailed-results');
+            resultsDiv.innerHTML = `
+                <div class="status success">
+                    📋 Test Report Generated (${report.testDuration})
+                </div>
+                <div class="test-form">
+                    <h3>Summary</h3>
+                    <ul>
+                        <li>API Tests: ${report.summary.apiTestsPassed}/${report.summary.apiTestsTotal}</li>
+                        <li>Field Tests: ${report.summary.fieldTestsCompleted}</li>
+                        <li>Dropdown Appearances: ${report.summary.dropdownAppearances}</li>
+                        <li>Console Debug Logs: ${report.summary.consoleDebugLogs}</li>
+                    </ul>
+                    <h3>Full Report (JSON)</h3>
+                    <pre style="background: #000; color: #0f0; padding: 10px; border-radius: 4px; font-size: 10px; max-height: 200px; overflow: auto;">${JSON.stringify(report, null, 2)}</pre>
+                </div>
+            `;
+            
+            logMessage('📊 Test report generated');
+            
+            // Also log to console for easy copying
+            console.log('🎯 MRVL Mention Test Report:', report);
+        }
+        
+        // Utility functions
+        function logMessage(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        function updateMetric(elementId, value) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = value;
+            }
+        }
+        
+        function clearResults(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = '';
+            }
+        }
+        
+        // Auto-initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            startConsoleMonitoring();
+            runAPITests();
+            
+            // Set up field event listeners
+            ['test-title', 'test-excerpt', 'test-content'].forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.addEventListener('input', function(e) {
+                        if (e.target.value.includes('@')) {
+                            logMessage(`@ detected in ${fieldId}`);
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -348,19 +348,19 @@ export const getNewsFeaturedImageUrl = (article) => {
   
   // CRITICAL FIX: Handle complex image objects from backend
   if (imagePath && typeof imagePath === 'object') {
-    // console.log('🖼️ getNewsFeaturedImageUrl - Complex image object detected:', imagePath);
+    console.log('🖼️ getNewsFeaturedImageUrl - Complex image object detected:', imagePath);
     // Backend returns: { url: "/images/news-placeholder.svg", exists: true, fallback: {...} }
     // Use the URL directly if it exists and is already complete
     const url = imagePath.url || imagePath.path || null;
     if (url && typeof url === 'string') {
       // If the URL already starts with API_CONFIG.BASE_URL or is a full URL, use as-is
       if (url.startsWith('http') || url.startsWith(API_CONFIG.BASE_URL)) {
-        // console.log('🖼️ getNewsFeaturedImageUrl - Using complete URL from object:', url);
+        console.log('🖼️ getNewsFeaturedImageUrl - Using complete URL from object:', url);
         return url;
       }
       // Otherwise, prepend the base URL to make it a complete URL
       const completeUrl = `${API_CONFIG.BASE_URL}${url}`;
-      // console.log('🖼️ getNewsFeaturedImageUrl - Built complete URL from object:', completeUrl);
+      console.log('🖼️ getNewsFeaturedImageUrl - Built complete URL from object:', completeUrl);
       return completeUrl;
     }
     // Fallback to generic placeholder handling
@@ -369,7 +369,7 @@ export const getNewsFeaturedImageUrl = (article) => {
   }
   
   const finalUrl = getImageUrl(imagePath, 'news-featured');
-  // console.log('🖼️ getNewsFeaturedImageUrl - Final URL:', finalUrl);
+  console.log('🖼️ getNewsFeaturedImageUrl - Final URL:', finalUrl);
   
   return finalUrl;
 };

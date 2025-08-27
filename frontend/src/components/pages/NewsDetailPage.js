@@ -576,12 +576,18 @@ function NewsDetailPage({ params, navigateTo }) {
       }
     });
     
-    // Clean content by removing standalone video URLs but keeping them in context
+    // Process content to replace [VIDEO_EMBED_x] placeholders with video embeds
     let processedContent = content;
-    detectedVideos.forEach(video => {
+    
+    // Replace [VIDEO_EMBED_x] placeholders with special markers
+    const videoPlaceholderRegex = /\[VIDEO_EMBED_(\d+)\]/g;
+    processedContent = processedContent.replace(videoPlaceholderRegex, '<!-- VIDEO_EMBEDDED_$1 -->');
+    
+    // Also clean content by removing standalone video URLs but keeping them in context
+    detectedVideos.forEach((video, index) => {
       // Only remove URLs that are on their own line to avoid breaking inline links
       const standalonePattern = new RegExp(`^\\s*${video.originalUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'gm');
-      processedContent = processedContent.replace(standalonePattern, '<!-- VIDEO_EMBEDDED -->');
+      processedContent = processedContent.replace(standalonePattern, `<!-- VIDEO_EMBEDDED_${index} -->`);
     });
     
     console.log('🎥 Final processed content:', { 
@@ -700,8 +706,31 @@ function NewsDetailPage({ params, navigateTo }) {
         {paragraphs.map((paragraph, index) => {
           const elements = [];
           
-          // Add paragraph content with improved styling (skip empty paragraphs)
-          if (paragraph.trim() && !paragraph.includes('<!-- VIDEO_EMBEDDED -->')) {
+          // Check if this paragraph contains a video placeholder
+          const videoPlaceholderMatch = paragraph.match(/<!-- VIDEO_EMBEDDED_(\d+) -->/);
+          if (videoPlaceholderMatch) {
+            const videoId = parseInt(videoPlaceholderMatch[1]);
+            const video = allVideos[videoId];
+            if (video) {
+              console.log('🎥 Found video placeholder for video', videoId, ':', video);
+              elements.push(
+                <div key={`video-${videoId}`} className="not-prose my-8">
+                  <VideoEmbed
+                    type={video.platform || video.type}
+                    id={video.video_id || video.id}
+                    url={video.embedUrl || video.embed_url || video.original_url || video.url || video.originalUrl}
+                    mobileOptimized={true}
+                    lazyLoad={true}
+                    inline={true}
+                    showTitle={false}
+                    className="rounded-lg overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700"
+                  />
+                </div>
+              );
+            }
+          }
+          // Add paragraph content with improved styling (skip empty paragraphs and video placeholders)
+          else if (paragraph.trim() && !paragraph.includes('<!-- VIDEO_EMBEDDED')) {
             elements.push(
               <div key={`p-${index}`} className="whitespace-pre-wrap leading-relaxed mb-6 text-gray-900 dark:text-gray-100">
                 {renderContentWithMentions(safeString(paragraph), mentionsData)}

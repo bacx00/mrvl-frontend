@@ -68,9 +68,10 @@ function VideoEmbed({
           autoplay,
           muted: muted || isMobile,
           startTime,
-          domain: typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+          domain: typeof window !== 'undefined' ? window.location.hostname : 'staging.mrvl.net'
         });
-        setEmbedUrl(embedUrl);
+        console.log('🎥 VideoEmbed - Generated embed URL:', embedUrl, 'for type:', type, 'id:', id);
+      setEmbedUrl(embedUrl);
       } else {
         setEmbedError(true);
       }
@@ -81,8 +82,9 @@ function VideoEmbed({
         autoplay,
         muted: muted || isMobile,
         startTime,
-        domain: typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+        domain: typeof window !== 'undefined' ? window.location.hostname : 'staging.mrvl.net'
       });
+      console.log('🎥 VideoEmbed - Generated embed URL:', embedUrl, 'for type:', type, 'id:', id);
       setEmbedUrl(embedUrl);
     }
   }, [type, id, url, isVisible, isMobile, isTablet, autoplay, muted, startTime]);

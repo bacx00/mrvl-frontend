@@ -11,6 +11,7 @@ const MentionDropdown = ({
   query = '',
   dropdownRef
 }) => {
+  console.log('[MentionDropdown] Render - show:', show, 'results:', results?.length, 'position:', position); // Debug
   if (!show) return null;
 
   // Get icon for mention type
@@ -42,11 +43,13 @@ const MentionDropdown = ({
   return (
     <div
       ref={dropdownRef}
-      className="fixed bg-[#1a2332] border border-[#2b3d4d] rounded-lg shadow-xl max-h-64 overflow-y-auto min-w-[280px]"
+      className="absolute bg-[#1a2332] border border-[#2b3d4d] rounded-lg shadow-xl max-h-64 overflow-y-auto min-w-[280px]"
       style={{
-        top: position.top,
-        left: position.left,
-        zIndex: 9999 // Ensure it's above all other elements
+        top: position.top || 0,
+        left: position.left || 0,
+        zIndex: 99999, // Very high z-index
+        position: 'fixed', // Ensure fixed positioning
+        display: show ? 'block' : 'none' // Explicitly control display
       }}
     >
       {loading ? (

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../hooks';
 
 function AuthModal({ isOpen, onClose }) {
-  const { login, register, api } = useAuth();
+  const { login, register, setup2FA, enable2FA, verify2FA, api } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -17,6 +17,16 @@ function AuthModal({ isOpen, onClose }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, message: '' });
+  
+  // 2FA state
+  const [show2FASetup, setShow2FASetup] = useState(false);
+  const [show2FAVerification, setShow2FAVerification] = useState(false);
+  const [tempToken, setTempToken] = useState('');
+  const [qrCode, setQrCode] = useState('');
+  const [secret, setSecret] = useState('');
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [recoveryCodes, setRecoveryCodes] = useState([]);
+  const [showRecoveryCodes, setShowRecoveryCodes] = useState(false);
 
   const checkPasswordStrength = (password) => {
     let score = 0;
@@ -147,6 +157,24 @@ function AuthModal({ isOpen, onClose }) {
       if (isLogin) {
         console.log('🔑 Attempting login...');
         result = await login(formData.email, formData.password);
+        
+        // Handle 2FA setup required
+        if (result.requires_2fa_setup) {
+          setTempToken(result.temp_token);
+          setShow2FASetup(true);
+          setError('');
+          setLoading(false);
+          return;
+        }
+        
+        // Handle 2FA verification required
+        if (result.requires_2fa_verification) {
+          setTempToken(result.temp_token);
+          setShow2FAVerification(true);
+          setError('');
+          setLoading(false);
+          return;
+        }
       } else {
         console.log('📝 Attempting registration...');
         result = await register({
@@ -163,11 +191,10 @@ function AuthModal({ isOpen, onClose }) {
         // Close modal after brief success message
         setTimeout(() => {
           onClose();
-          setFormData({ name: '', email: '', password: '', password_confirmation: '' });
-          setSuccess('');
+          resetModal();
         }, 1500);
       } else {
-        setError(result.error || 'Authentication failed');
+        setError(result.error || result.message || 'Authentication failed');
       }
     } catch (err) {
       console.error('Authentication error:', err);
@@ -177,16 +204,123 @@ function AuthModal({ isOpen, onClose }) {
     }
   };
 
-  const switchMode = () => {
-    setIsLogin(!isLogin);
-    setShowForgotPassword(false);
+  const resetModal = () => {
+    setFormData({ name: '', email: '', password: '', password_confirmation: '' });
     setError('');
     setSuccess('');
+    setShow2FASetup(false);
+    setShow2FAVerification(false);
+    setTempToken('');
+    setQrCode('');
+    setSecret('');
+    setTwoFactorCode('');
+    setRecoveryCodes([]);
+    setShowRecoveryCodes(false);
     setShowPassword(false);
     setShowConfirmPassword(false);
     setPasswordStrength({ score: 0, message: '' });
-    setFormData({ name: '', email: '', password: '', password_confirmation: '' });
+    setShowForgotPassword(false);
   };
+
+  const switchMode = () => {
+    setIsLogin(!isLogin);
+    resetModal();
+  };
+
+  // Handle 2FA setup flow
+  const handle2FASetup = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const result = await setup2FA(tempToken);
+      if (result.success) {
+        setQrCode(result.data.qr_code_image);
+        setSecret(result.data.secret);
+        setSuccess('Scan the QR code with your authenticator app');
+      } else {
+        setError(result.message || 'Failed to setup 2FA');
+      }
+    } catch (err) {
+      console.error('2FA Setup error:', err);
+      setError(err.message || 'Failed to setup 2FA');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle 2FA enable (after setup)
+  const handle2FAEnable = async () => {
+    if (!twoFactorCode || twoFactorCode.length !== 6) {
+      setError('Please enter a 6-digit code from your authenticator app');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+      
+      const result = await enable2FA(tempToken, twoFactorCode);
+      if (result.success) {
+        if (result.recovery_codes) {
+          setRecoveryCodes(result.recovery_codes);
+          setShowRecoveryCodes(true);
+        }
+        setSuccess('2FA enabled successfully! Login complete.');
+        setTimeout(() => {
+          onClose();
+          resetModal();
+        }, 2000);
+      } else {
+        setError(result.message || 'Invalid code. Please try again.');
+        setTwoFactorCode('');
+      }
+    } catch (err) {
+      console.error('2FA Enable error:', err);
+      setError(err.message || 'Invalid code. Please try again.');
+      setTwoFactorCode('');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle 2FA verification (for existing users)
+  const handle2FAVerification = async () => {
+    if (!twoFactorCode) {
+      setError('Please enter your 2FA code or recovery code');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+      
+      const result = await verify2FA(tempToken, twoFactorCode);
+      if (result.success) {
+        setSuccess('Login successful!');
+        setTimeout(() => {
+          onClose();
+          resetModal();
+        }, 1500);
+      } else {
+        setError('Invalid code. Please try again.');
+        setTwoFactorCode('');
+      }
+    } catch (err) {
+      console.error('2FA Verification error:', err);
+      setError('Invalid code. Please try again.');
+      setTwoFactorCode('');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Auto-setup 2FA when the setup screen is shown
+  React.useEffect(() => {
+    if (show2FASetup && tempToken && !qrCode) {
+      handle2FASetup();
+    }
+  }, [show2FASetup, tempToken, qrCode]);
 
   const handleForgotPassword = async () => {
     if (!formData.email) {
@@ -238,7 +372,11 @@ function AuthModal({ isOpen, onClose }) {
                 MRVL
               </div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                {showForgotPassword ? 'Reset Password' : isLogin ? 'Welcome Back' : 'Join MRVL'}
+                {show2FASetup ? '2FA Setup Required' : 
+                 show2FAVerification ? '2FA Verification' :
+                 showRecoveryCodes ? 'Save Recovery Codes' :
+                 showForgotPassword ? 'Reset Password' : 
+                 isLogin ? 'Welcome Back' : 'Join MRVL'}
               </h2>
             </div>
             <button
@@ -249,7 +387,13 @@ function AuthModal({ isOpen, onClose }) {
             </button>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-            {showForgotPassword 
+            {show2FASetup 
+              ? 'Scan the QR code with your authenticator app'
+              : show2FAVerification
+              ? 'Enter the 6-digit code from your authenticator app'
+              : showRecoveryCodes
+              ? 'Save these recovery codes in a safe place - they can only be used once'
+              : showForgotPassword 
               ? 'Enter your email address to receive a password reset link'
               : isLogin 
                 ? 'Sign in to access your dashboard and join discussions' 
@@ -280,6 +424,119 @@ function AuthModal({ isOpen, onClose }) {
             </div>
           )}
 
+          {/* 2FA Setup Screen */}
+          {show2FASetup && (
+            <div className="space-y-4">
+              {qrCode && (
+                <div className="text-center">
+                  <div className="bg-white p-4 rounded-xl inline-block mb-4">
+                    <img 
+                      src={qrCode} 
+                      alt="2FA QR Code" 
+                      className="max-w-full h-auto mx-auto"
+                      style={{ maxWidth: '200px', maxHeight: '200px' }}
+                    />
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Can't scan? Manual entry key: <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-xs">{secret}</code>
+                  </p>
+                </div>
+              )}
+              
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                  Enter 6-digit code from your authenticator app *
+                </label>
+                <input
+                  type="text"
+                  value={twoFactorCode}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    setTwoFactorCode(value);
+                  }}
+                  placeholder="000000"
+                  maxLength="6"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300 text-center text-2xl tracking-widest"
+                  disabled={loading}
+                />
+              </div>
+              
+              <button
+                type="button"
+                onClick={handle2FAEnable}
+                disabled={loading || twoFactorCode.length !== 6}
+                className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Verifying...' : 'Enable 2FA & Login'}
+              </button>
+            </div>
+          )}
+
+          {/* 2FA Verification Screen */}
+          {show2FAVerification && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                  Enter 6-digit code or recovery code *
+                </label>
+                <input
+                  type="text"
+                  value={twoFactorCode}
+                  onChange={(e) => setTwoFactorCode(e.target.value)}
+                  placeholder="000000 or recovery code"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300 text-center"
+                  disabled={loading}
+                />
+              </div>
+              
+              <button
+                type="button"
+                onClick={handle2FAVerification}
+                disabled={loading || !twoFactorCode}
+                className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Verifying...' : 'Verify & Login'}
+              </button>
+            </div>
+          )}
+
+          {/* Recovery Codes Display */}
+          {showRecoveryCodes && (
+            <div className="space-y-4">
+              <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
+                <div className="flex items-center space-x-2 mb-3">
+                  <span className="text-yellow-600 dark:text-yellow-400">⚠️</span>
+                  <span className="text-sm font-semibold text-yellow-700 dark:text-yellow-300">Important: Save These Recovery Codes</span>
+                </div>
+                <p className="text-xs text-yellow-600 dark:text-yellow-400 mb-3">
+                  These codes can be used to access your account if you lose your phone. Each code can only be used once.
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {recoveryCodes.map((code, index) => (
+                    <div key={index} className="bg-white dark:bg-gray-800 p-2 rounded border text-center font-mono text-sm">
+                      {code}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRecoveryCodes(false);
+                  onClose();
+                  resetModal();
+                }}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300"
+              >
+                I've Saved My Recovery Codes
+              </button>
+            </div>
+          )}
+
+          {/* Regular Login/Register Form - Hide during 2FA flows */}
+          {!show2FASetup && !show2FAVerification && !showRecoveryCodes && (
+          <>
           {/* Name Field - Only for Registration */}
           {!isLogin && !showForgotPassword && (
             <div>
@@ -452,8 +709,11 @@ function AuthModal({ isOpen, onClose }) {
               </div>
             </div>
           )}
+          </>
+          )}
 
-          {/* Submit Button */}
+          {/* Submit Button - Only show for regular login/register/forgot password */}
+          {!show2FASetup && !show2FAVerification && !showRecoveryCodes && (
           <button
             type={showForgotPassword ? "button" : "submit"}
             onClick={showForgotPassword ? handleForgotPassword : undefined}
@@ -478,9 +738,11 @@ function AuthModal({ isOpen, onClose }) {
               </>
             )}
           </button>
+          )}
         </form>
 
-        {/* Footer */}
+        {/* Footer - Only show for regular login/register/forgot password */}
+        {!show2FASetup && !show2FAVerification && !showRecoveryCodes && (
         <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 rounded-b-2xl">
           {!showForgotPassword ? (
             <>
@@ -533,6 +795,7 @@ function AuthModal({ isOpen, onClose }) {
             </p>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

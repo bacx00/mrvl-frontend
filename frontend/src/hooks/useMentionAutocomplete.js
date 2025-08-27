@@ -25,9 +25,21 @@ export const useMentionAutocomplete = (onMentionSelect) => {
 
       try {
         setLoading(true);
-        const response = await api.get(`/public/mentions/search?q=${encodeURIComponent(query)}&type=${type}&limit=8`);
+        console.log('[Mention] Searching for:', query, 'type:', type); // Debug
+        console.log('[Mention] API object:', api); // Debug API object
         
-        if (response.data.success) {
+        // Try direct fetch as fallback if api doesn't work
+        let response;
+        try {
+          response = await api.get(`/public/mentions/search?q=${encodeURIComponent(query)}&type=${type}&limit=8`);
+        } catch (apiError) {
+          console.log('[Mention] API call failed, trying direct fetch:', apiError);
+          const directResponse = await fetch(`https://staging.mrvl.net/api/public/mentions/search?q=${encodeURIComponent(query)}&type=${type}&limit=8`);
+          response = { data: await directResponse.json() };
+        }
+        
+        console.log('[Mention] Search response:', response.data); // Debug
+        if (response.data.success || response.data.data) {
           setMentionResults(response.data.data || []);
           setSelectedIndex(0);
         }
@@ -45,10 +57,22 @@ export const useMentionAutocomplete = (onMentionSelect) => {
   const getPopularMentions = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get('/public/mentions/popular?limit=6');
+      console.log('[Mention] Getting popular mentions'); // Debug
+      console.log('[Mention] API object:', api); // Debug API object
       
-      if (response.data.success) {
-        setMentionResults(response.data.data || []);
+      // Try direct fetch as fallback if api doesn't work
+      let response;
+      try {
+        response = await api.get('/public/mentions/popular?limit=6');
+      } catch (apiError) {
+        console.log('[Mention] API call failed, trying direct fetch:', apiError);
+        const directResponse = await fetch('https://staging.mrvl.net/api/public/mentions/popular?limit=6');
+        response = { data: await directResponse.json() };
+      }
+      
+      console.log('[Mention] Popular response:', response.data); // Debug
+      if (response.data || response.data.data) {
+        setMentionResults(response.data.data || response.data || []);
         setSelectedIndex(0);
       }
     } catch (error) {
@@ -66,12 +90,14 @@ export const useMentionAutocomplete = (onMentionSelect) => {
     const textarea = textareaRef.current;
     const rect = textarea.getBoundingClientRect();
     
-    // Position below the input/textarea with proper offset
-    // Account for fixed positioning
-    return {
-      top: rect.bottom + 5, // Use direct positioning since dropdown is fixed
-      left: rect.left
+    // Calculate position relative to viewport for fixed positioning
+    const position = {
+      top: rect.bottom + window.scrollY + 5, // Add scroll offset for proper positioning
+      left: rect.left + window.scrollX
     };
+    
+    console.log('[Mention] Dropdown position calculated:', position, 'rect:', rect); // Debug
+    return position;
   };
 
   // Handle input changes
@@ -93,21 +119,23 @@ export const useMentionAutocomplete = (onMentionSelect) => {
       const query = mentionMatch[1];
       const start = cursorPosition - mentionMatch[0].length;
       
-      console.log('Mention detected:', { query, start }); // Debug log
+      console.log('[Mention] @ detected at position:', start, 'query:', query); // Debug log
+      console.log('[Mention] Setting dropdown visible'); // Debug
       
       setMentionStart(start);
       setMentionQuery(query);
       setShowDropdown(true);
       
-      setTimeout(() => {
-        const pos = calculateDropdownPosition();
-        console.log('Dropdown position:', pos); // Debug log
-        setDropdownPosition(pos);
-      }, 0);
+      // Calculate and set dropdown position immediately
+      const pos = calculateDropdownPosition();
+      console.log('[Mention] Setting dropdown position:', pos); // Debug log
+      setDropdownPosition(pos);
       
       if (query.length === 0) {
+        console.log('[Mention] Calling getPopularMentions');
         getPopularMentions();
       } else {
+        console.log('[Mention] Calling searchMentions with query:', query);
         searchMentions(query);
       }
       return;
@@ -123,9 +151,8 @@ export const useMentionAutocomplete = (onMentionSelect) => {
       setMentionQuery(query);
       setShowDropdown(true);
       
-      setTimeout(() => {
-        setDropdownPosition(calculateDropdownPosition());
-      }, 0);
+      // Calculate and set dropdown position immediately
+      setDropdownPosition(calculateDropdownPosition());
       
       searchMentions(query, 'team');
       return;
@@ -141,9 +168,8 @@ export const useMentionAutocomplete = (onMentionSelect) => {
       setMentionQuery(query);
       setShowDropdown(true);
       
-      setTimeout(() => {
-        setDropdownPosition(calculateDropdownPosition());
-      }, 0);
+      // Calculate and set dropdown position immediately
+      setDropdownPosition(calculateDropdownPosition());
       
       searchMentions(query, 'player');
       return;
