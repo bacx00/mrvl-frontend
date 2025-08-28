@@ -12,10 +12,9 @@ function TeamForm({ teamId, navigateTo }) {
     region: '',
     logo: '',
     country: '',
-    rating: 1000, // Team ELO rating with Marvel Rivals default
     earnings: 0, // Team total earnings in USD
     // Missing team fields
-    elo_rating: '',
+    elo_rating: 1000, // Team ELO rating with Marvel Rivals default
     wins: '',
     losses: '',
     matches_played: '',
@@ -65,10 +64,9 @@ function TeamForm({ teamId, navigateTo }) {
         logo: team.logo_url || team.logo || '',
         flag: team.flag_url || team.flag || '',
         country: team.country || '',
-        rating: team.rating || team.elo_rating || 1000, // Load ELO rating from backend
         earnings: team.earnings || 0, // Load team earnings from backend
         // Load missing team fields
-        elo_rating: team.elo_rating || team.rating || '',
+        elo_rating: team.elo_rating || team.rating || 1000,
         peak_elo: team.peak_elo || '',
         wins: team.wins || '',
         losses: team.losses || '',
@@ -258,10 +256,10 @@ function TeamForm({ teamId, navigateTo }) {
         short_name: formData.shortName.trim(),
         region: formData.region,
         country: formData.country,
-        rating: parseInt(formData.elo_rating) || parseInt(formData.rating) || 1000, // Include ELO rating
+        rating: parseInt(formData.elo_rating) || 1000, // Include ELO rating
         earnings: parseFloat(formData.earnings) || 0, // Include team earnings
         // Include missing team fields
-        elo_rating: formData.elo_rating ? parseInt(formData.elo_rating) : (parseInt(formData.rating) || null),
+        elo_rating: formData.elo_rating ? parseInt(formData.elo_rating) : 1000,
         peak_elo: formData.peak_elo ? parseInt(formData.peak_elo) : null,
         wins: formData.wins ? parseInt(formData.wins) : null,
         losses: formData.losses ? parseInt(formData.losses) : null,

@@ -47,6 +47,7 @@ class MatchDetailErrorBoundary extends React.Component {
 }
 
 function MatchDetailPage({ matchId, navigateTo }) {
+  const [selectedHeroes, setSelectedHeroes] = useState({});
   const [match, setMatch] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentMapIndex, setCurrentMapIndex] = useState(0);
@@ -425,6 +426,12 @@ function MatchDetailPage({ matchId, navigateTo }) {
                   match.team2?.players || 
                   match.team2?.roster || [];
   
+  console.log('Map switching debug:', {
+    currentMapIndex,
+    mapData: match.maps?.[currentMapIndex],
+    hasComposition: !!match.maps?.[currentMapIndex]?.team1_composition,
+    compositionLength: match.maps?.[currentMapIndex]?.team1_composition?.length
+  });
   console.log('Player data check:', {
     team1Players: team1PlayersData,
     team2Players: team2PlayersData,
@@ -432,9 +439,22 @@ function MatchDetailPage({ matchId, navigateTo }) {
     team2PlayersLength: team2PlayersData?.length
   });
   
+  // Merge heroes data from team rosters into map composition data
+  const mergeHeroesData = (mapPlayers, teamRoster) => {
+    if (!mapPlayers || !teamRoster) return mapPlayers || [];
+    
+    return mapPlayers.map(mapPlayer => {
+      const rosterPlayer = teamRoster.find(p => p.id === mapPlayer.player_id || p.id === mapPlayer.id);
+      return {
+        ...mapPlayer,
+        heroes: rosterPlayer?.heroes || mapPlayer.heroes || []
+      };
+    });
+  };
+  
   const currentMapData = {
-    team1Players: team1PlayersData,
-    team2Players: team2PlayersData,
+    team1Players: mergeHeroesData(team1PlayersData, match.team1?.players),
+    team2Players: mergeHeroesData(team2PlayersData, match.team2?.players),
     mapName: match.maps?.[currentMapIndex]?.map_name || 
              match.maps?.[currentMapIndex]?.mapName || 
              'TBD',
@@ -931,18 +951,56 @@ function MatchDetailPage({ matchId, navigateTo }) {
                       return playerObj.player_name || playerObj.name || 'Unknown';
                     };
                     
-                    // ENHANCED: Handle multiple player data formats from API - Show ONLY username
+                    // ENHANCED: Handle multiple heroes per player
+                    const playerId = player.player_id || player.id;
+                    
+                    // For map-specific view, only show heroes played on THIS map
+                    // Get all heroes this player has played across all maps
+                    const getAllPlayerHeroes = () => {
+                      const heroesOnThisMap = [];
+                      
+                      // Check if this player played different heroes on this specific map
+                      // For now, use the single hero from composition data
+                      if (player.hero) {
+                        heroesOnThisMap.push({
+                          hero: player.hero,
+                          eliminations: player.eliminations || 0,
+                          deaths: player.deaths || 0,
+                          assists: player.assists || 0,
+                          damage_dealt: player.damage || 0,
+                          healing_done: player.healing || 0,
+                          damage_blocked: player.damage_blocked || 0
+                        });
+                      }
+                      
+                      // If player has heroes array from roster (for Map 1 or overview)
+                      const rosterPlayer = match.team1?.players?.find(p => p.id === playerId) || 
+                                         match.team2?.players?.find(p => p.id === playerId);
+                      
+                      // Only use roster heroes if we're on Map 1 or there's no map-specific data
+                      if (currentMapIndex === 0 && rosterPlayer?.heroes?.length > 0) {
+                        return rosterPlayer.heroes;
+                      }
+                      
+                      return heroesOnThisMap.length > 0 ? heroesOnThisMap : [];
+                    };
+                    
+                    const playerHeroes = getAllPlayerHeroes();
+                    const selectedHeroIdx = selectedHeroes[`${playerId}_${currentMapIndex}`] || 0;
+                    const currentHeroStats = playerHeroes[selectedHeroIdx] || {};
+                    
                     const playerData = {
                       id: player.id || player.player_id,
                       name: extractUsername(player),
                       country: player.country || player.nationality || 'US',
-                      hero: player.hero || player.current_hero || null,
-                      eliminations: player.eliminations || player.kills || 0,
-                      deaths: player.deaths || 0,
-                      assists: player.assists || 0,
-                      damage: player.damage || 0,
-                      healing: player.healing || 0,
-                      damage_blocked: player.damage_blocked || player.damage_mitigated || player.damageBlocked || 0
+                      hero: currentHeroStats.hero || player.hero || player.current_hero || null,
+                      heroes: playerHeroes,
+                      eliminations: currentHeroStats.eliminations || player.eliminations || player.kills || 0,
+                      deaths: currentHeroStats.deaths || player.deaths || 0,
+                      assists: currentHeroStats.assists || player.assists || 0,
+                      damage: currentHeroStats.damage_dealt || player.damage || 0,
+                      healing: currentHeroStats.healing_done || player.healing || 0,
+                      damage_blocked: currentHeroStats.damage_blocked || player.damage_blocked || player.damage_mitigated || player.damageBlocked || 0
                     };
                     
                     return (
@@ -957,12 +1015,40 @@ function MatchDetailPage({ matchId, navigateTo }) {
                           </div>
                         </td>
                         <td className="px-3 py-3">
-                          <div className="flex justify-center">
-                            <HeroImage 
-                              heroName={playerData.hero}
-                              size="sm"
-                              showRole={false}
-                            />
+                          <div className="flex justify-center items-center space-x-1">
+                            {playerData.heroes && playerData.heroes.length > 1 ? (
+                              // Multiple heroes - show stacked
+                              playerData.heroes.map((heroData, idx) => (
+                                <div
+                                  key={idx}
+                                  className={`cursor-pointer transition-all ${
+                                    selectedHeroIdx === idx 
+                                      ? 'ring-2 ring-blue-500 rounded scale-110 z-10' 
+                                      : 'opacity-70 hover:opacity-100 scale-90'
+                                  }`}
+                                  onClick={() => {
+                                    setSelectedHeroes(prev => ({
+                                      ...prev,
+                                      [`${playerId}_${currentMapIndex}`]: idx
+                                    }));
+                                  }}
+                                  title={`${heroData.hero}: ${heroData.eliminations}/${heroData.deaths}/${heroData.assists}`}
+                                >
+                                  <HeroImage 
+                                    heroName={heroData.hero}
+                                    size="sm"
+                                    showRole={false}
+                                  />
+                                </div>
+                              ))
+                            ) : (
+                              // Single hero
+                              <HeroImage 
+                                heroName={playerData.hero}
+                                size="sm"
+                                showRole={false}
+                              />
+                            )}
                           </div>
                         </td>
                         <td className="px-3 py-3 text-center text-sm font-medium">{playerData.eliminations}</td>
@@ -1048,18 +1134,56 @@ function MatchDetailPage({ matchId, navigateTo }) {
                       return playerObj.player_name || playerObj.name || 'Unknown';
                     };
                     
-                    // ENHANCED: Handle multiple player data formats from API - Show ONLY username
+                    // ENHANCED: Handle multiple heroes per player
+                    const playerId = player.player_id || player.id;
+                    
+                    // For map-specific view, only show heroes played on THIS map
+                    // Get all heroes this player has played across all maps
+                    const getAllPlayerHeroes = () => {
+                      const heroesOnThisMap = [];
+                      
+                      // Check if this player played different heroes on this specific map
+                      // For now, use the single hero from composition data
+                      if (player.hero) {
+                        heroesOnThisMap.push({
+                          hero: player.hero,
+                          eliminations: player.eliminations || 0,
+                          deaths: player.deaths || 0,
+                          assists: player.assists || 0,
+                          damage_dealt: player.damage || 0,
+                          healing_done: player.healing || 0,
+                          damage_blocked: player.damage_blocked || 0
+                        });
+                      }
+                      
+                      // If player has heroes array from roster (for Map 1 or overview)
+                      const rosterPlayer = match.team1?.players?.find(p => p.id === playerId) || 
+                                         match.team2?.players?.find(p => p.id === playerId);
+                      
+                      // Only use roster heroes if we're on Map 1 or there's no map-specific data
+                      if (currentMapIndex === 0 && rosterPlayer?.heroes?.length > 0) {
+                        return rosterPlayer.heroes;
+                      }
+                      
+                      return heroesOnThisMap.length > 0 ? heroesOnThisMap : [];
+                    };
+                    
+                    const playerHeroes = getAllPlayerHeroes();
+                    const selectedHeroIdx = selectedHeroes[`${playerId}_${currentMapIndex}`] || 0;
+                    const currentHeroStats = playerHeroes[selectedHeroIdx] || {};
+                    
                     const playerData = {
                       id: player.id || player.player_id,
                       name: extractUsername(player),
                       country: player.country || player.nationality || 'US',
-                      hero: player.hero || player.current_hero || null,
-                      eliminations: player.eliminations || player.kills || 0,
-                      deaths: player.deaths || 0,
-                      assists: player.assists || 0,
-                      damage: player.damage || 0,
-                      healing: player.healing || 0,
-                      damage_blocked: player.damage_blocked || player.damage_mitigated || player.damageBlocked || 0
+                      hero: currentHeroStats.hero || player.hero || player.current_hero || null,
+                      heroes: playerHeroes,
+                      eliminations: currentHeroStats.eliminations || player.eliminations || player.kills || 0,
+                      deaths: currentHeroStats.deaths || player.deaths || 0,
+                      assists: currentHeroStats.assists || player.assists || 0,
+                      damage: currentHeroStats.damage_dealt || player.damage || 0,
+                      healing: currentHeroStats.healing_done || player.healing || 0,
+                      damage_blocked: currentHeroStats.damage_blocked || player.damage_blocked || player.damage_mitigated || player.damageBlocked || 0
                     };
                     
                     return (
@@ -1074,12 +1198,40 @@ function MatchDetailPage({ matchId, navigateTo }) {
                           </div>
                         </td>
                         <td className="px-3 py-3">
-                          <div className="flex justify-center">
-                            <HeroImage 
-                              heroName={playerData.hero}
-                              size="sm"
-                              showRole={false}
-                            />
+                          <div className="flex justify-center items-center space-x-1">
+                            {playerData.heroes && playerData.heroes.length > 1 ? (
+                              // Multiple heroes - show stacked
+                              playerData.heroes.map((heroData, idx) => (
+                                <div
+                                  key={idx}
+                                  className={`cursor-pointer transition-all ${
+                                    selectedHeroIdx === idx 
+                                      ? 'ring-2 ring-blue-500 rounded scale-110 z-10' 
+                                      : 'opacity-70 hover:opacity-100 scale-90'
+                                  }`}
+                                  onClick={() => {
+                                    setSelectedHeroes(prev => ({
+                                      ...prev,
+                                      [`${playerId}_${currentMapIndex}`]: idx
+                                    }));
+                                  }}
+                                  title={`${heroData.hero}: ${heroData.eliminations}/${heroData.deaths}/${heroData.assists}`}
+                                >
+                                  <HeroImage 
+                                    heroName={heroData.hero}
+                                    size="sm"
+                                    showRole={false}
+                                  />
+                                </div>
+                              ))
+                            ) : (
+                              // Single hero
+                              <HeroImage 
+                                heroName={playerData.hero}
+                                size="sm"
+                                showRole={false}
+                              />
+                            )}
                           </div>
                         </td>
                         <td className="px-3 py-3 text-center text-sm font-medium">{playerData.eliminations}</td>

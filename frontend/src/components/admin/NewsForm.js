@@ -256,17 +256,18 @@ function NewsForm({ newsId, navigateTo }) {
       if (imageFile && (isEdit || response?.data?.data?.id)) {
         const articleId = isEdit ? newsId : response.data.data.id;
         const imageFormData = new FormData();
-        imageFormData.append('featured_image', imageFile);
+        imageFormData.append('image', imageFile);  // Changed from 'featured_image' to 'image'
+        imageFormData.append('news_id', articleId); // Add news_id to the form data
         
         try {
           // Use the dedicated postFile method which handles Bearer token authentication correctly
-          const imageResponse = await api.postFile(`/admin/news/${articleId}/featured-image`, imageFormData);
+          const imageResponse = await api.postFile('/admin/news/media/featured-image', imageFormData);
           console.log('Featured image upload response:', imageResponse);
           
           // Update the form data with the returned image path
-          if (imageResponse?.data?.data?.featured_image) {
-            // Use the path, not the full URL
-            const imagePath = imageResponse.data.data.featured_image;
+          if (imageResponse?.data?.data?.path || imageResponse?.data?.path) {
+            // Use the path from the response
+            const imagePath = imageResponse.data.data?.path || imageResponse.data.path;
             console.log('Image upload successful, path:', imagePath);
             setFormData(prev => ({
               ...prev,

@@ -6,14 +6,12 @@ import ImageUpload from '../shared/ImageUpload';
 function PlayerForm({ playerId, navigateTo }) {
   const [formData, setFormData] = useState({
     name: '',
-    realName: '',
     username: '',
     team: '',
     role: '',
     region: '',
     country: 'US',
     age: '',
-    rating: '',
     earnings: '',
     avatar: '',
     // Missing critical fields
@@ -49,14 +47,12 @@ function PlayerForm({ playerId, navigateTo }) {
       
       setFormData({
         name: player.real_name || player.name || '',
-        realName: player.real_name || player.realName || '',
         username: player.username || player.gamer_tag || '',
         team: player.team_id || player.team?.id || '',
         role: player.role || '',
         region: player.region || '',
         country: player.country || 'US',
         age: player.age || '',
-        rating: player.rating || '',
         earnings: player.earnings || '',
         avatar: player.avatar_url || player.avatar || '',
         // Load missing critical fields - preserve ELO rating
@@ -201,7 +197,6 @@ function PlayerForm({ playerId, navigateTo }) {
         region: formData.region,
         country: formData.country,
         age: formData.age ? parseInt(formData.age) : null,
-        rating: formData.rating ? parseFloat(formData.rating) : null,
         earnings: formData.earnings ? parseFloat(formData.earnings) : null,
         // Include all missing critical fields - default to 1000 if empty (matches DB default)
         elo_rating: formData.elo_rating ? parseInt(formData.elo_rating) : 1000,
@@ -487,20 +482,6 @@ function PlayerForm({ playerId, navigateTo }) {
               />
             </div>
 
-            {/* Real Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Real Name
-              </label>
-              <input
-                type="text"
-                name="realName"
-                value={formData.realName}
-                onChange={handleInputChange}
-                className="form-input"
-                placeholder="e.g., Anthony Edward Stark"
-              />
-            </div>
 
             {/* Age */}
             <div>
@@ -519,23 +500,6 @@ function PlayerForm({ playerId, navigateTo }) {
               />
             </div>
 
-            {/* Player Rating */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Rating
-              </label>
-              <input
-                type="number"
-                name="rating"
-                value={formData.rating}
-                onChange={handleInputChange}
-                className="form-input"
-                placeholder="e.g., 1500"
-                min="0"
-                max="3000"
-                step="1"
-              />
-            </div>
 
             {/* Player Earnings */}
             <div>
