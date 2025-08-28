@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Player History Map Test</title>
+    <style>
+        body { font-family: monospace; background: #1a1a1a; color: #fff; padding: 20px; }
+        .map-stat { border: 1px solid #444; padding: 10px; margin: 10px 0; background: #222; }
+        .map-1 { border-left: 5px solid #ff6b6b; }
+        .map-2 { border-left: 5px solid #6bcf7f; }
+        .map-3 { border-left: 5px solid #6b9fff; }
+    </style>
+</head>
+<body>
+    <h1>Player 405 (SJP) Match History - Map Display Test</h1>
+    <div id="results"></div>
+    <script>
+        fetch('https://staging.mrvl.net/api/players/405/match-history')
+            .then(r => r.json())
+            .then(data => {
+                const container = document.getElementById('results');
+                const match = data.data[0];
+                
+                container.innerHTML = `
+                    <h2>Match ${match.match_id} vs ${match.opponent.name}</h2>
+                    <p>Score: ${match.score} (${match.result})</p>
+                    <h3>Map Stats (${match.map_stats.length} maps):</h3>
+                `;
+                
+                match.map_stats.forEach(mapStat => {
+                    container.innerHTML += `
+                        <div class="map-stat map-${mapStat.map_number}">
+                            <strong>Map ${mapStat.map_number}: ${mapStat.map_name}</strong><br>
+                            Hero: ${mapStat.hero}<br>
+                            K/D/A: ${mapStat.eliminations}/${mapStat.deaths}/${mapStat.assists}<br>
+                            KDA: ${mapStat.kda}
+                        </div>
+                    `;
+                });
+            });
+    </script>
+</body>
+</html>

@@ -904,34 +904,32 @@ function PlayerDetailPage({ params, navigateTo }) {
                       // Group heroes by match and maps
                       filteredMatches.forEach((match) => {
                         if (match.map_stats && match.map_stats.length > 0) {
+                          // Filter map_stats by selected map if a map is selected
+                          let mapStatsToShow = match.map_stats;
+                          if (selectedMap) {
+                            mapStatsToShow = match.map_stats.filter(mapData => 
+                              (mapData.map_number || 1) === parseInt(selectedMap)
+                            );
+                          }
+                          
                           // Group map_stats by map_number
                           const statsByMap = {};
-                          match.map_stats.forEach(mapData => {
+                          mapStatsToShow.forEach(mapData => {
                             const mapNum = mapData.map_number || 1;
-                            
-                            // Apply map filter if selected
-                            if (selectedMap && mapNum !== parseInt(selectedMap)) {
-                              console.log(`Filtering out map ${mapNum} (selected: ${selectedMap})`);
-                              return; // Skip this map if it doesn't match the filter
-                            }
-                            console.log(`Including map ${mapNum} (selected: ${selectedMap})`);
-                            
                             
                             if (!statsByMap[mapNum]) {
                               statsByMap[mapNum] = [];
                             }
-                            statsByMap[mapNum].push(mapData);
+                            statsByMap[mapNum].push({
+                              ...mapData,
+                              isSelectedMap: true // All shown stats are now "selected"
+                            });
                           });
                           
-                          // Debug log to see what we have after filtering
+                          // Debug log to see what we have
                           console.log('Selected match:', selectedMatch, 'Selected map:', selectedMap);
                           console.log('Match ID:', match.match_id, 'Map stats count:', match.map_stats?.length);
-                          console.log('Stats by map after filtering:', statsByMap);
-                          
-                          // Only show match header and data if we have stats after filtering
-                          if (Object.keys(statsByMap).length === 0) {
-                            return; // Skip this match if no maps match the filter
-                          }
+                          console.log('Stats by map:', statsByMap);
                           
                           // Create a match header row
                           allRows.push(
@@ -969,14 +967,15 @@ function PlayerDetailPage({ params, navigateTo }) {
                             </tr>
                           );
                           
-                          // Add rows for each map's heroes
+                          // Add rows for each map's heroes (now only filtered maps)
                           Object.keys(statsByMap).sort((a, b) => a - b).forEach(mapNum => {
                             const mapHeroes = statsByMap[mapNum];
                             const mapName = mapHeroes[0]?.map_name || `Map ${mapNum}`;
                             
                             mapHeroes.forEach((heroData, heroIdx) => {
                               allRows.push(
-                                <tr key={`${match.match_id}-${mapNum}-${heroIdx}`} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                <tr key={`${match.match_id}-${mapNum}-${heroIdx}`} 
+                                  className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                                 <td className="py-3 px-3">
                                   <div 
                                     onClick={() => {

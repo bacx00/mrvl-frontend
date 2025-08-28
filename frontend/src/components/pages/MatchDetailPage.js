@@ -48,6 +48,7 @@ class MatchDetailErrorBoundary extends React.Component {
 
 function MatchDetailPage({ matchId, navigateTo }) {
   const [selectedHeroes, setSelectedHeroes] = useState({});
+  const [openHeroMenu, setOpenHeroMenu] = useState({}); // Track which player's hero menu is open
   const [match, setMatch] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentMapIndex, setCurrentMapIndex] = useState(0);
@@ -58,6 +59,18 @@ function MatchDetailPage({ matchId, navigateTo }) {
   useEffect(() => {
     currentMapIndexRef.current = currentMapIndex;
   }, [currentMapIndex]);
+  
+  // Close hero menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.hero-menu-container')) {
+        setOpenHeroMenu({});
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
   
   // CRITICAL: Force re-render when map changes
   useEffect(() => {
@@ -465,12 +478,26 @@ function MatchDetailPage({ matchId, navigateTo }) {
     team2Score: match.maps?.[currentMapIndex]?.team2_score || 0
   };
 
-  // Determine number of maps for format
+  // Determine number of maps for format (supports BO1 to BO9)
   const getMapCount = () => {
-    if (match.format === 'BO1') return 1;
-    if (match.format === 'BO3') return 3;
-    if (match.format === 'BO5') return 5;
-    if (match.format === 'BO7') return 7;
+    const format = match.format?.toUpperCase();
+    if (format === 'BO1' || format === 'BEST OF 1') return 1;
+    if (format === 'BO2' || format === 'BEST OF 2') return 2;
+    if (format === 'BO3' || format === 'BEST OF 3') return 3;
+    if (format === 'BO4' || format === 'BEST OF 4') return 4;
+    if (format === 'BO5' || format === 'BEST OF 5') return 5;
+    if (format === 'BO6' || format === 'BEST OF 6') return 6;
+    if (format === 'BO7' || format === 'BEST OF 7') return 7;
+    if (format === 'BO8' || format === 'BEST OF 8') return 8;
+    if (format === 'BO9' || format === 'BEST OF 9') return 9;
+    
+    // Try to extract number from format string
+    const formatMatch = format?.match(/\d+/);
+    if (formatMatch) {
+      const num = parseInt(formatMatch[0]);
+      if (num >= 1 && num <= 9) return num;
+    }
+    
     return 3; // Default to BO3
   };
 
@@ -1014,33 +1041,108 @@ function MatchDetailPage({ matchId, navigateTo }) {
                             <span className="font-medium text-sm">{playerData.name}</span>
                           </div>
                         </td>
-                        <td className="px-3 py-3">
-                          <div className="flex justify-center items-center space-x-1">
+                        <td className="px-3 py-3 relative">
+                          <div className="flex justify-center items-center">
                             {playerData.heroes && playerData.heroes.length > 1 ? (
-                              // Multiple heroes - show stacked
-                              playerData.heroes.map((heroData, idx) => (
+                              // Multiple heroes - show stacked with shadow effect
+                              <div className="relative flex items-center hero-menu-container">
+                                {/* Show up to 2 heroes stacked behind pointing to the right */}
+                                {playerData.heroes.slice(1, Math.min(3, playerData.heroes.length)).map((heroData, idx) => (
+                                  <div
+                                    key={`shadow-${idx}`}
+                                    className="absolute transition-all"
+                                    style={{
+                                      left: `${(idx + 1) * 10}px`,
+                                      zIndex: 3 - idx,
+                                      opacity: 0.5 - (idx * 0.1),
+                                      filter: 'brightness(0.8)'
+                                    }}
+                                  >
+                                    <HeroImage 
+                                      heroName={heroData.hero}
+                                      size="sm"
+                                      showRole={false}
+                                    />
+                                  </div>
+                                ))}
+                                
+                                {/* Main selected hero */}
                                 <div
-                                  key={idx}
-                                  className={`cursor-pointer transition-all ${
-                                    selectedHeroIdx === idx 
-                                      ? 'ring-2 ring-blue-500 rounded scale-110 z-10' 
-                                      : 'opacity-70 hover:opacity-100 scale-90'
-                                  }`}
+                                  className="relative cursor-pointer transition-all hover:scale-110"
+                                  style={{ 
+                                    zIndex: 10
+                                  }}
                                   onClick={() => {
-                                    setSelectedHeroes(prev => ({
+                                    // Toggle hero menu
+                                    const menuKey = `${playerId}_${currentMapIndex}`;
+                                    setOpenHeroMenu(prev => ({
                                       ...prev,
-                                      [`${playerId}_${currentMapIndex}`]: idx
+                                      [menuKey]: !prev[menuKey]
                                     }));
                                   }}
-                                  title={`${heroData.hero}: ${heroData.eliminations}/${heroData.deaths}/${heroData.assists}`}
+                                  title={`${playerData.heroes[selectedHeroIdx].hero}: ${playerData.heroes[selectedHeroIdx].eliminations}/${playerData.heroes[selectedHeroIdx].deaths}/${playerData.heroes[selectedHeroIdx].assists}`}
                                 >
                                   <HeroImage 
-                                    heroName={heroData.hero}
+                                    heroName={playerData.heroes[selectedHeroIdx].hero}
                                     size="sm"
                                     showRole={false}
                                   />
+                                  {playerData.heroes.length > 1 && (
+                                    <div className="absolute -top-0.5 -right-0.5 bg-blue-500/80 text-white text-[10px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-medium">
+                                      {playerData.heroes.length}
+                                    </div>
+                                  )}
                                 </div>
-                              ))
+                                
+                                {/* Hero selection dropdown */}
+                                {openHeroMenu[`${playerId}_${currentMapIndex}`] && (
+                                  <div className="absolute top-full mt-2 right-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-2 z-50 min-w-[200px]">
+                                    <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 px-2 py-1 mb-1">
+                                      Select Hero ({playerData.heroes.length} played)
+                                    </div>
+                                    {playerData.heroes.map((heroData, idx) => (
+                                      <div
+                                        key={idx}
+                                        className={`flex items-center space-x-2 p-2 rounded cursor-pointer transition-colors ${
+                                          selectedHeroIdx === idx 
+                                            ? 'bg-blue-100 dark:bg-blue-900/50' 
+                                            : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                                        }`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedHeroes(prev => ({
+                                            ...prev,
+                                            [`${playerId}_${currentMapIndex}`]: idx
+                                          }));
+                                          setOpenHeroMenu(prev => ({
+                                            ...prev,
+                                            [`${playerId}_${currentMapIndex}`]: false
+                                          }));
+                                        }}
+                                      >
+                                        <HeroImage 
+                                          heroName={heroData.hero}
+                                          size="sm"
+                                          showRole={false}
+                                        />
+                                        <div className="flex-1">
+                                          <div className="font-medium text-sm text-gray-900 dark:text-white">
+                                            {heroData.hero}
+                                          </div>
+                                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                                            {heroData.eliminations}/{heroData.deaths}/{heroData.assists} • KDA: {((heroData.eliminations + heroData.assists) / Math.max(heroData.deaths, 1)).toFixed(2)}
+                                          </div>
+                                        </div>
+                                        {selectedHeroIdx === idx && (
+                                          <div className="text-blue-500 dark:text-blue-400">
+                                            ✓
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                             ) : (
                               // Single hero
                               <HeroImage 
@@ -1197,33 +1299,108 @@ function MatchDetailPage({ matchId, navigateTo }) {
                             <span className="font-medium text-sm">{playerData.name}</span>
                           </div>
                         </td>
-                        <td className="px-3 py-3">
-                          <div className="flex justify-center items-center space-x-1">
+                        <td className="px-3 py-3 relative">
+                          <div className="flex justify-center items-center">
                             {playerData.heroes && playerData.heroes.length > 1 ? (
-                              // Multiple heroes - show stacked
-                              playerData.heroes.map((heroData, idx) => (
+                              // Multiple heroes - show stacked with shadow effect
+                              <div className="relative flex items-center hero-menu-container">
+                                {/* Show up to 2 heroes stacked behind pointing to the right */}
+                                {playerData.heroes.slice(1, Math.min(3, playerData.heroes.length)).map((heroData, idx) => (
+                                  <div
+                                    key={`shadow-${idx}`}
+                                    className="absolute transition-all"
+                                    style={{
+                                      left: `${(idx + 1) * 10}px`,
+                                      zIndex: 3 - idx,
+                                      opacity: 0.5 - (idx * 0.1),
+                                      filter: 'brightness(0.8)'
+                                    }}
+                                  >
+                                    <HeroImage 
+                                      heroName={heroData.hero}
+                                      size="sm"
+                                      showRole={false}
+                                    />
+                                  </div>
+                                ))}
+                                
+                                {/* Main selected hero */}
                                 <div
-                                  key={idx}
-                                  className={`cursor-pointer transition-all ${
-                                    selectedHeroIdx === idx 
-                                      ? 'ring-2 ring-blue-500 rounded scale-110 z-10' 
-                                      : 'opacity-70 hover:opacity-100 scale-90'
-                                  }`}
+                                  className="relative cursor-pointer transition-all hover:scale-110"
+                                  style={{ 
+                                    zIndex: 10
+                                  }}
                                   onClick={() => {
-                                    setSelectedHeroes(prev => ({
+                                    // Toggle hero menu
+                                    const menuKey = `${playerId}_${currentMapIndex}`;
+                                    setOpenHeroMenu(prev => ({
                                       ...prev,
-                                      [`${playerId}_${currentMapIndex}`]: idx
+                                      [menuKey]: !prev[menuKey]
                                     }));
                                   }}
-                                  title={`${heroData.hero}: ${heroData.eliminations}/${heroData.deaths}/${heroData.assists}`}
+                                  title={`${playerData.heroes[selectedHeroIdx].hero}: ${playerData.heroes[selectedHeroIdx].eliminations}/${playerData.heroes[selectedHeroIdx].deaths}/${playerData.heroes[selectedHeroIdx].assists}`}
                                 >
                                   <HeroImage 
-                                    heroName={heroData.hero}
+                                    heroName={playerData.heroes[selectedHeroIdx].hero}
                                     size="sm"
                                     showRole={false}
                                   />
+                                  {playerData.heroes.length > 1 && (
+                                    <div className="absolute -top-0.5 -right-0.5 bg-blue-500/80 text-white text-[10px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-medium">
+                                      {playerData.heroes.length}
+                                    </div>
+                                  )}
                                 </div>
-                              ))
+                                
+                                {/* Hero selection dropdown */}
+                                {openHeroMenu[`${playerId}_${currentMapIndex}`] && (
+                                  <div className="absolute top-full mt-2 right-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-2 z-50 min-w-[200px]">
+                                    <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 px-2 py-1 mb-1">
+                                      Select Hero ({playerData.heroes.length} played)
+                                    </div>
+                                    {playerData.heroes.map((heroData, idx) => (
+                                      <div
+                                        key={idx}
+                                        className={`flex items-center space-x-2 p-2 rounded cursor-pointer transition-colors ${
+                                          selectedHeroIdx === idx 
+                                            ? 'bg-blue-100 dark:bg-blue-900/50' 
+                                            : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                                        }`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedHeroes(prev => ({
+                                            ...prev,
+                                            [`${playerId}_${currentMapIndex}`]: idx
+                                          }));
+                                          setOpenHeroMenu(prev => ({
+                                            ...prev,
+                                            [`${playerId}_${currentMapIndex}`]: false
+                                          }));
+                                        }}
+                                      >
+                                        <HeroImage 
+                                          heroName={heroData.hero}
+                                          size="sm"
+                                          showRole={false}
+                                        />
+                                        <div className="flex-1">
+                                          <div className="font-medium text-sm text-gray-900 dark:text-white">
+                                            {heroData.hero}
+                                          </div>
+                                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                                            {heroData.eliminations}/{heroData.deaths}/{heroData.assists} • KDA: {((heroData.eliminations + heroData.assists) / Math.max(heroData.deaths, 1)).toFixed(2)}
+                                          </div>
+                                        </div>
+                                        {selectedHeroIdx === idx && (
+                                          <div className="text-blue-500 dark:text-blue-400">
+                                            ✓
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                             ) : (
                               // Single hero
                               <HeroImage 
