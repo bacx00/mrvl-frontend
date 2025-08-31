@@ -116,7 +116,7 @@ function AdminForums() {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/forums/categories');
+      const response = await api.get('/public/forums/categories');
       const categoriesData = response?.data?.data || response?.data || response || [];
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
       setError(null);

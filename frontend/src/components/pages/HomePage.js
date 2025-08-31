@@ -47,8 +47,8 @@ function HomePage({ navigateTo }) {
       const [matchResponse, eventsResponse, forumsResponse, newsResponse] = await Promise.allSettled([
         api.get('/matches'),
         api.get('/events'),
-        api.get('/forums/threads?limit=5'),
-        api.get('/news')
+        api.get('/public/forums/threads?limit=5'),
+        api.get('/public/news')
       ]);
 
       // Process matches

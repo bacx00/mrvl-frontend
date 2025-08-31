@@ -114,7 +114,7 @@ function CreateThreadPage({ navigateTo }) {
 
   const loadCategories = async () => {
     try {
-      const response = await api.get('/forums/categories');
+      const response = await api.get('/public/forums/categories');
       setCategories(response.data?.data || []);
     } catch (error) {
       console.error('Failed to load categories:', error);

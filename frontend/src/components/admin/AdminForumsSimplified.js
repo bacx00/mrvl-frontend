@@ -30,7 +30,7 @@ function AdminForumsSimplified({ navigateTo }) {
 
   const fetchCategories = async () => {
     try {
-      const response = await api.get('/forums/categories');
+      const response = await api.get('/public/forums/categories');
       const categoriesData = response?.data?.data || response?.data || [];
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
     } catch (err) {

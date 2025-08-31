@@ -15,8 +15,8 @@ function NewsPage({ navigateTo }) {
     try {
       // Fetch news and categories in parallel
       const [newsResponse, categoriesResponse] = await Promise.all([
-        api.get(`/news?category=${selectedCategory}&sort=${sortBy}`),
-        api.get('/news/categories')
+        api.get(`/public/news?category=${selectedCategory}&sort=${sortBy}`),
+        api.get('/public/news/categories')
       ]);
       
       const newsData = newsResponse.data?.data || newsResponse.data || [];

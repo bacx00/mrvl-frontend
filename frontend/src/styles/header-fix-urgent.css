@@ -1,0 +1,79 @@
+/* Header positioning fix - ensures header is always at top on ALL devices */
+
+/* Desktop and Tablet Navigation (regular Navigation component) */
+nav.fixed {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  height: 56px !important;
+  z-index: 50 !important;
+}
+
+/* Mobile Header (MobileNavigation component) */
+header.fixed {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  height: 64px !important; /* Mobile header is 16 * 4px = 64px (h-16 in Tailwind) */
+  z-index: 50 !important;
+}
+
+/* Ensure app container padding works on all devices */
+.app.pt-14 {
+  padding-top: 56px !important; /* 14 * 4px = 56px */
+}
+
+/* Mobile specific adjustments */
+@media (max-width: 1023px) {
+  /* Mobile header height is h-16 (64px) */
+  .app {
+    padding-top: 64px !important;
+  }
+  
+  /* Bottom navigation should stay at bottom */
+  nav.fixed.bottom-0 {
+    position: fixed !important;
+    bottom: 0 !important;
+    top: auto !important;
+    height: auto !important;
+  }
+}
+
+/* Tablet specific (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  nav.fixed {
+    height: 56px !important;
+  }
+  
+  .app {
+    padding-top: 56px !important;
+  }
+}
+
+/* Desktop (1024px+) */
+@media (min-width: 1024px) {
+  nav.fixed {
+    height: 56px !important;
+  }
+  
+  .app {
+    padding-top: 56px !important;
+  }
+}
+
+/* Smooth scrolling with header offset */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Ensure modals and dropdowns appear above header */
+.modal,
+.dropdown,
+.tooltip,
+.popover {
+  z-index: 9999 !important;
+}

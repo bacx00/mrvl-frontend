@@ -1,0 +1,44 @@
+/* Content spacing fix - ensures proper spacing with fixed header on ALL devices */
+
+/* Desktop Navigation: pt-14 = 56px */
+/* Mobile Header: pt-16 = 64px */
+
+/* Ensure smooth scrolling with fixed header offset */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 64px; /* Use larger value for safety */
+}
+
+/* Main content should not have extra top margin/padding 
+   since the app container already provides pt-14 or pt-16 */
+.main-content,
+main {
+  margin-top: 0 !important;
+}
+
+/* Desktop (1024px+) - Navigation is 56px (h-14) */
+@media (min-width: 1024px) {
+  html {
+    scroll-padding-top: 56px;
+  }
+}
+
+/* Tablet (768px - 1023px) - Navigation is 56px */
+@media (min-width: 768px) and (max-width: 1023px) {
+  html {
+    scroll-padding-top: 56px;
+  }
+}
+
+/* Mobile (< 768px) - Header is 64px (h-16) */
+@media (max-width: 767px) {
+  html {
+    scroll-padding-top: 64px;
+  }
+  
+  /* Mobile bottom navigation spacing */
+  .main-content,
+  main {
+    padding-bottom: 80px !important; /* Account for bottom nav */
+  }
+}

@@ -178,7 +178,7 @@ function MatchForm({ matchId, navigateTo }) {
     const loadHeroesFromAPI = async () => {
       try {
         console.log('Loading heroes from backend API...');
-        const response = await api.get('/heroes');
+        const response = await api.get('/public/heroes');
         const heroData = response?.data;
         
         console.log('Heroes loaded from API:', heroData);

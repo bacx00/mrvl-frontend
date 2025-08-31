@@ -1,0 +1,305 @@
+/* VLR.gg-style Desktop Compact Layout */
+/* Background: #101826 (VLR dark) instead of #0f0f24 */
+
+:root {
+  --vlr-bg-dark: #101826;
+  --vlr-bg-darker: #0a0f1a;
+  --vlr-container-max: 1200px; /* VLR.gg uses ~1200px max-width */
+  --vlr-content-padding: 1rem;
+  --vlr-card-spacing: 0.75rem;
+}
+
+/* Global Background Color Change */
+body,
+.dark body,
+.dark .bg-gray-900,
+.bg-gray-900 {
+  background-color: var(--vlr-bg-dark) !important;
+}
+
+/* Darker variants */
+.dark .bg-gray-900\/50,
+.bg-gray-900\/50 {
+  background-color: rgba(16, 24, 38, 0.5) !important;
+}
+
+.dark .bg-gray-900\/80,
+.bg-gray-900\/80 {
+  background-color: rgba(16, 24, 38, 0.8) !important;
+}
+
+.dark .bg-gray-900\/95,
+.bg-gray-900\/95 {
+  background-color: rgba(16, 24, 38, 0.95) !important;
+}
+
+/* Main App Background */
+.app,
+.main-content,
+#root {
+  background-color: var(--vlr-bg-dark) !important;
+}
+
+/* Container Width Constraints - Desktop Only */
+@media (min-width: 1280px) {
+  /* Main container constraint */
+  .container,
+  [class*="max-w-7xl"],
+  [class*="max-w-6xl"],
+  [class*="max-w-screen"] {
+    max-width: var(--vlr-container-max) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  /* Page-specific containers */
+  .main-content > div:first-child,
+  .page-container,
+  .content-wrapper {
+    max-width: var(--vlr-container-max);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--vlr-content-padding);
+    padding-right: var(--vlr-content-padding);
+  }
+
+  /* Navigation constraint */
+  nav > div:first-child,
+  .navigation-content {
+    max-width: var(--vlr-container-max);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Specific page layouts */
+  .matches-page,
+  .teams-page,
+  .players-page,
+  .rankings-page,
+  .news-page,
+  .forums-page {
+    max-width: var(--vlr-container-max);
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 var(--vlr-content-padding);
+  }
+
+  /* Match cards and lists */
+  .match-list,
+  .team-list,
+  .player-list {
+    max-width: 100%;
+  }
+
+  /* Forum threads */
+  .forum-container,
+  .thread-list {
+    max-width: var(--vlr-container-max);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* News articles */
+  .news-article,
+  .article-content {
+    max-width: 800px; /* Readable width for articles */
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Tournament brackets - can be wider */
+  .bracket-container,
+  .tournament-bracket {
+    max-width: min(1400px, 90vw);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Cards and components spacing */
+  .match-card,
+  .team-card,
+  .player-card,
+  .news-card {
+    margin-bottom: var(--vlr-card-spacing);
+  }
+
+  /* Reduce padding on large screens */
+  .px-6 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .py-8 {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .p-6 {
+    padding: 1rem;
+  }
+
+  /* Compact header */
+  header {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  /* Compact navigation */
+  nav {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  /* Footer constraint */
+  footer > div:first-child {
+    max-width: var(--vlr-container-max);
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* Ultra-wide screens (1920px+) */
+@media (min-width: 1920px) {
+  :root {
+    --vlr-container-max: 1400px; /* Slightly wider for 4K screens */
+  }
+
+  /* Even more centered content */
+  .main-content {
+    padding-left: calc((100vw - var(--vlr-container-max)) / 2);
+    padding-right: calc((100vw - var(--vlr-container-max)) / 2);
+  }
+}
+
+/* Fix any components still using old background */
+.bg-gray-800,
+.dark\:bg-gray-800 {
+  background-color: #1a202c;
+}
+
+/* Modal backgrounds */
+.modal-backdrop,
+.overlay-bg {
+  background-color: rgba(16, 24, 38, 0.75) !important;
+}
+
+/* Dropdown menus */
+.dropdown-menu,
+.menu-dropdown {
+  background-color: var(--vlr-bg-darker) !important;
+}
+
+/* Status page specific */
+.status-container {
+  max-width: var(--vlr-container-max) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Admin pages */
+.admin-dashboard,
+.admin-content {
+  max-width: var(--vlr-container-max);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Search results */
+.search-results {
+  max-width: var(--vlr-container-max);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Profile pages */
+.profile-container,
+.user-profile {
+  max-width: var(--vlr-container-max);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Ensure proper spacing on desktop */
+@media (min-width: 1280px) {
+  /* Remove excessive margins */
+  .mt-8 {
+    margin-top: 1.5rem;
+  }
+
+  .mb-8 {
+    margin-bottom: 1.5rem;
+  }
+
+  .my-8 {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Compact spacing between sections */
+  section + section {
+    margin-top: 2rem;
+  }
+
+  /* Reduce card shadows for cleaner look */
+  .shadow-lg {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  .shadow-xl {
+    box-shadow: 0 8px 10px -2px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Ensure text remains readable on new background */
+.text-gray-400 {
+  color: #9ca3af;
+}
+
+.text-gray-500 {
+  color: #6b7280;
+}
+
+.text-gray-600 {
+  color: #4b5563;
+}
+
+/* Border adjustments for new background */
+.border-gray-700 {
+  border-color: #2d3748;
+}
+
+.border-gray-800 {
+  border-color: #1a202c;
+}
+
+/* Code blocks and pre elements */
+pre,
+code {
+  background-color: var(--vlr-bg-darker);
+}
+
+/* Tables */
+.table-auto tbody tr:nth-child(even) {
+  background-color: rgba(16, 24, 38, 0.5);
+}
+
+/* Input fields on dark background */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: var(--vlr-bg-darker);
+  border-color: #2d3748;
+}
+
+/* Scrollbar styling for new background */
+::-webkit-scrollbar-track {
+  background: var(--vlr-bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2d3748;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4a5568;
+}

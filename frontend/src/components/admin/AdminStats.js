@@ -304,7 +304,7 @@ function AdminStats({ navigateTo }) {
 
     const getHeroData = async () => {
       try {
-        const heroesResponse = await api.get('/heroes');
+        const heroesResponse = await api.get('/public/heroes');
         const heroesData = heroesResponse.data || [];
         
         if (heroesData.length > 0) {

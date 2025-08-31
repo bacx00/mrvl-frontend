@@ -53,7 +53,7 @@ function AdminUsers() {
   const fetchHeroes = async () => {
     try {
       setHeroesLoading(true);
-      const response = await api.get('/heroes');
+      const response = await api.get('/public/heroes');
       const heroesData = response?.data?.data || response?.data || response || [];
       setHeroes(Array.isArray(heroesData) ? heroesData : []);
     } catch (err) {

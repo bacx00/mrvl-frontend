@@ -90,8 +90,8 @@ function Navigation({ currentPage, navigateTo, onAuthClick, user: propUser }) {
         api.get('/players'), 
         api.get('/events'),
         api.get('/matches'),
-        api.get('/forums/threads'),
-        api.get('/news')
+        api.get('/public/forums/threads'),
+        api.get('/public/news')
       ]);
       
       const searchTerm = query.toLowerCase();

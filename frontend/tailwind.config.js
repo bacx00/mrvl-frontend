@@ -6,6 +6,17 @@ module.exports = {
   ],
   darkMode: 'class',
   theme: {
+    container: {
+      center: true,
+      padding: '1rem',
+      screens: {
+        sm: '640px',
+        md: '768px', 
+        lg: '1024px',
+        xl: '1200px', // VLR.gg style max-width
+        '2xl': '1200px', // Cap at 1200px even on larger screens
+      },
+    },
     extend: {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

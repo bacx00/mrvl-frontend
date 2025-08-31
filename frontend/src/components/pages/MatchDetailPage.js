@@ -984,10 +984,37 @@ function MatchDetailPage({ matchId, navigateTo }) {
                     // For map-specific view, only show heroes played on THIS map
                     // Get all heroes this player has played across all maps
                     const getAllPlayerHeroes = () => {
+                      // Get ALL heroes this player played on THIS SPECIFIC MAP
+                      // This handles hero switching during live matches
                       const heroesOnThisMap = [];
                       
-                      // Check if this player played different heroes on this specific map
-                      // For now, use the single hero from composition data
+                      // Check if player has heroes_played array (from match_player_stats)
+                      // This contains all heroes they switched to during this map
+                      if (player.heroes_played && Array.isArray(player.heroes_played)) {
+                        // Return all heroes played on this map with their individual stats
+                        return player.heroes_played;
+                      }
+                      
+                      // Fallback: Check roster for all heroes (useful for overview)
+                      const rosterPlayer = match.team1?.players?.find(p => p.id === playerId) || 
+                                         match.team2?.players?.find(p => p.id === playerId);
+                      
+                      // If we have roster data with multiple heroes, use it
+                      if (rosterPlayer?.heroes?.length > 0) {
+                        // Check if these are map-specific heroes
+                        const mapSpecificHeroes = rosterPlayer.heroes.filter(h => 
+                          h.map_number === undefined || h.map_number === currentMapIndex + 1
+                        );
+                        if (mapSpecificHeroes.length > 0) {
+                          return mapSpecificHeroes;
+                        }
+                        // For Map 1 overview, show all heroes from roster
+                        if (currentMapIndex === 0) {
+                          return rosterPlayer.heroes;
+                        }
+                      }
+                      
+                      // Final fallback: Use single hero from composition
                       if (player.hero) {
                         heroesOnThisMap.push({
                           hero: player.hero,
@@ -1000,16 +1027,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
                         });
                       }
                       
-                      // If player has heroes array from roster (for Map 1 or overview)
-                      const rosterPlayer = match.team1?.players?.find(p => p.id === playerId) || 
-                                         match.team2?.players?.find(p => p.id === playerId);
-                      
-                      // Only use roster heroes if we're on Map 1 or there's no map-specific data
-                      if (currentMapIndex === 0 && rosterPlayer?.heroes?.length > 0) {
-                        return rosterPlayer.heroes;
-                      }
-                      
-                      return heroesOnThisMap.length > 0 ? heroesOnThisMap : [];
+                      return heroesOnThisMap;
                     };
                     
                     const playerHeroes = getAllPlayerHeroes();
@@ -1242,10 +1260,37 @@ function MatchDetailPage({ matchId, navigateTo }) {
                     // For map-specific view, only show heroes played on THIS map
                     // Get all heroes this player has played across all maps
                     const getAllPlayerHeroes = () => {
+                      // Get ALL heroes this player played on THIS SPECIFIC MAP
+                      // This handles hero switching during live matches
                       const heroesOnThisMap = [];
                       
-                      // Check if this player played different heroes on this specific map
-                      // For now, use the single hero from composition data
+                      // Check if player has heroes_played array (from match_player_stats)
+                      // This contains all heroes they switched to during this map
+                      if (player.heroes_played && Array.isArray(player.heroes_played)) {
+                        // Return all heroes played on this map with their individual stats
+                        return player.heroes_played;
+                      }
+                      
+                      // Fallback: Check roster for all heroes (useful for overview)
+                      const rosterPlayer = match.team1?.players?.find(p => p.id === playerId) || 
+                                         match.team2?.players?.find(p => p.id === playerId);
+                      
+                      // If we have roster data with multiple heroes, use it
+                      if (rosterPlayer?.heroes?.length > 0) {
+                        // Check if these are map-specific heroes
+                        const mapSpecificHeroes = rosterPlayer.heroes.filter(h => 
+                          h.map_number === undefined || h.map_number === currentMapIndex + 1
+                        );
+                        if (mapSpecificHeroes.length > 0) {
+                          return mapSpecificHeroes;
+                        }
+                        // For Map 1 overview, show all heroes from roster
+                        if (currentMapIndex === 0) {
+                          return rosterPlayer.heroes;
+                        }
+                      }
+                      
+                      // Final fallback: Use single hero from composition
                       if (player.hero) {
                         heroesOnThisMap.push({
                           hero: player.hero,
@@ -1258,16 +1303,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
                         });
                       }
                       
-                      // If player has heroes array from roster (for Map 1 or overview)
-                      const rosterPlayer = match.team1?.players?.find(p => p.id === playerId) || 
-                                         match.team2?.players?.find(p => p.id === playerId);
-                      
-                      // Only use roster heroes if we're on Map 1 or there's no map-specific data
-                      if (currentMapIndex === 0 && rosterPlayer?.heroes?.length > 0) {
-                        return rosterPlayer.heroes;
-                      }
-                      
-                      return heroesOnThisMap.length > 0 ? heroesOnThisMap : [];
+                      return heroesOnThisMap;
                     };
                     
                     const playerHeroes = getAllPlayerHeroes();

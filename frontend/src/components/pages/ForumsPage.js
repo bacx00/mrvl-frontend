@@ -57,8 +57,8 @@ function ForumsPage({ navigateTo }) {
       
       // Fetch threads and categories in parallel
       const [threadsResponse, categoriesResponse] = await Promise.all([
-        api.get(`/forums/threads?${params.toString()}`),
-        api.get('/forums/categories')
+        api.get(`/public/forums/threads?${params.toString()}`),
+        api.get('/public/forums/categories')
       ]);
       
       const threadsData = threadsResponse.data?.data || threadsResponse.data || [];

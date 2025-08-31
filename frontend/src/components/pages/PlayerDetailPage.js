@@ -206,8 +206,40 @@ function PlayerDetailPage({ params, navigateTo }) {
         setStats(playerData.stats);
       }
       
-      // Load comprehensive player statistics
-      await fetchPlayerStats();
+      // Use match history from player profile if available
+      if (playerData.match_history && Array.isArray(playerData.match_history)) {
+        console.log('Using match history from player profile:', playerData.match_history.length, 'matches');
+        
+        // Transform the match history data
+        const transformedMatches = playerData.match_history.map(match => ({
+          id: match.match_id,
+          match_id: match.match_id,
+          event: match.event || { name: 'Tournament', logo: null },
+          date: match.date,
+          format: match.format || 'BO3',
+          status: match.status,
+          team: match.team,
+          opponent: match.opponent,
+          result: match.result,
+          score: match.score,
+          map_stats: match.map_stats || [], // This contains ALL heroes per map
+          // Calculate totals from map stats
+          total_eliminations: match.map_stats ? match.map_stats.reduce((sum, m) => sum + (m.eliminations || 0), 0) : 0,
+          total_deaths: match.map_stats ? match.map_stats.reduce((sum, m) => sum + (m.deaths || 0), 0) : 0,
+          total_assists: match.map_stats ? match.map_stats.reduce((sum, m) => sum + (m.assists || 0), 0) : 0,
+          total_damage: match.map_stats ? match.map_stats.reduce((sum, m) => sum + (parseInt(m.damage) || 0), 0) : 0,
+          total_healing: match.map_stats ? match.map_stats.reduce((sum, m) => sum + (parseInt(m.healing) || 0), 0) : 0,
+          total_blocked: match.map_stats ? match.map_stats.reduce((sum, m) => sum + (parseInt(m.damage_blocked) || 0), 0) : 0,
+          hero_played: 'Multiple' // Since we have multiple heroes
+        }));
+        
+        setMatchHistory(transformedMatches);
+        console.log('Match history set with', transformedMatches.length, 'matches');
+        console.log('First match map_stats count:', transformedMatches[0]?.map_stats?.length);
+      } else {
+        // Fallback to old method if match_history is not in profile
+        await fetchPlayerStats();
+      }
       
       // Load mentions data for biography parsing
       await fetchMentionsData();
@@ -1138,8 +1170,8 @@ function PlayerDetailPage({ params, navigateTo }) {
                         }
                       });
                       
-                      // Pagination for Player History - 5 items per page
-                      const itemsPerPage = 5;
+                      // Pagination for Player History - 20 items per page (to show all heroes)
+                      const itemsPerPage = 20;
                       const totalPages = Math.ceil(allRows.length / itemsPerPage);
                       const startIndex = (playerHistoryPage - 1) * itemsPerPage;
                       const endIndex = startIndex + itemsPerPage;
@@ -1175,7 +1207,7 @@ function PlayerDetailPage({ params, navigateTo }) {
                     }
                   });
                   
-                  const itemsPerPage = 5;
+                  const itemsPerPage = 20;
                   const totalPages = Math.ceil(allRows.length / itemsPerPage);
                   
                   if (totalPages > 1) {
