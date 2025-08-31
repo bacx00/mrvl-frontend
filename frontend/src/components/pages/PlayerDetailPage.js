@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks';
-import { PlayerAvatar, TeamLogo, getCountryFlag, getHeroImageSync } from '../../utils/imageUtils';
+import { PlayerAvatar, TeamLogo, getCountryFlag, getHeroImageSync, getImageUrl } from '../../utils/imageUtils';
 import { parseTextWithMentions } from '../shared/UserDisplay';
 import MentionsSection from '../shared/MentionsSection';
 import { HEROES } from '../../constants/marvelRivalsData';
@@ -65,10 +65,8 @@ function PlayerDetailPage({ params, navigateTo }) {
       setPagination({ current_page: 1, last_page: 1, per_page: 20, total: 0 });
       setFilters({ date_from: '', date_to: '', event_id: '', hero: '', map: '' });
       
-      // Now fetch new player data
+      // Now fetch new player data (this will also load match history)
       fetchPlayerData();
-      // Also load match history immediately
-      fetchPlayerStats();
     }
   }, [playerId]);
   
@@ -214,7 +212,7 @@ function PlayerDetailPage({ params, navigateTo }) {
         const transformedMatches = playerData.match_history.map(match => ({
           id: match.match_id,
           match_id: match.match_id,
-          event: match.event || { name: 'Tournament', logo: null },
+          event: match.event, // Use the actual event data from backend
           date: match.date,
           format: match.format || 'BO3',
           status: match.status,
@@ -307,7 +305,7 @@ function PlayerDetailPage({ params, navigateTo }) {
           // New detailed format with map-specific hero stats
           return {
             id: match.match_id || match.id,
-            event: match.event || { name: 'Tournament', logo: null },
+            event: match.event, // Use the actual event data from backend
             date: match.date || match.created_at,
             format: match.format || 'BO3',
             status: match.status,
@@ -963,12 +961,48 @@ function PlayerDetailPage({ params, navigateTo }) {
                           console.log('Match ID:', match.match_id, 'Map stats count:', match.map_stats?.length);
                           console.log('Stats by map:', statsByMap);
                           
-                          // Create a match header row
+                          // Create a match header row with event info
                           allRows.push(
                             <tr key={`${match.match_id}-header`} className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                               <td colSpan="9" className="py-2 px-3">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center space-x-3">
+                                    {/* Event Image and Name */}
+                                    <div className="flex items-center space-x-2">
+                                      {match.event ? (
+                                        <>
+                                          {match.event.logo ? (
+                                            <img 
+                                              src={getImageUrl(match.event.logo)} 
+                                              alt={match.event.name}
+                                              className="w-6 h-6 rounded object-cover"
+                                              onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src = '/images/event-placeholder.svg';
+                                              }}
+                                            />
+                                          ) : (
+                                            <div className="w-6 h-6 bg-purple-600 rounded flex items-center justify-center">
+                                              <span className="text-white text-xs font-bold">
+                                                {match.event.name?.charAt(0) || 'E'}
+                                              </span>
+                                            </div>
+                                          )}
+                                          <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                                            {match.event.name}
+                                          </span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <div className="w-6 h-6 bg-gray-500 rounded flex items-center justify-center">
+                                            <span className="text-white text-sm">?</span>
+                                          </div>
+                                          <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                                            Standalone Match
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
                                     <div className="text-sm font-semibold text-gray-900 dark:text-white">
                                       <span 
                                         className="hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
@@ -1170,8 +1204,8 @@ function PlayerDetailPage({ params, navigateTo }) {
                         }
                       });
                       
-                      // Pagination for Player History - 20 items per page (to show all heroes)
-                      const itemsPerPage = 20;
+                      // Pagination for Player History - 4 items per page
+                      const itemsPerPage = 4;
                       const totalPages = Math.ceil(allRows.length / itemsPerPage);
                       const startIndex = (playerHistoryPage - 1) * itemsPerPage;
                       const endIndex = startIndex + itemsPerPage;
@@ -1207,7 +1241,7 @@ function PlayerDetailPage({ params, navigateTo }) {
                     }
                   });
                   
-                  const itemsPerPage = 20;
+                  const itemsPerPage = 4;
                   const totalPages = Math.ceil(allRows.length / itemsPerPage);
                   
                   if (totalPages > 1) {

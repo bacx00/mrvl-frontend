@@ -922,7 +922,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="relative">
             {/* Team 1 Stats Table */}
             <table className="w-full">
               <thead>
@@ -1063,7 +1063,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
                           <div className="flex justify-center items-center">
                             {playerData.heroes && playerData.heroes.length > 1 ? (
                               // Multiple heroes - show stacked with shadow effect
-                              <div className="relative flex items-center hero-menu-container">
+                              <div className="relative flex items-center hero-menu-container" style={{ zIndex: 'auto' }}>
                                 {/* Show up to 2 heroes stacked behind pointing to the right */}
                                 {playerData.heroes.slice(1, Math.min(3, playerData.heroes.length)).map((heroData, idx) => (
                                   <div
@@ -1112,52 +1112,85 @@ function MatchDetailPage({ matchId, navigateTo }) {
                                   )}
                                 </div>
                                 
-                                {/* Hero selection dropdown */}
+                                {/* Hero selection dropdown - horizontal layout */}
                                 {openHeroMenu[`${playerId}_${currentMapIndex}`] && (
-                                  <div className="absolute top-full mt-2 right-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-2 z-50 min-w-[200px]">
-                                    <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 px-2 py-1 mb-1">
+                                  <div className="absolute top-full mt-2 right-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-3 overflow-visible" style={{ zIndex: 9999 }}>
+                                    <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">
                                       Select Hero ({playerData.heroes.length} played)
                                     </div>
-                                    {playerData.heroes.map((heroData, idx) => (
-                                      <div
-                                        key={idx}
-                                        className={`flex items-center space-x-2 p-2 rounded cursor-pointer transition-colors ${
-                                          selectedHeroIdx === idx 
-                                            ? 'bg-blue-100 dark:bg-blue-900/50' 
-                                            : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                                        }`}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setSelectedHeroes(prev => ({
-                                            ...prev,
-                                            [`${playerId}_${currentMapIndex}`]: idx
-                                          }));
-                                          setOpenHeroMenu(prev => ({
-                                            ...prev,
-                                            [`${playerId}_${currentMapIndex}`]: false
-                                          }));
-                                        }}
-                                      >
-                                        <HeroImage 
-                                          heroName={heroData.hero}
-                                          size="sm"
-                                          showRole={false}
-                                        />
-                                        <div className="flex-1">
-                                          <div className="font-medium text-sm text-gray-900 dark:text-white">
-                                            {heroData.hero}
+                                    <div 
+                                      className="flex flex-row gap-2 overflow-x-auto hero-scroll-container" 
+                                      style={{ 
+                                        maxWidth: '240px', 
+                                        whiteSpace: 'nowrap',
+                                        scrollbarWidth: 'thin',
+                                        scrollbarColor: '#9CA3AF transparent'
+                                      }}
+                                    >
+                                      {playerData.heroes.map((heroData, idx) => (
+                                        <div
+                                          key={idx}
+                                          className={`relative inline-block flex-shrink-0 group cursor-pointer transition-all ${
+                                            selectedHeroIdx === idx 
+                                              ? 'ring-2 ring-blue-500 rounded-lg' 
+                                              : ''
+                                          }`}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedHeroes(prev => ({
+                                              ...prev,
+                                              [`${playerId}_${currentMapIndex}`]: idx
+                                            }));
+                                            setOpenHeroMenu(prev => ({
+                                              ...prev,
+                                              [`${playerId}_${currentMapIndex}`]: false
+                                            }));
+                                          }}
+                                        >
+                                          <div className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                                            <HeroImage 
+                                              heroName={heroData.hero}
+                                              size="md"
+                                              showRole={false}
+                                            />
                                           </div>
-                                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                                            {heroData.eliminations}/{heroData.deaths}/{heroData.assists} • KDA: {((heroData.eliminations + heroData.assists) / Math.max(heroData.deaths, 1)).toFixed(2)}
+                                          {/* Tooltip on hover - shows above the hero */}
+                                          <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 -translate-y-full hidden group-hover:block" style={{ zIndex: 99999 }}>
+                                            <div className="bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-lg border border-gray-700">
+                                              <div className="font-semibold text-center mb-1">{heroData.hero}</div>
+                                              <div className="flex flex-col gap-1">
+                                                <div className="flex justify-between gap-3">
+                                                  <span className="text-gray-400">K/D/A:</span>
+                                                  <span className="font-medium">{heroData.eliminations}/{heroData.deaths}/{heroData.assists}</span>
+                                                </div>
+                                                <div className="flex justify-between gap-3">
+                                                  <span className="text-gray-400">KDA:</span>
+                                                  <span className="font-medium text-green-400">{((heroData.eliminations + heroData.assists) / Math.max(heroData.deaths, 1)).toFixed(2)}</span>
+                                                </div>
+                                                {heroData.damage > 0 && (
+                                                  <div className="flex justify-between gap-3">
+                                                    <span className="text-gray-400">DMG:</span>
+                                                    <span className="font-medium">{(heroData.damage / 1000).toFixed(1)}k</span>
+                                                  </div>
+                                                )}
+                                                {heroData.healing > 0 && (
+                                                  <div className="flex justify-between gap-3">
+                                                    <span className="text-gray-400">HEAL:</span>
+                                                    <span className="font-medium text-green-400">{(heroData.healing / 1000).toFixed(1)}k</span>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </div>
+                                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
                                           </div>
+                                          {selectedHeroIdx === idx && (
+                                            <div className="absolute top-0 right-0 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                                              ✓
+                                            </div>
+                                          )}
                                         </div>
-                                        {selectedHeroIdx === idx && (
-                                          <div className="text-blue-500 dark:text-blue-400">
-                                            ✓
-                                          </div>
-                                        )}
-                                      </div>
-                                    ))}
+                                      ))}
+                                    </div>
                                   </div>
                                 )}
                               </div>
@@ -1339,7 +1372,7 @@ function MatchDetailPage({ matchId, navigateTo }) {
                           <div className="flex justify-center items-center">
                             {playerData.heroes && playerData.heroes.length > 1 ? (
                               // Multiple heroes - show stacked with shadow effect
-                              <div className="relative flex items-center hero-menu-container">
+                              <div className="relative flex items-center hero-menu-container" style={{ zIndex: 'auto' }}>
                                 {/* Show up to 2 heroes stacked behind pointing to the right */}
                                 {playerData.heroes.slice(1, Math.min(3, playerData.heroes.length)).map((heroData, idx) => (
                                   <div
@@ -1388,52 +1421,85 @@ function MatchDetailPage({ matchId, navigateTo }) {
                                   )}
                                 </div>
                                 
-                                {/* Hero selection dropdown */}
+                                {/* Hero selection dropdown - horizontal layout */}
                                 {openHeroMenu[`${playerId}_${currentMapIndex}`] && (
-                                  <div className="absolute top-full mt-2 right-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-2 z-50 min-w-[200px]">
-                                    <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 px-2 py-1 mb-1">
+                                  <div className="absolute top-full mt-2 right-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-3 overflow-visible" style={{ zIndex: 9999 }}>
+                                    <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">
                                       Select Hero ({playerData.heroes.length} played)
                                     </div>
-                                    {playerData.heroes.map((heroData, idx) => (
-                                      <div
-                                        key={idx}
-                                        className={`flex items-center space-x-2 p-2 rounded cursor-pointer transition-colors ${
-                                          selectedHeroIdx === idx 
-                                            ? 'bg-blue-100 dark:bg-blue-900/50' 
-                                            : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                                        }`}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setSelectedHeroes(prev => ({
-                                            ...prev,
-                                            [`${playerId}_${currentMapIndex}`]: idx
-                                          }));
-                                          setOpenHeroMenu(prev => ({
-                                            ...prev,
-                                            [`${playerId}_${currentMapIndex}`]: false
-                                          }));
-                                        }}
-                                      >
-                                        <HeroImage 
-                                          heroName={heroData.hero}
-                                          size="sm"
-                                          showRole={false}
-                                        />
-                                        <div className="flex-1">
-                                          <div className="font-medium text-sm text-gray-900 dark:text-white">
-                                            {heroData.hero}
+                                    <div 
+                                      className="flex flex-row gap-2 overflow-x-auto hero-scroll-container" 
+                                      style={{ 
+                                        maxWidth: '240px', 
+                                        whiteSpace: 'nowrap',
+                                        scrollbarWidth: 'thin',
+                                        scrollbarColor: '#9CA3AF transparent'
+                                      }}
+                                    >
+                                      {playerData.heroes.map((heroData, idx) => (
+                                        <div
+                                          key={idx}
+                                          className={`relative inline-block flex-shrink-0 group cursor-pointer transition-all ${
+                                            selectedHeroIdx === idx 
+                                              ? 'ring-2 ring-blue-500 rounded-lg' 
+                                              : ''
+                                          }`}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedHeroes(prev => ({
+                                              ...prev,
+                                              [`${playerId}_${currentMapIndex}`]: idx
+                                            }));
+                                            setOpenHeroMenu(prev => ({
+                                              ...prev,
+                                              [`${playerId}_${currentMapIndex}`]: false
+                                            }));
+                                          }}
+                                        >
+                                          <div className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                                            <HeroImage 
+                                              heroName={heroData.hero}
+                                              size="md"
+                                              showRole={false}
+                                            />
                                           </div>
-                                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                                            {heroData.eliminations}/{heroData.deaths}/{heroData.assists} • KDA: {((heroData.eliminations + heroData.assists) / Math.max(heroData.deaths, 1)).toFixed(2)}
+                                          {/* Tooltip on hover - shows above the hero */}
+                                          <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 -translate-y-full hidden group-hover:block" style={{ zIndex: 99999 }}>
+                                            <div className="bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-lg border border-gray-700">
+                                              <div className="font-semibold text-center mb-1">{heroData.hero}</div>
+                                              <div className="flex flex-col gap-1">
+                                                <div className="flex justify-between gap-3">
+                                                  <span className="text-gray-400">K/D/A:</span>
+                                                  <span className="font-medium">{heroData.eliminations}/{heroData.deaths}/{heroData.assists}</span>
+                                                </div>
+                                                <div className="flex justify-between gap-3">
+                                                  <span className="text-gray-400">KDA:</span>
+                                                  <span className="font-medium text-green-400">{((heroData.eliminations + heroData.assists) / Math.max(heroData.deaths, 1)).toFixed(2)}</span>
+                                                </div>
+                                                {heroData.damage > 0 && (
+                                                  <div className="flex justify-between gap-3">
+                                                    <span className="text-gray-400">DMG:</span>
+                                                    <span className="font-medium">{(heroData.damage / 1000).toFixed(1)}k</span>
+                                                  </div>
+                                                )}
+                                                {heroData.healing > 0 && (
+                                                  <div className="flex justify-between gap-3">
+                                                    <span className="text-gray-400">HEAL:</span>
+                                                    <span className="font-medium text-green-400">{(heroData.healing / 1000).toFixed(1)}k</span>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </div>
+                                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
                                           </div>
+                                          {selectedHeroIdx === idx && (
+                                            <div className="absolute top-0 right-0 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                                              ✓
+                                            </div>
+                                          )}
                                         </div>
-                                        {selectedHeroIdx === idx && (
-                                          <div className="text-blue-500 dark:text-blue-400">
-                                            ✓
-                                          </div>
-                                        )}
-                                      </div>
-                                    ))}
+                                      ))}
+                                    </div>
                                   </div>
                                 )}
                               </div>
