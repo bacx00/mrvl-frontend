@@ -49,7 +49,7 @@ function ThreadDetailPage({ params, navigateTo }) {
       
       // Add timestamp to prevent caching
       const timestamp = new Date().getTime();
-      const threadResponse = await api.get(`/forums/threads/${threadId}?t=${timestamp}`, {
+      const threadResponse = await api.get(`/public/forums/threads/${threadId}?t=${timestamp}`, {
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
@@ -509,7 +509,17 @@ function ThreadDetailPage({ params, navigateTo }) {
 
   const handlePinThread = async () => {
     try {
-      const isCurrentlyPinned = thread.meta?.pinned;
+      const isCurrentlyPinned = thread.meta?.pinned || thread.pinned;
+      
+      // Optimistically update the UI
+      setThread(prev => ({
+        ...prev,
+        pinned: !isCurrentlyPinned,
+        meta: {
+          ...prev.meta,
+          pinned: !isCurrentlyPinned
+        }
+      }));
       
       const endpoint = isCurrentlyPinned 
         ? `/admin/forums/threads/${threadId}/unpin`
@@ -519,20 +529,50 @@ function ThreadDetailPage({ params, navigateTo }) {
       
       // Check for success in response or successful message
       if (response.data?.success || response.data?.message?.includes('successfully')) {
-        // Immediately fetch fresh data
-        await fetchThreadData();
+        console.log(`✅ Thread ${isCurrentlyPinned ? 'unpinned' : 'pinned'} successfully`);
+        // Optionally fetch fresh data to ensure consistency
+        // await fetchThreadData();
       } else {
+        // Revert optimistic update on failure
+        setThread(prev => ({
+          ...prev,
+          pinned: isCurrentlyPinned,
+          meta: {
+            ...prev.meta,
+            pinned: isCurrentlyPinned
+          }
+        }));
         alert('Failed to update thread pin status');
       }
     } catch (error) {
       console.error('❌ Failed to pin/unpin thread:', error);
+      // Revert optimistic update on error
+      const isCurrentlyPinned = thread.meta?.pinned || thread.pinned;
+      setThread(prev => ({
+        ...prev,
+        pinned: isCurrentlyPinned,
+        meta: {
+          ...prev.meta,
+          pinned: isCurrentlyPinned
+        }
+      }));
       alert('Failed to update thread pin status');
     }
   };
 
   const handleLockThread = async () => {
     try {
-      const isCurrentlyLocked = thread.meta?.locked;
+      const isCurrentlyLocked = thread.meta?.locked || thread.locked;
+      
+      // Optimistically update the UI
+      setThread(prev => ({
+        ...prev,
+        locked: !isCurrentlyLocked,
+        meta: {
+          ...prev.meta,
+          locked: !isCurrentlyLocked
+        }
+      }));
       
       const endpoint = isCurrentlyLocked 
         ? `/admin/forums/threads/${threadId}/unlock`
@@ -542,13 +582,33 @@ function ThreadDetailPage({ params, navigateTo }) {
       
       // Check for success in response or successful message
       if (response.data?.success || response.data?.message?.includes('successfully')) {
-        // Immediately fetch fresh data
-        await fetchThreadData();
+        console.log(`✅ Thread ${isCurrentlyLocked ? 'unlocked' : 'locked'} successfully`);
+        // Optionally fetch fresh data to ensure consistency
+        // await fetchThreadData();
       } else {
+        // Revert optimistic update on failure
+        setThread(prev => ({
+          ...prev,
+          locked: isCurrentlyLocked,
+          meta: {
+            ...prev.meta,
+            locked: isCurrentlyLocked
+          }
+        }));
         alert('Failed to update thread lock status');
       }
     } catch (error) {
       console.error('❌ Failed to lock/unlock thread:', error);
+      // Revert optimistic update on error
+      const isCurrentlyLocked = thread.meta?.locked || thread.locked;
+      setThread(prev => ({
+        ...prev,
+        locked: isCurrentlyLocked,
+        meta: {
+          ...prev.meta,
+          locked: isCurrentlyLocked
+        }
+      }));
       alert('Failed to update thread lock status');
     }
   };

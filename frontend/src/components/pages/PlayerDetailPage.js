@@ -24,6 +24,9 @@ function PlayerDetailPage({ params, navigateTo }) {
   const [selectedMatch, setSelectedMatch] = useState('');
   const [selectedMap, setSelectedMap] = useState('');
   
+  // Remove local getHeroImageSync - use the one from imageUtils
+  
+  
   // Edit functionality states
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState({});
@@ -111,7 +114,7 @@ function PlayerDetailPage({ params, navigateTo }) {
     try {
       setLoading(true);
       
-      // Fetch player data with /public/ prefix
+      // Fetch player data from player-profile endpoint
       const response = await api.get(`/public/player-profile/${playerId}`);
       const playerData = response.data?.data || response.data || response;
       
@@ -205,11 +208,16 @@ function PlayerDetailPage({ params, navigateTo }) {
       }
       
       // Use match history from player profile if available
-      if (playerData.match_history && Array.isArray(playerData.match_history)) {
-        console.log('Using match history from player profile:', playerData.match_history.length, 'matches');
+      if (playerData.match_history) {
+        // Convert object to array if needed
+        const matchHistoryArray = Array.isArray(playerData.match_history) 
+          ? playerData.match_history 
+          : Object.values(playerData.match_history);
+        
+        console.log('Using match history from player profile:', matchHistoryArray.length, 'matches');
         
         // Transform the match history data
-        const transformedMatches = playerData.match_history.map(match => ({
+        const transformedMatches = matchHistoryArray.map(match => ({
           id: match.match_id,
           match_id: match.match_id,
           event: match.event, // Use the actual event data from backend
@@ -1086,12 +1094,19 @@ function PlayerDetailPage({ params, navigateTo }) {
                                 </td>
                                 <td className="py-3 px-3">
                                   <div className="flex items-center space-x-2">
-                                    <img 
-                                      src={getHeroImageSync(heroData.hero)} 
-                                      alt={heroData.hero}
-                                      className="w-8 h-8 rounded object-cover"
-                                      onError={(e) => { e.target.src = '/images/heroes/default.png'; }}
-                                    />
+                                    {getHeroImageSync(heroData.hero) ? (
+                                      <img 
+                                        src={getHeroImageSync(heroData.hero)} 
+                                        alt={heroData.hero}
+                                        className="w-8 h-8 rounded object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-8 h-8 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                        <span className="text-xs font-bold text-gray-600 dark:text-gray-400">
+                                          {heroData.hero?.slice(0, 2) || '??'}
+                                        </span>
+                                      </div>
+                                    )}
                                     <span className="font-medium text-gray-900 dark:text-white">
                                       {heroData.hero}
                                     </span>
@@ -1161,12 +1176,17 @@ function PlayerDetailPage({ params, navigateTo }) {
                               </td>
                               <td className="py-3 px-3">
                                 <div className="flex items-center space-x-2">
-                                  <img 
-                                    src={getHeroImageSync(match.hero || match.hero_played || 'Storm')} 
-                                    alt={match.hero || match.hero_played || 'Storm'}
-                                    className="w-8 h-8 rounded object-cover"
-                                    onError={(e) => { e.target.src = '/images/heroes/default.png'; }}
-                                  />
+                                  {heroHasNoImage(match.hero || match.hero_played || 'Storm') ? (
+                                    <div className="w-8 h-8 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                      <span className="text-gray-500 dark:text-gray-400 text-lg font-bold">?</span>
+                                    </div>
+                                  ) : (
+                                    <img 
+                                      src={getHeroImageSync(match.hero || match.hero_played || 'Storm')} 
+                                      alt={match.hero || match.hero_played || 'Storm'}
+                                      className="w-8 h-8 rounded object-cover"
+                                    />
+                                  )}
                                   <span className="font-medium text-gray-900 dark:text-white">
                                     {match.hero || match.hero_played || 'Various'}
                                   </span>
@@ -1299,15 +1319,11 @@ function PlayerDetailPage({ params, navigateTo }) {
                   const opponentTeam = match.opponent || match.opponent_team || { name: 'BOOM Esports', logo: null };
                   const isWin = match.result === 'L' ? false : (match.result === 'W' || match.result === 'WIN');
                   
-                  // For match 7, use actual scores from match data
-                  // The actual match score is 100 Thieves 1 - 2 BOOM Esports
-                  let team1Score = 1;
-                  let team2Score = 2;
+                  // Parse scores from the match data
+                  let team1Score = 0;
+                  let team2Score = 0;
                   
-                  if (match.match_id === 7) {
-                    team1Score = 1;
-                    team2Score = 2;
-                  } else if (match.score && match.score !== '0-0') {
+                  if (match.score && match.score !== '0-0') {
                     const scores = match.score.split('-');
                     team1Score = parseInt(scores[0]) || 0;
                     team2Score = parseInt(scores[1]) || 0;
@@ -1419,7 +1435,7 @@ function PlayerDetailPage({ params, navigateTo }) {
                                 {team2Score}
                               </span>
                             </div>
-                            <div className="text-center text-xs text-gray-500 mt-1">BO3</div>
+                            <div className="text-center text-xs text-gray-500 mt-1">{match.format || 'BO3'}</div>
                           </div>
                           
                           {/* Team 2 with Logo */}
@@ -1461,12 +1477,17 @@ function PlayerDetailPage({ params, navigateTo }) {
                               <div className="flex items-center space-x-3">
                                 <span className="text-gray-500 text-xs">MVP:</span>
                                 <div className="flex items-center space-x-2">
-                                  <img 
-                                    src={getHeroImageSync(match.hero || match.map_stats?.[0]?.hero || 'Hela')} 
-                                    alt={match.hero || match.map_stats?.[0]?.hero || 'Hela'}
-                                    className="w-5 h-5 rounded"
-                                    onError={(e) => { e.target.src = '/images/heroes/default.png'; }}
-                                  />
+                                  {heroHasNoImage(match.hero || match.map_stats?.[0]?.hero || 'Hela') ? (
+                                    <div className="w-5 h-5 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                      <span className="text-gray-500 dark:text-gray-400 text-xs font-bold">?</span>
+                                    </div>
+                                  ) : (
+                                    <img 
+                                      src={getHeroImageSync(match.hero || match.map_stats?.[0]?.hero || 'Hela')} 
+                                      alt={match.hero || match.map_stats?.[0]?.hero || 'Hela'}
+                                      className="w-5 h-5 rounded"
+                                    />
+                                  )}
                                   <span className="font-medium text-gray-900 dark:text-white text-xs">
                                     {match.hero || match.map_stats?.[0]?.hero || 'Hela'}
                                   </span>

@@ -97,7 +97,7 @@ function NewsDetailPage({ params, navigateTo }) {
       setLoading(true);
       console.log('🔍 NewsDetailPage: Fetching article ID:', articleId);
       
-      const response = await api.get(`/news/${articleId}`);
+      const response = await api.get(`/public/news/${articleId}`);
       const articleData = response.data?.data || response.data || response;
       
       console.log('✅ Article loaded:', articleData);
@@ -109,7 +109,7 @@ function NewsDetailPage({ params, navigateTo }) {
       
       // Increment view count
       try {
-        await api.post(`/news/${articleId}/view`);
+        await api.post(`/public/news/${articleId}/view`);
       } catch (error) {
         console.log('View count failed (likely not logged in)');
       }
@@ -436,7 +436,7 @@ function NewsDetailPage({ params, navigateTo }) {
       
       setComments(updatedComments);
 
-      const response = await api.delete(`/news/comments/${commentId}`);
+      const response = await api.delete(`/public/news/comments/${commentId}`);
       
       // Enhanced response validation to handle different response structures
       const isSuccess = response.status === 200 || 

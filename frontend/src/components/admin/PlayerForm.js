@@ -7,24 +7,66 @@ function PlayerForm({ playerId, navigateTo }) {
   const [formData, setFormData] = useState({
     name: '',
     username: '',
+    real_name: '',
     team: '',
+    team_id: '',
     role: '',
+    main_hero: '',
+    alt_heroes: [],
+    hero_pool: [],
     region: '',
     country: 'US',
+    nationality: '',
     age: '',
-    earnings: '',
+    birth_date: '',
+    earnings: 0,
+    total_earnings: 0,
     avatar: '',
-    // Missing critical fields
+    // Performance stats
     elo_rating: 1000,
+    rating: 1000,
+    peak_elo: 1000,
+    peak_rating: 1000,
+    skill_rating: 1000,
+    rank: 0,
+    wins: 0,
+    losses: 0,
+    kda: 0,
+    total_matches: 0,
+    win_rate: 0,
+    // Career stats
+    total_eliminations: 0,
+    total_deaths: 0,
+    total_assists: 0,
+    overall_kda: 0,
+    average_damage_per_match: 0,
+    average_healing_per_match: 0,
+    average_damage_blocked_per_match: 0,
+    // Streaks and achievements
+    longest_win_streak: 0,
+    current_win_streak: 0,
+    most_played_hero: '',
+    best_winrate_hero: '',
+    tournaments_played: 0,
+    // Organization
+    jersey_number: '',
+    team_position: '',
+    position_order: 0,
+    // Meta
     status: 'active',
+    biography: '',
+    liquipedia_url: '',
+    // Social links
     socialLinks: {
       twitter: '',
       twitch: '',
       youtube: '',
       instagram: '',
       discord: '',
-      tiktok: ''
-    }
+      tiktok: '',
+      facebook: ''
+    },
+    social_media: {}
   });
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -45,27 +87,92 @@ function PlayerForm({ playerId, navigateTo }) {
       
       console.log(' PlayerForm - Fetched player data:', player);
       
+      // Parse social media if it's a string
+      const socialData = player.social_media || player.social_links || player.socialLinks || {};
+      const socialParsed = typeof socialData === 'string' ? JSON.parse(socialData) : socialData;
+      
+      // PRESERVE ALL PLAYER DATA when editing
       setFormData({
+        // Basic info
         name: player.real_name || player.name || '',
         username: player.username || player.gamer_tag || '',
+        real_name: player.real_name || player.name || '',
         team: player.team_id || player.team?.id || '',
+        team_id: player.team_id || player.team?.id || '',
+        
+        // Game info
         role: player.role || '',
+        main_hero: player.main_hero || '',
+        alt_heroes: player.alt_heroes || [],
+        hero_pool: player.hero_pool || [],
+        
+        // Personal info
         region: player.region || '',
         country: player.country || 'US',
+        nationality: player.nationality || player.country || '',
         age: player.age || '',
-        earnings: player.earnings || '',
+        birth_date: player.birth_date || '',
         avatar: player.avatar_url || player.avatar || '',
-        // Load missing critical fields - preserve ELO rating
-        elo_rating: player.elo_rating || player.eloRating || 1000,
+        
+        // Financial
+        earnings: player.earnings || 0,
+        total_earnings: player.total_earnings || player.earnings || 0,
+        
+        // Performance stats - PRESERVE ALL
+        elo_rating: player.elo_rating || player.rating || 1000,
+        rating: player.rating || player.elo_rating || 1000,
+        peak_elo: player.peak_elo || player.peak_rating || 1000,
+        peak_rating: player.peak_rating || player.peak_elo || 1000,
+        skill_rating: player.skill_rating || 1000,
+        rank: player.rank || 0,
+        wins: player.wins || 0,
+        losses: player.losses || 0,
+        kda: player.kda || 0,
+        total_matches: player.total_matches || 0,
+        win_rate: player.win_rate || 0,
+        
+        // Career stats - PRESERVE ALL
+        total_eliminations: player.total_eliminations || 0,
+        total_deaths: player.total_deaths || 0,
+        total_assists: player.total_assists || 0,
+        overall_kda: player.overall_kda || player.kda || 0,
+        average_damage_per_match: player.average_damage_per_match || 0,
+        average_healing_per_match: player.average_healing_per_match || 0,
+        average_damage_blocked_per_match: player.average_damage_blocked_per_match || 0,
+        
+        // Streaks and achievements
+        longest_win_streak: player.longest_win_streak || 0,
+        current_win_streak: player.current_win_streak || 0,
+        most_played_hero: player.most_played_hero || '',
+        best_winrate_hero: player.best_winrate_hero || '',
+        tournaments_played: player.tournaments_played || 0,
+        
+        // Organization
+        jersey_number: player.jersey_number || '',
+        team_position: player.team_position || '',
+        position_order: player.position_order || 0,
+        
+        // Meta
         status: player.status || 'active',
-        socialLinks: player.social_media || player.social_links || player.socialLinks || {
-          twitter: '',
-          twitch: '',
-          youtube: '',
-          instagram: '',
-          discord: '',
-          tiktok: ''
-        }
+        biography: player.biography || '',
+        liquipedia_url: player.liquipedia_url || '',
+        
+        // Social links - merge all sources
+        socialLinks: {
+          twitter: socialParsed.twitter || player.twitter || '',
+          twitch: socialParsed.twitch || player.twitch || '',
+          youtube: socialParsed.youtube || player.youtube || '',
+          instagram: socialParsed.instagram || player.instagram || '',
+          discord: socialParsed.discord || player.discord || '',
+          tiktok: socialParsed.tiktok || player.tiktok || '',
+          facebook: socialParsed.facebook || player.facebook || ''
+        },
+        
+        // Keep raw social_media
+        social_media: player.social_media || socialParsed || {},
+        
+        // Preserve any additional fields
+        ...player
       });
     } catch (error) {
       console.error('Error fetching player:', error);
@@ -188,21 +295,91 @@ function PlayerForm({ playerId, navigateTo }) {
     try {
       let currentPlayerId = playerId;
 
-      // CRITICAL FIX: Prepare proper data format for Laravel backend
+      // CRITICAL FIX: Prepare proper data format for Laravel backend, preserving ALL data
       const submitData = {
+        // Basic info
         username: formData.username.trim(),
-        real_name: formData.name.trim(), // The "Player Name" field is actually the real name
-        team_id: formData.team ? parseInt(formData.team) : null, // FIXED: Ensure team_id is properly set
+        real_name: formData.name.trim() || formData.real_name.trim(),
+        team_id: formData.team ? parseInt(formData.team) : (formData.team_id ? parseInt(formData.team_id) : null),
+        
+        // Game info
         role: formData.role,
+        main_hero: formData.main_hero || null,
+        alt_heroes: formData.alt_heroes || [],
+        hero_pool: formData.hero_pool || [],
+        
+        // Personal info
         region: formData.region,
         country: formData.country,
+        nationality: formData.nationality || formData.country,
         age: formData.age ? parseInt(formData.age) : null,
-        earnings: formData.earnings ? parseFloat(formData.earnings) : null,
-        // Include all missing critical fields - default to 1000 if empty (matches DB default)
-        elo_rating: formData.elo_rating ? parseInt(formData.elo_rating) : 1000,
+        birth_date: formData.birth_date || null,
+        
+        // Financial - preserve existing earnings
+        earnings: parseFloat(formData.earnings) || 0,
+        total_earnings: parseFloat(formData.total_earnings) || parseFloat(formData.earnings) || 0,
+        
+        // Performance stats - PRESERVE ALL
+        elo_rating: parseInt(formData.elo_rating) || parseInt(formData.rating) || 1000,
+        rating: parseInt(formData.rating) || parseInt(formData.elo_rating) || 1000,
+        peak_elo: parseInt(formData.peak_elo) || parseInt(formData.peak_rating) || parseInt(formData.elo_rating) || 1000,
+        peak_rating: parseInt(formData.peak_rating) || parseInt(formData.peak_elo) || parseInt(formData.rating) || 1000,
+        skill_rating: parseInt(formData.skill_rating) || 1000,
+        rank: parseInt(formData.rank) || 0,
+        wins: parseInt(formData.wins) || 0,
+        losses: parseInt(formData.losses) || 0,
+        kda: parseFloat(formData.kda) || 0,
+        total_matches: parseInt(formData.total_matches) || 0,
+        
+        // Career stats - PRESERVE ALL
+        total_eliminations: parseInt(formData.total_eliminations) || 0,
+        total_deaths: parseInt(formData.total_deaths) || 0,
+        total_assists: parseInt(formData.total_assists) || 0,
+        overall_kda: parseFloat(formData.overall_kda) || parseFloat(formData.kda) || 0,
+        average_damage_per_match: parseFloat(formData.average_damage_per_match) || 0,
+        average_healing_per_match: parseFloat(formData.average_healing_per_match) || 0,
+        average_damage_blocked_per_match: parseFloat(formData.average_damage_blocked_per_match) || 0,
+        
+        // Streaks and achievements
+        longest_win_streak: parseInt(formData.longest_win_streak) || 0,
+        current_win_streak: parseInt(formData.current_win_streak) || 0,
+        most_played_hero: formData.most_played_hero || null,
+        best_winrate_hero: formData.best_winrate_hero || null,
+        tournaments_played: parseInt(formData.tournaments_played) || 0,
+        
+        // Organization
+        jersey_number: formData.jersey_number || null,
+        team_position: formData.team_position || null,
+        position_order: parseInt(formData.position_order) || 0,
+        
+        // Meta
         status: formData.status || 'active',
-        social_media: formData.socialLinks
+        biography: formData.biography || null,
+        liquipedia_url: formData.liquipedia_url || null,
+        
+        // Social media
+        social_media: formData.socialLinks,
+        twitter: formData.socialLinks.twitter || null,
+        twitch: formData.socialLinks.twitch || null,
+        youtube: formData.socialLinks.youtube || null,
+        instagram: formData.socialLinks.instagram || null,
+        discord: formData.socialLinks.discord || null,
+        tiktok: formData.socialLinks.tiktok || null,
+        facebook: formData.socialLinks.facebook || null
       };
+      
+      // Only include fields that have been explicitly set (for update operations)
+      if (isEdit) {
+        // Remove null/undefined values to preserve existing data
+        Object.keys(submitData).forEach(key => {
+          if (submitData[key] === null || submitData[key] === undefined || submitData[key] === '') {
+            // Keep zeros for numeric fields
+            if (typeof formData[key] !== 'number') {
+              delete submitData[key];
+            }
+          }
+        });
+      }
 
       console.log(' PlayerForm - Submit data prepared:', submitData);
 

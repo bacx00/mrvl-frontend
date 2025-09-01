@@ -70,6 +70,19 @@ function EventForm({ eventId, navigateTo }) {
       const response = await api.get(`/admin/events/${eventId}`);
       const event = response.data?.data || response.data || response;
       
+      // Helper function to extract date from ISO string or datetime string
+      const extractDate = (dateString) => {
+        if (!dateString) return '';
+        // Handle ISO format (2025-08-15T00:00:00.000000Z) or datetime format (2025-08-15 00:00:00)
+        if (dateString.includes('T')) {
+          return dateString.split('T')[0];
+        } else if (dateString.includes(' ')) {
+          return dateString.split(' ')[0];
+        }
+        // If it's already in correct format, return as is
+        return dateString;
+      };
+
       setFormData({
         name: event.name || '',
         description: event.description || '',
@@ -78,10 +91,10 @@ function EventForm({ eventId, navigateTo }) {
         format: event.format || 'single_elimination',
         region: event.region || 'International',
         game_mode: event.game_mode || 'Convoy',
-        start_date: event.start_date ? event.start_date.split(' ')[0] : '',
-        end_date: event.end_date ? event.end_date.split(' ')[0] : '',
-        registration_start: event.registration_start ? event.registration_start.split(' ')[0] : '',
-        registration_end: event.registration_end ? event.registration_end.split(' ')[0] : '',
+        start_date: extractDate(event.start_date),
+        end_date: extractDate(event.end_date),
+        registration_start: extractDate(event.registration_start),
+        registration_end: extractDate(event.registration_end),
         max_teams: event.max_teams || 16,
         prize_pool: event.prize_pool || '',
         currency: event.currency || 'USD',

@@ -133,7 +133,7 @@ const api = {
     };
     
     const config = {
-      method: 'POST',
+      method: options.method || 'POST',
       mode: 'cors',
       credentials: 'include',
       headers,
@@ -683,9 +683,10 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setIsAuthenticated(false);
       // Navigate to homepage after logout
-      if (window.navigateTo) {
-        window.navigateTo('home');
-      }
+      // Clear the hash to go to home
+      window.location.hash = '';
+      // Dispatch a custom event that the App can listen to
+      window.dispatchEvent(new CustomEvent('auth:logout'));
     }
   };
 

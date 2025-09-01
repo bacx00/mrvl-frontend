@@ -6,6 +6,7 @@ import { getImageUrl } from '../../utils/imageUtils';
 import { createErrorHandler, retryOperation, ERROR_CODES } from '../../utils/errorHandler';
 import ErrorBoundary from '../shared/ErrorBoundary';
 import TeamSelector from '../shared/TeamSelector';
+import TwoFactorSettings from '../admin/TwoFactorSettings';
 
 function SimpleUserProfile({ navigateTo, params }) {
   const { user, api, updateUser } = useAuth();
@@ -909,6 +910,14 @@ function SimpleUserProfile({ navigateTo, params }) {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 2FA Settings - Admin Users Only */}
+      {isOwnProfile && user?.role === 'admin' && (
+        <div className="card p-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Two-Factor Authentication</h2>
+          <TwoFactorSettings user={user} api={api} />
         </div>
       )}
 

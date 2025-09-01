@@ -44,7 +44,7 @@ function ForumVotingButtons({
     // Only fetch for threads
     if (itemType === 'thread') {
       try {
-        const endpoint = `/forums/threads/${itemId}`;
+        const endpoint = `/public/forums/threads/${itemId}`;
         const response = await api.get(endpoint);
         const data = response.data?.data || response.data;
         

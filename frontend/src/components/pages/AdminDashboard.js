@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, useAdminStats } from '../../hooks';
+import TwoFactorSettings from '../admin/TwoFactorSettings';
 
 function AdminDashboard() {
   const { user, isSuperAdmin, isAdmin, api } = useAuth();
@@ -396,6 +397,14 @@ function AdminDashboard() {
                   </div>
                 </div>
               </div>
+              
+              {/* 2FA Security Settings - Admin Only */}
+              {user && isAdmin() && (
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Two-Factor Authentication (Admin Only)</h4>
+                  <TwoFactorSettings user={user} api={api} />
+                </div>
+              )}
             </div>
           </div>
         )}

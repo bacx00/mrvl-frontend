@@ -99,10 +99,10 @@ function VotingButtons({
       // Try different voting endpoints based on item type
       let response;
       if (itemType === 'news') {
-        response = await api.post(`/news/${itemId}/vote`, { vote_type: voteType });
+        response = await api.post(`/public/news/${itemId}/vote`, { vote_type: voteType });
       } else if (itemType === 'news_comment') {
         try {
-          response = await api.post(`/news/comments/${itemId}/vote`, { vote_type: voteType });
+          response = await api.post(`/public/news/comments/${itemId}/vote`, { vote_type: voteType });
         } catch (err) {
           // Only use fallback if the specific endpoint fails
           console.log('News comment vote failed, using fallback:', err.message);

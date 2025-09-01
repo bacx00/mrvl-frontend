@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import { useAuth } from '../../hooks';
 import UserDisplay from './UserDisplay';
 import ForumVotingButtons from './ForumVotingButtons';
@@ -8,6 +9,7 @@ import { safeString, safeErrorMessage, safeContent } from '../../utils/safeStrin
 import { MessageCircle, Reply, Edit3, Trash2, Flag, Clock, Award } from 'lucide-react';
 
 const MatchComments = ({ matchId, navigateTo }) => {
+  console.log('🚀 MatchComments component mounting with matchId:', matchId);
   const { isAuthenticated, isAdmin, isModerator, api, user } = useAuth();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,17 +40,53 @@ const MatchComments = ({ matchId, navigateTo }) => {
     try {
       setLoading(true);
       
+      console.log('🔍 MatchComments: Fetching comments for match', matchId, 'page', page);
+      
       const timestamp = new Date().getTime();
-      const response = await api.get(`/matches/${matchId}/comments?page=${page}&per_page=20&t=${timestamp}`, {
+      
+      // Use api if available, otherwise fallback to axios
+      const httpClient = api || axios.create({
+        baseURL: 'https://staging.mrvl.net/api',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      
+      const response = await httpClient.get(`/matches/${matchId}/comments?page=${page}&per_page=20&t=${timestamp}`, {
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
         }
       });
       
-      const responseData = response.data || response;
-      const commentsData = responseData.data || [];
-      const metaData = responseData.meta || {};
+      console.log('📥 MatchComments: Response received:', response);
+      console.log('📥 MatchComments: Response.data:', response.data);
+      console.log('📥 MatchComments: Response.data.data:', response.data?.data);
+      
+      // Handle the response structure properly
+      let responseData, commentsData, metaData;
+      
+      if (response.data && response.data.success) {
+        // API response with success wrapper
+        responseData = response.data;
+        commentsData = response.data.data || [];
+        metaData = response.data.meta || {};
+      } else if (response.success) {
+        // Direct success response
+        responseData = response;
+        commentsData = response.data || [];
+        metaData = response.meta || {};
+      } else {
+        // Fallback
+        responseData = response.data || response;
+        commentsData = responseData.data || responseData || [];
+        metaData = responseData.meta || {};
+      }
+      
+      console.log('💬 MatchComments: Response data:', responseData);
+      console.log('💬 MatchComments: Comments array:', commentsData);
+      console.log('💬 MatchComments: Found', commentsData.length, 'comments');
       
       if (page === 1) {
         setComments(commentsData);
@@ -63,6 +101,8 @@ const MatchComments = ({ matchId, navigateTo }) => {
       
     } catch (error) {
       console.error('❌ MatchComments: Failed to load comments:', error);
+      console.error('Match ID:', matchId);
+      console.error('API object:', api);
       if (page === 1) {
         setComments([]);
       }
@@ -72,8 +112,13 @@ const MatchComments = ({ matchId, navigateTo }) => {
   }, [api, matchId]);
 
   useEffect(() => {
-    fetchComments();
-  }, [fetchComments]);
+    console.log('📡 MatchComments useEffect triggered - api:', api, 'matchId:', matchId);
+    if (matchId) {
+      fetchComments();
+    } else {
+      console.warn('⚠️ MatchComments: Missing matchId', { matchId });
+    }
+  }, [fetchComments, matchId]);
 
   const formatTimeAgo = (dateString) => {
     if (!dateString) return 'Unknown';

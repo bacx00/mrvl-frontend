@@ -11,21 +11,47 @@ function TeamForm({ teamId, navigateTo }) {
     shortName: '',
     region: '',
     logo: '',
+    flag: '',
     country: '',
     earnings: 0, // Team total earnings in USD
     // Missing team fields
     elo_rating: 1000, // Team ELO rating with Marvel Rivals default
-    wins: '',
-    losses: '',
-    matches_played: '',
+    peak_elo: 1000,
+    wins: 0,
+    losses: 0,
+    matches_played: 0,
+    maps_won: 0,
+    maps_lost: 0,
+    win_rate: 0,
+    map_win_rate: 0,
+    points: 0,
+    rank: 0,
+    rating: 1000,
+    current_streak_count: 0,
+    current_streak_type: '',
+    longest_win_streak: 0,
+    tournaments_won: 0,
     achievements: '',
     captain: '',
+    manager: '',
+    owner: '',
+    founded: '',
+    founded_date: '',
+    description: '',
+    website: '',
+    liquipedia_url: '',
     status: 'Active',
+    platform: 'PC',
+    game: 'Marvel Rivals',
+    division: '',
+    player_count: 0,
     // COACH DATA INTEGRATION - CRITICAL FIX
     coach: {
       name: '',
       avatar: '',
-      country: 'US'
+      country: 'US',
+      image: '',
+      nationality: ''
     },
     socialLinks: {
       twitter: '',
@@ -33,8 +59,11 @@ function TeamForm({ teamId, navigateTo }) {
       youtube: '',
       website: '',
       discord: '',
-      tiktok: ''
-    }
+      tiktok: '',
+      facebook: '',
+      twitch: ''
+    },
+    social_media: {}
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -57,37 +86,87 @@ function TeamForm({ teamId, navigateTo }) {
       
       console.log('TeamForm - Fetched team data:', team);
       
+      // Preserve ALL existing team data when editing
+      const socialLinks = team.social_links || team.socialLinks || team.social_media || {};
+      const socialMediaParsed = typeof socialLinks === 'string' ? JSON.parse(socialLinks) : socialLinks;
+      
       setFormData({
+        // Basic info
         name: team.name || '',
         shortName: team.short_name || team.shortName || '',
         region: team.region || '',
         logo: team.logo_url || team.logo || '',
         flag: team.flag_url || team.flag || '',
         country: team.country || '',
-        earnings: team.earnings || 0, // Load team earnings from backend
-        // Load missing team fields
+        
+        // Financial
+        earnings: team.earnings || team.total_earnings || 0,
+        
+        // Performance stats - PRESERVE ALL
         elo_rating: team.elo_rating || team.rating || 1000,
-        peak_elo: team.peak_elo || '',
-        wins: team.wins || '',
-        losses: team.losses || '',
-        matches_played: team.matches_played || '',
+        peak_elo: team.peak_elo || team.peak || team.elo_rating || 1000,
+        rating: team.rating || team.elo_rating || 1000,
+        wins: team.wins || 0,
+        losses: team.losses || 0,
+        matches_played: team.matches_played || 0,
+        maps_won: team.maps_won || 0,
+        maps_lost: team.maps_lost || 0,
+        win_rate: team.win_rate || 0,
+        map_win_rate: team.map_win_rate || 0,
+        points: team.points || 0,
+        rank: team.rank || 0,
+        
+        // Streaks and records
+        current_streak_count: team.current_streak_count || 0,
+        current_streak_type: team.current_streak_type || '',
+        longest_win_streak: team.longest_win_streak || 0,
+        tournaments_won: team.tournaments_won || 0,
+        record: team.record || '',
+        
+        // Organization info
         achievements: team.achievements || '',
         captain: team.captain || '',
+        manager: team.manager || '',
+        owner: team.owner || '',
+        founded: team.founded || '',
+        founded_date: team.founded_date || '',
+        description: team.description || '',
+        website: team.website || '',
+        liquipedia_url: team.liquipedia_url || '',
+        
+        // Meta info
         status: team.status || 'Active',
-        // COACH DATA INTEGRATION - CRITICAL FIX
+        platform: team.platform || 'PC',
+        game: team.game || 'Marvel Rivals',
+        division: team.division || '',
+        player_count: team.player_count || 0,
+        
+        // COACH DATA INTEGRATION - PRESERVE ALL COACH FIELDS
         coach: {
           name: team.coach_name || team.coach || '',
-          avatar: team.coach_image || '',
-          country: team.coach_country || 'US'
+          avatar: team.coach_image || team.coach_avatar || '',
+          country: team.coach_country || team.coach_nationality || 'US',
+          image: team.coach_image || '',
+          nationality: team.coach_nationality || team.coach_country || ''
         },
-        socialLinks: team.social_links || team.socialLinks || {
-          twitter: '',
-          instagram: '',
-          youtube: '',
-          website: '',
-          discord: '',
-          tiktok: ''
-        }
+        
+        // Social Links - merge all sources
+        socialLinks: {
+          twitter: socialMediaParsed.twitter || team.twitter || '',
+          instagram: socialMediaParsed.instagram || team.instagram || '',
+          youtube: socialMediaParsed.youtube || team.youtube || '',
+          website: socialMediaParsed.website || team.website || '',
+          discord: socialMediaParsed.discord || team.discord || '',
+          tiktok: socialMediaParsed.tiktok || team.tiktok || '',
+          facebook: socialMediaParsed.facebook || team.facebook || '',
+          twitch: socialMediaParsed.twitch || team.twitch || ''
+        },
+        
+        // Keep raw social_media for backend compatibility
+        social_media: team.social_media || socialMediaParsed || {},
+        
+        // Preserve any additional fields from backend
+        ...team
       });
     } catch (error) {
       console.error('Error fetching team:', error);
@@ -250,37 +329,93 @@ function TeamForm({ teamId, navigateTo }) {
     try {
       console.log('TeamForm - Starting save process...');
       
-      // CRITICAL FIX: Prepare proper data format for Laravel backend
+      // CRITICAL FIX: Prepare proper data format for Laravel backend, preserving ALL existing data
       const submitData = {
+        // Required fields
         name: formData.name.trim(),
         short_name: formData.shortName.trim(),
         region: formData.region,
         country: formData.country,
-        rating: parseInt(formData.elo_rating) || 1000, // Include ELO rating
-        earnings: parseFloat(formData.earnings) || 0, // Include team earnings
-        // Include missing team fields
-        elo_rating: formData.elo_rating ? parseInt(formData.elo_rating) : 1000,
-        peak_elo: formData.peak_elo ? parseInt(formData.peak_elo) : null,
-        wins: formData.wins ? parseInt(formData.wins) : null,
-        losses: formData.losses ? parseInt(formData.losses) : null,
-        matches_played: formData.matches_played ? parseInt(formData.matches_played) : null,
+        
+        // Ratings and performance - preserve existing values
+        rating: parseInt(formData.rating) || parseInt(formData.elo_rating) || 1000,
+        elo_rating: parseInt(formData.elo_rating) || parseInt(formData.rating) || 1000,
+        peak_elo: parseInt(formData.peak_elo) || parseInt(formData.peak) || parseInt(formData.elo_rating) || 1000,
+        
+        // Statistics - preserve ALL existing stats
+        wins: parseInt(formData.wins) || 0,
+        losses: parseInt(formData.losses) || 0,
+        matches_played: parseInt(formData.matches_played) || 0,
+        maps_won: parseInt(formData.maps_won) || 0,
+        maps_lost: parseInt(formData.maps_lost) || 0,
+        win_rate: parseFloat(formData.win_rate) || 0,
+        map_win_rate: parseFloat(formData.map_win_rate) || 0,
+        points: parseInt(formData.points) || 0,
+        rank: parseInt(formData.rank) || 0,
+        
+        // Streaks and records - preserve
+        current_streak_count: parseInt(formData.current_streak_count) || 0,
+        current_streak_type: formData.current_streak_type || '',
+        longest_win_streak: parseInt(formData.longest_win_streak) || 0,
+        tournaments_won: parseInt(formData.tournaments_won) || 0,
+        record: formData.record || '',
+        
+        // Financial
+        earnings: parseFloat(formData.earnings) || 0,
+        
+        // Organization
         achievements: formData.achievements || null,
         captain: formData.captain || null,
+        manager: formData.manager || null,
+        owner: formData.owner || null,
+        founded: formData.founded || null,
+        founded_date: formData.founded_date || null,
+        description: formData.description || null,
+        website: formData.website || null,
+        liquipedia_url: formData.liquipedia_url || null,
+        
+        // Meta
         status: formData.status || 'Active',
-        // COACH DATA INTEGRATION - CRITICAL FIX
+        platform: formData.platform || 'PC',
+        game: formData.game || 'Marvel Rivals',
+        division: formData.division || '',
+        player_count: parseInt(formData.player_count) || 0,
+        
+        // COACH DATA INTEGRATION - preserve all coach data
         coach: formData.coach.name || '',
         coach_name: formData.coach.name || '',
-        coach_country: formData.coach.country || 'US',
-        // CRITICAL FIX: Ensure social_links is properly formatted
+        coach_country: formData.coach.country || formData.coach.nationality || 'US',
+        coach_nationality: formData.coach.nationality || formData.coach.country || 'US',
+        coach_image: formData.coach.image || formData.coach.avatar || '',
+        
+        // Social links - merge all sources
         social_links: {
           twitter: formData.socialLinks.twitter || '',
           instagram: formData.socialLinks.instagram || '',
           youtube: formData.socialLinks.youtube || '',
-          website: formData.socialLinks.website || '',
+          website: formData.socialLinks.website || formData.website || '',
           discord: formData.socialLinks.discord || '',
-          tiktok: formData.socialLinks.tiktok || ''
-        }
+          tiktok: formData.socialLinks.tiktok || '',
+          facebook: formData.socialLinks.facebook || '',
+          twitch: formData.socialLinks.twitch || ''
+        },
+        
+        // Include social_media for backend compatibility
+        social_media: JSON.stringify(formData.social_media || formData.socialLinks || {})
       };
+      
+      // Only include fields that have been explicitly set (for update operations)
+      if (isEdit) {
+        // Remove null/undefined values to preserve existing data
+        Object.keys(submitData).forEach(key => {
+          if (submitData[key] === null || submitData[key] === undefined || submitData[key] === '') {
+            // Keep zeros for numeric fields
+            if (typeof formData[key] !== 'number') {
+              delete submitData[key];
+            }
+          }
+        });
+      }
 
       console.log('TeamForm - Submit data prepared:', submitData);
 
