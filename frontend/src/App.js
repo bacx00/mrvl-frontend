@@ -172,12 +172,28 @@ function AppContent() {
       
       // Handle hash-based routing
       if (hash) {
-        const [routeName, ...paramParts] = hash.split('/');
+        // Check if hash contains query params (e.g., #reset-password?token=xxx&email=xxx)
+        const hashParts = hash.split('?');
+        const routePath = hashParts[0];
+        const queryString = hashParts[1] || '';
+        
+        const [routeName, ...paramParts] = routePath.split('/');
         if (ROUTES[routeName]) {
           const params = {};
+          
+          // Parse ID from path if present
           if (paramParts.length > 0) {
-            params.id = paramParts[0]; // Simple ID parameter support
+            params.id = paramParts[0];
           }
+          
+          // Parse query parameters if present
+          if (queryString) {
+            const urlParams = new URLSearchParams(queryString);
+            for (const [key, value] of urlParams.entries()) {
+              params[key] = value;
+            }
+          }
+          
           console.log('🔗 Hash route detected:', routeName, params);
           setCurrentPage(routeName);
           setPageParams(params);

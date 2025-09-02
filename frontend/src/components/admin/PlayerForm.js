@@ -306,7 +306,7 @@ function PlayerForm({ playerId, navigateTo }) {
         role: formData.role,
         main_hero: formData.main_hero || null,
         alt_heroes: formData.alt_heroes || [],
-        hero_pool: formData.hero_pool || [],
+        hero_pool: JSON.stringify(formData.hero_pool || []),
         
         // Personal info
         region: formData.region,
@@ -315,15 +315,12 @@ function PlayerForm({ playerId, navigateTo }) {
         age: formData.age ? parseInt(formData.age) : null,
         birth_date: formData.birth_date || null,
         
-        // Financial - preserve existing earnings
-        earnings: parseFloat(formData.earnings) || 0,
+        // Financial - avoid duplicates
         total_earnings: parseFloat(formData.total_earnings) || parseFloat(formData.earnings) || 0,
         
-        // Performance stats - PRESERVE ALL
-        elo_rating: parseInt(formData.elo_rating) || parseInt(formData.rating) || 1000,
+        // Performance stats - avoid duplicates
         rating: parseInt(formData.rating) || parseInt(formData.elo_rating) || 1000,
         peak_elo: parseInt(formData.peak_elo) || parseInt(formData.peak_rating) || parseInt(formData.elo_rating) || 1000,
-        peak_rating: parseInt(formData.peak_rating) || parseInt(formData.peak_elo) || parseInt(formData.rating) || 1000,
         skill_rating: parseInt(formData.skill_rating) || 1000,
         rank: parseInt(formData.rank) || 0,
         wins: parseInt(formData.wins) || 0,
@@ -331,11 +328,10 @@ function PlayerForm({ playerId, navigateTo }) {
         kda: parseFloat(formData.kda) || 0,
         total_matches: parseInt(formData.total_matches) || 0,
         
-        // Career stats - PRESERVE ALL
+        // Career stats - avoid duplicates
         total_eliminations: parseInt(formData.total_eliminations) || 0,
         total_deaths: parseInt(formData.total_deaths) || 0,
         total_assists: parseInt(formData.total_assists) || 0,
-        overall_kda: parseFloat(formData.overall_kda) || parseFloat(formData.kda) || 0,
         average_damage_per_match: parseFloat(formData.average_damage_per_match) || 0,
         average_healing_per_match: parseFloat(formData.average_healing_per_match) || 0,
         average_damage_blocked_per_match: parseFloat(formData.average_damage_blocked_per_match) || 0,
@@ -357,15 +353,8 @@ function PlayerForm({ playerId, navigateTo }) {
         biography: formData.biography || null,
         liquipedia_url: formData.liquipedia_url || null,
         
-        // Social media
-        social_media: formData.socialLinks,
-        twitter: formData.socialLinks.twitter || null,
-        twitch: formData.socialLinks.twitch || null,
-        youtube: formData.socialLinks.youtube || null,
-        instagram: formData.socialLinks.instagram || null,
-        discord: formData.socialLinks.discord || null,
-        tiktok: formData.socialLinks.tiktok || null,
-        facebook: formData.socialLinks.facebook || null
+        // Social media - send as JSON string (avoid duplicates)
+        social_media: JSON.stringify(formData.socialLinks || {})
       };
       
       // Only include fields that have been explicitly set (for update operations)

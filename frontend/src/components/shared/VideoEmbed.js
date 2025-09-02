@@ -70,12 +70,14 @@ function VideoEmbed({
           startTime,
           domain: typeof window !== 'undefined' ? window.location.hostname : 'staging.mrvl.net'
         });
-        console.log('🎥 VideoEmbed - Generated embed URL:', embedUrl, 'for type:', type, 'id:', id);
-      setEmbedUrl(embedUrl);
+        console.log('🎥 VideoEmbed - Generated embed URL from URL:', embedUrl, 'for type:', validation.video.type, 'id:', validation.video.id);
+        setEmbedUrl(embedUrl);
+        setEmbedError(false); // Clear any previous errors
       } else {
+        console.warn('🎥 VideoEmbed - Invalid URL:', url);
         setEmbedError(true);
       }
-    } else if (id) {
+    } else if (id && type) {
       const embedUrl = generateEmbedUrl(type, id, {
         isMobile,
         isTablet,
@@ -84,8 +86,12 @@ function VideoEmbed({
         startTime,
         domain: typeof window !== 'undefined' ? window.location.hostname : 'staging.mrvl.net'
       });
-      console.log('🎥 VideoEmbed - Generated embed URL:', embedUrl, 'for type:', type, 'id:', id);
+      console.log('🎥 VideoEmbed - Generated embed URL from ID:', embedUrl, 'for type:', type, 'id:', id);
       setEmbedUrl(embedUrl);
+      setEmbedError(false); // Clear any previous errors
+    } else {
+      console.warn('🎥 VideoEmbed - No valid ID or URL provided');
+      setEmbedError(true);
     }
   }, [type, id, url, isVisible, isMobile, isTablet, autoplay, muted, startTime]);
 
@@ -153,7 +159,7 @@ function VideoEmbed({
   }
 
   // VLR.gg-style professional error state
-  if (embedError || !embedUrl) {
+  if (embedError) {
     const videoTypeName = getVideoPlatformName(type);
     
     return (
@@ -199,7 +205,7 @@ function VideoEmbed({
   }
 
   // VLR.gg-style professional loading placeholder
-  if (!isVisible) {
+  if (!isVisible || !embedUrl) {
     const aspectRatio = getVideoAspectRatio(type, isMobile);
     
     return (

@@ -193,7 +193,7 @@ function NewsDetailPage({ params, navigateTo }) {
         setComments(prevComments => [...prevComments, tempComment]);
       }
 
-      const response = await api.post(`/news/${articleId}/comments`, {
+      const response = await api.post(`/public/news/${articleId}/comments`, {
         content: safeString(content.trim()), // Ensure payload content is safely converted
         parent_id: replyToId
       });

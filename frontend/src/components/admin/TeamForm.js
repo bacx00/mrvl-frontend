@@ -337,9 +337,8 @@ function TeamForm({ teamId, navigateTo }) {
         region: formData.region,
         country: formData.country,
         
-        // Ratings and performance - preserve existing values
+        // Ratings and performance - preserve existing values (avoid duplicates)
         rating: parseInt(formData.rating) || parseInt(formData.elo_rating) || 1000,
-        elo_rating: parseInt(formData.elo_rating) || parseInt(formData.rating) || 1000,
         peak_elo: parseInt(formData.peak_elo) || parseInt(formData.peak) || parseInt(formData.elo_rating) || 1000,
         
         // Statistics - preserve ALL existing stats
@@ -381,27 +380,21 @@ function TeamForm({ teamId, navigateTo }) {
         division: formData.division || '',
         player_count: parseInt(formData.player_count) || 0,
         
-        // COACH DATA INTEGRATION - preserve all coach data
+        // COACH DATA INTEGRATION - preserve all coach data (avoid duplicates)
         coach: formData.coach.name || '',
-        coach_name: formData.coach.name || '',
-        coach_country: formData.coach.country || formData.coach.nationality || 'US',
         coach_nationality: formData.coach.nationality || formData.coach.country || 'US',
         coach_image: formData.coach.image || formData.coach.avatar || '',
         
-        // Social links - merge all sources
-        social_links: {
+        // Social links - converted to JSON string for backend
+        social_media: JSON.stringify({
           twitter: formData.socialLinks.twitter || '',
           instagram: formData.socialLinks.instagram || '',
           youtube: formData.socialLinks.youtube || '',
-          website: formData.socialLinks.website || formData.website || '',
           discord: formData.socialLinks.discord || '',
           tiktok: formData.socialLinks.tiktok || '',
           facebook: formData.socialLinks.facebook || '',
           twitch: formData.socialLinks.twitch || ''
-        },
-        
-        // Include social_media for backend compatibility
-        social_media: JSON.stringify(formData.social_media || formData.socialLinks || {})
+        })
       };
       
       // Only include fields that have been explicitly set (for update operations)
