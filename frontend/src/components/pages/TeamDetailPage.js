@@ -197,39 +197,92 @@ function TeamDetailPage({ params, navigateTo }) {
     try {
       setMatchesLoading(true);
       
-      // Fetch all match categories in parallel
-      const [upcomingResponse, liveResponse, recentResponse, statsResponse] = await Promise.all([
-        api.get(`/teams/${teamId}/matches/upcoming?per_page=10&page=${page}`).catch(() => ({ data: { data: [], meta: {} } })),
-        api.get(`/teams/${teamId}/matches/live`).catch(() => ({ data: { data: [] } })),
-        api.get(`/teams/${teamId}/matches/recent?per_page=10&page=${page}`).catch(() => ({ data: { data: [], meta: {} } })),
-        api.get(`/teams/${teamId}/matches/stats`).catch(() => ({ data: { data: {} } }))
-      ]);
+      // Fetch matches from public API and filter for this team
+      const matchesResponse = await api.get('/public/matches').catch(() => ({ data: [] }));
+      const allMatches = Array.isArray(matchesResponse.data) ? matchesResponse.data : (matchesResponse.data.data || []);
       
-      // Set upcoming matches
-      const upcomingData = upcomingResponse.data.data || [];
-      setUpcomingMatches(upcomingData);
+      // Filter matches for this team - check both root level IDs and nested team objects
+      const teamMatches = allMatches.filter(match => 
+        match.team1_id === parseInt(teamId) || 
+        match.team2_id === parseInt(teamId) ||
+        match.team1?.id === parseInt(teamId) || 
+        match.team2?.id === parseInt(teamId)
+      );
       
-      // Set live matches
-      const liveData = liveResponse.data.data || [];
-      setLiveMatches(liveData);
+      // Separate matches by status
+      const now = new Date();
+      const upcoming = [];
+      const live = [];
+      const recent = [];
       
-      // Set recent matches
-      const recentData = recentResponse.data.data || [];
-      setRecentMatches(recentData);
+      teamMatches.forEach(match => {
+        // Format match data for display - check both root level and nested team objects
+        const team1Id = match.team1?.id || match.team1_id;
+        const team2Id = match.team2?.id || match.team2_id;
+        const isTeam1 = team1Id === parseInt(teamId);
+        
+        const formattedMatch = {
+          ...match,
+          opponent: isTeam1 ? {
+            id: team2Id,
+            name: match.team2?.name || match.team2_name || 'TBD',
+            short_name: match.team2?.short_name || match.team2_short || 'TBD',
+            logo: match.team2?.logo || match.team2_logo
+          } : {
+            id: team1Id,
+            name: match.team1?.name || match.team1_name || 'TBD',
+            short_name: match.team1?.short_name || match.team1_short || 'TBD',
+            logo: match.team1?.logo || match.team1_logo
+          },
+          team_score: isTeam1 ? match.team1_score : match.team2_score,
+          opponent_score: isTeam1 ? match.team2_score : match.team1_score,
+          result: match.status === 'completed' ? 
+            (isTeam1 ? (match.team1_score > match.team2_score ? 'W' : 'L') : 
+             (match.team2_score > match.team1_score ? 'W' : 'L')) : null,
+          score: match.status === 'completed' ? 
+            `${isTeam1 ? match.team1_score : match.team2_score} - ${isTeam1 ? match.team2_score : match.team1_score}` : null,
+          event: match.event || { 
+            id: match.event_id, 
+            name: match.event_name || 'Regular Match',
+            logo: match.event_logo 
+          },
+          date: match.match_info?.scheduled_at || match.scheduled_at || match.played_at || match.created_at,
+          format: match.format || `BO${match.maps_data?.length || 3}`
+        };
+        
+        if (match.status === 'live' || match.status === 'ongoing') {
+          live.push(formattedMatch);
+        } else if (match.status === 'completed') {
+          recent.push(formattedMatch);
+        } else if (match.status === 'scheduled' || match.status === 'upcoming') {
+          upcoming.push(formattedMatch);
+        }
+      });
       
-      // Set pagination for active tab
-      if (recentResponse.data.meta) {
-        setPagination(recentResponse.data.meta);
-      }
+      // Sort matches
+      upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
+      recent.sort((a, b) => new Date(b.date) - new Date(a.date));
       
-      // Set match statistics
-      const statsData = statsResponse.data.data || {};
-      setMatchStats(prev => ({ ...prev, ...statsData }));
+      // Set state
+      setUpcomingMatches(upcoming);
+      setLiveMatches(live);
+      setRecentMatches(recent);
+      
+      // Calculate stats
+      const wins = recent.filter(m => m.result === 'W').length;
+      const losses = recent.filter(m => m.result === 'L').length;
+      setMatchStats(prev => ({ 
+        ...prev, 
+        wins,
+        losses,
+        winRate: recent.length > 0 ? ((wins / recent.length) * 100).toFixed(1) : 0
+      }));
       
       console.log('Team matches loaded:', {
-        upcoming: upcomingData.length,
-        live: liveData.length,
-        recent: recentData.length
+        upcoming: upcoming.length,
+        live: live.length,
+        recent: recent.length,
+        total: teamMatches.length
       });
       
     } catch (error) {
@@ -643,250 +696,31 @@ function TeamDetailPage({ params, navigateTo }) {
             )}
           </div>
 
-          {/* Match History Section - VLR.gg Style */}
-          <div className="card">
-            {/* Match Tabs */}
-            <div className="border-b border-gray-200 dark:border-gray-700">
-              <div className="flex">
-                <button
-                  onClick={() => handleMatchTabChange('upcoming')}
-                  className={`px-6 py-4 text-sm font-medium transition-colors flex items-center space-x-2 ${
-                    activeMatchTab === 'upcoming'
-                      ? 'text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400 bg-red-50 dark:bg-red-900/10'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                  }`}
-                >
-                  <span>Upcoming</span>
-                  {upcomingMatches.length > 0 && (
-                    <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
-                      {upcomingMatches.length}
-                    </span>
-                  )}
-                </button>
-                <button
-                  onClick={() => handleMatchTabChange('live')}
-                  className={`px-6 py-4 text-sm font-medium transition-colors flex items-center space-x-2 ${
-                    activeMatchTab === 'live'
-                      ? 'text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400 bg-red-50 dark:bg-red-900/10'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                  }`}
-                >
-                  <span>Live</span>
-                  {liveMatches.length > 0 && (
-                    <span className="bg-red-600 text-white text-xs px-2 py-1 rounded-full animate-pulse">
-                      {liveMatches.length}
-                    </span>
-                  )}
-                </button>
-                <button
-                  onClick={() => handleMatchTabChange('recent')}
-                  className={`px-6 py-4 text-sm font-medium transition-colors flex items-center space-x-2 ${
-                    activeMatchTab === 'recent'
-                      ? 'text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400 bg-red-50 dark:bg-red-900/10'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                  }`}
-                >
-                  <span>Recent Results</span>
-                  {recentMatches.length > 0 && (
-                    <span className="bg-gray-600 text-white text-xs px-2 py-1 rounded-full">
-                      {recentMatches.length}
-                    </span>
-                  )}
-                </button>
+          {/* Match History Section - vlr.gg style with larger cards (EXACTLY LIKE PLAYER PROFILE) */}
+          <div className="card p-6">
+
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-red-600 dark:text-red-400">Match History</h3>
+                {recentMatches.length > 0 && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Showing {((matchHistoryPage - 1) * MATCHES_PER_PAGE) + 1}-{Math.min(matchHistoryPage * MATCHES_PER_PAGE, recentMatches.length)} of {recentMatches.length} matches
+                  </p>
+                )}
               </div>
-            </div>
-
-            {/* Match Content */}
-            <div className="p-6">
-              {matchesLoading ? (
-                <div className="text-center py-8">
-                  <div className="loading-spinner mx-auto mb-4"></div>
-                  <p className="text-gray-600 dark:text-gray-400">Loading matches...</p>
+              {matchesLoading && (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Loading...</span>
                 </div>
-              ) : (
+              )}
+            </div>
+            
+            {/* Match Cards - vlr.gg style */}
+            <div className="space-y-4">
+              {recentMatches.length > 0 ? (
                 <>
-                  {/* Upcoming Matches */}
-                  {activeMatchTab === 'upcoming' && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
-                        Upcoming Matches ({upcomingMatches.length})
-                      </h3>
-                      {upcomingMatches.length > 0 ? (
-                        <div className="space-y-3">
-                          {upcomingMatches.map((match, index) => (
-                            <div 
-                              key={match.id || index}
-                              onClick={() => navigateTo('match-detail', { id: match.id })}
-                              className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/20 cursor-pointer transition-colors border border-blue-200 dark:border-blue-800"
-                            >
-                              <div className="flex items-center space-x-4">
-                                {/* Event Logo - VLR.gg Style */}
-                                {match.event_logo && (
-                                  <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
-                                    <img 
-                                      src={match.event_logo} 
-                                      alt={match.event_name} 
-                                      className="w-full h-full object-cover"
-                                      onError={(e) => { e.target.src = getImageUrl(null, 'event-banner'); }}
-                                    />
-                                  </div>
-                                )}
-                                
-                                {/* Time Badge */}
-                                <div className="text-blue-600 dark:text-blue-400 font-bold text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded">
-                                  {match.time_until || 'SCHEDULED'}
-                                </div>
-                                
-                                {/* Teams Display - VLR.gg Style with Both Logos */}
-                                <div className="flex items-center space-x-3">
-                                  {/* Current Team Logo */}
-                                  <TeamLogo team={team} size="w-8 h-8" />
-                                  
-                                  {/* VS Badge */}
-                                  <div className="text-gray-400 font-medium text-sm">
-                                    VS
-                                  </div>
-                                  
-                                  {/* Opponent Logo */}
-                                  <TeamLogo team={match.opponent} size="w-8 h-8" />
-                                  
-                                  {/* Match Info */}
-                                  <div>
-                                    <div className="font-medium text-gray-900 dark:text-white">
-                                      {match.opponent?.name || 'TBD'}
-                                    </div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-500">
-                                      {match.event_name} • {match.format || 'BO3'}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              {/* Date & Time */}
-                              <div className="text-right">
-                                <div className="text-sm text-gray-600 dark:text-gray-400">
-                                  {formatDate(match.scheduled_at)}
-                                </div>
-                                <div className="text-xs text-gray-500 dark:text-gray-500">
-                                  {new Date(match.scheduled_at).toLocaleTimeString('en-US', { 
-                                    hour: '2-digit', 
-                                    minute: '2-digit' 
-                                  })}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <div className="text-gray-500 dark:text-gray-500">No upcoming matches scheduled</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Live Matches */}
-                  {activeMatchTab === 'live' && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4 flex items-center">
-                        <span className="w-3 h-3 bg-red-500 rounded-full mr-2 animate-pulse"></span>
-                        Live Matches ({liveMatches.length})
-                      </h3>
-                      {liveMatches.length > 0 ? (
-                        <div className="space-y-3">
-                          {liveMatches.map((match, index) => (
-                            <div 
-                              key={match.id || index}
-                              onClick={() => navigateTo('match-detail', { id: match.id })}
-                              className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/10 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 cursor-pointer transition-colors border border-red-200 dark:border-red-800"
-                            >
-                              <div className="flex items-center space-x-4">
-                                {/* Event Logo - VLR.gg Style */}
-                                {match.event_logo && (
-                                  <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
-                                    <img 
-                                      src={match.event_logo} 
-                                      alt={match.event_name} 
-                                      className="w-full h-full object-cover"
-                                      onError={(e) => { e.target.src = getImageUrl(null, 'event-banner'); }}
-                                    />
-                                  </div>
-                                )}
-                                
-                                {/* LIVE Badge */}
-                                <div className="bg-red-600 text-white px-3 py-1 text-xs font-bold rounded-full animate-pulse">
-                                  LIVE
-                                </div>
-                                
-                                {/* Teams Display - VLR.gg Style with Both Logos */}
-                                <div className="flex items-center space-x-3">
-                                  {/* Current Team Logo */}
-                                  <TeamLogo team={team} size="w-8 h-8" />
-                                  
-                                  {/* Live Score */}
-                                  <div className="text-center min-w-[60px]">
-                                    <div className="text-lg font-bold text-gray-900 dark:text-white">
-                                      <span className="text-red-600 dark:text-red-400">{match.team_score || 0}</span>
-                                      <span className="mx-1 text-gray-400">-</span>
-                                      <span className="text-blue-600 dark:text-blue-400">{match.opponent_score || 0}</span>
-                                    </div>
-                                  </div>
-                                  
-                                  {/* Opponent Logo */}
-                                  <TeamLogo team={match.opponent} size="w-8 h-8" />
-                                  
-                                  {/* Match Info */}
-                                  <div>
-                                    <div className="font-medium text-gray-900 dark:text-white">
-                                      {match.opponent?.name || 'TBD'}
-                                    </div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-500">
-                                      {match.event_name} • Map {match.current_map || 1}/{match.maps_total || 3}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              {/* Format */}
-                              <div className="text-right">
-                                <div className="text-sm text-gray-600 dark:text-gray-400">
-                                  {match.format || 'BO3'}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <div className="text-gray-500 dark:text-gray-500">No live matches</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Recent Results - Match History Style (Same as Player Profile) */}
-                  {activeMatchTab === 'recent' && (
-                    <div>
-                      <div className="flex items-center justify-between mb-6">
-                        <div>
-                          <h3 className="text-xl font-bold text-red-600 dark:text-red-400">Match History</h3>
-                          {recentMatches.length > 0 && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                              Showing {((matchHistoryPage - 1) * MATCHES_PER_PAGE) + 1}-{Math.min(matchHistoryPage * MATCHES_PER_PAGE, recentMatches.length)} of {recentMatches.length} matches
-                            </p>
-                          )}
-                        </div>
-                        {matchesLoading && (
-                          <div className="flex items-center space-x-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
-                            <span className="text-sm text-gray-600 dark:text-gray-400">Loading...</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {recentMatches.length > 0 ? (
-                        <div className="space-y-4">
-                          {recentMatches
+                  {recentMatches
                             .slice((matchHistoryPage - 1) * MATCHES_PER_PAGE, matchHistoryPage * MATCHES_PER_PAGE)
                             .map((match, index) => {
                             // Handle new API response format
@@ -1069,15 +903,11 @@ function TeamDetailPage({ params, navigateTo }) {
                               </button>
                             </div>
                           )}
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <div className="text-gray-500 dark:text-gray-500">No recent matches</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-gray-500 dark:text-gray-500">No recent matches</div>
+                </div>
               )}
             </div>
           </div>

@@ -338,8 +338,31 @@ function AuthModal({ isOpen, onClose }) {
       });
 
       if (response.success) {
-        setSuccess('Password reset link sent to your email address');
-        setShowForgotPassword(false);
+        // Check if reset link is included in response (for development/email issues)
+        if (response.reset_link) {
+          setSuccess(
+            <div>
+              <p className="mb-2">{response.message}</p>
+              <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{response.note}</p>
+                <a 
+                  href={response.reset_link} 
+                  className="text-xs text-blue-600 dark:text-blue-400 break-all hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Click here to reset password
+                </a>
+              </div>
+            </div>
+          );
+        } else {
+          setSuccess('Password reset link sent to your email address');
+        }
+        // Don't close the modal if we're showing the link
+        if (!response.reset_link) {
+          setShowForgotPassword(false);
+        }
       } else {
         setError(response.message || 'Failed to send reset link');
       }

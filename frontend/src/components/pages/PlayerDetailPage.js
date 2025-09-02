@@ -15,6 +15,10 @@ function PlayerDetailPage({ params, navigateTo }) {
   const [mapStats, setMapStats] = useState([]);
   const [eventStats, setEventStats] = useState([]);
   const [expandedMatch, setExpandedMatch] = useState(null);
+  
+  // Pagination for match history
+  const [matchHistoryPage, setMatchHistoryPage] = useState(1);
+  const MATCHES_PER_PAGE = 4;
   const [loading, setLoading] = useState(true);
   const [dataLoading, setDataLoading] = useState(false);
   const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, per_page: 20, total: 0 });
@@ -57,6 +61,7 @@ function PlayerDetailPage({ params, navigateTo }) {
       setHeroStats([]);
       setPerformanceStats(null);
       setMapStats([]);
+      setMatchHistoryPage(1); // Reset pagination
       setEventStats([]);
       setExpandedMatch(null);
       setSelectedMatch('');
@@ -1302,7 +1307,14 @@ function PlayerDetailPage({ params, navigateTo }) {
           {/* Match History Section - vlr.gg style with larger cards */}
           <div className="card p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-red-600 dark:text-red-400">Match History</h3>
+              <div>
+                <h3 className="text-xl font-bold text-red-600 dark:text-red-400">Match History</h3>
+                {matchHistory.length > 0 && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Showing {((matchHistoryPage - 1) * MATCHES_PER_PAGE) + 1}-{Math.min(matchHistoryPage * MATCHES_PER_PAGE, matchHistory.length)} of {matchHistory.length} matches
+                  </p>
+                )}
+              </div>
               {dataLoading && (
                 <div className="flex items-center space-x-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
@@ -1314,7 +1326,9 @@ function PlayerDetailPage({ params, navigateTo }) {
             {/* Match Cards - vlr.gg style */}
             {matchHistory.length > 0 ? (
               <div className="space-y-4">
-                {matchHistory.map((match) => {
+                {matchHistory
+                  .slice((matchHistoryPage - 1) * MATCHES_PER_PAGE, matchHistoryPage * MATCHES_PER_PAGE)
+                  .map((match) => {
                   const playerTeam = match.team || match.player_team || { name: '100 Thieves', logo: '/storage/teams/logos/100t-logo.png' };
                   const opponentTeam = match.opponent || match.opponent_team || { name: 'BOOM Esports', logo: null };
                   const isWin = match.result === 'L' ? false : (match.result === 'W' || match.result === 'WIN');
@@ -1527,26 +1541,26 @@ function PlayerDetailPage({ params, navigateTo }) {
                   );
                 })}
                 
-                {/* Pagination */}
-                {pagination.last_page > 1 && (
+                {/* Pagination for Match History */}
+                {Math.ceil(matchHistory.length / MATCHES_PER_PAGE) > 1 && (
                   <div className="flex justify-center items-center space-x-2 mt-6">
                     <button
-                      onClick={() => handlePageChange(Math.max(1, pagination.current_page - 1))}
-                      disabled={pagination.current_page === 1}
-                      className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50 hover:bg-gray-300 dark:hover:bg-gray-600"
+                      onClick={() => setMatchHistoryPage(Math.max(1, matchHistoryPage - 1))}
+                      disabled={matchHistoryPage === 1}
+                      className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                     >
                       Previous
                     </button>
                     
                     <div className="flex space-x-1">
-                      {[...Array(Math.min(5, pagination.last_page))].map((_, i) => {
+                      {[...Array(Math.ceil(matchHistory.length / MATCHES_PER_PAGE))].map((_, i) => {
                         const page = i + 1;
                         return (
                           <button
                             key={page}
-                            onClick={() => handlePageChange(page)}
-                            className={`px-3 py-1 rounded ${
-                              pagination.current_page === page
+                            onClick={() => setMatchHistoryPage(page)}
+                            className={`px-3 py-1 rounded transition-colors ${
+                              matchHistoryPage === page
                                 ? 'bg-red-600 text-white'
                                 : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                             }`}
@@ -1558,9 +1572,9 @@ function PlayerDetailPage({ params, navigateTo }) {
                     </div>
                     
                     <button
-                      onClick={() => handlePageChange(Math.min(pagination.last_page, pagination.current_page + 1))}
-                      disabled={pagination.current_page === pagination.last_page}
-                      className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50 hover:bg-gray-300 dark:hover:bg-gray-600"
+                      onClick={() => setMatchHistoryPage(Math.min(Math.ceil(matchHistory.length / MATCHES_PER_PAGE), matchHistoryPage + 1))}
+                      disabled={matchHistoryPage === Math.ceil(matchHistory.length / MATCHES_PER_PAGE)}
+                      className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                     >
                       Next
                     </button>
