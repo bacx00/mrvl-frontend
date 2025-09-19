@@ -75,9 +75,9 @@ export const API_ENDPOINTS = {
 
   // News & Forums
   NEWS: {
-    LIST: '/api/news',
-    DETAIL: '/api/news/{slug}',
-    CATEGORIES: '/api/news/categories',
+    LIST: '/api/public/news',
+    DETAIL: '/api/public/news/{id}',
+    CATEGORIES: '/api/public/news/categories',
     ADMIN_LIST: '/api/admin/news',
     ADMIN_DETAIL: '/api/admin/news/{id}',
     CREATE: '/api/admin/news',
@@ -86,10 +86,17 @@ export const API_ENDPOINTS = {
   },
 
   FORUMS: {
-    THREADS: '/api/forums/threads',
-    THREAD_DETAIL: '/api/forums/threads/{id}',
-    CATEGORIES: '/api/forums/categories',
-    CREATE: '/api/forums/threads',
+    THREADS: '/api/public/forums/threads',
+    THREAD_DETAIL: '/api/public/forums/threads/{id}',
+    CATEGORIES: '/api/public/forums/categories',
+    HOT: '/api/public/forums/hot',
+    TRENDING: '/api/public/forums/trending',
+    OVERVIEW: '/api/public/forums/overview',
+    SEARCH: '/api/public/forums/search',
+    THREAD_POSTS: '/api/public/forums/threads/{id}/posts',
+    CREATE: '/api/user/forums/threads',
+    VOTE_THREAD: '/api/forums/threads/{threadId}/vote',
+    VOTE_POST: '/api/forums/posts/{postId}/vote',
     ADMIN_PIN: '/api/admin/forums/threads/{id}/pin',
     ADMIN_UNPIN: '/api/admin/forums/threads/{id}/unpin',
     ADMIN_LOCK: '/api/admin/forums/threads/{id}/lock',

@@ -8,11 +8,16 @@ function AdminNews() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // Modal and form states
-  const [showNewsModal, setShowNewsModal] = useState(false);
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
+
+  // View management - replace inline forms with native form views
+  const [currentView, setCurrentView] = useState('list'); // 'list', 'create', 'edit'
+  const [editingNewsId, setEditingNewsId] = useState(null);
   const [editingNews, setEditingNews] = useState(null);
+  const [showNewsModal, setShowNewsModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+
+  // Modal and form states (keeping only category modal for now)
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [deletingCategory, setDeletingCategory] = useState(null);
   const [showReassignModal, setShowReassignModal] = useState(false);
@@ -48,14 +53,6 @@ function AdminNews() {
   const [featuredArticles, setFeaturedArticles] = useState([]);
   const [showFeaturedModal, setShowFeaturedModal] = useState(false);
 
-  // Export functionality
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [exportOptions, setExportOptions] = useState({
-    format: 'csv',
-    dateRange: 'all',
-    includeComments: true,
-    includeAnalytics: true
-  });
   
   // Category form data
   const [categoryFormData, setCategoryFormData] = useState({
@@ -192,59 +189,116 @@ function AdminNews() {
   }, [news, filters]);
 
   // News CRUD Operations
+  // Navigation functions for native form views
   const handleCreateNews = () => {
-    setNewsFormData({
-      title: '',
-      content: '',
-      excerpt: '',
-      category_id: null,
-      status: 'draft',
-      featured_image: '',
-      tags: '',
-      author: '',
-      published_at: ''
-    });
-    setEditingNews(null);
-    setShowNewsModal(true);
+    setCurrentView('create');
+    setEditingNewsId(null);
   };
 
   const handleEditNews = (article) => {
-    setEditingNews(article);
-    setNewsFormData({
-      title: article.title || '',
-      content: article.content || '',
-      excerpt: article.excerpt || '',
-      category_id: article.category_id || null,
-      status: article.status || 'draft',
-      featured_image: article.featured_image || '',
-      tags: Array.isArray(article.tags) ? article.tags.join(', ') : (article.tags || ''),
-      author: article.author || '',
-      published_at: article.published_at || '',
-      scheduled_at: article.scheduled_at || '',
-      is_featured: article.featured || false,
-      allow_comments: article.allow_comments !== false,
-      seo_title: article.seo_title || '',
-      seo_description: article.seo_description || '',
-      reading_time: article.reading_time || 0
-    });
-    setShowNewsModal(true);
+    setCurrentView('edit');
+    setEditingNewsId(article.id);
+  };
+
+  const handleBackToList = () => {
+    setCurrentView('list');
+    setEditingNewsId(null);
+    // Refresh the news list when returning from form
+    fetchNews();
   };
 
   // Featured article management
   const handleToggleFeatured = async (articleId, isFeatured) => {
+    const newFeaturedStatus = !isFeatured;
+
+    console.log('🏆 Toggling featured status:', { articleId, isFeatured, newFeaturedStatus });
+
+    // Optimistic update for real-time UI - handle all possible featured property names
+    setNews(prevNews =>
+      prevNews.map(article =>
+        article.id === articleId
+          ? {
+              ...article,
+              featured: newFeaturedStatus,
+              is_featured: newFeaturedStatus,
+              // Handle other possible property names from backend
+              meta: {
+                ...article.meta,
+                featured: newFeaturedStatus
+              }
+            }
+          : article
+      )
+    );
+
+    // Update featured articles list optimistically
+    if (newFeaturedStatus) {
+      const articleToFeature = news.find(a => a.id === articleId);
+      if (articleToFeature) {
+        setFeaturedArticles(prev => [...prev, { ...articleToFeature, featured: true, is_featured: true }]);
+      }
+    } else {
+      setFeaturedArticles(prev => prev.filter(a => a.id !== articleId));
+    }
+
     try {
       const response = await api.put(`/admin/news-moderation/${articleId}`, {
-        featured: !isFeatured
+        featured: newFeaturedStatus
       });
-      
-      if (response.data?.success !== false) {
-        await fetchNews();
-        await fetchFeaturedArticles();
-        alert(`Article ${!isFeatured ? 'featured' : 'unfeatured'} successfully!`);
-      } else {
+
+      if (response.data?.success === false) {
+        // Revert on failure
+        setNews(prevNews =>
+          prevNews.map(article =>
+            article.id === articleId
+              ? { ...article, featured: isFeatured, is_featured: isFeatured }
+              : article
+          )
+        );
+
+        // Revert featured articles
+        if (newFeaturedStatus) {
+          setFeaturedArticles(prev => prev.filter(a => a.id !== articleId));
+        } else {
+          const articleToRestore = news.find(a => a.id === articleId);
+          if (articleToRestore) {
+            setFeaturedArticles(prev => [...prev, { ...articleToRestore, featured: true, is_featured: true }]);
+          }
+        }
+
         throw new Error(response.data?.message || 'Feature toggle failed');
       }
+
+      // Success - optionally update with server data
+      if (response.data?.article) {
+        setNews(prevNews =>
+          prevNews.map(article =>
+            article.id === articleId
+              ? { ...article, ...response.data.article }
+              : article
+          )
+        );
+      }
     } catch (error) {
+      // Revert on error
+      setNews(prevNews =>
+        prevNews.map(article =>
+          article.id === articleId
+            ? { ...article, featured: isFeatured, is_featured: isFeatured }
+            : article
+        )
+      );
+
+      // Revert featured articles
+      if (newFeaturedStatus) {
+        setFeaturedArticles(prev => prev.filter(a => a.id !== articleId));
+      } else {
+        const articleToRestore = news.find(a => a.id === articleId);
+        if (articleToRestore) {
+          setFeaturedArticles(prev => [...prev, { ...articleToRestore, featured: true, is_featured: true }]);
+        }
+      }
+
       console.error('Error toggling featured status:', error);
       alert('Failed to update featured status');
     }
@@ -291,38 +345,6 @@ function AdminNews() {
     } catch (error) {
       console.error('Error scheduling article:', error);
       alert('Failed to schedule article');
-    }
-  };
-
-  // Export functionality
-  const handleExportData = async () => {
-    try {
-      const params = new URLSearchParams({
-        format: exportOptions.format,
-        dateRange: exportOptions.dateRange,
-        includeComments: exportOptions.includeComments,
-        includeAnalytics: exportOptions.includeAnalytics
-      });
-      
-      const response = await api.get(`/admin/news-moderation/export?${params}`, {
-        responseType: 'blob'
-      });
-      
-      // Create download link
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `news-export-${new Date().toISOString().split('T')[0]}.${exportOptions.format}`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      
-      setShowExportModal(false);
-      alert('Export completed successfully!');
-    } catch (error) {
-      console.error('Error exporting data:', error);
-      alert('Failed to export data');
     }
   };
 
@@ -386,15 +408,28 @@ function AdminNews() {
 
   const handleDeleteNews = async (newsId, title) => {
     if (window.confirm(`Are you sure you want to delete "${title}"?`)) {
+      // Store original news for rollback
+      const originalNews = [...news];
+      const originalFeatured = [...featuredArticles];
+
+      // Optimistic update - remove article immediately
+      setNews(prevNews => prevNews.filter(article => article.id !== newsId));
+      setFeaturedArticles(prevFeatured => prevFeatured.filter(article => article.id !== newsId));
+
       try {
         const response = await api.delete(`/admin/news-moderation/${newsId}`);
-        if (response.data?.success !== false) {
-          await fetchNews();
-          alert('News deleted successfully!');
-        } else {
+
+        if (response.data?.success === false) {
+          // Revert on failure
+          setNews(originalNews);
+          setFeaturedArticles(originalFeatured);
           throw new Error(response.data?.message || 'Delete failed');
         }
+        // Success - article already removed from UI
       } catch (error) {
+        // Revert on error
+        setNews(originalNews);
+        setFeaturedArticles(originalFeatured);
         console.error('Error deleting news:', error);
         const errorMessage = error.response?.data?.message || error.message || 'Error deleting news';
         alert(errorMessage);
@@ -632,6 +667,24 @@ function AdminNews() {
     );
   }
 
+  // Conditional rendering based on current view
+  if (currentView === 'create') {
+    return (
+      <NewsForm
+        navigateTo={handleBackToList}
+      />
+    );
+  }
+
+  if (currentView === 'edit' && editingNewsId) {
+    return (
+      <NewsForm
+        newsId={editingNewsId}
+        navigateTo={handleBackToList}
+      />
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -640,14 +693,11 @@ function AdminNews() {
           <p className="text-gray-600 dark:text-gray-400">Manage news articles and content</p>
         </div>
         <div className="flex space-x-3">
-          <button onClick={handleCreateCategory} className="btn btn-secondary">
+          <button onClick={() => window.location.href = '/moderator'} className="btn btn-secondary">
             Manage Categories
           </button>
           <button onClick={() => setShowFeaturedModal(true)} className="btn btn-info">
             Manage Featured
-          </button>
-          <button onClick={() => setShowExportModal(true)} className="btn btn-outline-secondary">
-            Export Data
           </button>
           <button onClick={handleCreateNews} className="btn btn-primary">
             Create News Article
@@ -871,11 +921,11 @@ function AdminNews() {
                   >
                     Edit
                   </button>
-                  <button 
-                    onClick={() => handleToggleFeatured(article.id, article.featured)}
+                  <button
+                    onClick={() => handleToggleFeatured(article.id, article.featured || article.is_featured || article.meta?.featured)}
                     className="btn btn-outline-info text-sm"
                   >
-                    {article.featured ? 'Unfeature' : 'Feature'}
+                    {(article.featured || article.is_featured || article.meta?.featured) ? 'Unfeature' : 'Feature'}
                   </button>
                   <button className="btn btn-outline-secondary text-sm">
                     View Analytics
@@ -1190,105 +1240,6 @@ function AdminNews() {
         </div>
       )}
 
-      {/* Export Data Modal */}
-      {showExportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Export News Data
-              </h3>
-              <button
-                onClick={() => setShowExportModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Export Format
-                </label>
-                <select
-                  value={exportOptions.format}
-                  onChange={(e) => setExportOptions({...exportOptions, format: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-                >
-                  <option value="csv">CSV (Comma Separated)</option>
-                  <option value="xlsx">Excel (XLSX)</option>
-                  <option value="json">JSON</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Date Range
-                </label>
-                <select
-                  value={exportOptions.dateRange}
-                  onChange={(e) => setExportOptions({...exportOptions, dateRange: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-                >
-                  <option value="all">All Time</option>
-                  <option value="today">Today</option>
-                  <option value="week">Last 7 Days</option>
-                  <option value="month">Last 30 Days</option>
-                  <option value="year">Last Year</option>
-                </select>
-              </div>
-              
-              <div className="space-y-3">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Include Additional Data
-                </label>
-                
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={exportOptions.includeComments}
-                      onChange={(e) => setExportOptions({...exportOptions, includeComments: e.target.checked})}
-                      className="rounded border-gray-300 dark:border-gray-600"
-                    />
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
-                      Include Comments Data
-                    </span>
-                  </label>
-                  
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={exportOptions.includeAnalytics}
-                      onChange={(e) => setExportOptions({...exportOptions, includeAnalytics: e.target.checked})}
-                      className="rounded border-gray-300 dark:border-gray-600"
-                    />
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
-                      Include Analytics (views, engagement)
-                    </span>
-                  </label>
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex space-x-3">
-              <button
-                onClick={() => setShowExportModal(false)}
-                className="btn btn-secondary flex-1"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleExportData}
-                className="btn btn-primary flex-1"
-              >
-                Export Data
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Featured Articles Management Modal */}
       {showFeaturedModal && (

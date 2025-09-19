@@ -13,11 +13,40 @@ import liveScoreSync from '../../utils/LiveScoreSyncSimple';
  * - No Pusher/WebSocket dependencies
  */
 const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
-  const { isAuthenticated, user, isAdmin } = useAuth();
+  const { isAuthenticated, user, isAdmin, api } = useAuth();
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://staging.mrvl.net';
   const token = localStorage.getItem('authToken');
   const hasAdminAccess = isAuthenticated && token && user && isAdmin();
-  
+
+  // Get match ID from URL parameters if not provided as prop
+  const getMatchIdFromUrl = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('match_id');
+  };
+
+  const [matchFromApi, setMatchFromApi] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Use provided match or fetch from API using URL parameter
+  const currentMatch = match || matchFromApi;
+  // Fetch match from API if match ID is provided in URL
+  useEffect(() => {
+    const matchIdFromUrl = getMatchIdFromUrl();
+    if (matchIdFromUrl && !match) {
+      setLoading(true);
+      api.get(`/matches/${matchIdFromUrl}`)
+        .then(response => {
+          setMatchFromApi(response.data?.data || response.data);
+        })
+        .catch(error => {
+          console.error('Error fetching match:', error);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [match, api]);
+
   // State Management
   const [matchData, setMatchData] = useState(() => {
     const defaultMaps = {};
@@ -66,12 +95,12 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
 
   // Initialize match data on mount
   useEffect(() => {
-    if (match?.id) {
+    if (currentMatch?.id) {
       hasLoadedInitialData.current = false; // Reset flag for new match
       loadMatchData();
       
       // Subscribe to live updates
-      const unsubscribe = liveScoreSync.subscribe(match.id, handleLiveUpdate);
+      const unsubscribe = liveScoreSync.subscribe(currentMatch.id, handleLiveUpdate);
       
       return () => {
         isUnmountedRef.current = true;
@@ -82,15 +111,15 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
         }
       };
     }
-  }, [match?.id]);
+  }, [currentMatch?.id]);
 
   // Load initial match data
   const loadMatchData = async () => {
-    if (!match?.id) return;
+    if (!currentMatch?.id) return;
     
     setIsLoading(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/api/matches/${match.id}`, {
+      const response = await fetch(`${BACKEND_URL}/api/matches/${currentMatch.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json'
@@ -283,7 +312,7 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
 
   // Save match data (broadcasts to all tabs immediately)
   const saveMatchData = useCallback(async (includeMapSwitch = false) => {
-    if (!match?.id || !hasAdminAccess) return;
+    if (!currentMatch?.id || !hasAdminAccess) return;
     
     // Use the ref to get the latest state
     const currentData = matchDataRef.current;
@@ -309,7 +338,7 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
     
     // Prepare data for save
     const saveData = {
-      id: match.id,
+      id: currentMatch.id,
       team1_score: currentData.maps[currentData.currentMap].team1Score,
       team2_score: currentData.maps[currentData.currentMap].team2Score,
       series_score_team1: currentData.team1SeriesScore,
@@ -327,7 +356,7 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
     };
     
     // Broadcast immediately via localStorage
-    liveScoreSync.broadcastUpdate(match.id, saveData);
+    liveScoreSync.broadcastUpdate(currentMatch.id, saveData);
     setSaveStatus('saving');
     
     // Debounced API save
@@ -337,7 +366,7 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
     
     syncTimeoutRef.current = setTimeout(async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/matches/${match.id}/live-update`, {
+        const response = await fetch(`${BACKEND_URL}/api/matches/${currentMatch.id}/live-update`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -364,7 +393,7 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
         setTimeout(() => setSaveStatus('idle'), 3000);
       }
     }, 500); // Debounce API calls by 500ms
-  }, [match?.id, hasAdminAccess, token]); // Removed matchData from deps since we use ref
+  }, [currentMatch?.id, hasAdminAccess, token]); // Removed matchData from deps since we use ref
 
   // Update functions with immediate save
   const updateScore = (team, delta) => {
@@ -444,10 +473,10 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
       console.log('Sending hero update to backend:', {
         player_id: playerId,
         hero: hero,
-        map_index: matchData.currentMap - 1  // Convert to 0-based for display
+        map_index: matchData.currentMap  // Keep 1-based for backend consistency
       });
       try {
-        const response = await fetch(`${BACKEND_URL}/api/matches/${match.id}/live-update`, {
+        const response = await fetch(`${BACKEND_URL}/api/matches/${currentMatch.id}/live-update`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -456,7 +485,7 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
           body: JSON.stringify({
             type: 'hero-update',
             data: {
-              map_index: matchData.currentMap - 1,  // Convert to 0-based for backend array indexing
+              map_index: matchData.currentMap,  // Keep 1-based for backend consistency
               team: team,
               player_id: playerId,
               hero: hero,
@@ -521,10 +550,10 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
         player_id: playerId,
         stat_type: stat,
         value: numericValue,
-        map_index: matchData.currentMap - 1  // Convert to 0-based for display
+        map_index: matchData.currentMap  // Keep 1-based for backend consistency
       });
       try {
-        const response = await fetch(`${BACKEND_URL}/api/matches/${match.id}/live-update`, {
+        const response = await fetch(`${BACKEND_URL}/api/matches/${currentMatch.id}/live-update`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -533,7 +562,7 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
           body: JSON.stringify({
             type: 'stats-update',
             data: {
-              map_index: matchData.currentMap - 1,  // Convert to 0-based for backend array indexing
+              map_index: matchData.currentMap,  // Keep 1-based for backend consistency
               team: team,
               player_id: playerId,
               stat_type: stat,
@@ -554,7 +583,7 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
   };
 
   const switchMap = async (mapNumber) => {
-    if (!match?.id) return;
+    if (!currentMatch?.id) return;
     
     console.log(`Switching to map ${mapNumber}`);
     
@@ -711,7 +740,38 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
     });
   };
 
-  if (!isOpen) return null;
+  // Allow component to render when accessed via URL (isOpen will be undefined)
+  if (isOpen === false) return null;
+
+  // Show loading state when fetching match from URL
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-gray-800 rounded-lg p-8 text-center">
+          <div className="text-white text-xl mb-4">Loading Match...</div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if no match found
+  if (!currentMatch) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-gray-800 rounded-lg p-8 text-center">
+          <div className="text-red-400 text-xl mb-4">Match Not Found</div>
+          <div className="text-gray-400 mb-4">Could not load match data</div>
+          <button
+            onClick={() => window.close()}
+            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -720,7 +780,7 @@ const UnifiedLiveScoring = ({ isOpen, onClose, match, onUpdate }) => {
         <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-4 z-10">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-white">Live Scoring Panel</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-white">
+            <button onClick={onClose || (() => window.close())} className="text-gray-400 hover:text-white">
               <X size={24} />
             </button>
           </div>

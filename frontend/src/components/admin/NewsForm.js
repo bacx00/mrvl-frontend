@@ -4,7 +4,7 @@ import { useMentionAutocomplete } from '../../hooks/useMentionAutocomplete';
 import ImageUpload from '../shared/ImageUpload';
 import MentionDropdown from '../shared/MentionDropdown';
 import VideoPreview from '../shared/VideoPreview';
-import { detectAllVideoUrls, processContentForVideos } from '../../utils/videoUtils';
+import { detectAllVideoUrls, processContentForVideos, restoreVideoUrls } from '../../utils/videoUtils';
 
 function NewsForm({ newsId, navigateTo }) {
   const [formData, setFormData] = useState({
@@ -85,15 +85,27 @@ function NewsForm({ newsId, navigateTo }) {
 
   const fetchNews = async () => {
     if (!isEdit) return;
-    
+
     try {
       setLoading(true);
       const response = await api.get(`/admin/news/${newsId}`);
       const news = response.data || response;
+
+      // Restore video URLs from placeholders for editing
+      let restoredContent = news.content || '';
+      if (news.videos && news.videos.length > 0) {
+        restoredContent = restoreVideoUrls(news.content, news.videos);
+        console.log('🎥 Restored video URLs for editing:', {
+          original: news.content,
+          restored: restoredContent,
+          videos: news.videos
+        });
+      }
+
       setFormData({
         title: news.title || '',
         excerpt: news.excerpt || '',
-        content: news.content || '',
+        content: restoredContent,
         category: news.category || 'updates',
         status: news.status || 'draft',
         featured: news.featured || false,
@@ -261,7 +273,7 @@ function NewsForm({ newsId, navigateTo }) {
         
         try {
           // Use the dedicated postFile method which handles Bearer token authentication correctly
-          const imageResponse = await api.postFile('/admin/news/media/featured-image', imageFormData);
+          const imageResponse = await api.postFile('user/news/media/featured-image', imageFormData);
           console.log('Featured image upload response:', imageResponse);
           
           // Update the form data with the returned image path
@@ -284,7 +296,12 @@ function NewsForm({ newsId, navigateTo }) {
       alert(`News article ${isEdit ? 'updated' : 'created'} successfully!`);
       
       if (navigateTo) {
-        navigateTo('admin-news');
+        // Support both callback function and route-based navigation
+        if (typeof navigateTo === 'function') {
+          navigateTo();
+        } else {
+          navigateTo('admin-news');
+        }
       }
     } catch (error) {
       console.error('Error saving news:', error);
@@ -326,7 +343,7 @@ function NewsForm({ newsId, navigateTo }) {
           </p>
         </div>
         <button 
-          onClick={() => navigateTo && navigateTo('admin-news')}
+          onClick={() => navigateTo && (typeof navigateTo === 'function' ? navigateTo() : navigateTo('admin-news'))}
           className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
         >
           ← Back to News
@@ -648,7 +665,7 @@ All content will auto-embed with rich previews and metadata!"
         <div className="flex justify-end space-x-4">
           <button
             type="button"
-            onClick={() => navigateTo && navigateTo('admin-news')}
+            onClick={() => navigateTo && (typeof navigateTo === 'function' ? navigateTo() : navigateTo('admin-news'))}
             className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             Cancel

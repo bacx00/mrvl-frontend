@@ -269,9 +269,24 @@ function SwissMatch({ match, navigateTo, isAdmin, onMatchUpdate }) {;
     >;
       {/* Match Header */};
       <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between">;
-        <span className="text-xs text-gray-500 dark:text-gray-400">;
-          Best of {match.best_of};
-        </span>;
+        {isAdmin ? (
+          <select
+            className="text-xs text-gray-500 dark:text-gray-400 bg-transparent border-none focus:outline-none cursor-pointer"
+            value={match.best_of || 3}
+            onChange={(e) => onMatchUpdate && onMatchUpdate(match.id, { best_of: parseInt(e.target.value) })}
+            title="Click to change Best Of value"
+          >
+            <option value={1}>Best of 1</option>
+            <option value={3}>Best of 3</option>
+            <option value={5}>Best of 5</option>
+            <option value={7}>Best of 7</option>
+            <option value={9}>Best of 9</option>
+          </select>
+        ) : (
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            Best of {match.best_of}
+          </span>
+        )};
         {isLive && (;
           <div className="flex items-center">;
             <span className="relative flex h-2 w-2 mr-1">;
@@ -482,9 +497,24 @@ function BracketMatch({ match, isGrandFinal, navigateTo, isAdmin, onMatchUpdate 
             {match.match_id};
           </span>;
           {isGrandFinal && (;
-            <span className="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded">;
-              Bo{match.best_of};
-            </span>;
+            {isAdmin ? (
+              <select
+                className="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded border-none focus:outline-none cursor-pointer"
+                value={match.best_of || 5}
+                onChange={(e) => onMatchUpdate && onMatchUpdate(match.id, { best_of: parseInt(e.target.value) })}
+                title="Click to change Best Of value"
+              >
+                <option value={1}>Bo1</option>
+                <option value={3}>Bo3</option>
+                <option value={5}>Bo5</option>
+                <option value={7}>Bo7</option>
+                <option value={9}>Bo9</option>
+              </select>
+            ) : (
+              <span className="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded">
+                Bo{match.best_of}
+              </span>
+            )};
           )};
         </div>;
         {isLive && (;

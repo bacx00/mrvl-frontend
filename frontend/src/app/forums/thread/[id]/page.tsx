@@ -158,7 +158,7 @@ export default function ThreadViewPage() {
         setLoading(true);
         
         // Try to fetch real data
-        const res = await fetch(`/api/forums/threads/${id}?page=${currentPage}`);
+        const res = await fetch(`/api/public/forums/threads/${id}?page=${currentPage}`);
         if (res.ok) {
           const data = await res.json();
           setThreadDetails(data.thread);
@@ -189,7 +189,7 @@ export default function ThreadViewPage() {
     
     try {
       // Try to post to API
-      const res = await fetch(`/api/forums/threads/${id}/posts`, {
+      const res = await fetch(`/api/user/forums/threads/${id}/posts`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

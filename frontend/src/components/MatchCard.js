@@ -100,10 +100,10 @@ function MatchCard({ match, navigateTo, isCompact = false }) {
         <div className="flex items-center justify-between text-sm">
           <div className="flex-1">
             <div className="font-medium text-gray-900 dark:text-white">
-              {match.team1?.short_name || match.team1?.name || 'TBD'}
+              {match.team1?.short_name || match.team1?.name || 'TEAM'}
             </div>
             <div className="font-medium text-gray-900 dark:text-white">
-              {match.team2?.short_name || match.team2?.name || 'TBD'}
+              {match.team2?.short_name || match.team2?.name || 'TEAM'}
             </div>
           </div>
           <div className="text-right">
@@ -151,7 +151,7 @@ function MatchCard({ match, navigateTo, isCompact = false }) {
               </div>
             )}
             <span className="text-xs text-gray-500 dark:text-gray-500">
-              {match.event?.name || 'Scrim'}
+              {match.event?.name || ''}
             </span>
             {match.event?.tier && (
               <span className={`px-1.5 py-0.5 text-xs font-bold rounded border ${
@@ -182,9 +182,9 @@ function MatchCard({ match, navigateTo, isCompact = false }) {
                       e.stopPropagation();
                       navigateTo && navigateTo('team-detail', { id: match.team1?.id });
                     }}
-                    title={match.team1?.name || 'TBD'}
+                    title={match.team1?.name || match.team1?.short_name || 'TEAM'}
                   >
-                    {match.team1?.name || 'TBD'}
+                    {match.team1?.name || match.team1?.short_name || 'TEAM'}
                   </span>
                   {match.team1?.country && (
                     <span className="text-sm flex-shrink-0">{getCountryFlag(match.team1.country)}</span>
@@ -218,9 +218,9 @@ function MatchCard({ match, navigateTo, isCompact = false }) {
                       e.stopPropagation();
                       navigateTo && navigateTo('team-detail', { id: match.team2?.id });
                     }}
-                    title={match.team2?.name || 'TBD'}
+                    title={match.team2?.name || match.team2?.short_name || 'TEAM'}
                   >
-                    {match.team2?.name || 'TBD'}
+                    {match.team2?.name || match.team2?.short_name || 'TEAM'}
                   </span>
                 </div>
                 {match.team2?.short_name && (

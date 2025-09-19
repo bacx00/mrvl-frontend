@@ -15,8 +15,10 @@ function TwoFactorSettings({ user, api }) {
   const checkTwoFactorStatus = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/2fa/status');
-      setTwoFactorStatus(response.data || response);
+      const response = await api.get('/auth/2fa/status');
+      const statusData = response.data || response;
+      console.log('2FA Status Response:', statusData); // Debug log
+      setTwoFactorStatus(statusData);
     } catch (err) {
       console.error('Failed to fetch 2FA status:', err);
       setError('Failed to load 2FA status');
@@ -36,7 +38,7 @@ function TwoFactorSettings({ user, api }) {
       setError('');
       setMessage('');
 
-      const response = await api.post('/2fa/disable', { code });
+      const response = await api.post('/auth/2fa/disable', { code });
       
       if (response.success) {
         setMessage('Two-factor authentication has been disabled successfully');

@@ -29,13 +29,13 @@ const ForumModerationPanel = () => {
     setError(null);
     try {
       if (activeTab === 'threads') {
-        const response = await api.get('/api/admin/forums-moderation/threads');
+        const response = await api.get('/admin/forums-moderation/threads');
         setThreads(response?.data?.data || response?.data || []);
       } else if (activeTab === 'posts') {
-        const response = await api.get('/api/admin/forums-moderation/posts');
+        const response = await api.get('/admin/forums-moderation/posts');
         setPosts(response?.data?.data || response?.data || []);
       } else if (activeTab === 'reports') {
-        const response = await api.get('/api/admin/forums-moderation/reports');
+        const response = await api.get('/admin/forums-moderation/reports');
         setReports(response?.data?.data || response?.data || []);
       }
     } catch (error) {
@@ -65,11 +65,11 @@ const ForumModerationPanel = () => {
       
       let endpoint;
       if (type === 'threads') {
-        endpoint = `/api/admin/forums-moderation/threads/${id}`;
+        endpoint = `/admin/forums-moderation/threads/${id}`;
       } else if (type === 'posts') {
-        endpoint = `/api/admin/forums-moderation/posts/${id}`;
+        endpoint = `/admin/forums-moderation/posts/${id}`;
       } else {
-        endpoint = `/api/admin/forums-moderation/reports/${id}/${action}`;
+        endpoint = `/admin/forums-moderation/reports/${id}/${action}`;
       }
       
       let response;
@@ -126,9 +126,9 @@ const ForumModerationPanel = () => {
     
     try {
       const endpoint = activeTab === 'threads' ? 
-        '/api/admin/forums-moderation/threads/bulk-action' : 
-        activeTab === 'posts' ? '/api/admin/forums-moderation/posts/bulk-action' :
-        '/api/admin/forums-moderation/reports/bulk-action';
+        '/admin/forums-moderation/threads/bulk-action' : 
+        activeTab === 'posts' ? '/admin/forums-moderation/posts/bulk-action' :
+        '/admin/forums-moderation/reports/bulk-action';
       
       const response = await api.post(endpoint, {
         ids: Array.from(selectedItems),

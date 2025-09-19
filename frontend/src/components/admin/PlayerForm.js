@@ -398,12 +398,11 @@ function PlayerForm({ playerId, navigateTo }) {
         try {
           const avatarUrl = await uploadAvatar(avatarFile, currentPlayerId);
           console.log(' Avatar uploaded successfully:', avatarUrl);
-          
-          // Update player with new avatar URL
-          const updatedFormData = { ...submitData, avatar: avatarUrl };
-          console.log(' Updating player with avatar URL:', updatedFormData.avatar);
-          await api.put(`/admin/players/${currentPlayerId}`, updatedFormData);
-          console.log(' Player updated with avatar URL');
+
+          // CRITICAL FIX: Avatar upload endpoint already updates player record
+          // No need for additional API call which could trigger validation errors
+          console.log(' Avatar upload completed - player record already updated');
+
         } catch (avatarError) {
           console.error(' Avatar upload failed:', avatarError);
           // Don't fail the whole operation for avatar upload failure
@@ -601,6 +600,7 @@ function PlayerForm({ playerId, navigateTo }) {
                 currentImage={formData.avatar}
                 placeholder="Upload Player Avatar"
                 className="w-full max-w-md"
+                maxSize={50 * 1024 * 1024} // 50MB limit
               />
               {formData.avatar && (
                 <div className="mt-2">

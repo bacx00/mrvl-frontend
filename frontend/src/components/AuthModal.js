@@ -187,12 +187,10 @@ function AuthModal({ isOpen, onClose }) {
 
       if (result.success) {
         setSuccess(isLogin ? 'Login successful!' : 'Account created successfully!');
-        
-        // Close modal after brief success message
-        setTimeout(() => {
-          onClose();
-          resetModal();
-        }, 1500);
+
+        // Close modal immediately on success
+        onClose();
+        resetModal();
       } else {
         setError(result.error || result.message || 'Authentication failed');
       }
@@ -265,12 +263,13 @@ function AuthModal({ isOpen, onClose }) {
         if (result.recovery_codes) {
           setRecoveryCodes(result.recovery_codes);
           setShowRecoveryCodes(true);
-        }
-        setSuccess('2FA enabled successfully! Login complete.');
-        setTimeout(() => {
+          setSuccess('2FA enabled successfully! Please save your recovery codes.');
+        } else {
+          setSuccess('2FA enabled successfully! Login complete.');
+          // Close immediately if no recovery codes to show
           onClose();
           resetModal();
-        }, 2000);
+        }
       } else {
         setError(result.message || 'Invalid code. Please try again.');
         setTwoFactorCode('');
@@ -298,10 +297,9 @@ function AuthModal({ isOpen, onClose }) {
       const result = await verify2FA(tempToken, twoFactorCode);
       if (result.success) {
         setSuccess('Login successful!');
-        setTimeout(() => {
-          onClose();
-          resetModal();
-        }, 1500);
+        // Close immediately after success
+        onClose();
+        resetModal();
       } else {
         setError('Invalid code. Please try again.');
         setTwoFactorCode('');

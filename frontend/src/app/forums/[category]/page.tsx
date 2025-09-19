@@ -154,7 +154,7 @@ export default function ForumCategoryPage() {
       setLoading(true);
       try {
         // Try to fetch real data
-        const categoriesRes = await fetch('/api/forums/categories');
+        const categoriesRes = await fetch('/api/public/forums/categories');
         if (categoriesRes.ok) {
           const categoriesData = await categoriesRes.json();
           const foundCategory = categoriesData.find((cat: any) => cat.id === category);
@@ -166,7 +166,7 @@ export default function ForumCategoryPage() {
           }
 
           // Fetch threads for this category
-          const threadsRes = await fetch(`/api/forums/categories/${category}/threads?page=${currentPage}&sort=${sortOrder}`);
+          const threadsRes = await fetch(`/api/public/forums/threads?category=${category}&page=${currentPage}&sort=${sortOrder}`);
           if (threadsRes.ok) {
             const threadsData = await threadsRes.json();
             setThreads(threadsData.threads || []);

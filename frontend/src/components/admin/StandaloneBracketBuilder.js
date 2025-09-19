@@ -83,10 +83,16 @@ const StandaloneBracketBuilder = ({ eventId }) => {
 
     // Fetch teams from database and load existing bracket if any
     useEffect(() => {
-        fetchTeams();
-        if (eventId) {
-            loadExistingBracket();
-        }
+        const initializeData = async () => {
+            // First fetch teams
+            const teams = await fetchTeams();
+            // Then load existing bracket (which needs teams data)
+            if (eventId && teams) {
+                await loadExistingBracket(teams);
+            }
+        };
+
+        initializeData();
     }, [eventId]);
 
     const fetchTeams = async () => {
@@ -95,10 +101,11 @@ const StandaloneBracketBuilder = ({ eventId }) => {
             const response = await api.get('/teams');
             const teams = response.data?.data || response.data || [];
             setAvailableTeams(teams);
+            return teams;
         } catch (error) {
             console.error('Error fetching teams:', error);
             // Fallback to some default teams if API fails
-            setAvailableTeams([
+            const fallbackTeams = [
                 { id: 1, name: 'Team Secret' },
                 { id: 2, name: 'FaZe Clan' },
                 { id: 3, name: 'Cloud9' },
@@ -115,18 +122,23 @@ const StandaloneBracketBuilder = ({ eventId }) => {
                 { id: 14, name: 'Version1' },
                 { id: 15, name: 'The Guard' },
                 { id: 16, name: 'Ghost Gaming' }
-            ]);
+            ];
+            setAvailableTeams(fallbackTeams);
+            return fallbackTeams;
         } finally {
             setLoading(false);
         }
     };
 
     // Load existing bracket from database
-    const loadExistingBracket = async () => {
+    const loadExistingBracket = async (teamsData = null) => {
         try {
+            // Use provided teams data or fall back to state
+            const teams = teamsData || availableTeams;
+
             // Try both endpoints to get bracket data
             let bracketInfo = null;
-            
+
             // First try the bracket endpoint
             try {
                 const bracketResponse = await api.get(`/events/${eventId}/bracket`);
@@ -137,13 +149,13 @@ const StandaloneBracketBuilder = ({ eventId }) => {
             } catch (e) {
                 console.log('📝 Bracket endpoint not available, trying event endpoint');
             }
-            
+
             // If no bracket from bracket endpoint, try event endpoint
             let eventData = null;
             if (!bracketInfo) {
                 const response = await api.get(`/events/${eventId}`);
                 eventData = response.data?.data || response.data;
-                
+
                 if (eventData.bracket_data) {
                     bracketInfo = eventData.bracket_data;
                     console.log('✅ Loaded bracket from event.bracket_data');
@@ -152,14 +164,63 @@ const StandaloneBracketBuilder = ({ eventId }) => {
                     console.log('✅ Loaded bracket from event.bracket');
                 }
             }
-            
+
             // If we found bracket data, load it
             if (bracketInfo && (bracketInfo.rounds?.length > 0 || bracketInfo.matches?.length > 0)) {
+                console.log('🔍 Processing bracket data with team resolution');
+                console.log('🔍 Available teams for resolution:', teams);
+
+                // Helper function to resolve team ID to team object
+                const resolveTeam = (teamId) => {
+                    if (!teamId) return null;
+                    // Try to find team in provided teams
+                    const team = teams.find(t => t.id === teamId || t.id === parseInt(teamId));
+                    if (team) {
+                        console.log(`✅ Resolved team ${teamId} to ${team.name}`);
+                        return team;
+                    }
+
+                    // If not found in teams, check bracket teams
+                    if (bracketInfo.teams) {
+                        const bracketTeam = bracketInfo.teams.find(t => t.id === teamId || t.id === parseInt(teamId));
+                        if (bracketTeam) {
+                            console.log(`✅ Resolved team ${teamId} from bracket teams to ${bracketTeam.name}`);
+                            return bracketTeam;
+                        }
+                    }
+
+                    console.log(`⚠️ Could not resolve team ${teamId}`);
+                    return null;
+                };
+
+                // Process rounds and populate team names
+                let processedRounds = [];
+                if (bracketInfo.rounds && Array.isArray(bracketInfo.rounds)) {
+                    processedRounds = bracketInfo.rounds.map(round => ({
+                        ...round,
+                        matches: round.matches ? round.matches.map(match => {
+                            const team1 = match.team1_id ? resolveTeam(match.team1_id) : match.team1;
+                            const team2 = match.team2_id ? resolveTeam(match.team2_id) : match.team2;
+
+                            return {
+                                ...match,
+                                team1: team1,
+                                team2: team2,
+                                // Keep original IDs for reference
+                                team1_id: match.team1_id || team1?.id,
+                                team2_id: match.team2_id || team2?.id
+                            };
+                        }) : []
+                    }));
+                }
+
+                console.log('✅ Processed rounds with team names:', processedRounds);
+
                 // Restore all bracket properties
                 setBracketData({
                     name: bracketInfo.name || eventData?.name || 'Tournament',
                     format: bracketInfo.format || bracketInfo.type || 'single_elimination',
-                    rounds: bracketInfo.rounds || [],
+                    rounds: processedRounds,
                     teams: bracketInfo.teams || [],
                     settings: bracketInfo.settings || {
                         bestOf: 3,
@@ -169,15 +230,15 @@ const StandaloneBracketBuilder = ({ eventId }) => {
                     },
                     public: bracketInfo.public !== undefined ? bracketInfo.public : true
                 });
-                
+
                 // Update UI state
                 setSelectedFormat(bracketInfo.format || bracketInfo.type || 'single_elimination');
                 setSelectedBestOf(bracketInfo.settings?.bestOf || 3);
                 setSelectedTeams(bracketInfo.settings?.totalTeams || 8);
                 setIsPublic(bracketInfo.public !== undefined ? bracketInfo.public : true);
-                
-                console.log('✅ Fully loaded existing bracket with all settings');
-                
+
+                console.log('✅ Fully loaded existing bracket with all settings and team names');
+
                 // Set edit mode to true so user can modify existing bracket
                 setEditMode(true);
             } else {
@@ -671,6 +732,26 @@ const StandaloneBracketBuilder = ({ eventId }) => {
         }
     };
 
+    // Update Best of value for a match
+    const updateBestOf = (roundId, matchId, bestOfValue) => {
+        const newRounds = [...bracketData.rounds];
+        const round = newRounds.find(r => r.id === roundId);
+        const match = round.matches.find(m => m.id === matchId);
+
+        match.bestOf = bestOfValue;
+
+        // Reset scores if they exceed the new bestOf limit
+        const maxScore = Math.ceil(bestOfValue / 2);
+        if (match.score1 >= maxScore || match.score2 >= maxScore) {
+            match.score1 = 0;
+            match.score2 = 0;
+            match.winner = null;
+            match.status = match.team1 && match.team2 ? 'live' : 'pending';
+        }
+
+        setBracketData({ ...bracketData, rounds: newRounds });
+    };
+
     // Advance winner to next round - returns updated bracket data
     const advanceWinner = (currentBracketData, roundId, matchId, winner) => {
         if (!winner) return currentBracketData;
@@ -881,6 +962,7 @@ const StandaloneBracketBuilder = ({ eventId }) => {
                                             availableTeams={availableTeams}
                                             onTeamSelect={updateTeamSelection}
                                             onScoreUpdate={updateMatchScore}
+                                            onBestOfChange={updateBestOf}
                                         />
                                     ))}
                                 </div>
@@ -942,7 +1024,7 @@ const StandaloneBracketBuilder = ({ eventId }) => {
 };
 
 // Match Box Component
-const MatchBox = ({ match, roundId, editMode, availableTeams, onTeamSelect, onScoreUpdate }) => {
+const MatchBox = ({ match, roundId, editMode, availableTeams, onTeamSelect, onScoreUpdate, onBestOfChange }) => {
     const [editingScore, setEditingScore] = useState(false);
     const [tempScores, setTempScores] = useState({ score1: match.score1, score2: match.score2 });
 
@@ -966,7 +1048,21 @@ const MatchBox = ({ match, roundId, editMode, availableTeams, onTeamSelect, onSc
         <div className={`bg-gray-800 rounded-lg p-3 mb-4 border-2 ${getStatusColor()} min-w-[250px]`}>
             <div className="text-xs text-gray-400 mb-2 flex justify-between">
                 <span>Match {match.matchNumber}</span>
-                <span className="text-blue-400">BO{match.bestOf}</span>
+                {editMode ? (
+                    <select
+                        value={match.bestOf || 3}
+                        onChange={(e) => onBestOfChange(roundId, match.id, parseInt(e.target.value))}
+                        className="bg-gray-600 text-blue-400 rounded px-1 text-xs"
+                    >
+                        <option value={1}>BO1</option>
+                        <option value={3}>BO3</option>
+                        <option value={5}>BO5</option>
+                        <option value={7}>BO7</option>
+                        <option value={9}>BO9</option>
+                    </select>
+                ) : (
+                    <span className="text-blue-400">BO{match.bestOf}</span>
+                )}
             </div>
 
             {/* Team 1 */}

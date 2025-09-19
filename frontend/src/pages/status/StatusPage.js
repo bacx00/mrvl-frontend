@@ -50,9 +50,9 @@ const StatusPage = () => {
       name: 'Content Delivery',
       key: 'content',
       endpoints: [
-        { name: 'News API', endpoint: '/api/news', critical: false },
+        { name: 'News API', endpoint: '/api/public/news', critical: false },
         { name: 'Media Storage', endpoint: '/api/media', critical: false },
-        { name: 'Forums API', endpoint: '/api/forums', critical: false },
+        { name: 'Forums API', endpoint: '/api/public/forums/threads', critical: false },
         { name: 'CDN Services', endpoint: 'cdn.mrvl.net', critical: false }
       ]
     },

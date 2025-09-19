@@ -67,7 +67,7 @@ const ManualBracketManager = ({ tournamentId, eventId }) => {
 
   const fetchFormats = async () => {
     try {
-      const response = await axios.get('/api/admin/manual-bracket/formats');
+      const response = await axios.get('/api/public/manual-bracket/formats');
       setFormats(response.data.formats || {});
     } catch (err) {
       console.error('Failed to fetch formats:', err);
@@ -522,6 +522,8 @@ const ManualBracketManager = ({ tournamentId, eventId }) => {
 const ScoreUpdateModal = ({ match, gameModes, onUpdate, onClose }) => {
   const [team1Score, setTeam1Score] = useState(match.team1_score || 0);
   const [team2Score, setTeam2Score] = useState(match.team2_score || 0);
+  const [matchBestOf, setMatchBestOf] = useState(match.best_of || 3);
+  const [matchStatus, setMatchStatus] = useState(match.status || 'pending');
   const [gameDetails, setGameDetails] = useState([]);
   const [completeMatch, setCompleteMatch] = useState(false);
 
@@ -529,12 +531,14 @@ const ScoreUpdateModal = ({ match, gameModes, onUpdate, onClose }) => {
     onUpdate(match.id, {
       team1_score: team1Score,
       team2_score: team2Score,
+      best_of: matchBestOf,
+      status: matchStatus,
       game_details: gameDetails,
       complete_match: completeMatch
     });
   };
 
-  const requiredWins = Math.ceil(match.best_of / 2);
+  const requiredWins = Math.ceil(matchBestOf / 2);
   const canComplete = team1Score >= requiredWins || team2Score >= requiredWins;
 
   return (
@@ -552,8 +556,50 @@ const ScoreUpdateModal = ({ match, gameModes, onUpdate, onClose }) => {
             {match.round_name} - Match {match.match_number}
           </p>
           <p className="text-xs text-gray-500">
-            Best of {match.best_of} (First to {requiredWins})
+            Manual Match Control - All Settings Editable
           </p>
+        </div>
+
+        {/* Best-Of Selection */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-2">
+            Best Of (BO) Format
+          </label>
+          <select
+            value={matchBestOf}
+            onChange={(e) => setMatchBestOf(parseInt(e.target.value))}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+          >
+            <option value="1">BO1 - First to 1</option>
+            <option value="3">BO3 - First to 2</option>
+            <option value="5">BO5 - First to 3</option>
+            <option value="7">BO7 - First to 4</option>
+            <option value="9">BO9 - First to 5</option>
+            <option value="11">BO11 - First to 6</option>
+          </select>
+          <p className="text-xs text-gray-400 mt-1">
+            First to {Math.ceil(matchBestOf / 2)} wins
+          </p>
+        </div>
+
+        {/* Match Status */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-2">
+            Match Status
+          </label>
+          <select
+            value={matchStatus}
+            onChange={(e) => setMatchStatus(e.target.value)}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+          >
+            <option value="pending">Pending</option>
+            <option value="ready">Ready</option>
+            <option value="live">Live</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="bye">Bye</option>
+            <option value="forfeit">Forfeit</option>
+          </select>
         </div>
 
         {/* Team 1 Score */}
@@ -564,7 +610,7 @@ const ScoreUpdateModal = ({ match, gameModes, onUpdate, onClose }) => {
           <input
             type="number"
             min="0"
-            max={match.best_of}
+            max={matchBestOf}
             value={team1Score}
             onChange={(e) => setTeam1Score(parseInt(e.target.value) || 0)}
             className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
@@ -579,7 +625,7 @@ const ScoreUpdateModal = ({ match, gameModes, onUpdate, onClose }) => {
           <input
             type="number"
             min="0"
-            max={match.best_of}
+            max={matchBestOf}
             value={team2Score}
             onChange={(e) => setTeam2Score(parseInt(e.target.value) || 0)}
             className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500"

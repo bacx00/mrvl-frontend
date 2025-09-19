@@ -84,9 +84,7 @@ const MARVEL_RIVALS_CONFIG = {
   statuses: [
     { value: 'upcoming', label: 'Upcoming', color: 'blue' },
     { value: 'live', label: 'Live', color: 'red' },
-    { value: 'completed', label: 'Completed', color: 'green' },
-    { value: 'cancelled', label: 'Cancelled', color: 'gray' },
-    { value: 'postponed', label: 'Postponed', color: 'yellow' }
+    { value: 'completed', label: 'Completed', color: 'green' }
   ]
 };
 
@@ -590,17 +588,17 @@ function MatchForm({ matchId, navigateTo }) {
         console.log('Real-time score update sent successfully with automatic winners');
         
         // ENHANCED: Broadcast update through LiveScoreManager for instant UI updates
-        liveScoreManager.broadcastScoreUpdate(matchId, {
-          team1_score: matchData.team1_score,
-          team2_score: matchData.team2_score,
-          maps: matchData.maps,
-          status: matchData.status,
-          current_map: matchData.current_map
-        }, {
-          source: 'MatchForm',
-          type: 'form_score_update',
-          timestamp: Date.now()
-        });
+        // liveScoreManager.broadcastScoreUpdate(matchId, {
+        //   team1_score: matchData.team1_score,
+        //   team2_score: matchData.team2_score,
+        //   maps: matchData.maps,
+        //   status: matchData.status,
+        //   current_map: matchData.current_map
+        // }, {
+        //   source: 'MatchForm',
+        //   type: 'form_score_update',
+        //   timestamp: Date.now()
+        // });
       }
     } catch (error) {
       console.error('Error sending real-time score update:', error);
@@ -820,10 +818,20 @@ function MatchForm({ matchId, navigateTo }) {
       
       console.log('Match saved to PRODUCTION backend successfully:', response);
       alert(`Match ${isEdit ? 'updated' : 'created'} successfully with preserved heroes and maps!`);
-      
-      // Navigate back to matches list
+
+      // Navigate to match detail page for new matches, back to admin for edits
       if (navigateTo) {
-        navigateTo('admin-matches');
+        if (isEdit) {
+          navigateTo('admin-matches');
+        } else {
+          // For new matches, redirect to the match detail page
+          const newMatchId = response.data?.data?.id || response.data?.id;
+          if (newMatchId) {
+            navigateTo('match-detail', { id: newMatchId });
+          } else {
+            navigateTo('admin-matches');
+          }
+        }
       }
     } catch (error) {
       console.error('Error saving match to PRODUCTION backend:', error);
@@ -1019,33 +1027,6 @@ function MatchForm({ matchId, navigateTo }) {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Tournament Round
-              </label>
-              <input
-                type="text"
-                name="round"
-                value={formData.round}
-                onChange={handleInputChange}
-                className="form-input"
-                placeholder="Semi-Finals, Quarter-Finals, etc."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Bracket Position
-              </label>
-              <input
-                type="text"
-                name="bracket_position"
-                value={formData.bracket_position}
-                onChange={handleInputChange}
-                className="form-input"
-                placeholder="Upper Bracket, Lower Bracket, etc."
-              />
-            </div>
           </div>
         </div>
 
@@ -1210,7 +1191,7 @@ function MatchForm({ matchId, navigateTo }) {
                   >
                     {MARVEL_RIVALS_CONFIG.maps.map(mapData => (
                       <option key={mapData.name} value={mapData.name}>
-                        {mapData.icon} {mapData.name} ({mapData.mode})
+                        {mapData.name} ({mapData.mode})
                       </option>
                     ))}
                   </select>
@@ -1218,7 +1199,6 @@ function MatchForm({ matchId, navigateTo }) {
                   {map.mode && MARVEL_RIVALS_CONFIG.gameModes[map.mode] && (
                     <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm">
                       <div className="flex items-center space-x-2">
-                        <span className="text-xl">{MARVEL_RIVALS_CONFIG.gameModes[map.mode].icon}</span>
                         <span className="font-bold text-gray-900 dark:text-white">
                           {MARVEL_RIVALS_CONFIG.gameModes[map.mode].displayName}
                         </span>
@@ -1239,7 +1219,7 @@ function MatchForm({ matchId, navigateTo }) {
                   >
                     {Object.entries(MARVEL_RIVALS_CONFIG.gameModes).map(([mode, modeData]) => (
                       <option key={mode} value={mode}>
-                        {modeData.icon} {modeData.displayName} - {Math.floor(modeData.duration / 60)}min
+                        {modeData.displayName} - {Math.floor(modeData.duration / 60)}min
                       </option>
                     ))}
                   </select>

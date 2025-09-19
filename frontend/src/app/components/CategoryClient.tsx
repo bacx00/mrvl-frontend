@@ -96,8 +96,8 @@ const CategoryClient: React.FC<CategoryClientProps> = ({
         ...(tagFilter && { tag: tagFilter })
       });
       
-      const categoryResponse = await fetch(`/api/forums/categories/${categoryId}`);
-      const threadsResponse = await fetch(`/api/forums/categories/${categoryId}/threads?${params}`);
+      const categoryResponse = await fetch(`/api/public/forums/categories`);
+      const threadsResponse = await fetch(`/api/public/forums/threads?category=${categoryId}&${params}`);
       
       if (!categoryResponse.ok || !threadsResponse.ok) {
         throw new Error('Failed to fetch category data');
@@ -269,7 +269,7 @@ const CategoryClient: React.FC<CategoryClientProps> = ({
     setSubmittingThread(true);
     
     try {
-      const response = await fetch(`/api/forums/categories/${categoryId}/threads`, {
+      const response = await fetch(`/api/user/forums/threads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -2,6 +2,8 @@ class MentionService {
   constructor() {
     // Simple polling-based service for mention updates
     this.pollingIntervals = new Map();
+    // Event listeners for real-time updates
+    this.eventListeners = new Map();
   }
 
   // Subscribe to mention updates for a specific entity (polling-based)
@@ -34,11 +36,51 @@ class MentionService {
     }
   }
 
+  // Trigger mention deletion event
+  notifyMentionDeleted(mentionId, entityType, entityId) {
+    const key = `${entityType}-${entityId}`;
+
+    if (this.eventListeners.has(key)) {
+      const listeners = this.eventListeners.get(key);
+      listeners.forEach(callback => {
+        callback({
+          type: 'mention_deleted',
+          mentionId,
+          entityType,
+          entityId
+        });
+      });
+    }
+  }
+
+  // Add event listener for mention updates
+  addEventListener(entityType, entityId, callback) {
+    const key = `${entityType}-${entityId}`;
+
+    if (!this.eventListeners.has(key)) {
+      this.eventListeners.set(key, new Set());
+    }
+
+    this.eventListeners.get(key).add(callback);
+
+    return () => {
+      const listeners = this.eventListeners.get(key);
+      if (listeners) {
+        listeners.delete(callback);
+        if (listeners.size === 0) {
+          this.eventListeners.delete(key);
+        }
+      }
+    };
+  }
+
   // Cleanup method
   disconnect() {
     // Clear all polling intervals
     this.pollingIntervals.forEach(interval => clearInterval(interval));
     this.pollingIntervals.clear();
+    // Clear all event listeners
+    this.eventListeners.clear();
   }
 }
 

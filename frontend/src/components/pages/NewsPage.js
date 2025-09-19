@@ -106,7 +106,7 @@ function NewsPage({ navigateTo }) {
         {(isAdmin() || isModerator()) && (
           <div className="flex space-x-2">
             <button 
-              onClick={() => navigateTo && navigateTo('admin-news-categories')}
+              onClick={() => navigateTo && navigateTo('moderator')}
               className="px-3 py-1.5 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors"
             >
               Manage Categories

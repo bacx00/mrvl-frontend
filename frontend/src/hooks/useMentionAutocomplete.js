@@ -31,10 +31,10 @@ export const useMentionAutocomplete = (onMentionSelect) => {
         // Try direct fetch as fallback if api doesn't work
         let response;
         try {
-          response = await api.get(`/public/mentions/search?q=${encodeURIComponent(query)}&type=${type}&limit=8`);
+          response = await api.get(`/public/mentions/search?q=${encodeURIComponent(query)}&type=${type}&limit=50`);
         } catch (apiError) {
           console.log('[Mention] API call failed, trying direct fetch:', apiError);
-          const directResponse = await fetch(`https://staging.mrvl.net/api/public/mentions/search?q=${encodeURIComponent(query)}&type=${type}&limit=8`);
+          const directResponse = await fetch(`https://staging.mrvl.net/api/public/mentions/search?q=${encodeURIComponent(query)}&type=${type}&limit=50`);
           response = { data: await directResponse.json() };
         }
         
@@ -63,10 +63,10 @@ export const useMentionAutocomplete = (onMentionSelect) => {
       // Try direct fetch as fallback if api doesn't work
       let response;
       try {
-        response = await api.get('/public/mentions/popular?limit=6');
+        response = await api.get('/public/mentions/popular?limit=20');
       } catch (apiError) {
         console.log('[Mention] API call failed, trying direct fetch:', apiError);
-        const directResponse = await fetch('https://staging.mrvl.net/api/public/mentions/popular?limit=6');
+        const directResponse = await fetch('https://staging.mrvl.net/api/public/mentions/popular?limit=20');
         response = { data: await directResponse.json() };
       }
       

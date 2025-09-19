@@ -72,12 +72,31 @@ function MatchDetailPage({ matchId, navigateTo }) {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
   
-  // CRITICAL: Force re-render when map changes
+  // CRITICAL: Force re-render when map changes and reset hero selections
   useEffect(() => {
     console.log(`MatchDetailPage: Current map changed to index ${currentMapIndex}`);
     if (match?.maps?.[currentMapIndex]) {
       console.log('MatchDetailPage: Current map data:', match.maps[currentMapIndex]);
     }
+
+    // Reset hero selections for the new map to show first hero by default
+    // This ensures each map starts with a clean state unless explicitly set
+    setSelectedHeroes(prev => {
+      const newSelected = { ...prev };
+      const currentMapKey = `_${currentMapIndex}`;
+
+      // Find all keys for the current map and reset them to 0 (first hero)
+      Object.keys(newSelected).forEach(key => {
+        if (key.endsWith(currentMapKey)) {
+          newSelected[key] = 0;
+        }
+      });
+
+      return newSelected;
+    });
+
+    // Close any open hero menus when switching maps
+    setOpenHeroMenu({});
   }, [currentMapIndex, match?.maps]);
   const [showLiveScoring, setShowLiveScoring] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
@@ -348,23 +367,19 @@ function MatchDetailPage({ matchId, navigateTo }) {
           // Ensure maps data is properly structured first
           const mapsData = matchData.score?.maps || matchData.maps_data || matchData.maps || [];
           
-          // Calculate overall score from map wins if not explicitly provided
+          // Calculate overall score from map wins as fallback
           const overallScore = calculateOverallScore(mapsData);
-          const hasExplicitScore = (matchData.team1_score !== undefined && matchData.team1_score !== null) || 
-                                   (matchData.score?.team1 !== undefined && matchData.score?.team1 !== null);
-          
-          console.log('🏆 Match loading - Explicit score:', hasExplicitScore, 'Calculated score:', overallScore);
+
+          console.log('🏆 Match loading - Calculated score from maps:', overallScore);
           
           // Transform API response to frontend-expected format
           const transformedMatch = {
             ...matchData,
             // FIXED: Always use direct API fields first, prioritizing live scoring fields
             team1_score: matchData.team1_score ?? matchData.series_score_team1 ??
-                        matchData.score?.team1 ?? 
-                        (hasExplicitScore ? 0 : overallScore.team1Score),
+                        matchData.score?.team1 ?? overallScore.team1Score,
             team2_score: matchData.team2_score ?? matchData.series_score_team2 ??
-                        matchData.score?.team2 ?? 
-                        (hasExplicitScore ? 0 : overallScore.team2Score),
+                        matchData.score?.team2 ?? overallScore.team2Score,
             // Store both formats for compatibility
             series_score_team1: matchData.series_score_team1 ?? matchData.team1_score ?? 0,
             series_score_team2: matchData.series_score_team2 ?? matchData.team2_score ?? 0,
@@ -1002,16 +1017,19 @@ function MatchDetailPage({ matchId, navigateTo }) {
                       // If we have roster data with multiple heroes, use it
                       if (rosterPlayer?.heroes?.length > 0) {
                         // Check if these are map-specific heroes
-                        const mapSpecificHeroes = rosterPlayer.heroes.filter(h => 
-                          h.map_number === undefined || h.map_number === currentMapIndex + 1
+                        // Support both 0-based and 1-based map indexing
+                        const mapSpecificHeroes = rosterPlayer.heroes.filter(h =>
+                          h.map_number === undefined ||
+                          h.map_number === currentMapIndex + 1 ||
+                          h.map_number === currentMapIndex ||
+                          h.map_index === currentMapIndex ||
+                          h.map_index === currentMapIndex + 1
                         );
                         if (mapSpecificHeroes.length > 0) {
                           return mapSpecificHeroes;
                         }
-                        // For Map 1 overview, show all heroes from roster
-                        if (currentMapIndex === 0) {
-                          return rosterPlayer.heroes;
-                        }
+                        // If no map-specific heroes found, use all roster heroes for this map
+                        return rosterPlayer.heroes;
                       }
                       
                       // Final fallback: Use single hero from composition
@@ -1032,6 +1050,11 @@ function MatchDetailPage({ matchId, navigateTo }) {
                     
                     const playerHeroes = getAllPlayerHeroes();
                     const selectedHeroIdx = selectedHeroes[`${playerId}_${currentMapIndex}`] || 0;
+
+                    // Debug: Log hero data for map progression tracking
+                    if (playerHeroes.length > 1) {
+                      console.log(`Map ${currentMapIndex + 1} - Player ${playerId} heroes:`, playerHeroes, 'Selected idx:', selectedHeroIdx);
+                    }
                     const currentHeroStats = playerHeroes[selectedHeroIdx] || {};
                     
                     const playerData = {
@@ -1311,16 +1334,19 @@ function MatchDetailPage({ matchId, navigateTo }) {
                       // If we have roster data with multiple heroes, use it
                       if (rosterPlayer?.heroes?.length > 0) {
                         // Check if these are map-specific heroes
-                        const mapSpecificHeroes = rosterPlayer.heroes.filter(h => 
-                          h.map_number === undefined || h.map_number === currentMapIndex + 1
+                        // Support both 0-based and 1-based map indexing
+                        const mapSpecificHeroes = rosterPlayer.heroes.filter(h =>
+                          h.map_number === undefined ||
+                          h.map_number === currentMapIndex + 1 ||
+                          h.map_number === currentMapIndex ||
+                          h.map_index === currentMapIndex ||
+                          h.map_index === currentMapIndex + 1
                         );
                         if (mapSpecificHeroes.length > 0) {
                           return mapSpecificHeroes;
                         }
-                        // For Map 1 overview, show all heroes from roster
-                        if (currentMapIndex === 0) {
-                          return rosterPlayer.heroes;
-                        }
+                        // If no map-specific heroes found, use all roster heroes for this map
+                        return rosterPlayer.heroes;
                       }
                       
                       // Final fallback: Use single hero from composition
@@ -1341,6 +1367,11 @@ function MatchDetailPage({ matchId, navigateTo }) {
                     
                     const playerHeroes = getAllPlayerHeroes();
                     const selectedHeroIdx = selectedHeroes[`${playerId}_${currentMapIndex}`] || 0;
+
+                    // Debug: Log hero data for map progression tracking
+                    if (playerHeroes.length > 1) {
+                      console.log(`Map ${currentMapIndex + 1} - Player ${playerId} heroes:`, playerHeroes, 'Selected idx:', selectedHeroIdx);
+                    }
                     const currentHeroStats = playerHeroes[selectedHeroIdx] || {};
                     
                     const playerData = {

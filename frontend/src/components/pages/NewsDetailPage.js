@@ -126,8 +126,10 @@ function NewsDetailPage({ params, navigateTo }) {
     try {
       // Fetch mentions autocomplete data for parsing content
       const response = await api.get('/mentions/search?limit=50');
-      if (response.data?.success && response.data?.data) {
-        setMentionsData(response.data.data);
+      if (response.success && Array.isArray(response.data)) {
+        setMentionsData(response.data);
+      } else {
+        setMentionsData([]);
       }
     } catch (error) {
       console.error('Error fetching mentions data:', error);
@@ -154,11 +156,11 @@ function NewsDetailPage({ params, navigateTo }) {
     const originalComments = [...comments];
 
     setSubmittingComment(true);
-    try {
-      // ENHANCED: Add optimistic UI update for comments with safe object handling
-      const tempComment = {
-        id: `temp-${Date.now()}`,
-        content: safeString(content.trim()), // Ensure content is safely converted
+
+    // ENHANCED: Add optimistic UI update for comments with safe object handling
+    const tempComment = {
+      id: `temp-${Date.now()}`,
+      content: safeString(content.trim()), // Ensure content is safely converted
         author: {
           // Safely extract user properties to prevent [object Object] display
           ...user,
@@ -174,8 +176,9 @@ function NewsDetailPage({ params, navigateTo }) {
         user_vote: null,
         mentions: [], // Empty array for temp comments
         replies: []
-      };
+    };
 
+    try {
       // Add optimistic comment to UI
       if (replyToId) {
         // Add as nested reply
@@ -498,7 +501,7 @@ function NewsDetailPage({ params, navigateTo }) {
     }
 
     try {
-      const response = await api.put(`/news/comments/${commentId}`, {
+      const response = await api.put(`/user/news/comments/${commentId}`, {
         content: content.trim()
       });
       
@@ -660,14 +663,14 @@ function NewsDetailPage({ params, navigateTo }) {
     });
     
     // Process content with mentions for clickable links
-    const contentWithMentions = processContentWithMentions(processedContent, mentionsData, navigateTo);
+    const contentWithMentions = processContentWithMentions(processedContent, article.mentions || [], navigateTo);
     
     // If no videos, just return content with mentions
     if (!allVideos || allVideos.length === 0) {
       return (
         <div className="prose prose-lg dark:prose-invert max-w-none">
           <div className="whitespace-pre-wrap leading-relaxed">
-            {renderContentWithMentions(safeString(processedContent), mentionsData)}
+            {renderContentWithMentions(safeString(processedContent), article.mentions || [])}
           </div>
         </div>
       );
@@ -695,24 +698,28 @@ function NewsDetailPage({ params, navigateTo }) {
       }
     }
     
-    console.log('🎥 Video placement strategy:', { 
-      totalParagraphs, 
-      videoPlacementPoints, 
-      videosToPlace: allVideos.length 
+    console.log('🎥 Video placement strategy:', {
+      totalParagraphs,
+      videoPlacementPoints,
+      videosToPlace: allVideos.length
     });
-    
+
+    // Track which videos have already been embedded to prevent duplicates
+    const embeddedVideoIds = new Set();
+
     return (
       <div className="prose prose-lg dark:prose-invert max-w-none">
         {paragraphs.map((paragraph, index) => {
           const elements = [];
-          
+
           // Check if this paragraph contains a video placeholder
           const videoPlaceholderMatch = paragraph.match(/<!-- VIDEO_EMBEDDED_(\d+) -->/);
           if (videoPlaceholderMatch) {
             const videoId = parseInt(videoPlaceholderMatch[1]);
             const video = allVideos[videoId];
-            if (video) {
+            if (video && !embeddedVideoIds.has(videoId)) {
               console.log('🎥 Found video placeholder for video', videoId, ':', video);
+              embeddedVideoIds.add(videoId);
               elements.push(
                 <div key={`video-${videoId}`} className="not-prose my-8">
                   <VideoEmbed
@@ -733,33 +740,41 @@ function NewsDetailPage({ params, navigateTo }) {
           else if (paragraph.trim() && !paragraph.includes('<!-- VIDEO_EMBEDDED')) {
             elements.push(
               <div key={`p-${index}`} className="whitespace-pre-wrap leading-relaxed mb-6 text-gray-900 dark:text-gray-100">
-                {renderContentWithMentions(safeString(paragraph), mentionsData)}
+                {renderContentWithMentions(safeString(paragraph), article.mentions || [])}
               </div>
             );
           }
-          
-          // Check if we should place a video after this paragraph
+
+          // Check if we should place a video after this paragraph (only if not already embedded)
           if (videoIndex < allVideos.length && videoPlacementPoints.includes(index)) {
-            const video = allVideos[videoIndex];
-            console.log('🎥 Placing video at position', index, ':', video);
-            
-            elements.push(
-              <div key={`video-${videoIndex}`} className="not-prose my-8">
-                <VideoEmbed
-                  type={video.platform || video.type}
-                  id={video.video_id || video.id}
-                  url={video.embedUrl || video.embed_url || video.original_url || video.url || video.originalUrl}
-                  mobileOptimized={true}
-                  lazyLoad={true}
-                  inline={true}
-                  showTitle={false}
-                  className="rounded-lg overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700"
-                />
-              </div>
-            );
-            videoIndex++;
+            // Skip videos that were already embedded via placeholder
+            while (videoIndex < allVideos.length && embeddedVideoIds.has(videoIndex)) {
+              videoIndex++;
+            }
+
+            if (videoIndex < allVideos.length) {
+              const video = allVideos[videoIndex];
+              console.log('🎥 Placing video at position', index, ':', video);
+              embeddedVideoIds.add(videoIndex);
+
+              elements.push(
+                <div key={`video-${videoIndex}`} className="not-prose my-8">
+                  <VideoEmbed
+                    type={video.platform || video.type}
+                    id={video.video_id || video.id}
+                    url={video.embedUrl || video.embed_url || video.original_url || video.url || video.originalUrl}
+                    mobileOptimized={true}
+                    lazyLoad={true}
+                    inline={true}
+                    showTitle={false}
+                    className="rounded-lg overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700"
+                  />
+                </div>
+              );
+              videoIndex++;
+            }
           }
-          
+
           return elements;
         })}
         
@@ -767,7 +782,7 @@ function NewsDetailPage({ params, navigateTo }) {
         {videoIndex < allVideos.length && (
           <div className="not-prose mt-8 space-y-6">
             <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-4 border-t border-gray-200 dark:border-gray-700 pt-6">
-              📺 Related Videos ({allVideos.length - videoIndex} more)
+              Related Videos ({allVideos.length - videoIndex} more)
             </div>
             {allVideos.slice(videoIndex).map((video, index) => {
               console.log('🎥 Placing remaining video:', video);
@@ -792,7 +807,7 @@ function NewsDetailPage({ params, navigateTo }) {
         {allVideos.length > 0 && (
           <div className="mt-8 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              📺 Video Content Summary
+              Video Content Summary
             </h3>
             <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
               {allVideos.map((video, index) => (
@@ -842,9 +857,9 @@ function NewsDetailPage({ params, navigateTo }) {
     const marginStyle = isReply ? { marginLeft: `${Math.min(depth * 2, 6)}rem` } : {};
     
     return (
-      <div 
-        key={comment.id} 
-        className={`${isReply ? 'pl-4 border-l-2 border-gray-200 dark:border-gray-700' : ''} py-4`}
+      <div
+        key={comment.id}
+        className={`${isReply ? 'pl-4 border-l-2 border-gray-200 dark:border-gray-700' : 'px-0'} py-4`}
         style={marginStyle}
       >
         <div className="flex items-start space-x-3">
@@ -1110,7 +1125,7 @@ function NewsDetailPage({ params, navigateTo }) {
 
           {/* Title */}
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            {renderContentWithMentions(safeString(article.title), mentionsData)}
+            {renderContentWithMentions(safeString(article.title), article.mentions || [])}
           </h1>
 
           {/* Author and meta */}
@@ -1129,7 +1144,7 @@ function NewsDetailPage({ params, navigateTo }) {
               {(() => {
                 const readingTime = calculateReadingTime(article.content) || article.meta?.read_time;
                 return readingTime ? (
-                  <span>📖 {readingTime} min read</span>
+                  <span>{readingTime} min read</span>
                 ) : null;
               })()}
               {(() => {
@@ -1137,7 +1152,7 @@ function NewsDetailPage({ params, navigateTo }) {
                 const totalVideos = detectedVideos.length;
                 return totalVideos > 0 ? (
                   <span className="text-blue-600 dark:text-blue-400">
-                    📺 {totalVideos} video{totalVideos !== 1 ? 's' : ''}
+                    {totalVideos} video{totalVideos !== 1 ? 's' : ''}
                   </span>
                 ) : null;
               })()}
@@ -1162,7 +1177,7 @@ function NewsDetailPage({ params, navigateTo }) {
         <div className="p-6">
           {article.excerpt && (
             <div className="text-lg text-gray-700 dark:text-gray-300 mb-6 font-medium">
-              {renderContentWithMentions(safeString(article.excerpt), mentionsData)}
+              {renderContentWithMentions(safeString(article.excerpt), article.mentions || [])}
             </div>
           )}
           
@@ -1273,7 +1288,7 @@ function NewsDetailPage({ params, navigateTo }) {
         )}
 
         {/* Comments list */}
-        <div className="divide-y divide-gray-200 dark:divide-gray-700">
+        <div className="divide-y divide-gray-200 dark:divide-gray-700 px-6">
           {comments.length > 0 ? (
             comments.map(comment => renderComment(comment))
           ) : (

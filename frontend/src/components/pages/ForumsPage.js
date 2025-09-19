@@ -6,6 +6,7 @@ import MobileForumNavigation from '../mobile/MobileForumNavigation';
 import VirtualizedForumList from '../mobile/VirtualizedForumList';
 import TabletForumLayout from '../tablet/TabletForumLayout';
 import TabletSplitView from '../tablet/TabletSplitView';
+import MentionLink from '../shared/MentionLink';
 import { formatTimeAgo } from '../../lib/utils.js';
 import { Search, Filter, TrendingUp, MessageCircle, Eye, ChevronDown, RefreshCw, Bookmark, Share2, MoreVertical } from 'lucide-react';
 
@@ -16,12 +17,64 @@ function ForumsPage({ navigateTo }) {
   const safeString = (value) => {
     return typeof value === 'string' ? value : '';
   };
+
+  // Helper function to render content with mentions
+  const renderContentWithMentions = (content, mentions = []) => {
+    const safeContent = safeString(content);
+    if (!safeContent || typeof safeContent !== 'string') return null;
+
+    // If no mentions, return plain text
+    if (!mentions || mentions.length === 0) return safeContent;
+
+    // Sort mentions by position to process them in order
+    const sortedMentions = [...mentions].sort((a, b) =>
+      (a.position_start || 0) - (b.position_start || 0)
+    );
+
+    const elements = [];
+    let lastIndex = 0;
+
+    sortedMentions.forEach((mention) => {
+      const mentionText = mention.mention_text;
+      const startPos = safeContent.indexOf(mentionText, lastIndex);
+
+      if (startPos !== -1) {
+        // Add text before mention
+        if (startPos > lastIndex) {
+          elements.push(safeContent.slice(lastIndex, startPos));
+        }
+
+        // Add the mention as a clickable component
+        elements.push(
+          <MentionLink
+            key={`mention-${startPos}-${mention.id}`}
+            mention={mention}
+            navigateTo={navigateTo}
+          />
+        );
+
+        lastIndex = startPos + mentionText.length;
+      }
+    });
+
+    // Add remaining text
+    if (lastIndex < safeContent.length) {
+      elements.push(safeContent.slice(lastIndex));
+    }
+
+    return elements.length > 0 ? elements : safeContent;
+  };
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('latest');
   const [searchQuery, setSearchQuery] = useState('');
   const [threads, setThreads] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Enhanced filter states
+  const [filterByStatus, setFilterByStatus] = useState('all'); // 'all', 'active', 'locked', 'pinned'
+  const [filterByMentions, setFilterByMentions] = useState('all'); // 'all', 'with_mentions', 'team_mentions', 'player_mentions'
+  const [filterByActivity, setFilterByActivity] = useState('all'); // 'all', 'recent_activity', 'no_replies'
   
   // Mobile-specific state
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -48,12 +101,33 @@ function ForumsPage({ navigateTo }) {
     try {
       setLoading(true);
       
-      // Build query parameters
+      // Build comprehensive query parameters
       const params = new URLSearchParams();
       if (selectedCategory !== 'all') params.append('category', selectedCategory);
       if (sortBy) params.append('sort', sortBy);
+
+      // Enhanced filtering parameters
+      if (filterByStatus !== 'all') params.append('status_filter', filterByStatus);
+      if (filterByMentions !== 'all') params.append('mentions_filter', filterByMentions);
+      if (filterByActivity !== 'all') params.append('activity_filter', filterByActivity);
+
       const safeSearchQuery = safeString(currentSearchQuery || '');
-      if (safeSearchQuery.trim()) params.append('search', safeSearchQuery.trim());
+      if (safeSearchQuery.trim()) {
+        // Enhanced search - tell backend to search in all content
+        params.append('search', safeSearchQuery.trim());
+        // Add parameters to search in mentions, replies, and comments
+        params.append('search_mentions', 'true');
+        params.append('search_replies', 'true');
+        params.append('search_comments', 'true');
+        params.append('search_content', 'true');
+        // Include related data in response
+        params.append('include_mentions', 'true');
+        params.append('include_stats', 'true');
+      } else {
+        // Always include mentions and stats for better UX
+        params.append('include_mentions', 'true');
+        params.append('include_stats', 'true');
+      }
       
       // Fetch threads and categories in parallel
       const [threadsResponse, categoriesResponse] = await Promise.all([
@@ -61,12 +135,18 @@ function ForumsPage({ navigateTo }) {
         api.get('/public/forums/categories')
       ]);
       
-      const threadsData = threadsResponse.data?.data || threadsResponse.data || [];
+      const rawThreadsData = threadsResponse.data?.data || threadsResponse.data || [];
       const categoriesData = categoriesResponse.data?.data || categoriesResponse.data || [];
-      
+
+      // Ensure mentions are included in threads data
+      const threadsData = Array.isArray(rawThreadsData) ? rawThreadsData.map(thread => ({
+        ...thread,
+        mentions: thread.mentions || []
+      })) : [];
+
       console.log('Forum threads loaded:', threadsData.length);
       console.log('Forum categories loaded:', categoriesData.length);
-      
+
       setThreads(threadsData);
       setCategories(categoriesData);
       
@@ -77,13 +157,13 @@ function ForumsPage({ navigateTo }) {
     } finally {
       setLoading(false);
     }
-  }, [api, selectedCategory, sortBy]);
+  }, [api, selectedCategory, sortBy, filterByStatus, filterByMentions, filterByActivity]);
 
   // CRITICAL FIX: Separate effects for different types of updates
   // Immediate updates for category/sort changes
   useEffect(() => {
     fetchForumData(searchQuery);
-  }, [selectedCategory, sortBy, fetchForumData]);
+  }, [selectedCategory, sortBy, filterByStatus, filterByMentions, filterByActivity, fetchForumData]);
   
   // Debounced effect for search queries only
   useEffect(() => {
@@ -411,7 +491,7 @@ function ForumsPage({ navigateTo }) {
                   <div className="flex items-start space-x-3">
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
-                        {thread.title}
+                        {renderContentWithMentions(thread.title, thread.mentions)}
                       </h3>
                       <div className="flex items-center space-x-3 text-sm text-gray-500 dark:text-gray-400">
                         <span>{thread.author?.username || 'Anonymous'}</span>
@@ -572,7 +652,7 @@ function ForumsPage({ navigateTo }) {
                 setShowSearchResults(true);
                 fetchSearchSuggestions(e.target.value);
               }}
-              placeholder="Search discussions..."
+              placeholder="Search discussions, mentions, replies, comments..."
               className="w-full pl-10 pr-4 py-2.5 bg-gray-100 dark:bg-gray-800 border-none rounded-lg text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-red-500 mobile-input-no-zoom"
             />
           </div>
@@ -593,6 +673,75 @@ function ForumsPage({ navigateTo }) {
             </div>
           )}
         </div>
+
+        {/* Enhanced Mobile Filters Panel */}
+        {showMobileFilters && (
+          <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="space-y-3">
+              {/* Status Filter */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Thread Status
+                </label>
+                <select
+                  value={filterByStatus}
+                  onChange={(e) => setFilterByStatus(e.target.value)}
+                  className="w-full px-2 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"
+                >
+                  <option value="all">All Threads</option>
+                  <option value="active">Active</option>
+                  <option value="locked">Locked</option>
+                  <option value="pinned">Pinned</option>
+                </select>
+              </div>
+
+              {/* Mentions Filter */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Mentions
+                </label>
+                <select
+                  value={filterByMentions}
+                  onChange={(e) => setFilterByMentions(e.target.value)}
+                  className="w-full px-2 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"
+                >
+                  <option value="all">All Posts</option>
+                  <option value="with_mentions">With Mentions</option>
+                  <option value="team_mentions">Team Mentions</option>
+                  <option value="player_mentions">Player Mentions</option>
+                </select>
+              </div>
+
+              {/* Activity Filter */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Activity
+                </label>
+                <select
+                  value={filterByActivity}
+                  onChange={(e) => setFilterByActivity(e.target.value)}
+                  className="w-full px-2 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"
+                >
+                  <option value="all">All Activity</option>
+                  <option value="recent_activity">Recent Activity</option>
+                  <option value="no_replies">No Replies</option>
+                </select>
+              </div>
+
+              {/* Clear Filters Button */}
+              <button
+                onClick={() => {
+                  setFilterByStatus('all');
+                  setFilterByMentions('all');
+                  setFilterByActivity('all');
+                }}
+                className="w-full px-3 py-2 text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded transition-colors"
+              >
+                Clear All Filters
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Mobile Filter Tabs */}
         <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-2">
@@ -628,7 +777,7 @@ function ForumsPage({ navigateTo }) {
         <div className="flex space-x-2">
           {(isAdmin() || isModerator()) && (
             <button 
-              onClick={() => navigateTo && navigateTo('admin-forum-categories')}
+              onClick={() => navigateTo && navigateTo('moderator')}
               className="px-3 py-1.5 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors"
             >
               Manage Categories
@@ -655,7 +804,7 @@ function ForumsPage({ navigateTo }) {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search threads..."
+              placeholder="Search threads, mentions, replies, comments..."
               className="text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-1 text-gray-900 dark:text-white flex-1 md:max-w-xs"
             />
             {searchQuery && (
@@ -769,7 +918,7 @@ function ForumsPage({ navigateTo }) {
 
                       {/* Title */}
                       <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 hover:text-red-600 dark:hover:text-red-400 transition-colors">
-                        {thread.title}
+                        {renderContentWithMentions(thread.title, thread.mentions)}
                       </h3>
 
                       {/* Author and Time */}
@@ -892,7 +1041,7 @@ function ForumsPage({ navigateTo }) {
 
                         {/* Title */}
                         <h3 className="font-semibold text-gray-900 dark:text-white mb-1 hover:text-red-600 dark:hover:text-red-400 transition-colors line-clamp-1">
-                          {thread.title}
+                          {renderContentWithMentions(thread.title, thread.mentions)}
                         </h3>
 
                         {/* Author */}

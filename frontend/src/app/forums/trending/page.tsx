@@ -147,7 +147,7 @@ export default function ForumTrendingPage() {
         setError(null);
         
         // Try to fetch real data
-        const res = await fetch(`/api/forums/trending?period=${timePeriod}&category=${categoryFilter}`);
+        const res = await fetch(`/api/public/forums/trending?period=${timePeriod}&category=${categoryFilter}`);
         if (res.ok) {
           const data = await res.json();
           setThreads(data);

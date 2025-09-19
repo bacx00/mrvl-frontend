@@ -318,7 +318,7 @@ class PWAEnhancer {
         });
       
       case 'forum_post':
-        return fetch('/api/forums/posts', {
+        return fetch('/api/user/forums/posts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(action.data)

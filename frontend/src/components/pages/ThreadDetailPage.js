@@ -414,17 +414,55 @@ function ThreadDetailPage({ params, navigateTo }) {
         content: content.trim()
       });
 
-      if (response.data?.success) {
+      // Enhanced response validation to handle different response structures
+      const isSuccess = response.status === 200 ||
+                       response.status === 201 ||
+                       response?.data?.success === true ||
+                       response?.success === true ||
+                       (response?.data && !response?.data?.error) ||
+                       (response?.message && response.message.toLowerCase().includes('success'));
+
+      if (isSuccess) {
         setEditingPost(null);
         setEditContent('');
-        
+
         // Immediately fetch fresh data
         await fetchThreadData();
+
+        // Show success feedback
+        const successMessage = document.createElement('div');
+        successMessage.textContent = '✅ Post updated successfully';
+        successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
+        document.body.appendChild(successMessage);
+        setTimeout(() => document.body.removeChild(successMessage), 3000);
       } else {
         alert('Failed to edit post. Please try again.');
       }
     } catch (error) {
       console.error('❌ Failed to edit post:', error);
+
+      // CRITICAL FIX: Check if this is actually a successful response that was caught as an error
+      const isActuallySuccess = (error.response?.status === 200 || error.response?.status === 201) &&
+                                (error.response?.data?.success === true || !error.response?.data?.error);
+
+      if (isActuallySuccess) {
+        // This is actually a success, handle it properly
+        setEditingPost(null);
+        setEditContent('');
+
+        // Immediately fetch fresh data
+        await fetchThreadData();
+
+        // Show success message
+        const successMessage = document.createElement('div');
+        successMessage.textContent = '✅ Post updated successfully';
+        successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
+        document.body.appendChild(successMessage);
+        setTimeout(() => document.body.removeChild(successMessage), 3000);
+
+        return; // Exit early since this was actually successful
+      }
+
       alert('Failed to edit post. Please try again.');
     } finally {
       setSubmitting(false);
@@ -934,7 +972,7 @@ function ThreadDetailPage({ params, navigateTo }) {
         </span>
         <span>/</span>
         <span className="text-gray-900 dark:text-white font-medium truncate">
-          {thread.title}
+          {renderContentWithMentions(thread.title, thread.mentions || [])}
         </span>
       </div>
 
@@ -958,7 +996,7 @@ function ThreadDetailPage({ params, navigateTo }) {
 
             {/* Title */}
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-              {thread.title}
+              {renderContentWithMentions(thread.title, thread.mentions || [])}
             </h1>
 
             {/* Author & Stats */}

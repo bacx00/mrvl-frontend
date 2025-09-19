@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks';
 import { useMentionUpdates } from '../../hooks/useMentionUpdates';
 import { formatMentionForDisplay } from '../../utils/mentionUtils';
 import { getImageUrl } from '../../utils/imageUtils';
+import mentionService from '../../services/mentionService';
 
 const MentionsSection = ({ 
   entityType, // 'player' or 'team'
@@ -29,6 +30,25 @@ const MentionsSection = ({
   useEffect(() => {
     fetchMentions();
   }, [entityType, entityId, currentPage, contentTypeFilter]);
+
+  // Listen for real-time mention deletion events
+  useEffect(() => {
+    if (!entityType || !entityId) return;
+
+    const handleMentionEvent = (event) => {
+      if (event.type === 'mention_deleted') {
+        // Immediately remove the deleted mention from the list
+        setMentions(prev => prev.filter(mention => mention.id !== event.mentionId));
+        // Also refresh the count
+        refreshData();
+      }
+    };
+
+    // Subscribe to mention events
+    const unsubscribeEvents = mentionService.addEventListener(entityType, entityId, handleMentionEvent);
+
+    return unsubscribeEvents;
+  }, [entityType, entityId, refreshData]);
 
   // Poll for new mentions every 30 seconds
   useEffect(() => {

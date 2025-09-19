@@ -11,7 +11,6 @@ const MentionDropdown = ({
   query = '',
   dropdownRef
 }) => {
-  console.log('[MentionDropdown] Render - show:', show, 'results:', results?.length, 'position:', position); // Debug
   if (!show) return null;
 
   // Get icon for mention type

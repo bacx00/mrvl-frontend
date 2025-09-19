@@ -144,9 +144,9 @@ function TeamForm({ teamId, navigateTo }) {
         // COACH DATA INTEGRATION - PRESERVE ALL COACH FIELDS
         coach: {
           name: team.coach_name || team.coach || '',
-          avatar: team.coach_image || team.coach_avatar || '',
+          avatar: team.coach_data?.avatar || team.coach_image || team.coach_avatar || '',
           country: team.coach_country || team.coach_nationality || 'US',
-          image: team.coach_image || '',
+          image: team.coach_data?.avatar || team.coach_image || '',
           nationality: team.coach_nationality || team.coach_country || ''
         },
         
@@ -381,7 +381,7 @@ function TeamForm({ teamId, navigateTo }) {
         player_count: parseInt(formData.player_count) || 0,
         
         // COACH DATA INTEGRATION - preserve all coach data (avoid duplicates)
-        coach: formData.coach.name || '',
+        coach_name: formData.coach.name || '',
         coach_nationality: formData.coach.nationality || formData.coach.country || 'US',
         coach_image: formData.coach.image || formData.coach.avatar || '',
         

@@ -146,9 +146,9 @@ function ForumVotingButtons({
       // Use appropriate voting endpoints based on item type
       let endpoint;
       if (itemType === 'thread') {
-        endpoint = `/forums/threads/${itemId}/vote`;
+        endpoint = `/user/forums/threads/${itemId}/vote`;
       } else if (itemType === 'post') {
-        endpoint = `/forums/posts/${itemId}/vote`;
+        endpoint = `/user/forums/posts/${itemId}/vote`;
       } else if (itemType === 'match-comment') {
         endpoint = `/match-comments/${itemId}/vote`;
       } else {

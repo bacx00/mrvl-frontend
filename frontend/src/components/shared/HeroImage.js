@@ -127,11 +127,11 @@ const HeroImage = ({
         <img
           src={imageUrl}
           alt={heroData.hero_name}
-          className={`${className.includes('w-full') ? 'w-full h-full' : currentSizeClass} object-contain`}
+          className={`${className.includes('w-full') ? 'w-full h-full' : currentSizeClass} object-cover ${className.includes('rounded-full') ? 'rounded-full' : ''}`}
           onError={() => setImageError(true)}
         />
       ) : (
-        <div className={`${className.includes('w-full') ? 'w-full h-full' : ''} flex items-center justify-center text-gray-700 dark:text-gray-300 text-sm font-medium px-2 text-center`}>
+        <div className={`${className.includes('w-full') ? 'w-full h-full' : ''} flex items-center justify-center text-gray-700 dark:text-gray-300 text-sm font-medium px-2 text-center ${className.includes('rounded-full') ? 'rounded-full bg-gray-100 dark:bg-gray-800' : ''}`}>
           {heroData.fallback_text || heroData.hero_name}
         </div>
       )}

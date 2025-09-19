@@ -195,8 +195,8 @@ export default function ForumHomePage() {
 
         // Try to fetch real data first
         const [categoriesRes, featuredRes] = await Promise.all([
-          fetch('/api/forums/categories'),
-          fetch('/api/forums/featured')
+          fetch('/api/public/forums/categories'),
+          fetch('/api/public/forums/hot')
         ]);
 
         if (categoriesRes.ok && featuredRes.ok) {

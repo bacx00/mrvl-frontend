@@ -60,7 +60,7 @@ export default function Sidebar({
         setIsLoading(true);
 
         // Fetch trending threads
-        const trendingRes = await fetch('/api/forums/trending?limit=8');
+        const trendingRes = await fetch('/api/public/forums/trending?limit=8');
         if (trendingRes.ok) {
           const trending = await trendingRes.json();
           setTrendingThreads(trending);

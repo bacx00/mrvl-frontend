@@ -12,6 +12,8 @@ function SimpleUserProfile({ navigateTo, params }) {
   const { user, api, updateUser } = useAuth();
   const targetUserId = params?.id;
   const isOwnProfile = !targetUserId || targetUserId == user?.id;
+  const isAdminViewingOtherProfile = !isOwnProfile && user?.role === 'admin';
+  const canEditProfile = isOwnProfile || isAdminViewingOtherProfile;
   
   // Debug logging
   console.log('🔍 SimpleUserProfile Debug:');
@@ -242,12 +244,13 @@ function SimpleUserProfile({ navigateTo, params }) {
         const userData = response.data?.data || response.data;
         setProfileData({
           name: userData.name || '',
-          email: '', // Don't show other users' emails
+          email: isAdminViewingOtherProfile ? userData.email || '' : '', // Show email to admins
           avatar: userData.avatar || '',
           hero_flair: userData.hero_flair || '',
           team_flair_id: userData.team_flair?.id || null,
           show_hero_flair: userData.show_hero_flair !== false,
-          show_team_flair: userData.show_team_flair !== false
+          show_team_flair: userData.show_team_flair !== false,
+          use_hero_as_avatar: userData.use_hero_as_avatar || false
         });
       }
     } catch (error) {
@@ -350,7 +353,17 @@ function SimpleUserProfile({ navigateTo, params }) {
           new_password: '',
           new_password_confirmation: ''
         });
-        alert('Password changed successfully!');
+
+        // Check if re-authentication is required
+        if (response.data?.requires_reauth) {
+          alert('Password changed successfully! You will be logged out and need to sign in again with your new password.');
+          // Logout and redirect to home page
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userData');
+          window.location.href = '/';
+        } else {
+          alert('Password changed successfully!');
+        }
       }
     } catch (error) {
       console.error('Failed to change password:', error);
@@ -454,9 +467,16 @@ function SimpleUserProfile({ navigateTo, params }) {
       <div className="text-center">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
           {isOwnProfile ? 'User Profile' : `${profileData.name}'s Profile`}
+          {isAdminViewingOtherProfile && (
+            <span className="ml-2 text-lg bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 px-2 py-1 rounded-full text-sm font-medium">
+              Admin Edit Mode
+            </span>
+          )}
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          {isOwnProfile ? 'Manage your profile settings and preferences' : 'View user profile and activity'}
+          {isOwnProfile ? 'Manage your profile settings and preferences' :
+           isAdminViewingOtherProfile ? 'Editing user profile as administrator' :
+           'View user profile and activity'}
         </p>
       </div>
 
@@ -486,7 +506,7 @@ function SimpleUserProfile({ navigateTo, params }) {
           )}
           
           {/* Avatar Actions */}
-          {isOwnProfile && (
+          {canEditProfile && (
             <div className="flex flex-col space-y-2">
               <button
                 onClick={() => setShowHeroAvatarModal(true)}
@@ -759,10 +779,10 @@ function SimpleUserProfile({ navigateTo, params }) {
             <input
               type="text"
               value={profileData.name}
-              onChange={(e) => isOwnProfile && setProfileData(prev => ({...prev, name: e.target.value}))}
+              onChange={(e) => canEditProfile && setProfileData(prev => ({...prev, name: e.target.value}))}
               className="form-input"
               placeholder={isOwnProfile ? "Your username" : "Username"}
-              readOnly={!isOwnProfile}
+              readOnly={!canEditProfile}
             />
           </div>
           <div>
@@ -779,7 +799,7 @@ function SimpleUserProfile({ navigateTo, params }) {
           </div>
           
           {/* Save Button for Profile Info */}
-          {isOwnProfile && (
+          {canEditProfile && (
             <div className="mt-6 flex justify-end">
               <button
                 onClick={saveProfile}
@@ -797,7 +817,7 @@ function SimpleUserProfile({ navigateTo, params }) {
         </div>
       </div>
 
-      {/* Password Change Section */}
+      {/* Password Change Section - Only for own profile for security */}
       {isOwnProfile && (
         <div className="card p-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Change Password</h2>

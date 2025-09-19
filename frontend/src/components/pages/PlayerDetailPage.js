@@ -265,7 +265,7 @@ function PlayerDetailPage({ params, navigateTo }) {
 
   const fetchMentionsData = async () => {
     if (!playerId) return;
-    
+
     try {
       // Fetch mentions autocomplete data for parsing biography text
       const response = await api.get('/mentions/search?limit=50');
@@ -277,6 +277,11 @@ function PlayerDetailPage({ params, navigateTo }) {
       // Don't break the page if mentions fail
       setMentionsData([]);
     }
+  };
+
+  // Refresh mentions data when external changes occur
+  const refreshMentionsData = () => {
+    fetchMentionsData();
   };
 
   const fetchPlayerStats = async (page = 1, currentFilters = filters) => {
@@ -574,9 +579,6 @@ function PlayerDetailPage({ params, navigateTo }) {
                   {player.age && (
                     <span className="text-gray-600 dark:text-gray-300">• Age: {player.age}</span>
                   )}
-                  {player.region && (
-                    <span className="text-gray-600 dark:text-gray-300">• {player.region === 'Americas' ? 'America' : player.region}</span>
-                  )}
                 </div>
                 {/* Social Links - VLR.gg Style */}
                 {player.socialMedia && Object.values(player.socialMedia).some(link => link) && (
@@ -628,23 +630,16 @@ function PlayerDetailPage({ params, navigateTo }) {
             <div className="text-right">
               {/* Earnings */}
               <div className="mb-4">
-                <div className="flex items-center justify-end space-x-2 mb-2">
-                  <div className="text-3xl font-bold text-green-600 dark:text-green-400">{formatCurrency(player.totalEarnings || 0)}</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Earnings</div>
-                </div>
+                <div className="text-3xl font-bold text-green-600 dark:text-green-400">{formatCurrency(player.totalEarnings || 0)}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">Earnings</div>
               </div>
               
               {/* ELO Rating */}
               <div className="mb-4">
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">ELO Rating</div>
-                <div className="flex items-center justify-end space-x-2">
-                  <span className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                    {player.eloRating || player.elo_rating || 1000}
-                  </span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    • #{player.rank || 'Unranked'}
-                  </span>
+                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                  {player.eloRating || player.elo_rating || 1000}
                 </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">ELO Rating</div>
               </div>
               
               {/* Edit Button for Admins/Moderators */}
@@ -1181,7 +1176,7 @@ function PlayerDetailPage({ params, navigateTo }) {
                               </td>
                               <td className="py-3 px-3">
                                 <div className="flex items-center space-x-2">
-                                  {heroHasNoImage(match.hero || match.hero_played || 'Storm') ? (
+                                  {!(match.hero || match.hero_played || 'Storm') ? (
                                     <div className="w-8 h-8 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                                       <span className="text-gray-500 dark:text-gray-400 text-lg font-bold">?</span>
                                     </div>
@@ -1491,7 +1486,7 @@ function PlayerDetailPage({ params, navigateTo }) {
                               <div className="flex items-center space-x-3">
                                 <span className="text-gray-500 text-xs">MVP:</span>
                                 <div className="flex items-center space-x-2">
-                                  {heroHasNoImage(match.hero || match.map_stats?.[0]?.hero || 'Hela') ? (
+                                  {!(match.hero || match.map_stats?.[0]?.hero || 'Hela') ? (
                                     <div className="w-5 h-5 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                                       <span className="text-gray-500 dark:text-gray-400 text-xs font-bold">?</span>
                                     </div>

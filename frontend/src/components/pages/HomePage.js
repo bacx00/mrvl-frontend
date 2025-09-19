@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../hooks';
 import { TeamLogo, getNewsFeaturedImageUrl, getEventBannerUrl, getImageUrl, getEventLogoUrl } from '../../utils/imageUtils';
 import { formatTimeAgo, formatDateSafe } from '../../lib/utils.js';
+import MentionLink from '../shared/MentionLink';
+import { safeString } from '../../utils/safeStringUtils';
 
 function HomePage({ navigateTo }) {
   const { api } = useAuth();
@@ -36,6 +38,53 @@ function HomePage({ navigateTo }) {
     return categoryMap[category] || '';
   };
 
+  // Helper function to render content with mentions
+  const renderContentWithMentions = (content, mentions = []) => {
+    const safeContent = safeString(content);
+    if (!safeContent || typeof safeContent !== 'string') return null;
+
+    // If no mentions, return plain text
+    if (!mentions || mentions.length === 0) return safeContent;
+
+    // Sort mentions by position to process them in order
+    const sortedMentions = [...mentions].sort((a, b) =>
+      (a.position_start || 0) - (b.position_start || 0)
+    );
+
+    const elements = [];
+    let lastIndex = 0;
+
+    sortedMentions.forEach((mention) => {
+      const mentionText = mention.mention_text;
+      const startPos = safeContent.indexOf(mentionText, lastIndex);
+
+      if (startPos !== -1) {
+        // Add text before mention
+        if (startPos > lastIndex) {
+          elements.push(safeContent.slice(lastIndex, startPos));
+        }
+
+        // Add the mention as a clickable component
+        elements.push(
+          <MentionLink
+            key={`mention-${startPos}-${mention.id}`}
+            mention={mention}
+            navigateTo={navigateTo}
+          />
+        );
+
+        lastIndex = startPos + mentionText.length;
+      }
+    });
+
+    // Add remaining text
+    if (lastIndex < safeContent.length) {
+      elements.push(safeContent.slice(lastIndex));
+    }
+
+    return elements.length > 0 ? elements : safeContent;
+  };
+
   const fetchData = useCallback(async () => {
     if (loading || dataFetched) return; // Prevent duplicate requests
     
@@ -65,7 +114,7 @@ function HomePage({ navigateTo }) {
               name: match.event_name || match.event?.name || 'Marvel Rivals Championship 2025',
               tier: match.event?.tier || 'S'
             },
-            status: match.status === 'ongoing' ? 'live' : (match.status || 'upcoming'),
+            status: match.status === 'ongoing' ? 'live' : (match.status === 'scheduled' ? 'upcoming' : (match.status || 'upcoming')),
             format: match.format || 'BO3',
             time: match.scheduled_at 
               ? new Date(match.scheduled_at).toLocaleTimeString('en-US', { 
@@ -151,6 +200,7 @@ function HomePage({ navigateTo }) {
           discussionsData = rawDiscussions.slice(0, 5).map(thread => ({
             id: thread.id,
             title: thread.title,
+            mentions: thread.mentions || [],
             author: thread.author?.username || thread.author?.name || thread.user_name || 'MRVL User',
             replies: thread.stats?.replies || thread.replies || thread.replies_count || 0,
             lastActivity: thread.meta?.last_reply_at_relative || thread.meta?.created_at_relative || (thread.updated_at ? formatTimeAgo(thread.updated_at) : 'Recently'),
@@ -176,7 +226,10 @@ function HomePage({ navigateTo }) {
           });
           
           // Only use featured articles, don't fallback to non-featured
-          newsData = featured.slice(0, 3);
+          newsData = featured.slice(0, 3).map(article => ({
+            ...article,
+            mentions: article.mentions || []
+          }));
           console.log('HomePage: Showing featured news only:', newsData.length, 'articles');
           
           if (featured.length === 0) {
@@ -343,46 +396,51 @@ function HomePage({ navigateTo }) {
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* VLR.gg inspired layout - 4 columns */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
-        
-        {/* Left Sidebar - Recent Discussions */}
-        <div className="xl:col-span-3">
+      {/* Main 3-column layout: Discussions | Events/News | Matches */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+        {/* Left Column - Recent Discussions */}
+        <div className="lg:col-span-1 space-y-4">
           <div className="card">
-            <div 
+            <div
               className="px-3 py-2 border-b border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
               onClick={() => handleNavigationClick('forums')}
             >
               <h2 className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">
-                Recent Discussion
+                Recent Discussions
               </h2>
             </div>
             <div className="divide-y divide-gray-200 dark:divide-gray-600">
               {recentDiscussions.length > 0 ? (
                 recentDiscussions.map(discussion => (
-                  <div 
-                    key={discussion.id} 
-                    className="recent-discussion-item cursor-pointer"
+                  <div
+                    key={discussion.id}
+                    className="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
                     onClick={() => handleDiscussionClick(discussion)}
                   >
-                    <div className="px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                      <div className="text-xs font-medium text-gray-900 dark:text-white truncate">
-                        {discussion.title}
-                      </div>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        <span>{discussion.author}</span>
-                        <span>•</span>
-                        <span>{discussion.replies} replies</span>
-                        <span>•</span>
-                        <span>{discussion.lastActivity}</span>
-                      </div>
-                      {discussion.category && (
-                        <div className="mt-1">
-                          <span className="inline-block px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded">
-                            {discussion.category}
-                          </span>
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-snug">
+                          {renderContentWithMentions(discussion.title, discussion.mentions)}
+                        </h3>
+                        <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          <span>{discussion.author}</span>
+                          <span>•</span>
+                          <span>{discussion.lastActivity}</span>
+                          {discussion.category && (
+                            <>
+                              <span>•</span>
+                              <span className="text-red-600 dark:text-red-400 font-medium">{discussion.category}</span>
+                            </>
+                          )}
                         </div>
-                      )}
+                      </div>
+                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                        <div className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                          {discussion.replies}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">replies</div>
+                      </div>
                     </div>
                   </div>
                 ))
@@ -399,101 +457,146 @@ function HomePage({ navigateTo }) {
           </div>
         </div>
 
-        {/* Center Content - Events & News */}
-        <div className="xl:col-span-6 space-y-4">
-          {/* Events - Moved to top */}
+        {/* Center Column - Events/News */}
+        <div className="lg:col-span-1 space-y-4">
+          {/* Featured Events Banner */}
+          {bannerEvent && shouldShowBanner && (
+            <div
+              className="relative rounded-lg overflow-hidden cursor-pointer group min-h-[200px] flex items-center justify-center bg-gradient-to-r from-red-900 to-red-700"
+              onClick={() => handleEventClick(bannerEvent)}
+            >
+              {/* Background Image */}
+              <div className="absolute inset-0">
+                {currentBannerUrl && !bannerImageError && (
+                  <img
+                    src={currentBannerUrl}
+                    alt={bannerEvent.name}
+                    className={`w-full h-full object-cover transition-opacity duration-500 ${
+                      bannerImageLoaded ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    onLoad={handleBannerImageLoad}
+                    onError={handleBannerImageError}
+                  />
+                )}
+                <div className="absolute inset-0 bg-black/50"></div>
+              </div>
+
+              {/* Content Overlay */}
+              <div className="relative z-10 text-center p-6">
+                <div className="mb-2">
+                  <span className="inline-block px-2 py-1 bg-red-600 text-white text-xs font-semibold rounded uppercase tracking-wide">
+                    {bannerEvent.status === 'live' || bannerEvent.status === 'ongoing' ? 'Live Now' : 'Featured Event'}
+                  </span>
+                </div>
+                <h2 className="text-xl font-bold text-white mb-2 line-clamp-2">
+                  {bannerEvent.name}
+                </h2>
+                <div className="text-sm text-white/90 space-y-1">
+                  <div>{bannerEvent.prizePool}</div>
+                  <div>{bannerEvent.teams} Teams • {bannerEvent.region}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Events List */}
           <div className="card">
-            <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center">
-              <h2 
-                className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors px-2 -mx-2 py-1 rounded"
-                onClick={() => handleNavigationClick('events')}
-              >
-                Events
-              </h2>
-              <select 
-                value={eventFilter}
-                onChange={(e) => setEventFilter(e.target.value)}
-                className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded border-0 focus:ring-2 focus:ring-red-500 outline-none cursor-pointer"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <option value="live">Live</option>
-                <option value="upcoming">Upcoming</option>
-                <option value="completed">Completed</option>
-              </select>
+            <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-600">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">
+                  Tournament Events
+                </h2>
+                <div className="flex gap-1">
+                  {['live', 'upcoming', 'completed'].map((filter) => (
+                    <button
+                      key={filter}
+                      onClick={() => setEventFilter(filter)}
+                      className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
+                        eventFilter === filter
+                          ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="divide-y divide-gray-200 dark:divide-gray-600">
               {filteredEvents.length > 0 ? (
-                filteredEvents.slice(0, 5).map(event => {
-                  const eventLogoUrl = getEventLogoUrl(event);
-                  return (
-                    <div 
-                      key={event.id}
-                      className="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
-                      onClick={() => handleEventClick(event)}
-                    >
-                      <div className="flex items-center gap-3">
-                        {/* Event Logo on Left */}
-                        <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden bg-gray-100 dark:bg-gray-700">
-                          <img 
-                            src={eventLogoUrl}
+                filteredEvents.slice(0, 5).map(event => (
+                  <div
+                    key={event.id}
+                    className="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+                    onClick={() => handleEventClick(event)}
+                  >
+                    <div className="flex items-center gap-3">
+                      {/* Event Logo */}
+                      <div className="flex-shrink-0 w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center overflow-hidden">
+                        {getEventLogoUrl(event) ? (
+                          <img
+                            src={getEventLogoUrl(event)}
                             alt={event.name}
                             className="w-full h-full object-cover"
+                            loading="lazy"
                             onError={(e) => {
                               e.target.style.display = 'none';
-                              e.target.parentElement.innerHTML = `
-                                <div class="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-xs font-bold">
-                                  ${event.name.substring(0, 2).toUpperCase()}
-                                </div>
-                              `;
                             }}
                           />
-                        </div>
-                        
-                        {/* Event Details */}
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                {event.name}
-                              </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                {event.region} • {event.format || event.stage} • {event.teams} teams
-                              </div>
-                              {event.start_date && event.end_date && (
-                                <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                  {new Date(event.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(event.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                </div>
-                              )}
-                            </div>
-                            <div className="text-right">
-                              <div className="text-sm font-bold text-red-600 dark:text-red-400">
-                                {event.prizePool}
-                              </div>
-                              {(event.status === 'live' || event.status === 'ongoing') && (
-                                <div className="text-xs text-red-600 dark:text-red-400 font-bold animate-pulse mt-1">LIVE</div>
-                              )}
-                            </div>
+                        ) : (
+                          <div className="text-red-600 dark:text-red-400 text-xs font-bold">
+                            {event.name.substring(0, 2).toUpperCase()}
                           </div>
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
+                          {event.name}
+                        </h3>
+                        <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                          {event.prizePool} • {event.teams} Teams • {event.region}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">
+                          {event.stage}
                         </div>
                       </div>
+
+                      {/* Status Badge */}
+                      <div className="flex-shrink-0">
+                        {event.status === 'live' || event.status === 'ongoing' ? (
+                          <span className="inline-block px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-xs font-medium rounded">
+                            Live
+                          </span>
+                        ) : event.status === 'upcoming' || event.status === 'scheduled' ? (
+                          <span className="inline-block px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium rounded">
+                            Upcoming
+                          </span>
+                        ) : (
+                          <span className="inline-block px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium rounded">
+                            Completed
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  );
-                })
+                  </div>
+                ))
               ) : loading ? (
                 <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                   <div className="animate-pulse">Loading events...</div>
                 </div>
               ) : (
                 <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                  No events available
+                  No {eventFilter} events
                 </div>
               )}
             </div>
           </div>
 
-          {/* Featured News - Normal cards with image on left */}
+          {/* Featured News */}
           <div className="card">
-            <div 
+            <div
               className="px-3 py-2 border-b border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
               onClick={() => handleNavigationClick('news')}
             >
@@ -505,18 +608,17 @@ function HomePage({ navigateTo }) {
               {featuredNews.length > 0 ? (
                 featuredNews.map(article => {
                   const articleImageUrl = getNewsFeaturedImageUrl(article);
-                  console.log('🖼️ HomePage - Article image URL:', articleImageUrl);
-                  
+
                   return (
-                    <div 
+                    <div
                       key={article.id}
-                      className="px-3 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      className="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
                       onClick={() => handleNewsClick(article)}
                     >
                       <div className="flex gap-3">
                         {articleImageUrl && (
                           <div className="flex-shrink-0 w-24 h-16 overflow-hidden rounded">
-                            <img 
+                            <img
                               src={articleImageUrl}
                               alt={article.title}
                               className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
@@ -530,7 +632,7 @@ function HomePage({ navigateTo }) {
                         )}
                         <div className="flex-1 min-w-0">
                           <h3 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
-                            {article.title}
+                            {renderContentWithMentions(article.title, article.mentions)}
                           </h3>
                           <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
                             {article.excerpt || article.description}
@@ -556,14 +658,13 @@ function HomePage({ navigateTo }) {
               )}
             </div>
           </div>
-
         </div>
 
-        {/* Right Sidebar - All Matches with Pagination */}
-        <div className="xl:col-span-3 space-y-4">
+        {/* Right Column - Matches (with 3 sections) */}
+        <div className="lg:col-span-1 space-y-4">
           {/* Upcoming Matches */}
           <div className="card">
-            <div 
+            <div
               className="px-3 py-2 border-b border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
               onClick={() => handleNavigationClick('matches')}
             >
@@ -572,131 +673,104 @@ function HomePage({ navigateTo }) {
               </h2>
             </div>
             <div className="divide-y divide-gray-200 dark:divide-gray-600">
-              {(() => {
-                const startIndex = (upcomingPage - 1) * matchesPerPage;
-                const endIndex = startIndex + matchesPerPage;
-                const paginatedUpcoming = upcomingMatches.slice(startIndex, endIndex);
-                const totalPages = Math.ceil(upcomingMatches.length / matchesPerPage);
-
-                return (
-                  <>
-                    {paginatedUpcoming.length > 0 ? (
-                      paginatedUpcoming.map(match => (
-                  <div 
+              {upcomingMatches.slice(0, 3).length > 0 ? (
+                upcomingMatches.slice(0, 3).map(match => (
+                  <div
                     key={match.id}
-                    className="px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+                    className="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer min-h-[70px] flex flex-col justify-center"
                     onClick={() => handleMatchClick(match)}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="flex items-center gap-2">
-                          <TeamLogo team={match.team1} className="w-6 h-6" />
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            {match.team1?.name || 'TBD'}
-                          </span>
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">vs</div>
-                        <div className="flex items-center gap-2">
-                          <TeamLogo team={match.team2} className="w-6 h-6" />
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            {match.team2?.name || 'TBD'}
-                          </span>
-                        </div>
+                    {/* Tournament Name - Top Center */}
+                    <div className="text-center mb-2">
+                      <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                        {match.event?.name || 'Tournament'}
                       </div>
-                      <div className="text-right">
-                        <div className="text-xs text-gray-600 dark:text-gray-400">{match.time}</div>
+                    </div>
+
+                    {/* Teams and Match Info */}
+                    <div className="flex items-center justify-between gap-3">
+                      {/* Team 1 */}
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <TeamLogo team={match.team1} className="w-7 h-7 flex-shrink-0 rounded-full" />
+                        <span className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1 leading-tight">
+                          {match.team1?.name || 'TBD'}
+                        </span>
+                      </div>
+
+                      {/* Center: Score and Format */}
+                      <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                        <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">vs</div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">{match.format}</div>
                       </div>
-                    </div>
-                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      {match.event.name}
+
+                      {/* Team 2 */}
+                      <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                        <span className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1 leading-tight">
+                          {match.team2?.name || 'TBD'}
+                        </span>
+                        <TeamLogo team={match.team2} className="w-7 h-7 flex-shrink-0 rounded-full" />
+                      </div>
                     </div>
                   </div>
-                      ))
-                    ) : loading ? (
-                      <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                        <div className="animate-pulse">Loading matches...</div>
-                      </div>
-                    ) : (
-                      <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                        No upcoming matches
-                      </div>
-                    )}
-                    
-                    {/* Pagination Controls */}
-                    {totalPages > 1 && (
-                      <div className="px-3 py-2 flex justify-between items-center border-t border-gray-200 dark:border-gray-600">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setUpcomingPage(prev => Math.max(1, prev - 1));
-                          }}
-                          disabled={upcomingPage === 1}
-                          className="px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 dark:hover:bg-gray-600"
-                        >
-                          Previous
-                        </button>
-                        <span className="text-xs text-gray-600 dark:text-gray-400">
-                          Page {upcomingPage} of {totalPages}
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setUpcomingPage(prev => Math.min(totalPages, prev + 1));
-                          }}
-                          disabled={upcomingPage === totalPages}
-                          className="px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 dark:hover:bg-gray-600"
-                        >
-                          Next
-                        </button>
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
+                ))
+              ) : (
+                <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                  No upcoming matches
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Live Matches - Without red banner */}
+          {/* Live Matches */}
           {liveMatches.length > 0 && (
             <div className="card">
-              <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-600">
+              <div
+                className="px-3 py-2 border-b border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                onClick={() => handleNavigationClick('matches')}
+              >
                 <h2 className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">
                   Live Matches
                 </h2>
               </div>
               <div className="divide-y divide-gray-200 dark:divide-gray-600">
                 {liveMatches.map(match => (
-                  <div 
+                  <div
                     key={match.id}
-                    className="px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+                    className="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer min-h-[70px] flex flex-col justify-center"
                     onClick={() => handleMatchClick(match)}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="flex items-center gap-2">
-                          <TeamLogo team={match.team1} className="w-6 h-6" />
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            {match.team1?.name || 'TBD'}
-                          </span>
-                        </div>
-                        <div className="text-lg font-bold text-red-600 dark:text-red-400">
-                          {match.score}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <TeamLogo team={match.team2} className="w-6 h-6" />
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            {match.team2?.name || 'TBD'}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs text-red-600 dark:text-red-400 font-bold animate-pulse">LIVE</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{match.format}</div>
+                    {/* Tournament Name - Top Center */}
+                    <div className="text-center mb-2">
+                      <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                        {match.event?.name || 'Tournament'}
                       </div>
                     </div>
-                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      {match.event.name}
+
+                    {/* Teams and Match Info */}
+                    <div className="flex items-center justify-between gap-3">
+                      {/* Team 1 */}
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <TeamLogo team={match.team1} className="w-7 h-7 flex-shrink-0 rounded-full" />
+                        <span className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1 leading-tight">
+                          {match.team1?.name || 'TBD'}
+                        </span>
+                      </div>
+
+                      {/* Center: Live Score and Format */}
+                      <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                        <div className="text-lg font-bold text-red-600 dark:text-red-400">
+                          {match.score || '0-0'}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{match.format}</div>
+                      </div>
+
+                      {/* Team 2 */}
+                      <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                        <span className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1 leading-tight">
+                          {match.team2?.name || 'TBD'}
+                        </span>
+                        <TeamLogo team={match.team2} className="w-7 h-7 flex-shrink-0 rounded-full" />
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -706,104 +780,70 @@ function HomePage({ navigateTo }) {
 
           {/* Completed Matches */}
           <div className="card">
-            <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-600">
-              <h2 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                Recent Results
+            <div
+              className="px-3 py-2 border-b border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+              onClick={() => handleNavigationClick('matches')}
+            >
+              <h2 className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">
+                Completed Matches
               </h2>
             </div>
             <div className="divide-y divide-gray-200 dark:divide-gray-600">
-              {(() => {
-                const startIndex = (completedPage - 1) * matchesPerPage;
-                const endIndex = startIndex + matchesPerPage;
-                const paginatedCompleted = completedMatches.slice(startIndex, endIndex);
-                const totalPages = Math.ceil(completedMatches.length / matchesPerPage);
-
-                return (
-                  <>
-                    {paginatedCompleted.length > 0 ? (
-                      paginatedCompleted.map(match => (
-                  <div 
+              {completedMatches.slice(0, 3).length > 0 ? (
+                completedMatches.slice(0, 3).map(match => (
+                  <div
                     key={match.id}
-                    className="px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+                    className="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer min-h-[70px] flex flex-col justify-center"
                     onClick={() => handleMatchClick(match)}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="flex items-center gap-2">
-                          <TeamLogo team={match.team1} className="w-6 h-6" />
-                          <span className={`text-sm font-medium ${
-                            match.team1_score > match.team2_score 
-                              ? 'text-green-600 dark:text-green-400' 
-                              : 'text-gray-600 dark:text-gray-400'
-                          }`}>
-                            {match.team1?.name || 'TBD'}
-                          </span>
-                        </div>
+                    {/* Tournament Name - Top Center */}
+                    <div className="text-center mb-2">
+                      <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                        {match.event?.name || 'Tournament'}
+                      </div>
+                    </div>
+
+                    {/* Teams and Match Info */}
+                    <div className="flex items-center justify-between gap-3">
+                      {/* Team 1 */}
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <TeamLogo team={match.team1} className="w-7 h-7 flex-shrink-0 rounded-full" />
+                        <span className={`text-sm font-medium line-clamp-1 leading-tight ${
+                          match.team1_score > match.team2_score
+                            ? 'text-green-600 dark:text-green-400 font-semibold'
+                            : 'text-gray-600 dark:text-gray-400'
+                        }`}>
+                          {match.team1?.name || 'TBD'}
+                        </span>
+                      </div>
+
+                      {/* Center: Final Score and Format */}
+                      <div className="flex flex-col items-center gap-1 flex-shrink-0">
                         <div className="text-lg font-bold text-gray-700 dark:text-gray-300">
                           {match.score}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <TeamLogo team={match.team2} className="w-6 h-6" />
-                          <span className={`text-sm font-medium ${
-                            match.team2_score > match.team1_score 
-                              ? 'text-green-600 dark:text-green-400' 
-                              : 'text-gray-600 dark:text-gray-400'
-                          }`}>
-                            {match.team2?.name || 'TBD'}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Completed</div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">{match.format}</div>
                       </div>
-                    </div>
-                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      {match.event.name}
+
+                      {/* Team 2 */}
+                      <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                        <span className={`text-sm font-medium line-clamp-1 leading-tight ${
+                          match.team2_score > match.team1_score
+                            ? 'text-green-600 dark:text-green-400 font-semibold'
+                            : 'text-gray-600 dark:text-gray-400'
+                        }`}>
+                          {match.team2?.name || 'TBD'}
+                        </span>
+                        <TeamLogo team={match.team2} className="w-7 h-7 flex-shrink-0 rounded-full" />
+                      </div>
                     </div>
                   </div>
-                      ))
-                    ) : loading ? (
-                      <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                        <div className="animate-pulse">Loading results...</div>
-                      </div>
-                    ) : (
-                      <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                        No recent results
-                      </div>
-                    )}
-                    
-                    {/* Pagination Controls */}
-                    {totalPages > 1 && (
-                      <div className="px-3 py-2 flex justify-between items-center border-t border-gray-200 dark:border-gray-600">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCompletedPage(prev => Math.max(1, prev - 1));
-                          }}
-                          disabled={completedPage === 1}
-                          className="px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 dark:hover:bg-gray-600"
-                        >
-                          Previous
-                        </button>
-                        <span className="text-xs text-gray-600 dark:text-gray-400">
-                          Page {completedPage} of {totalPages}
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCompletedPage(prev => Math.min(totalPages, prev + 1));
-                          }}
-                          disabled={completedPage === totalPages}
-                          className="px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 dark:hover:bg-gray-600"
-                        >
-                          Next
-                        </button>
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
+                ))
+              ) : (
+                <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                  No completed matches
+                </div>
+              )}
             </div>
           </div>
         </div>

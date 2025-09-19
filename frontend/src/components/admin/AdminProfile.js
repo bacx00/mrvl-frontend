@@ -292,21 +292,6 @@ function AdminProfile() {
         </div>
       </div>
 
-      {/* Activity Log */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Recent Activity</h3>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between py-2 border-b dark:border-gray-700">
-            <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">Logged in</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Today at {new Date().toLocaleTimeString()}</p>
-            </div>
-          </div>
-          <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-            <p className="text-sm">Full activity log coming soon...</p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

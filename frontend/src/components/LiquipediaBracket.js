@@ -15,6 +15,7 @@ function LiquipediaBracket({
   const [editingMatch, setEditingMatch] = useState(null);
   const [team1Score, setTeam1Score] = useState(0);
   const [team2Score, setTeam2Score] = useState(0);
+  const [localBracket, setLocalBracket] = useState(bracket);
   const { api } = useAuth();
 
   // If no bracket provided, show empty state

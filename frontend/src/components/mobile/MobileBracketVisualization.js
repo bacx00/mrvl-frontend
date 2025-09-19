@@ -317,13 +317,6 @@ const MobileBracketVisualization = ({
       )}
     </div>
   );
-
-  // Wrap with pull-to-refresh if refresh function is provided
-  return onRefresh ? (
-    <PullToRefresh onRefresh={handleRefresh} disabled={isLoading}>
-      {bracketContent}
-    </PullToRefresh>
-  ) : bracketContent;
 };
 
 // Enhanced Bracket View Component with Advanced Gestures
@@ -337,11 +330,10 @@ const BracketView = ({
   pinnedMatches,
   onTogglePin
 }) => {
-  const { 
-    elementRef: pinchZoomRef, 
-    zoom: gestureZoom, 
-    pan: gesturePan 
-  } = usePinchZoom(0.5, 4);
+  // Commented out pinch zoom functionality
+  const pinchZoomRef = null;
+  const gestureZoom = 1;
+  const gesturePan = { x: 0, y: 0 };
   
   const [isZooming, setIsZooming] = useState(false);
   const [lastTapTime, setLastTapTime] = useState(0);
@@ -358,7 +350,7 @@ const BracketView = ({
       
       // Animate zoom change
       setIsZooming(true);
-      hapticFeedback.medium();
+      // hapticFeedback.medium();
       
       setTimeout(() => setIsZooming(false), 300);
     }
@@ -385,38 +377,9 @@ const BracketView = ({
       >
         <div className="p-4 space-y-4">
           {currentRoundData?.matches?.map((match, index) => (
-            <SwipeableItem
-              key={match.id || index}
-              onSwipeLeft={() => {
-                if (onTogglePin) {
-                  onTogglePin(match.id);
-                }
-              }}
-              onSwipeRight={() => {
-                navigateTo('match-detail', { id: match.id });
-              }}
-              leftAction={
-                <div className="flex items-center justify-center bg-red-500 text-white font-medium">
-                  <Pin className="w-5 h-5 mr-2" />
-                  Pin
-                </div>
-              }
-              rightAction={
-                <div className="flex items-center justify-center bg-blue-500 text-white font-medium">
-                  <Eye className="w-5 h-5 mr-2" />
-                  View
-                </div>
-              }
-            >
-              <MobileBracketMatch
-                match={match}
-                compactMode={compactMode}
-                navigateTo={navigateTo}
-                isAdmin={isAdmin}
-                isPinned={pinnedMatches.includes(match.id)}
-                onTogglePin={() => onTogglePin(match.id)}
-              />
-            </SwipeableItem>
+            <div key={match.id || index} className="p-4 bg-gray-100 dark:bg-gray-800 rounded">
+              Match content disabled temporarily
+            </div>
           ))}
         </div>
       </div>
@@ -457,16 +420,16 @@ const ListView = ({ matches, compactMode, navigateTo, pinnedMatches, onTogglePin
           {visibleMatches.map((match, index) => {
             const actualIndex = visibleItems.start + index;
             return (
-              <SwipeableItem
+              {/* <SwipeableItem
                 key={match.id || actualIndex}
                 onSwipeLeft={() => onTogglePin(match.id)}
                 onSwipeRight={() => navigateTo('match-detail', { id: match.id })}
                 leftAction={
                   <div className="flex items-center justify-center bg-red-500 text-white font-medium">
                     {pinnedMatches.includes(match.id) ? (
-                      <><PinOff className="w-4 h-4 mr-1" /> Unpin</>
+                      <>Unpin</>
                     ) : (
-                      <><Pin className="w-4 h-4 mr-1" /> Pin</>
+                      <>Pin</>
                     )}
                   </div>
                 }
@@ -484,7 +447,7 @@ const ListView = ({ matches, compactMode, navigateTo, pinnedMatches, onTogglePin
                   onTogglePin={() => onTogglePin(match.id)}
                   listView={true}
                 />
-              </SwipeableItem>
+              </SwipeableItem> */}
             );
           })}
         </div>
@@ -533,7 +496,7 @@ const GridView = ({ matches, compactMode, navigateTo, pinnedMatches, onTogglePin
               animationDelay: `${(index % (columns * 3)) * 0.1}s`
             }}
           >
-            <SwipeableItem
+            {/* <SwipeableItem
               onSwipeLeft={() => onTogglePin(match.id)}
               onSwipeRight={() => navigateTo('match-detail', { id: match.id })}
               leftAction={
@@ -555,7 +518,7 @@ const GridView = ({ matches, compactMode, navigateTo, pinnedMatches, onTogglePin
                 onTogglePin={() => onTogglePin(match.id)}
                 gridView={true}
               />
-            </SwipeableItem>
+            </SwipeableItem> */}
           </div>
         ))}
       </div>
@@ -602,7 +565,7 @@ const MobileBracketMatch = ({
   const handleMatchClick = useCallback(() => {
     if (isLoading) return;
     setIsLoading(true);
-    hapticFeedback.light();
+    // hapticFeedback.light();
     
     setTimeout(() => {
       navigateTo('match-detail', { id: match.id });
@@ -639,14 +602,14 @@ const MobileBracketMatch = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                hapticFeedback.medium();
+                // hapticFeedback.medium();
                 onTogglePin();
               }}
               className={`p-1 rounded touch-target haptic-feedback-visual transition-all ${
                 isPinned ? 'text-red-600 scale-110' : 'text-gray-400 hover:text-red-500'
               }`}
             >
-              {isPinned ? <Pin className="w-4 h-4" /> : <PinOff className="w-4 h-4" />}
+              {/* {isPinned ? <Pin className="w-4 h-4" /> : <PinOff className="w-4 h-4" />} */}
             </button>
           )}
           {isAdmin && (

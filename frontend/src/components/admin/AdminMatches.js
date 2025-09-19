@@ -21,7 +21,6 @@ function AdminMatches() {
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [expandedMatch, setExpandedMatch] = useState(null);
 
   useEffect(() => {
     fetchMatches();
@@ -147,32 +146,7 @@ function AdminMatches() {
     fetchMatches();
   };
 
-  const toggleExpandMatch = (matchId) => {
-    setExpandedMatch(expandedMatch === matchId ? null : matchId);
-  };
 
-  // Inline score update handler
-  const handleScoreUpdate = async (matchId, team, newScore) => {
-    try {
-      const scoreUpdate = team === 1 ? { team1_score: newScore } : { team2_score: newScore };
-      const response = await api.put(`/api/admin/matches-moderation/${matchId}`, scoreUpdate);
-      
-      if (response.data?.success === false) {
-        throw new Error(response.data?.message || 'Score update failed');
-      }
-      
-      // Update local state immediately
-      setMatches(prevMatches => 
-        prevMatches.map(match => 
-          match.id === matchId ? { ...match, ...scoreUpdate } : match
-        )
-      );
-    } catch (error) {
-      console.error('Error updating score:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Error updating score';
-      alert(errorMessage);
-    }
-  };
 
   const handleCreateMatch = async () => {
     handleShowCreateForm();
@@ -184,10 +158,8 @@ function AdminMatches() {
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
       case 'completed':
         return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      case 'scheduled':
+      case 'upcoming':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'cancelled':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
       default:
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
     }
@@ -268,10 +240,9 @@ function AdminMatches() {
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
             >
               <option value="all">All Status</option>
-              <option value="scheduled">Scheduled</option>
+              <option value="upcoming">Upcoming</option>
               <option value="live">Live</option>
               <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
             </select>
           </div>
           <div>
@@ -361,33 +332,11 @@ function AdminMatches() {
                   </div>
                 </div>
 
-                {/* Score with Inline Editing */}
+                {/* Score Display */}
                 <div className="flex items-center space-x-4 px-6">
                   {match.status === 'live' || match.status === 'completed' ? (
-                    <div className="flex items-center space-x-2">
-                      {match.status === 'live' ? (
-                        <>
-                          <input
-                            type="number"
-                            value={match.team1_score || 0}
-                            onChange={(e) => handleScoreUpdate(match.id, 1, parseInt(e.target.value) || 0)}
-                            className="w-16 px-2 py-1 text-center font-bold text-lg border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                            min="0"
-                          />
-                          <span className="text-lg font-bold text-gray-500 dark:text-gray-400">-</span>
-                          <input
-                            type="number"
-                            value={match.team2_score || 0}
-                            onChange={(e) => handleScoreUpdate(match.id, 2, parseInt(e.target.value) || 0)}
-                            className="w-16 px-2 py-1 text-center font-bold text-lg border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                            min="0"
-                          />
-                        </>
-                      ) : (
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                          {match.team1_score || 0} - {match.team2_score || 0}
-                        </div>
-                      )}
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {match.team1_score || 0} - {match.team2_score || 0}
                     </div>
                   ) : (
                     <div className="text-lg text-gray-500 dark:text-gray-400">
@@ -407,122 +356,47 @@ function AdminMatches() {
                 </div>
               </div>
 
-              {/* Expand/Collapse Button for Live Controls */}
-              {(match.status === 'live' || match.status === 'scheduled') && (
-                <div className="mt-3 text-center">
+              {/* Action Buttons */}
+              <div className="mt-3 flex justify-center space-x-2">
+                <button
+                  onClick={() => handleEditMatch(match)}
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium"
+                >
+                  Edit Match
+                </button>
+                {match.status === 'upcoming' && (
                   <button
-                    onClick={() => toggleExpandMatch(match.id)}
-                    className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center mx-auto space-x-1"
+                    onClick={() => handleStatusChange(match.id, 'live')}
+                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium"
                   >
-                    <span>{expandedMatch === match.id ? 'Hide Live Controls' : 'Show Live Controls'}</span>
-                    <svg 
-                      className={`w-4 h-4 transform transition-transform ${expandedMatch === match.id ? 'rotate-180' : ''}`}
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
+                    Start Match
                   </button>
-                </div>
-              )}
-            </div>
-
-            {/* Expanded Live Controls */}
-            {expandedMatch === match.id && (match.status === 'live' || match.status === 'scheduled') && (
-              <div className="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Team 1 Controls */}
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-red-200 dark:border-red-800">
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2 text-center">
-                      {match.team1_name || 'Team 1'}
-                    </h4>
-                    <div className="space-y-2">
-                      <button
-                        onClick={() => handleScoreUpdate(match.id, 1, (match.team1_score || 0) + 1)}
-                        className="w-full px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium"
-                      >
-                        +1 Point
-                      </button>
-                      {(match.team1_score || 0) > 0 && (
-                        <button
-                          onClick={() => handleScoreUpdate(match.id, 1, Math.max(0, (match.team1_score || 0) - 1))}
-                          className="w-full px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium"
-                        >
-                          -1 Point
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Team 2 Controls */}
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2 text-center">
-                      {match.team2_name || 'Team 2'}
-                    </h4>
-                    <div className="space-y-2">
-                      <button
-                        onClick={() => handleScoreUpdate(match.id, 2, (match.team2_score || 0) + 1)}
-                        className="w-full px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium"
-                      >
-                        +1 Point
-                      </button>
-                      {(match.team2_score || 0) > 0 && (
-                        <button
-                          onClick={() => handleScoreUpdate(match.id, 2, Math.max(0, (match.team2_score || 0) - 1))}
-                          className="w-full px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium"
-                        >
-                          -1 Point
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Global Match Controls */}
-                <div className="mt-4 flex justify-center space-x-3">
-                  {match.status === 'scheduled' && (
-                    <button
-                      onClick={() => handleStatusChange(match.id, 'live')}
-                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-medium"
-                    >
-                      Start Match
-                    </button>
-                  )}
-                  {match.status === 'live' && (
-                    <button
-                      onClick={() => handleStatusChange(match.id, 'completed')}
-                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded font-medium"
-                    >
-                      Complete Match
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex justify-between items-center">
-                <div className="flex space-x-2">
-                  <button 
-                    onClick={() => handleEditMatch(match)}
-                    className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                )}
+                {(match.status === 'live' || match.status === 'upcoming') && (
+                  <button
+                    onClick={() => window.open(`/#admin-live-scoring?match_id=${match.id}`, '_blank')}
+                    className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded text-sm font-medium"
                   >
-                    Edit
+                    Live Scoring
                   </button>
-                  <button className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300">
-                    View Details
+                )}
+                {match.status === 'live' && (
+                  <button
+                    onClick={() => handleStatusChange(match.id, 'completed')}
+                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm font-medium"
+                  >
+                    Complete Match
                   </button>
-                </div>
+                )}
                 <button
                   onClick={() => handleDeleteMatch(match.id, `${match.team1_name} vs ${match.team2_name}`)}
-                  className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 font-medium"
+                  className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium"
                 >
                   Delete
                 </button>
               </div>
             </div>
+
           </div>
         ))}
       </div>
@@ -661,10 +535,14 @@ function AdminMatches() {
             </div>
             
             <div className="p-6">
-              <MatchForm 
-                navigateTo={(path) => {
+              <MatchForm
+                navigateTo={(path, params) => {
                   handleCloseCreateForm();
                   handleMatchUpdate();
+                  // Handle navigation for new matches
+                  if (path === 'match-detail' && params?.id) {
+                    window.location.href = `/matches/${params.id}`;
+                  }
                 }}
               />
             </div>
@@ -689,11 +567,15 @@ function AdminMatches() {
             </div>
             
             <div className="p-6">
-              <MatchForm 
+              <MatchForm
                 matchId={selectedMatch?.id}
-                navigateTo={(path) => {
+                navigateTo={(path, params) => {
                   handleCloseEditForm();
                   handleMatchUpdate();
+                  // Handle navigation for edited matches
+                  if (path === 'match-detail' && params?.id) {
+                    window.location.href = `/matches/${params.id}`;
+                  }
                 }}
               />
             </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../../hooks';
 import { getUserAvatarUrl, getHeroImageSync } from '../../utils/imageUtils';
 
-function AdminUsers() {
+function AdminUsers({ navigateTo }) {
   const { api } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -399,7 +399,7 @@ function AdminUsers() {
     const confirmMessage = `Are you sure you want to change status to "${newStatus}" for ${selectedUsers.size} users?`;
     if (window.confirm(confirmMessage)) {
       try {
-        const response = await api.post('/api/admin/users/bulk-update', {
+        const response = await api.post('/admin/users/bulk-update', {
           user_ids: Array.from(selectedUsers),
           status: newStatus
         });
@@ -426,7 +426,7 @@ function AdminUsers() {
     const confirmMessage = `Are you sure you want to change role to "${newRole}" for ${selectedUsers.size} users?`;
     if (window.confirm(confirmMessage)) {
       try {
-        const response = await api.post('/api/admin/users/bulk-update', {
+        const response = await api.post('/admin/users/bulk-update', {
           user_ids: Array.from(selectedUsers),
           role: newRole
         });
@@ -698,10 +698,9 @@ function AdminUsers() {
                       <div className="flex-shrink-0 h-10 w-10">
                         <UserAvatar user={user} navigateToProfile={() => {
                           console.log('🔍 AdminUsers: Navigating to user profile:', user.id);
-                          // Admin functionality - navigate to user profile
-                          if (window.confirm(`Navigate to user profile for ${user.name}?`)) {
-                            // This would navigate to user profile page - implement as needed
-                            window.open(`/profile/${user.id}`, '_blank');
+                          // Navigate to user profile page using the app's router
+                          if (navigateTo) {
+                            navigateTo('user-profile', { userId: user.id });
                           }
                         }} />
                       </div>
@@ -1127,7 +1126,11 @@ function AdminUsers() {
             <div className="space-y-4">
               <div className="text-center">
                 <div className="h-16 w-16 mx-auto mb-3">
-                  <UserAvatar user={selectedUser} navigateToProfile={() => {}} />
+                  <UserAvatar user={selectedUser} navigateToProfile={() => {
+                    if (navigateTo) {
+                      navigateTo('user-profile', { userId: selectedUser.id });
+                    }
+                  }} />
                 </div>
                 <h4 className="text-xl font-semibold text-gray-900 dark:text-white">{selectedUser.name}</h4>
                 <p className="text-gray-600 dark:text-gray-400">{selectedUser.email}</p>

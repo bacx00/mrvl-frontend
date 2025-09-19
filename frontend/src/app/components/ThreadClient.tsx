@@ -78,8 +78,8 @@ const ThreadClient: React.FC<ThreadClientProps> = ({
     try {
       if (!append) setLoading(true);
       
-      const threadResponse = await fetch(`/api/forums/${categoryId}/threads/${threadId}`);
-      const postsResponse = await fetch(`/api/forums/${categoryId}/threads/${threadId}/posts?page=${page}&sort=${sortOrder}&author=${filterAuthor}`);
+      const threadResponse = await fetch(`/api/public/forums/threads/${threadId}`);
+      const postsResponse = await fetch(`/api/public/forums/threads/${threadId}/posts?page=${page}&sort=${sortOrder}&author=${filterAuthor}`);
       
       if (!threadResponse.ok || !postsResponse.ok) {
         throw new Error('Failed to fetch thread data');
@@ -228,7 +228,7 @@ const ThreadClient: React.FC<ThreadClientProps> = ({
   // Handle report
   const handleReport = useCallback(async (postId: string, reason: string) => {
     try {
-      const response = await fetch(`/api/forums/posts/${postId}/report`, {
+      const response = await fetch(`/api/reports/forums/posts/${postId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason })
@@ -252,7 +252,7 @@ const ThreadClient: React.FC<ThreadClientProps> = ({
     setSubmittingReply(true);
     
     try {
-      const response = await fetch(`/api/forums/${categoryId}/threads/${threadId}/posts`, {
+      const response = await fetch(`/api/user/forums/threads/${threadId}/posts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content })
@@ -286,7 +286,7 @@ const ThreadClient: React.FC<ThreadClientProps> = ({
     if (!user || !thread) return;
     
     try {
-      const response = await fetch(`/api/forums/threads/${threadId}/subscribe`, {
+      const response = await fetch(`/api/user/forums/threads/${threadId}/subscribe`, {
         method: thread.isSubscribed ? 'DELETE' : 'POST'
       });
       

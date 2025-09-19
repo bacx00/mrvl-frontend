@@ -55,7 +55,7 @@
     "compression-webpack-plugin": "^11.1.0",
     "postcss": "^8.5.6",
     "puppeteer": "^24.17.0",
-    "tailwindcss": "^4.1.10",
+    "tailwindcss": "^3.0.0",
     "typescript": "^5.8.3",
     "ws": "^8.18.3"
   }

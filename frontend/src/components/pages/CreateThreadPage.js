@@ -355,7 +355,7 @@ function CreateThreadPage({ navigateTo }) {
       } else if (error.message.includes('422')) {
         setError('🚨 VALIDATION ISSUE: Please check your thread title and content.');
       } else if (error.message.includes('404')) {
-        setError('🚨 BACKEND ISSUE: Forum threads API endpoint not found. Please implement /api/forums/threads endpoint.');
+        setError('🚨 BACKEND ISSUE: Forum threads API endpoint not found. Please check /api/user/forums/threads endpoint.');
       } else if (error.message.includes('500')) {
         setError('🚨 BACKEND ISSUE: Server error when creating thread. Check backend forum implementation.');
       } else {

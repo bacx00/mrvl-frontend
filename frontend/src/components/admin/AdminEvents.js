@@ -41,7 +41,7 @@ function AdminEvents() {
     try {
       setLoading(true);
       setError(null);
-      const response = await api.get(`/api/admin/events?page=${page}&limit=${limit}`);
+      const response = await api.get(`/admin/events?page=${page}&limit=${limit}`);
       const eventsData = response?.data?.data || response?.data || response || [];
       setEvents(Array.isArray(eventsData) ? eventsData : []);
     } catch (err) {
@@ -99,7 +99,7 @@ function AdminEvents() {
   const handleDeleteEvent = async (eventId, eventName) => {
     if (window.confirm(`Are you sure you want to delete event "${eventName}"? This action cannot be undone.`)) {
       try {
-        const response = await api.delete(`/api/admin/events/${eventId}`);
+        const response = await api.delete(`/admin/events/${eventId}`);
         if (response.data?.success !== false) {
           await fetchEvents();
           alert('Event deleted successfully!');
@@ -152,7 +152,7 @@ function AdminEvents() {
     
     try {
       if (editingEvent) {
-        const response = await api.put(`/api/admin/events/${editingEvent.id}`, eventFormData);
+        const response = await api.put(`/admin/events/${editingEvent.id}`, eventFormData);
         if (response.data?.success !== false) {
           await fetchEvents();
           setShowEventModal(false);
@@ -161,7 +161,7 @@ function AdminEvents() {
           throw new Error(response.data?.message || 'Event update failed');
         }
       } else {
-        const response = await api.post('/api/admin/events', eventFormData);
+        const response = await api.post('/admin/events', eventFormData);
         if (response.data?.success !== false) {
           await fetchEvents();
           setShowEventModal(false);
@@ -205,7 +205,7 @@ function AdminEvents() {
     const confirmMessage = `Are you sure you want to change status to "${newStatus}" for ${selectedEvents.size} events?`;
     if (window.confirm(confirmMessage)) {
       try {
-        const response = await api.post('/api/admin/events/bulk-update', {
+        const response = await api.post('/admin/events/bulk-update', {
           event_ids: Array.from(selectedEvents),
           status: newStatus
         });
@@ -232,7 +232,7 @@ function AdminEvents() {
     const confirmMessage = `Are you sure you want to delete ${selectedEvents.size} events? This action cannot be undone.`;
     if (window.confirm(confirmMessage)) {
       try {
-        const response = await api.post('/api/admin/events/bulk-delete', {
+        const response = await api.post('/admin/events/bulk-delete', {
           event_ids: Array.from(selectedEvents)
         });
         

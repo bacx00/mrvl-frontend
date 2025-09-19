@@ -407,8 +407,7 @@ function EventForm({ eventId, navigateTo }) {
   const statuses = [
     { value: 'upcoming', label: 'Upcoming' },
     { value: 'ongoing', label: 'Ongoing' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'cancelled', label: 'Cancelled' }
+    { value: 'completed', label: 'Completed' }
   ];
 
   if (loading) {

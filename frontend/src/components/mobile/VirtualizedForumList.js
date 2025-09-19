@@ -20,7 +20,6 @@ const ThreadItem = React.memo(({ index, style, data }) => {
   } = data;
   
   const thread = threads[index];
-  if (!thread) return null;
 
   // Using imported formatTimeAgo from utils.js for consistency
 
@@ -43,6 +42,8 @@ const ThreadItem = React.memo(({ index, style, data }) => {
     e.stopPropagation();
     onShare(thread);
   }, [thread, onShare]);
+
+  if (!thread) return null;
 
   if (viewMode === 'compact') {
     return (

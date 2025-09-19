@@ -117,7 +117,7 @@ function AdminDashboardContent({ navigateTo }) {
       case 'events':
         return hasMinimumRole(user, ROLES.MODERATOR) ? <AdminEvents navigateTo={navigateTo} /> : <AccessDenied />;
       case 'users':
-        return hasRole(user, ROLES.ADMIN) ? <AdminUsers /> : <AccessDenied />;
+        return hasRole(user, ROLES.ADMIN) ? <AdminUsers navigateTo={navigateTo} /> : <AccessDenied />;
       case 'news':
         return hasMinimumRole(user, ROLES.MODERATOR) ? <AdminNewsSimplified navigateTo={navigateTo} /> : <AccessDenied />;
       case 'forums':
@@ -125,6 +125,11 @@ function AdminDashboardContent({ navigateTo }) {
       case 'bulk-operations':
         return hasRole(user, ROLES.ADMIN) ? <AdminBulkOperations /> : <AccessDenied />;
       case 'profile':
+        // Navigate to the existing user profile page instead of showing separate admin profile
+        if (navigateTo) {
+          navigateTo('user-profile', { userId: user?.id });
+          return null;
+        }
         return <AdminProfile />;
       default:
         return <AdminOverview />;

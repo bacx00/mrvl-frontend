@@ -176,7 +176,7 @@ function TeamDetailPage({ params, navigateTo }) {
 
   const fetchMentionsData = async () => {
     if (!teamId) return;
-    
+
     try {
       // Fetch mentions autocomplete data for parsing description text
       const response = await api.get('/mentions/search?limit=50');
@@ -188,6 +188,11 @@ function TeamDetailPage({ params, navigateTo }) {
       // Don't break the page if mentions fail
       setMentionsData([]);
     }
+  };
+
+  // Refresh mentions data when external changes occur
+  const refreshMentionsData = () => {
+    fetchMentionsData();
   };
 
   // Fetch team matches from new API endpoints
@@ -530,10 +535,14 @@ function TeamDetailPage({ params, navigateTo }) {
               </div>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(matchStats.totalEarnings || team.earnings || 0)}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-300">Total Earnings</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{Math.floor(matchStats.rating || team.rating || 1500)}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-300">ELO Rating • #{matchStats.ranking || team.rank || 'N/A'}</div>
+              <div className="mb-4">
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(matchStats.totalEarnings || team.earnings || 0)}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-300 mt-1">Total Earnings</div>
+              </div>
+              <div className="mb-4">
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">{Math.floor(matchStats.rating || team.rating || 1500)}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-300 mt-1">ELO Rating</div>
+              </div>
               
               {/* Edit Button for Admins/Moderators */}
               {(isAdmin() || isModerator()) && !isEditing && (
@@ -569,12 +578,6 @@ function TeamDetailPage({ params, navigateTo }) {
               <div>
                 <div className="text-gray-500 dark:text-gray-500 text-sm">Avg Team Rating</div>
                 <div className="font-medium text-gray-900 dark:text-white mt-1">{Math.floor(matchStats.avgTeamRating || 1500)}</div>
-              </div>
-              <div>
-                <div className="text-gray-500 dark:text-gray-500 text-sm">Map Diff</div>
-                <div className={`font-medium mt-1 ${(matchStats.mapDifferential || 0) > 0 ? 'text-green-600' : (matchStats.mapDifferential || 0) < 0 ? 'text-red-600' : 'text-gray-600'}`}>
-                  {(matchStats.mapDifferential || 0) > 0 ? '+' : ''}{matchStats.mapDifferential || 0}
-                </div>
               </div>
             </div>
           </div>
@@ -631,8 +634,8 @@ function TeamDetailPage({ params, navigateTo }) {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold text-gray-900 dark:text-white">{player.rating || 1500}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-500">Rating</div>
+                    <div className="font-bold text-gray-900 dark:text-white">{player.elo_rating || player.eloRating || 1500}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-500">ELO</div>
                   </div>
                 </div>
               ))}
